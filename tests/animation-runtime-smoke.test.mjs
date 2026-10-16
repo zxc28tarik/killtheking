@@ -4,11 +4,16 @@ import vm from 'node:vm';
 import {readFileSync} from 'node:fs';
 
 const source=readFileSync(new URL('../src/oyun.js',import.meta.url),'utf8');
-function sourceFunction(name, following) {
+function sourceFunction(name) {
  const start=source.indexOf('function '+name+'(');
- const end=source.indexOf('function '+following+'(',start);
- assert.ok(start>0 && end>start, 'Missing function: '+name);
- return source.slice(start,end).trim();
+ const open=source.indexOf('{',start);
+ assert.ok(start>0 && open>start, 'Missing function: '+name);
+ let depth=0;
+ for(let i=open;i<source.length;i++){
+   if(source[i]==='{')depth++;
+   else if(source[i]==='}' && --depth===0)return source.slice(start,i+1);
+ }
+ throw new Error('Unterminated function: '+name);
 }
 const blend=vm.runInNewContext('('+sourceFunction('blendArticulatedRig','applyPlayerTpsMotion')+')',{
  THREE:{MathUtils:{lerp:(a,b,t)=>a+(b-a)*t}}
