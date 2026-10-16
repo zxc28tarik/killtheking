@@ -45,6 +45,18 @@
    const recoil=Math.sin(Math.PI*impact);
    torsoX-=.12*recoil;headX+=.12*recoil;
   }
+  // TPS-only locomotion overlays use the same rig without modifying its meshes.
+  // No walking in the air; sliding lowers the silhouette without moving the collider.
+  if(signals.sliding){
+   leftLeg=.64;rightLeg=.20;
+   torsoX+=.25;headX-=.10;
+   capeX+=.12;
+   if(!guarding)leftArm=-.35;
+  }else if(signals.airborne){
+   leftLeg=-.32;rightLeg=.48;
+   torsoX-=.08;headX+=.07;
+   capeX+=.16;
+  }
   if(stagger>0){
    const frozen=Math.sin((1-stagger)*Math.PI);
    rightArm=-.75+frozen*.45;
