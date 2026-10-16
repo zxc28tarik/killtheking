@@ -27,7 +27,15 @@
         if(!['sword','spear'].includes(kind)||!Number.isFinite(reach)||reach<=0)throw Error('Invalid swing');
         return {kind,reach,side:side?1:0,elapsed:0,duration:DURATION,hitKeys:new Set(),resolved:false,finished:false};
     }
-    function advance(swing,dt,castSegment){
+    // During slide-hops or fast turns, the fighter's world position can shift
+    // independently of their local attack pose. Track both motions.
+    function withinReach(origin, point, reach, padding=3) {
+        if (!origin || !point) return false;
+        const dx=point.x-origin.x, dz=point.z-origin.z;
+        const bound=reach+padding;
+        return dx*dx+dz*dz<=bound*bound && Math.abs(point.y-origin.y)<=bound+2;
+    }
+    function advance(swing,dt,castSegment,projectTip){
         if(!swing||swing.finished||swing.resolved||!(dt>0)||!Number.isFinite(dt))return null;
         if(typeof castSegment!=='function')throw Error('castSegment callback required');
         const prior=swing.elapsed/swing.duration;
@@ -42,12 +50,35 @@
             if(t1<t0-EPS)continue;
             const tip0=pose(swing.kind,swing.reach,swing.side,t0);
             const tip1=pose(swing.kind,swing.reach,swing.side,t1);
+            // Inter-frame world bridge protects high-speed player movement.
+            // Snapshot the point by value; vector pools may be reused next tick.
+            let worldBlocked=false;
+            if (typeof projectTip === 'function') {
+                const projected=projectTip(tip1);
+                if (projected) {
+                    const tipWorld={x:projected.x,y:projected.y,z:projected.z};
+                    if (swing.previousWorldTip) {
+                        const bridge=castSegment(swing.previousWorldTip,tipWorld,true);
+                        if (bridge && bridge.kind==='world') worldBlocked=true;
+                        if (bridge && !worldBlocked && (bridge.kind==='bot'||bridge.kind==='barrel')) {
+                            const key=bridge.kind==='bot'?'bot:'+bridge.bot.id:'barrel:'+bridge.barrel.id;
+                            if (!swing.hitKeys.has(key)) {
+                                swing.hitKeys.add(key);
+                                swing.resolved=true;
+                                return bridge;
+                            }
+                        }
+                    }
+                    swing.previousWorldTip=tipWorld;
+                }
+            }
+            if (worldBlocked) continue;
             const strikes=[
                 [{x:0,y:-.1,z:0},tip1],
                 [tip0,tip1]
             ];
             for(const [start,end] of strikes){
-                const contact=castSegment(start,end);
+                const contact=castSegment(start,end,false);
                 if(!contact||!['bot','barrel'].includes(contact.kind))continue;
                 const key=contact.kind==='bot' ? 'bot:'+contact.bot.id : 'barrel:'+contact.barrel.id;
                 if(swing.hitKeys.has(key))continue;
@@ -59,5 +90,5 @@
         if(swing.elapsed>=swing.duration-EPS)swing.finished=true;
         return null;
     }
-    return {begin,advance,pose,DURATION,ACTIVE_START,ACTIVE_END};
+    return {begin,advance,pose,withinReach,DURATION,ACTIVE_START,ACTIVE_END};
 });

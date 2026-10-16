@@ -1839,6 +1839,7 @@
 
         const keys = {};
         let activeWeaponSwing = null;
+        let lastWeaponSwingRaycasts = 0;
         let isGameActive = false;
         let mouseSensitivity = 1.0;
         let playerCharGroup = null;
@@ -4092,22 +4093,34 @@
                 const swing = activeWeaponSwing;
                 const origin = (player.isThirdPerson ? player.pos : camera.position).clone();
                 const orientation = camera.quaternion.clone();
-                // One nearest-hit raycast for static world, barrels and live fighters.
-                const targets = [...worldMeshes];
-                bots.filter(b => !b.dead).forEach(b => b.mesh.traverse(c => {
-                    if (c.isMesh) targets.push(c);
-                }));
-                barrels.filter(b => b.active).forEach(b => b.group.traverse(c => {
-                    if (c.isMesh) targets.push(c);
-                }));
-                const impact = ArenaWeaponSweep.advance(swing, dt, (localFrom, localTo) => {
-                    const from = origin.clone().add(new THREE.Vector3(
-                        localFrom.x, localFrom.y, localFrom.z).applyQuaternion(orientation));
-                    const to = origin.clone().add(new THREE.Vector3(
-                        localTo.x, localTo.y, localTo.z).applyQuaternion(orientation));
+                // Keep one candidate buffer per swing and ignore distant
+                // dynamic combatants; static castle geometry always stays in.
+                const targets = swing.contactTargets || (swing.contactTargets = []);
+                targets.length = 0;
+                for (const mesh of worldMeshes) targets.push(mesh);
+                for (const bot of bots) {
+                    if (bot.dead || !ArenaWeaponSweep.withinReach(origin, bot.mesh.position, swing.reach, 4)) continue;
+                    bot.mesh.traverse(c => { if (c.isMesh) targets.push(c); });
+                }
+                for (const barrel of barrels) {
+                    if (!barrel.active || !ArenaWeaponSweep.withinReach(origin, barrel.pos, swing.reach, 4)) continue;
+                    barrel.group.traverse(c => { if (c.isMesh) targets.push(c); });
+                }
+                const impact = ArenaWeaponSweep.advance(swing, dt, (localFrom, localTo, worldSpace) => {
+                    // World-space bridges cover player displacement between frames;
+                    // the usual animation segments remain local to the camera.
+                    const from = worldSpace
+                        ? new THREE.Vector3(localFrom.x, localFrom.y, localFrom.z)
+                        : origin.clone().add(new THREE.Vector3(
+                            localFrom.x, localFrom.y, localFrom.z).applyQuaternion(orientation));
+                    const to = worldSpace
+                        ? new THREE.Vector3(localTo.x, localTo.y, localTo.z)
+                        : origin.clone().add(new THREE.Vector3(
+                            localTo.x, localTo.y, localTo.z).applyQuaternion(orientation));
                     const direction = to.sub(from);
                     const length = direction.length();
                     if (length < 0.001) return null;
+                    swing.raycastCount = (swing.raycastCount || 0) + 1;
                     raycaster.set(from, direction.multiplyScalar(1 / length));
                     raycaster.near = 0.001;
                     raycaster.far = length;
@@ -4121,13 +4134,17 @@
                     if (barrelIndex !== undefined && barrels[barrelIndex] && barrels[barrelIndex].active)
                         return {kind:'barrel',barrel:barrels[barrelIndex],distance:hit.distance};
                     return {kind:'world',distance:hit.distance};
-                });
+                }, localTip => new THREE.Vector3(localTip.x, localTip.y, localTip.z)
+                    .applyQuaternion(orientation).add(origin));
                 if (impact && impact.kind === 'barrel') triggerBarrelExplosion(impact.barrel);
                 else if (impact && impact.kind === 'bot') {
                     const damage = (impact.isHead ? swing.headshotDamage : swing.damage) + swing.bonus;
                     damageBot(impact.bot, damage, impact.isHead, swing.weaponName, swing.tag, impact.point);
                 }
-                if (swing.finished || swing.resolved) activeWeaponSwing = null;
+                if (swing.finished || swing.resolved) {
+                    lastWeaponSwingRaycasts = swing.raycastCount || 0;
+                    activeWeaponSwing = null;
+                }
             } else if (activeWeaponSwing && (!isGameActive || player.classIdx !== activeWeaponSwing.classIdx)) {
                 activeWeaponSwing = null;
             }
@@ -4566,7 +4583,8 @@
             playerKills: player.kills,
             playerParries: player.parries,
             playerDeaths: player.deaths,
-            weaponSwingActive: !!activeWeaponSwing
+            weaponSwingActive: !!activeWeaponSwing,
+            lastWeaponSwingRaycasts
         });
         window.onload = function() {
             animate();
