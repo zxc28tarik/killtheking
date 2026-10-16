@@ -16,3 +16,14 @@ jobs:
         run: node --check vendor/three-r128.js
       - name: Regression tests
         run: node --test tests/*.test.mjs
+
+      - name: Build playable offline HTML from repository sources
+        run: python3 tools/build_offline.py --out dist/KillTheKing_Oyna.html
+      - name: Validate all inlined HTML scripts
+        run: node tools/check_offline.cjs dist/KillTheKing_Oyna.html
+      - name: Upload tested playable HTML
+        uses: actions/upload-artifact@v4
+        with:
+          name: killtheking-playable-html
+          path: dist/KillTheKing_Oyna.html
+          if-no-files-found: error
