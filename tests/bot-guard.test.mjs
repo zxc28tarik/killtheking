@@ -50,5 +50,5 @@ test('bot guard responds to wind-up, has cooldown and visible defensive arm',()=
  assert.match(source,/other\.meleeWindup > 0 && other\.arenaTargetType === 'bot'/);
  assert.match(source,/threat\.meleeWindup <= 0\.18/);
  assert.match(source,/bot\.guardCooldown = 2\.4/);
- assert.match(source,/bot\.guardTime > 0 && bot\.mesh\._parts\.leftArm/);
+ assert.match(source,/guard: bot\.guardTime > 0/);\n assert.match(source,/parts\.leftArm\.rotation\.x = THREE\.MathUtils\.lerp/);
 });
