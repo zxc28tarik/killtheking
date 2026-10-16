@@ -39,3 +39,11 @@ test('parry state is isolated to player knight, bot attacks and freeze',()=>{
  assert.match(html,/src\/combat-defense\.js/);
  assert.ok(html.indexOf('src/combat-defense.js') < html.indexOf('src/oyun.js'));
 });
+
+test('melee bots telegraph an attack before applying damage',()=>{
+ const src=readFileSync(new URL('../src/oyun.js',import.meta.url),'utf8');
+ assert.match(src,/bot\.meleeWindup = 0\.36/);
+ assert.match(src,/if \(bot\.meleeWindup > 0\)/);
+ assert.match(src,/arenaLineOfSight\(bot, targetPosition, arenaTarget\.type === 'player'\)/);
+ assert.match(src,/bot\.meleeWindup = 0;\s*bot\.attackTimer = 0\.35/);
+});
