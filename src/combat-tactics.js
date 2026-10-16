@@ -16,6 +16,10 @@
         const nx = distance > TOL ? dx / distance : 1, nz = distance > TOL ? dz / distance : 0;
         const point = (x, z) => ({x, z, y: navigator.heightAt(x, z)});
         const valid = candidate => navigator.walkableAt(candidate.x, candidate.z, candidate.y);
+        // A position that is visible but disconnected from the bot is not a
+        // valid firing or retreat destination. Older mocks lack isReachable.
+        const accessible = candidate => typeof navigator.isReachable !== 'function' ||
+            navigator.isReachable(from, candidate);
         const result = (mode, goal) => ({mode, goal});
         const hold = () => result('hold', null);
         const approach = () => result('advance', point(target.x, target.z));
@@ -33,7 +37,7 @@
             for (const [vx,vz] of vectors) {
                 for (const scale of [1, 0.6]) {
                     const candidate = point(from.x + vx * spacing * scale, from.z + vz * spacing * scale);
-                    if (valid(candidate) && navigator.clearSegment(start, candidate))
+                    if (valid(candidate) && navigator.clearSegment(start, candidate) && accessible(candidate))
                         return result(away ? 'retreat' : 'strafe', candidate);
                 }
             }
@@ -56,7 +60,7 @@
             for (const [ox,oz] of DIRECTIONS) {
                 for (const radius of [5,9]) {
                     const candidate = point(from.x + ox * radius, from.z + oz * radius);
-                    if (!valid(candidate) || !canSeeFrom(candidate, target)) continue;
+                    if (!valid(candidate) || !accessible(candidate) || !canSeeFrom(candidate, target)) continue;
                     const aimDist = Math.hypot(target.x - candidate.x, target.z - candidate.z);
                     if (aimDist > range * 0.93 || aimDist < minimum * 0.7) continue;
                     const travel = Math.hypot(candidate.x-from.x,candidate.z-from.z);
