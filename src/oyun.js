@@ -3991,56 +3991,41 @@
                     particles.push({ mesh: trail, vel: new THREE.Vector3(), life: 0.22, maxLife: 0.22, grow: false });
                 }
 
-                // Check Barrel hit
-                let removed = false;
-                for (const b of barrels) {
-                    if (b.active && arr.mesh.position.distanceTo(b.pos.clone().add(new THREE.Vector3(0, 1.1, 0))) < 1.15) {
-                        triggerHitmarker(false);
-                        triggerBarrelExplosion(b);
-                        scene.remove(arr.mesh);
-                        arrows.splice(i, 1);
-                        removed = true;
-                        break;
+                // Swept collision: find the FIRST obstruction along the complete frame segment.
+                // Earlier frame-end overlap checks could hit a bot behind a wall.
+                const impact = ArenaArrowCollision.sweep(prevPos, arr.mesh.position, {
+                    barrels,
+                    bots,
+                    groundY: 0.15,
+                    worldHit(from, to) {
+                        const travel = to.clone().sub(from);
+                        const distance = travel.length();
+                        if (distance <= 0.000001) return null;
+                        raycaster.set(from, travel.multiplyScalar(1 / distance));
+                        raycaster.near = 0;
+                        raycaster.far = distance;
+                        return raycaster.intersectObjects(worldMeshes, false)[0] || null;
                     }
-                }
-                if (removed) continue;
-
-                // Check Bot hit
-                for (const bot of bots) {
-                    if (bot.dead) continue;
-                    const bPos = bot.mesh.position;
-                    const dx = arr.mesh.position.x - bPos.x;
-                    const dz = arr.mesh.position.z - bPos.z;
-                    const dy = arr.mesh.position.y - bPos.y;
-                    if (Math.hypot(dx, dz) < 0.9 && dy >= 0 && dy <= 3.1) {
-                        const isHead = dy > 2.15;
+                });
+                if (impact) {
+                    arr.mesh.position.set(impact.point.x, impact.point.y, impact.point.z);
+                    if (impact.type === 'barrel') {
+                        triggerHitmarker(false);
+                        triggerBarrelExplosion(impact.target);
+                        scene.remove(arr.mesh);
+                    } else if (impact.type === 'bot') {
+                        const bot = impact.target;
+                        const isHead = impact.point.y - bot.mesh.position.y > 2.15;
                         const bowCls = CLASSES[2];
                         const baseDmg = isHead ? bowCls.headshotDamage : Math.round(bowCls.damage * (0.55 + arr.charge * 0.75));
                         damageBot(bot, baseDmg, isHead, bowCls.weaponName, '', arr.mesh.position);
                         scene.remove(arr.mesh);
-                        arrows.splice(i, 1);
-                        removed = true;
-                        break;
-                    }
-                }
-                if (removed) continue;
-
-                // Check Wall / Ground Sticking
-                const segDir = arr.mesh.position.clone().sub(prevPos);
-                const segLen = segDir.length();
-                if (segLen > 0.001) {
-                    raycaster.set(prevPos, segDir.normalize());
-                    raycaster.far = segLen;
-                    const wallHits = raycaster.intersectObjects(worldMeshes, false);
-                    if (wallHits.length > 0 || arr.mesh.position.y <= 0.15) {
+                    } else {
                         if (isGameActive && arr.mesh.position.distanceTo(player.pos) < 35) sfx.playArrowThud();
-                        if (wallHits.length > 0) {
-                            arr.mesh.position.copy(wallHits[0].point);
-                        }
                         stuckArrows.push({ mesh: arr.mesh, life: 10.0 });
-                        arrows.splice(i, 1);
-                        continue;
                     }
+                    arrows.splice(i, 1);
+                    continue;
                 }
 
                 if (arr.life <= 0) {
