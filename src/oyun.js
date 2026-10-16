@@ -1363,6 +1363,7 @@
         const viewmodels = [];
         // Invisible model-tip anchors for real-geometry calibration in desktop QA.
         const visualWeaponTipMarkers = [];
+        const visualWeaponGripMarkers = [];
         let leftShieldGroup = null;
         let bowArrowMesh = null;
         let bowStringMesh = null;
@@ -1551,6 +1552,10 @@
             swordVisualTip.position.set(0.34, 1.15, -0.64);
             swordGroup.add(swordVisualTip);
             visualWeaponTipMarkers[0] = swordVisualTip;
+            const swordVisualGrip = new THREE.Object3D();
+            swordVisualGrip.position.set(0.34, -0.05, -0.64);
+            swordGroup.add(swordVisualGrip);
+            visualWeaponGripMarkers[0] = swordVisualGrip;
             swordGroup.rotation.set(-0.22, -0.12, 0.08);
             weaponHolder.add(swordGroup);
             viewmodels.push(swordGroup);
@@ -1594,6 +1599,10 @@
             spearVisualTip.position.set(0.32, -0.20, -2.59);
             spearGroup.add(spearVisualTip);
             visualWeaponTipMarkers[1] = spearVisualTip;
+            const spearVisualGrip = new THREE.Object3D();
+            spearVisualGrip.position.set(0.32, -0.20, -0.64);
+            spearGroup.add(spearVisualGrip);
+            visualWeaponGripMarkers[1] = spearVisualGrip;
             weaponHolder.add(spearGroup);
             viewmodels.push(spearGroup);
 
@@ -4129,7 +4138,7 @@
                     if (!barrel.active || !ArenaWeaponSweep.withinReach(origin, barrel.pos, swing.reach, 4)) continue;
                     barrel.group.traverse(c => { if (c.isMesh) targets.push(c); });
                 }
-                const impact = ArenaWeaponSweep.advance(swing, dt, (localFrom, localTo, worldSpace) => {
+                const castSegment = (localFrom, localTo, worldSpace) => {
                     // World-space bridges cover player displacement between frames;
                     // the usual animation segments remain local to the camera.
                     const from = worldSpace
@@ -4157,8 +4166,33 @@
                     if (barrelIndex !== undefined && barrels[barrelIndex] && barrels[barrelIndex].active)
                         return {kind:'barrel',barrel:barrels[barrelIndex],distance:hit.distance};
                     return {kind:'world',distance:hit.distance};
-                }, localTip => new THREE.Vector3(localTip.x, localTip.y, localTip.z)
-                    .applyQuaternion(orientation).add(origin));
+                };
+                let impact = null;
+                if (!player.isThirdPerson && visualWeaponTipMarkers[swing.classIdx] &&
+                    visualWeaponGripMarkers[swing.classIdx]) {
+                    // Use current rendered model transforms, including recoil, sway and bob.
+                    const marker = visualWeaponTipMarkers[swing.classIdx];
+                    const gripMarker = visualWeaponGripMarkers[swing.classIdx];
+                    camera.updateMatrixWorld(true);
+                    const tip = camera.worldToLocal(marker.getWorldPosition(new THREE.Vector3()));
+                    const grip = camera.worldToLocal(gripMarker.getWorldPosition(new THREE.Vector3()));
+                    const proxy = ArenaModelWeaponContact.proxy({
+                        kind: swing.kind, reach: swing.reach, origin,
+                        forward: new THREE.Vector3(0, 0, -1).applyQuaternion(orientation),
+                        right: new THREE.Vector3(1, 0, 0).applyQuaternion(orientation),
+                        grip, tip
+                    });
+                    impact = ArenaModelWeaponContact.advance(swing, dt,
+                        proxy ? {origin,point:proxy.point} : null,
+                        (from, to) => castSegment(from, to, true));
+                } else {
+                    // TPS has a hidden camera-attached viewmodel: keep the
+                    // original player-centered sweep until TPS is calibrated.
+                    impact = ArenaWeaponSweep.advance(swing, dt, castSegment, localTip => {
+                        const tip = new THREE.Vector3(localTip.x, localTip.y, localTip.z);
+                        return tip.applyQuaternion(orientation).add(origin);
+                    });
+                }
                 if (impact && impact.kind === 'barrel') triggerBarrelExplosion(impact.barrel);
                 else if (impact && impact.kind === 'bot') {
                     const damage = (impact.isHead ? swing.headshotDamage : swing.damage) + swing.bonus;
