@@ -1,0 +1,18 @@
+name: Browser game checks
+on:
+  push:
+  pull_request:
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax check game source
+        run: node --check src/oyun.js
+      - name: Syntax check vendored graphics engine
+        run: node --check vendor/three-r128.js
+      - name: Regression tests
+        run: node --test tests/*.test.mjs

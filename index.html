@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="tr"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KRUNKER 1600: KUŞATMA — Serbest Arena v1</title>
+    
+    <script src="vendor/three-r128.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles/game.css"></head>
+<body class="relative w-full h-full overflow-hidden text-white">
+
+    <!-- 3D Three.js Canvas -->
+    <canvas id="game-canvas"></canvas>
+
+    <!-- High-Speed Anime/Krunker Speed Lines Overlay Canvas -->
+    <canvas id="speed-lines-canvas" class="fixed inset-0 w-full h-full z-10"></canvas>
+
+    <!-- Ambient Cinematic Vignette -->
+    <div id="cinematic-vignette" class="fixed inset-0 z-10"></div>
+
+    <!-- Damage, ADS & Shield Vignettes -->
+    <div id="damage-overlay" class="fixed inset-0 opacity-0 z-10"></div>
+    <div id="ads-overlay" class="fixed inset-0 opacity-0 z-10"></div>
+    <div id="shield-overlay" class="fixed inset-0 opacity-0 z-10"></div>
+
+    <!-- Added: weighty, short-lived hit confirmation layers -->
+    <div id="impact-vignette" aria-hidden="true"></div>
+    <div id="impact-text" aria-hidden="true"></div>
+
+    <!-- Floating Bot Health Bars, Barrel Labels & Floating Damage Numbers -->
+    <div id="world-labels-container" class="fixed inset-0 pointer-events-none z-10 overflow-hidden"></div>
+    <div id="damage-numbers-container" class="fixed inset-0 pointer-events-none z-20 overflow-hidden"></div>
+
+    <!-- ==================== IN-GAME KRUNKER v3.0 HD HUD ==================== -->
+    <div id="hud" class="fixed inset-0 pointer-events-none z-20 flex flex-col justify-between p-3 sm:p-5">
+
+        <!-- TOP BAR: Radar + Timer/Stats (Left), Logo + Medals (Center), Killfeed (Right) -->
+        <div class="flex justify-between items-start w-full gap-2">
+            
+            <!-- Top-Left: Live Radar + Timer & Stats -->
+            <div class="flex items-start gap-2.5">
+                <!-- Live Minimap / Radar -->
+                <div class="hud-box p-1.5 rounded-lg flex flex-col items-center">
+                    <canvas id="radar-canvas" width="104" height="104" class="rounded bg-slate-950/90 border border-white/15"></canvas>
+                    <div class="text-[10px] font-extrabold text-amber-400 tracking-wider mt-0.5 krunker-text">KUŞATMA RADARI</div>
+                </div>
+
+                <!-- Timer, FPS & K/D/Streak -->
+                <div class="flex flex-col gap-1.5">
+                    <div class="flex items-center gap-2">
+                        <div class="hud-box px-3 py-1.5 rounded flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-sm bg-amber-400 inline-block shadow-[0_0_8px_#f59e0b]"></span>
+                            <span class="text-base sm:text-lg font-bold tracking-wider krunker-text text-gray-100">SÜRE</span>
+                            <span id="hud-timer" class="text-lg sm:text-2xl font-extrabold text-amber-400 krunker-text">04:00</span>
+                        </div>
+                        <div class="hud-box px-2.5 py-1 rounded text-xs font-bold leading-tight krunker-text">
+                            <div class="text-lime-400"><span id="hud-fps">60</span> FPS</div>
+                            <div id="hud-lighting-badge" class="text-amber-300">🌅 GÜN BATIMI [H]</div>
+                        </div>
+                    </div>
+                    <div class="hud-box px-3 py-1.5 rounded text-xs sm:text-sm font-bold tracking-wide krunker-text text-gray-200 leading-tight">
+                        <div class="text-amber-400 font-extrabold">KRUNKER 1600 <span class="text-xs text-white bg-amber-600 px-1.5 py-0.2 rounded ml-1">v3.5 HD + SERBEST ARENA</span></div>
+                        <div class="flex gap-3 mt-1 text-xs sm:text-sm">
+                            <span class="text-emerald-400">LEŞ: <strong id="hud-kills">0</strong></span>
+                            <span class="text-rose-400">ÖLÜM: <strong id="hud-deaths">0</strong></span>
+                            <span class="text-amber-300">SERİ: <strong id="hud-streak">0</strong></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Top-Center: Krunker Banner & Medal Popups -->
+            <div class="hidden md:flex flex-col items-center -mt-1 relative">
+                <div class="text-3xl lg:text-4xl font-black italic tracking-wider text-white krunker-title">
+                    KRUNKER <span class="text-amber-400">1600</span>
+                </div>
+                <div class="bg-amber-600/95 border-2 border-black px-3 py-0.5 -mt-1.5 rounded shadow-lg text-[11px] font-extrabold tracking-widest text-amber-100 uppercase krunker-text">
+                    HD KARAKTERLER • [P] KAMERA (FPS/TPS) • [H] ATMOSFER
+                </div>
+                <!-- Animated Medal Container -->
+                <div id="medal-container" class="mt-2 flex flex-wrap justify-center gap-2 max-w-md"></div>
+            </div>
+
+            <!-- Top-Right: Kill Feed -->
+            <div id="kill-feed" class="flex flex-col items-end gap-1.5 max-w-xs sm:max-w-md"></div>
+        </div>
+
+        <!-- CENTER: Crosshair, Bow Charge Arc, Hitmarker, Multi-Stage Reload Bar & Score Popups -->
+        <div class="fixed inset-0 pointer-events-none flex items-center justify-center">
+            <!-- Dynamic Crosshair -->
+            <div id="crosshair" class="relative w-9 h-9 flex items-center justify-center transition-transform duration-75">
+                <div id="ch-top" class="absolute -top-1 w-0.5 h-2.5 bg-white border border-black transition-all duration-75"></div>
+                <div id="ch-bot" class="absolute -bottom-1 w-0.5 h-2.5 bg-white border border-black transition-all duration-75"></div>
+                <div id="ch-left" class="absolute -left-1 h-0.5 w-2.5 bg-white border border-black transition-all duration-75"></div>
+                <div id="ch-right" class="absolute -right-1 h-0.5 w-2.5 bg-white border border-black transition-all duration-75"></div>
+                <div id="ch-dot" class="w-1.5 h-1.5 bg-amber-400 rounded-full border border-black"></div>
+            </div>
+
+            <!-- Hitmarker -->
+            <div id="hitmarker" class="relative w-8 h-8 opacity-0 transition-opacity duration-75">
+                <div class="hitmarker-line" style="top: 4px; left: 0px; transform: rotate(45deg);"></div>
+                <div class="hitmarker-line" style="top: 4px; right: 0px; transform: rotate(-45deg);"></div>
+                <div class="hitmarker-line" style="bottom: 4px; left: 0px; transform: rotate(-45deg);"></div>
+                <div class="hitmarker-line" style="bottom: 4px; right: 0px; transform: rotate(45deg);"></div>
+            </div>
+
+            <!-- Bow Draw / Ability Charge Bar under Crosshair -->
+            <div id="bow-charge-ui" class="hidden absolute mt-14 flex flex-col items-center">
+                <div id="bow-charge-label" class="text-[11px] font-extrabold tracking-widest text-emerald-300 krunker-text mb-0.5 uppercase">
+                    YAY GERİLİYOR: %0
+                </div>
+                <div class="w-28 h-2.5 bg-black/85 border border-white/30 rounded overflow-hidden p-0.5">
+                    <div id="bow-charge-fill" class="h-full bg-emerald-400 transition-none" style="width: 0%;"></div>
+                </div>
+            </div>
+
+            <!-- Multi-Stage 1600 Musket Reload Indicator -->
+            <div id="reload-indicator" class="hidden absolute mt-16 flex flex-col items-center">
+                <div id="reload-stage-text" class="text-xs font-extrabold tracking-widest text-amber-300 krunker-text mb-1 uppercase">
+                    1/3 BARUT DÖKÜLÜYOR...
+                </div>
+                <div class="w-36 h-3 bg-black/85 border border-white/30 rounded overflow-hidden p-0.5">
+                    <div id="reload-bar-fill" class="h-full bg-amber-400 transition-none" style="width: 0%;"></div>
+                </div>
+            </div>
+
+            <!-- Center Score Popup Container -->
+            <div id="score-popup-container" class="absolute mt-28 flex flex-col items-center gap-1"></div>
+        </div>
+
+        <!-- BOTTOM SECTION: Chat + HP/Speed/Slide (Left) & Weapon/Ability/Classes (Right) -->
+        <div class="flex justify-between items-end w-full gap-4">
+            
+            <!-- Bottom-Left: Krunker Chat + HP Bar + Speedometer & Momentum Bonus -->
+            <div class="flex flex-col gap-2.5 w-64 sm:w-80">
+                <!-- Krunker-style Chat Box -->
+                <div class="hud-box rounded p-2 text-xs flex flex-col gap-1 max-h-32 overflow-hidden">
+                    <div id="chat-messages" class="flex flex-col gap-1 overflow-y-auto pr-1">
+                        <div><span class="text-rose-400 font-bold">Şövalye_34:</span> <span class="text-gray-100">Yeni pelerinli şövalye zırhları ve tüylü miğferler efsane!</span></div>
+                        <div><span class="text-amber-400 font-bold">Yeniçeri_1600:</span> <span class="text-gray-100">[P] tuşuna basıp kendi karakterinizi 3. şahısta görün!</span></div>
+                        <div><span class="text-sky-400 font-bold">Mızraklı_Kurt:</span> <span class="text-gray-100">Tüfekçilerin göğsündeki barutluk kuşağı ve bıyıklar çok iyi</span></div>
+                        <div><span class="text-emerald-400 font-bold">Okçu_Reis:</span> <span class="text-gray-100">Sırtımda oklu sadak, elimde uzun yay ile surlardayım</span></div>
+                    </div>
+                    <div class="border-t border-white/15 pt-1 mt-0.5 text-[10px] text-gray-400 flex justify-between">
+                        <span>Kuşatma_Sohbet</span>
+                        <span class="text-amber-400 font-bold">[P] 3. Şahıs Kamera | [H] Atmosfer</span>
+                    </div>
+                </div>
+
+                <!-- Health & Speedometer Box -->
+                <div class="hud-box rounded p-3 flex flex-col gap-2">
+                    <div class="flex justify-between items-center text-sm sm:text-base font-extrabold krunker-text">
+                        <span>CAN: <span id="hud-hp-text" class="text-lime-400">100 / 100</span></span>
+                        <span id="hud-status-badge" class="text-[11px] bg-white/10 px-2 py-0.5 rounded text-amber-300">HAZIR</span>
+                    </div>
+                    <div class="w-full h-3.5 bg-black/80 border border-white/25 rounded overflow-hidden p-0.5">
+                        <div id="hud-hp-bar" class="h-full bg-lime-400 transition-all duration-150" style="width: 100%;"></div>
+                    </div>
+                    <div class="flex justify-between items-center text-xs sm:text-sm font-extrabold krunker-text pt-0.5">
+                        <span>HIZ: <span id="hud-speed" class="text-white">0</span></span>
+                        <span id="hud-slide-indicator" class="text-[10px] text-sky-300 tracking-wider">SHIFT + SPACE: SLIDE-HOP</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom-Right: Class Quick-Switch + Ability Box + Main Weapon Box -->
+            <div class="flex flex-col items-end gap-2">
+                <!-- Quick Class Switch Pills (1 - 4) -->
+                <div class="flex flex-wrap justify-end gap-1.5">
+                    <div id="pill-1" class="hud-box px-2.5 py-1 rounded text-xs sm:text-sm font-bold krunker-text">
+                        <span class="text-amber-400">[1]</span> Şövalye
+                    </div>
+                    <div id="pill-2" class="hud-box px-2.5 py-1 rounded text-xs sm:text-sm font-bold krunker-text">
+                        <span class="text-amber-400">[2]</span> Piyade
+                    </div>
+                    <div id="pill-3" class="hud-box px-2.5 py-1 rounded text-xs sm:text-sm font-bold krunker-text">
+                        <span class="text-amber-400">[3]</span> Okçu
+                    </div>
+                    <div id="pill-4" class="hud-box px-2.5 py-1 rounded text-xs sm:text-sm font-bold krunker-text">
+                        <span class="text-amber-400">[4]</span> Tüfekçi
+                    </div>
+                </div>
+
+                <!-- Main Weapon, Right-Click Ability & Secondary Info Box -->
+                <div class="hud-box rounded p-3 min-w-[250px] sm:min-w-[290px] flex flex-col items-end">
+                    <div class="flex items-center justify-between w-full mb-1">
+                        <span id="hud-ability-badge" class="text-[11px] font-extrabold bg-amber-500/20 text-amber-300 border border-amber-400/40 px-2 py-0.5 rounded krunker-text">
+                            [F] SÜNGÜ DARBESİ: HAZIR
+                        </span>
+                        <div id="hud-weapon-icon" class="opacity-95"></div>
+                    </div>
+                    <div class="text-base sm:text-xl font-extrabold tracking-wide krunker-text text-amber-300">
+                        MERMİ: <span id="hud-ammo" class="text-white">1 / 1 (BARUT)</span>
+                    </div>
+                    <div class="text-xs sm:text-sm font-extrabold tracking-wider krunker-text text-gray-200 uppercase">
+                        SINIF: <span id="hud-class-name" class="text-amber-400">TÜFEKÇİ (1600 MUSKET)</span>
+                    </div>
+                    <div id="hud-class-tip" class="text-[11px] text-sky-300 font-bold krunker-text mt-0.5">
+                        Sağ Tık: Nişan (ADS) | [R]: Barut Doldur | [F]: Hançer
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ==================== START / PAUSE MENU OVERLAY (v3.0 HD) ==================== -->
+    <div id="menu-overlay" class="fixed inset-0 z-30 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
+        <div class="max-w-5xl w-full bg-slate-900/95 border-2 border-amber-500/60 rounded-xl shadow-2xl p-5 sm:p-7 flex flex-col gap-5 my-auto">
+            
+            <!-- Header -->
+            <div class="flex flex-col sm:flex-row justify-between items-center border-b border-white/10 pb-4 gap-3">
+                <div class="text-center sm:text-left">
+                    <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2.5">
+                        <h1 class="text-3xl sm:text-5xl font-black italic tracking-wider text-white krunker-title">
+                            KRUNKER <span class="text-amber-400">1600</span>
+                        </h1>
+                        <span class="bg-amber-500 text-slate-950 text-xs font-black px-2.5 py-1 rounded border border-black uppercase tracking-wider">
+                            HD KARAKTER v3.5 · VURUŞ HİSSİ v1
+                        </span>
+                        <span class="bg-sky-500 text-slate-950 text-xs font-extrabold px-2.5 py-1 rounded border border-black uppercase tracking-wider">
+                            [P] 3. ŞAHIS (TPS) GÖRÜNÜMÜ
+                        </span>
+                    </div>
+                    <p class="text-gray-300 text-xs sm:text-sm mt-1">
+                        Pelerinli Şövalyeler, Tüylü Şapkalı &amp; Barutluk Kuşaklı 1600 Tüfekçileri, Morion Miğferli Piyadeler ve Sadaklı Okçular!
+                    </p>
+                </div>
+
+                <!-- Atmosphere & Sensitivity Controls -->
+                <div class="flex flex-wrap sm:flex-nowrap items-center gap-2.5">
+                    <div class="bg-slate-800/90 border border-white/10 rounded-lg px-3.5 py-2 flex flex-col gap-1">
+                        <span class="text-[11px] font-bold text-amber-400 uppercase">ATMOSFER / IŞIK ([H] TUŞU)</span>
+                        <div class="flex gap-1.5">
+                            <button onclick="setAtmosphere(0)" id="atmo-btn-0" class="px-2.5 py-1 rounded text-xs font-extrabold bg-amber-500 text-slate-950 cursor-pointer">🌅 Gün Batımı</button>
+                            <button onclick="setAtmosphere(1)" id="atmo-btn-1" class="px-2.5 py-1 rounded text-xs font-extrabold bg-slate-700 text-gray-200 cursor-pointer">☀️ Öğle</button>
+                            <button onclick="setAtmosphere(2)" id="atmo-btn-2" class="px-2.5 py-1 rounded text-xs font-extrabold bg-slate-700 text-gray-200 cursor-pointer">🌙 Gece</button>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-800/90 border border-white/10 rounded-lg px-4 py-2.5 flex flex-col gap-1 min-w-[185px]">
+                        <div class="flex justify-between text-xs font-bold text-gray-300">
+                            <span>HASSASİYET</span>
+                            <span id="sens-value" class="text-amber-400">1.0x</span>
+                        </div>
+                        <input id="sens-slider" type="range" min="0.3" max="2.5" step="0.1" value="1.0" class="accent-amber-500 cursor-pointer w-full">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Class Selection Grid (4 Upgraded v3.5 HD Classes) -->
+            <div>
+                <div class="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-amber-400 mb-2.5 flex items-center justify-between">
+                    <span>SAVAŞÇI SINIFINI SEÇ (OYUN İÇİNDE 1-4 İLE DEĞİŞTİR, [P] İLE KARAKTERİNİ GÖR):</span>
+                    <span class="text-sky-300 hidden sm:inline">Her Sınıfın Kendine Özgü 1600'ler Zırhı, Miğferi ve Silüeti Vardır!</span>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                    
+                    <!-- Class 1: Şövalye (Kılıç & Kalkan) -->
+                    <div onclick="selectClass(0)" id="card-class-0" class="class-card cursor-pointer rounded-lg border-2 border-white/15 bg-slate-800/75 p-3.5 flex flex-col justify-between">
+                        <div>
+                            <div class="flex justify-between items-center mb-1.5">
+                                <span class="text-xs font-extrabold bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded border border-amber-500/30">[1] KILIÇ &amp; KALKAN</span>
+                                <span class="text-xs font-bold text-lime-400">130 HP</span>
+                            </div>
+                            <h3 class="text-lg font-extrabold text-white krunker-text">ŞÖVALYE</h3>
+                            <p class="text-xs text-gray-300 mt-1">
+                                <strong class="text-amber-300">Sol Tık:</strong> Hızlı Kılıç Komboları.<br>
+                                <strong class="text-sky-300">Sağ Tık (Basılı):</strong> Kalkan Kaldır (%75 Hasar Blok).<br>
+                                <strong class="text-rose-300">Kalkan + Sol Tık / [F]:</strong> Kalkan Hücumu (İleri Atılma)!
+                            </p>
+                        </div>
+                        <div class="mt-3 pt-2 border-t border-white/10 text-[11px] text-amber-300 font-bold flex justify-between">
+                            <span>HASAR: 65-100</span>
+                            <span>HIZ: 112</span>
+                        </div>
+                    </div>
+
+                    <!-- Class 2: Piyade (Mızrak / Kargı) -->
+                    <div onclick="selectClass(1)" id="card-class-1" class="class-card cursor-pointer rounded-lg border-2 border-white/15 bg-slate-800/75 p-3.5 flex flex-col justify-between">
+                        <div>
+                            <div class="flex justify-between items-center mb-1.5">
+                                <span class="text-xs font-extrabold bg-sky-500/20 text-sky-300 px-2 py-0.5 rounded border border-sky-500/30">[2] MOMENTUM KARGI</span>
+                                <span class="text-xs font-bold text-lime-400">110 HP</span>
+                            </div>
+                            <h3 class="text-lg font-extrabold text-white krunker-text">PİYADE (MIZRAK)</h3>
+                            <p class="text-xs text-gray-300 mt-1">
+                                <strong class="text-amber-300">Pasif:</strong> Hızlandıkça (Slide-Hop) Mızrak Hasarı Katlanır!<br>
+                                <strong class="text-sky-300">Sağ Tık / [F]:</strong> Kargı Hücumu (Aniden ileri fırlar ve deler).
+                            </p>
+                        </div>
+                        <div class="mt-3 pt-2 border-t border-white/10 text-[11px] text-amber-300 font-bold flex justify-between">
+                            <span>HASAR: 70 - 180+</span>
+                            <span>MENZİL: UZUN</span>
+                        </div>
+                    </div>
+
+                    <!-- Class 3: Okçu (Gerilebilir Uzun Yay) -->
+                    <div onclick="selectClass(2)" id="card-class-2" class="class-card cursor-pointer rounded-lg border-2 border-white/15 bg-slate-800/75 p-3.5 flex flex-col justify-between">
+                        <div>
+                            <div class="flex justify-between items-center mb-1.5">
+                                <span class="text-xs font-extrabold bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded border border-emerald-500/30">[3] GERİLEBİLİR YAY</span>
+                                <span class="text-xs font-bold text-lime-400">100 HP</span>
+                            </div>
+                            <h3 class="text-lg font-extrabold text-white krunker-text">OKÇU (UZUN YAY)</h3>
+                            <p class="text-xs text-gray-300 mt-1">
+                                <strong class="text-emerald-300">Sol Tık Basılı Tut:</strong> Yayı Ger (%100 güçte oklar dümdüz uçar ve duvarlara saplanır).<br>
+                                <strong class="text-sky-300">[F] Tuşu:</strong> Yakın Dövüş Hançeri.
+                            </p>
+                        </div>
+                        <div class="mt-3 pt-2 border-t border-white/10 text-[11px] text-amber-300 font-bold flex justify-between">
+                            <span>HASAR: 55 - 165</span>
+                            <span>HIZ: 108</span>
+                        </div>
+                    </div>
+
+                    <!-- Class 4: Tüfekçi (1600 Çakmaklı Tüfek + Süngü) -->
+                    <div onclick="selectClass(3)" id="card-class-3" class="class-card selected cursor-pointer rounded-lg border-2 border-white/15 bg-slate-800/75 p-3.5 flex flex-col justify-between">
+                        <div>
+                            <div class="flex justify-between items-center mb-1.5">
+                                <span class="text-xs font-extrabold bg-rose-500/20 text-rose-300 px-2 py-0.5 rounded border border-rose-500/30">[4] BARUT &amp; SÜNGÜ</span>
+                                <span class="text-xs font-bold text-amber-300">100 HP</span>
+                            </div>
+                            <h3 class="text-lg font-extrabold text-white krunker-text">TÜFEKÇİ (1600)</h3>
+                            <p class="text-xs text-gray-300 mt-1">
+                                <strong class="text-rose-300">Sol Tık:</strong> Tek Atan Çakmaklı Tüfek &amp; Hacimsel Barut Dumanı.<br>
+                                <strong class="text-sky-300">[F] Tuşu:</strong> Barut doldururken bile anında **Süngü / Hançer** sapla!
+                            </p>
+                        </div>
+                        <div class="mt-3 pt-2 border-t border-white/10 text-[11px] text-amber-300 font-bold flex justify-between">
+                            <span>HASAR: 115 - 220</span>
+                            <span>SÜNGÜ [F]: 75</span>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Controls Guide & Play CTA -->
+            <div class="flex flex-col md:flex-row justify-between items-center gap-4 bg-slate-950/80 p-4 rounded-xl border border-white/10">
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-x-5 gap-y-1.5 text-xs sm:text-sm text-gray-300">
+                    <div><strong class="text-amber-400">WASD + SPACE:</strong> Hareket &amp; Zıpla</div>
+                    <div><strong class="text-sky-400">SHIFT / C:</strong> Kayma (Slide-Hop!)</div>
+                    <div><strong class="text-amber-400">SOL TIK:</strong> Ateş / Yay Ger / Kılıç</div>
+                    <div><strong class="text-emerald-400">SAĞ TIK:</strong> Kalkan / Hücum / Zoom</div>
+                    <div><strong class="text-rose-400">F veya V:</strong> Süngü / Kalkan Çarpması</div>
+                    <div><strong class="text-amber-400">[P] &amp; [H]:</strong> 3. Şahıs Karakter &amp; Atmosfer</div>
+                </div>
+
+                <button id="play-btn" class="w-full md:w-auto px-8 py-4 bg-gradient-to-b from-amber-400 to-amber-600 hover:from-amber-300 hover:to-amber-500 text-slate-950 font-black text-xl rounded-lg shadow-[0_0_25px_rgba(245,158,11,0.55)] border-2 border-amber-200 tracking-wider uppercase transition transform active:scale-95 cursor-pointer">
+                    KUŞATMAYA GİR (BAŞLA)
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="src/oyun.js"></script>
+
+</body></html>
