@@ -2655,6 +2655,8 @@
                     guardFacingYaw: 0,
                     guardAttempts: 0,
                     walkCycle: Math.random() * 10,
+                    motionState: ArenaCharacterMotion.createState(Math.random() * Math.PI * 2),
+                    strikePoseTime: 0,
                     hitFlashTimer: 0,
                     hitReactionTime: 0,
                     hitLeanSign: 1,
@@ -3211,6 +3213,7 @@
             const targetPoint = targetPos.clone().add(new THREE.Vector3(0, target.type === 'player' ? 1.0 : 1.65, 0));
             const shotDir = targetPoint.clone().sub(origin).normalize();
             bot.attackTimer = (isRanged ? 1.75 : 1.45) + Math.random() * 1.15;
+            bot.strikePoseTime = isRanged ? 0.17 : 0.25;
             if (isRanged) {
                 arenaShotTracer(origin, targetPoint, bot.role === 'archer');
                 if (bot.role === 'musket') spawnSmokeCloud(origin, shotDir, 8, 1.0);
@@ -3812,6 +3815,28 @@
         let fpsFrames = 0;
         let fpsTimer = 0;
 
+        // Procedural animation of existing joint groups only; no mesh replacement.
+        function applyBotMotion(bot, dt, distance = 0) {
+            const pose = ArenaCharacterMotion.update(bot.motionState, dt, {
+                travel: distance, role: bot.role, windup: bot.meleeWindup,
+                strike: bot.strikePoseTime, guard: bot.guardTime > 0,
+                stagger: bot.staggerTime, hit: bot.hitReactionTime
+            });
+            const parts = bot.mesh._parts;
+            const rate = Math.min(1, dt * 15);
+            parts.leftLeg.rotation.x = THREE.MathUtils.lerp(parts.leftLeg.rotation.x, pose.leftLeg, rate);
+            parts.rightLeg.rotation.x = THREE.MathUtils.lerp(parts.rightLeg.rotation.x, pose.rightLeg, rate);
+            if (parts.leftArm) parts.leftArm.rotation.x = THREE.MathUtils.lerp(parts.leftArm.rotation.x, pose.leftArm, rate);
+            if (parts.rightArm) parts.rightArm.rotation.x = THREE.MathUtils.lerp(parts.rightArm.rotation.x, pose.rightArm, rate);
+            if (parts.torso) {
+                parts.torso.rotation.x = THREE.MathUtils.lerp(parts.torso.rotation.x, pose.torsoX, rate);
+                parts.torso.rotation.z = THREE.MathUtils.lerp(parts.torso.rotation.z, pose.torsoZ, rate);
+            }
+            if (parts.head) parts.head.rotation.x = THREE.MathUtils.lerp(parts.head.rotation.x, pose.headX, rate);
+            if (parts.capeMesh) parts.capeMesh.rotation.x = THREE.MathUtils.lerp(parts.capeMesh.rotation.x, pose.capeX, rate);
+            bot.strikePoseTime = Math.max(0, bot.strikePoseTime - dt);
+        }
+
         function updateGame(dt) {
             arenaClock += dt;
             if (player.shieldParryTime > 0) {
@@ -4331,6 +4356,17 @@
                     bot.mesh.rotation.z = bot.fallDirection * fallen * 1.22;
                     bot.mesh.rotation.x = -fallen * 0.20;
                     bot.mesh.scale.set(1.07, 1 - fallen * 0.18, 1.03);
+                    const deathPose = ArenaCharacterMotion.deathPose(fallen, bot.fallDirection);
+                    const parts = bot.mesh._parts;
+                    parts.leftLeg.rotation.x = deathPose.leftLeg;
+                    parts.rightLeg.rotation.x = deathPose.rightLeg;
+                    if (parts.leftArm) parts.leftArm.rotation.x = deathPose.leftArm;
+                    if (parts.rightArm) parts.rightArm.rotation.x = deathPose.rightArm;
+                    if (parts.torso) {
+                        parts.torso.rotation.x = deathPose.torsoX;
+                        parts.torso.rotation.z = deathPose.torsoZ;
+                    }
+                    if (parts.head) parts.head.rotation.x = deathPose.headX;
                     if (bot.respawnTimer <= 0) {
                         bot.dead = false;
                         bot.hp = bot.maxHp;
@@ -4354,6 +4390,8 @@
                         bot.hitReactionTime = 0;
                         bot.staggerTime = 0;
                         bot.meleeWindup = 0;
+                        bot.strikePoseTime = 0;
+                        bot.motionState = ArenaCharacterMotion.createState();
                         bot.guardTime = 0;
                         bot.guardParryTime = 0;
                         bot.guardCooldown = 0;
@@ -4370,6 +4408,7 @@
                 if (bot.staggerTime > 0) {
                     bot.staggerTime = Math.max(0, bot.staggerTime - dt);
                     bot.attackTimer = Math.max(bot.attackTimer, 0.2);
+                    applyBotMotion(bot, dt);
                     return;
                 }
                 const toPlayer = new THREE.Vector3().subVectors(player.pos, bot.mesh.position);
@@ -4480,6 +4519,7 @@
                             bot.navPath[0].z - botGround.z) < 1.3) bot.navPath.shift();
                     steerTarget = bot.navPath[0];
                 }
+                let animationTravel = 0;
                 if (needsApproach && steerTarget) {
                     const stepDir = new THREE.Vector3(
                         steerTarget.x - botGround.x, 0, steerTarget.z - botGround.z);
@@ -4495,17 +4535,7 @@
                         const madeProgress = Math.hypot(newPos.x-beforeX,newPos.z-beforeZ);
                         if (madeProgress > 0.025) {
                             bot.navStuck = 0;
-                            bot.walkCycle += dt * 10;
-                            bot.mesh._parts.leftLeg.rotation.x = Math.sin(bot.walkCycle) * 0.65;
-                            bot.mesh._parts.rightLeg.rotation.x = -Math.sin(bot.walkCycle) * 0.65;
-                            if (bot.mesh._parts.leftArm) {
-                                bot.mesh._parts.leftArm.rotation.x = bot.role === 'knight'
-                                    ? -0.45 : -Math.sin(bot.walkCycle) * 0.4;
-                            }
-                            if (bot.mesh._parts.capeMesh) {
-                                bot.mesh._parts.capeMesh.rotation.x = 0.32 +
-                                    Math.sin(bot.walkCycle * 1.5) * 0.12;
-                            }
+                            animationTravel = madeProgress;
                         } else {
                             bot.navStuck += dt;
                             if (bot.navStuck > 0.55) {
@@ -4517,15 +4547,11 @@
                         }
                     }
                 } else {
-                    // While holding fire position, face the selected opponent.
+                    // Hold tactical facing but ease the walk animation to idle.
                     if (targetPosition) {
                         const facing = targetPosition.clone().sub(bot.mesh.position);
                         if (facing.lengthSq() > 0.04) bot.mesh.rotation.y = Math.atan2(facing.x, facing.z);
                     }
-                    bot.mesh._parts.leftLeg.rotation.x = THREE.MathUtils.lerp(
-                        bot.mesh._parts.leftLeg.rotation.x, 0, dt * 8);
-                    bot.mesh._parts.rightLeg.rotation.x = THREE.MathUtils.lerp(
-                        bot.mesh._parts.rightLeg.rotation.x, 0, dt * 8);
                 }
 
                 // Hit reaction is visibly different from walk/breath cycle.
@@ -4539,15 +4565,6 @@
                     bot.mesh.rotation.x = THREE.MathUtils.lerp(bot.mesh.rotation.x, 0, dt * 12);
                 }
                 bot.mesh.scale.lerp(new THREE.Vector3(1, 1, 1), Math.min(1, dt * 14));
-                if (bot.mesh._parts.rightArm) {
-                    const swingBoost = bot.attackTimer < 0.35 ? Math.sin((0.35 - bot.attackTimer) * 9) * 0.85 : 0;
-                    bot.mesh._parts.rightArm.rotation.x = -Math.PI / 3 - swingBoost + Math.sin(nowSec * 3 + bot.id) * 0.05;
-                }
-
-                if (bot.guardTime > 0 && bot.mesh._parts.leftArm) {
-                    bot.mesh._parts.leftArm.rotation.x = -1.25;
-                }
-
                 // Ramp and upper-walkway elevation remain consistent with the route.
                 const navHeight = navigator.heightAt(bot.mesh.position.x, bot.mesh.position.z);
                 bot.mesh.position.y = THREE.MathUtils.lerp(bot.mesh.position.y,
@@ -4556,7 +4573,7 @@
                 // Melee attacks telegraph before they land, enabling reactive parries.
                 if (bot.meleeWindup > 0) {
                     bot.meleeWindup = Math.max(0, bot.meleeWindup - dt);
-                    if (bot.mesh._parts.rightArm) bot.mesh._parts.rightArm.rotation.x = -2.15;
+                    // Motion layer renders the attack preparation pose.
                     if (!isGameActive || !arenaTarget || arenaDist > bot.range ||
                         !arenaLineOfSight(bot, targetPosition, arenaTarget.type === 'player')) {
                         bot.meleeWindup = 0;
@@ -4577,6 +4594,8 @@
                 } else if (bot.attackTimer > 0) {
                     bot.attackTimer -= dt * 0.45;
                 }
+
+                applyBotMotion(bot, dt, animationTravel);
 
                 // Project 3D position above bot head to 2D screen
                 const headWorld = bot.mesh.position.clone().add(new THREE.Vector3(0, 3.4, 0));
@@ -4634,6 +4653,7 @@
                 remainingWaypoints: b.navPath.length, navigationStuckTime: b.navStuck,
                 tacticalMode: b.tacticMode, meleeWindup: b.meleeWindup,
                 guarding: b.guardTime > 0, guardParryTime: b.guardParryTime,
+                walkBlend: b.motionState.weight, strikePoseTime: b.strikePoseTime,
                 target: b.arenaTargetType === 'bot' && bots[b.arenaTargetId]
                     ? bots[b.arenaTargetId].name : b.arenaTargetType,
                 arenaKills: b.arenaKills })),
