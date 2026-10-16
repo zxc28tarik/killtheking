@@ -1361,6 +1361,8 @@
         scene.add(camera);
 
         const viewmodels = [];
+        // Invisible model-tip anchors for real-geometry calibration in desktop QA.
+        const visualWeaponTipMarkers = [];
         let leftShieldGroup = null;
         let bowArrowMesh = null;
         let bowStringMesh = null;
@@ -1545,6 +1547,10 @@
             leftShieldGroup.rotation.y = 0.35;
 
             swordGroup.add(rightArm0, hilt, pommel, guardCenter, gem, quillonBar, sideRingGuard, ricasso, blade, fuller, leftShieldGroup);
+            const swordVisualTip = new THREE.Object3D();
+            swordVisualTip.position.set(0.34, 1.15, -0.64);
+            swordGroup.add(swordVisualTip);
+            visualWeaponTipMarkers[0] = swordVisualTip;
             swordGroup.rotation.set(-0.22, -0.12, 0.08);
             weaponHolder.add(swordGroup);
             viewmodels.push(swordGroup);
@@ -1584,6 +1590,10 @@
             tip.position.set(0.32, -0.20, -2.28);
 
             spearGroup.add(rightArm1, leftArm1, shaft, gripWrap1, socketCollar, tassel, halberdAxe, rearFluke, tip);
+            const spearVisualTip = new THREE.Object3D();
+            spearVisualTip.position.set(0.32, -0.20, -2.59);
+            spearGroup.add(spearVisualTip);
+            visualWeaponTipMarkers[1] = spearVisualTip;
             weaponHolder.add(spearGroup);
             viewmodels.push(spearGroup);
 
@@ -4028,9 +4038,17 @@
                     let atkRotX = 0, atkRotZ = 0, atkZ = 0;
 
                     if (player.classIdx === 0) { // Knight Sword + Shield + Glowing Slash Arc
-                        atkRotX = -anim * 1.15;
-                        atkRotZ = (player.comboStep === 0 ? 1 : -0.7) * anim * 0.85;
-                        atkZ = -anim * 0.25;
+                        if (activeWeaponSwing && activeWeaponSwing.kind === 'sword') {
+                            const phase = THREE.MathUtils.clamp(1 - player.attackAnimTime / 0.82, 0, 1);
+                            const visual = ArenaWeaponSweep.visualPose('sword', activeWeaponSwing.side, phase);
+                            atkRotX = visual.rotationX;
+                            atkRotZ = visual.rotationZ;
+                            atkZ = visual.offsetZ;
+                        } else {
+                            atkRotX = -anim * 1.15;
+                            atkRotZ = (player.comboStep === 0 ? 1 : -0.7) * anim * 0.85;
+                            atkZ = -anim * 0.25;
+                        }
                         if (meleeSlashTrailMesh) {
                             meleeSlashTrailMesh.material.opacity = anim * 0.68;
                             meleeSlashTrailMesh.rotation.z = (player.comboStep === 0 ? -1 : 1) * player.attackAnimTime * 2.5;
@@ -4041,7 +4059,12 @@
                             leftShieldGroup.rotation.y = THREE.MathUtils.lerp(leftShieldGroup.rotation.y, player.isShielding ? 0.05 : 0.35, dt * 14);
                         }
                     } else if (player.classIdx === 1) { // Pikeman Spear
-                        atkZ = -anim * 0.72;
+                        if (activeWeaponSwing && activeWeaponSwing.kind === 'spear') {
+                            const phase = THREE.MathUtils.clamp(1 - player.attackAnimTime / 0.82, 0, 1);
+                            atkZ = ArenaWeaponSweep.visualPose('spear', activeWeaponSwing.side, phase).offsetZ;
+                        } else {
+                            atkZ = -anim * 0.72;
+                        }
                         if (meleeSlashTrailMesh) meleeSlashTrailMesh.material.opacity = 0;
                     } else if (player.classIdx === 2) { // Archer Bow Draw
                         atkZ = anim * 0.14;
@@ -4584,7 +4607,15 @@
             playerParries: player.parries,
             playerDeaths: player.deaths,
             weaponSwingActive: !!activeWeaponSwing,
-            lastWeaponSwingRaycasts
+            lastWeaponSwingRaycasts,
+            // Only sampled when inspected; doesn't add work to the game loop.
+            visualWeaponTip: (player.classIdx < 2 && visualWeaponTipMarkers[player.classIdx])
+                ? (() => {
+                    const marker = visualWeaponTipMarkers[player.classIdx];
+                    const world = marker.getWorldPosition(new THREE.Vector3());
+                    const local = camera.worldToLocal(world);
+                    return {x:local.x,y:local.y,z:local.z};
+                })() : null
         });
         window.onload = function() {
             animate();
