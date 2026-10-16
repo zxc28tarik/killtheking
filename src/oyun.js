@@ -1947,6 +1947,13 @@
         ];
 
         const bots = [];
+        // Use the known level-design spawn pool, but prefer locations away from living fighters.
+        function chooseArenaRespawn(pool, excludedBot = null, includePlayer = true) {
+            const threats = bots.filter(other => other !== excludedBot && !other.dead)
+                .map(other => other.mesh.position);
+            if (includePlayer && isGameActive) threats.push(player.pos);
+            return ArenaSpawnSafety.chooseSpawn(pool, threats);
+        }
         const flyingHelmets = [];
         const worldLabelsContainer = document.getElementById('world-labels-container');
 
@@ -3142,7 +3149,7 @@
                 player.hp = player.maxHp;
                 addKillFeed(bot.name, bot.weapon, 'Sen_1600', false);
                 addScorePopup('YENİDEN DOĞDUN!', 'text-rose-400');
-                const sp = COURTYARD_SPAWNS[Math.floor(Math.random() * COURTYARD_SPAWNS.length)];
+                const sp = chooseArenaRespawn(COURTYARD_SPAWNS, null, false);
                 player.pos.set(sp.x, sp.y + 1.5, sp.z);
                 // The killer returns to fighting the whole arena, not camping the respawn.
                 bot.arenaTargetType = null;
@@ -4101,7 +4108,7 @@
                         bot.hasHelmet = true;
                         bot.mesh._parts.helmetGroup.visible = true;
                         const spawns = bot.preferWall ? RAMPART_SPAWNS : COURTYARD_SPAWNS;
-                        bot.mesh.position.copy(spawns[Math.floor(Math.random() * spawns.length)]);
+                        bot.mesh.position.copy(chooseArenaRespawn(spawns, bot, true));
                         bot.mesh.rotation.x = 0;
                         bot.mesh.rotation.z = 0;
                         bot.mesh.scale.set(1, 1, 1);
