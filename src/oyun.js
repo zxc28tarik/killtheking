@@ -1946,13 +1946,19 @@
             new THREE.Vector3(18, 9, -40)
         ];
 
+        // A* grid built once from the castle's existing collision geometry and ramps.
+        const navigator = ArenaNavigation.createNavigator(colliders, ramps,
+            { min: -42.5, max: 42.5, upperEdge: 39 });
         const bots = [];
         // Use the known level-design spawn pool, but prefer locations away from living fighters.
         function chooseArenaRespawn(pool, excludedBot = null, includePlayer = true) {
             const threats = bots.filter(other => other !== excludedBot && !other.dead)
                 .map(other => other.mesh.position);
             if (includePlayer && isGameActive) threats.push(player.pos);
-            return ArenaSpawnSafety.chooseSpawn(pool, threats);
+            const preferred = ArenaSpawnSafety.chooseSpawn(pool, threats);
+            // Use the nearest valid point so a new fighter cannot spawn in battlements.
+            const cell = navigator.nearest(preferred);
+            return cell ? new THREE.Vector3(cell.x, cell.y, cell.z) : preferred;
         }
         const flyingHelmets = [];
         const worldLabelsContainer = document.getElementById('world-labels-container');
@@ -2563,7 +2569,9 @@
                 const mesh = createBotMesh(profile);
                 const spawnList = profile.preferWall ? RAMPART_SPAWNS : COURTYARD_SPAWNS;
                 const sp = spawnList[i % spawnList.length];
-                mesh.position.copy(sp);
+                const initialNode = navigator.nearest(sp);
+                if (initialNode) mesh.position.set(initialNode.x, initialNode.y, initialNode.z);
+                else mesh.position.copy(sp);
                 scene.add(mesh);
 
                 const label = document.createElement('div');
@@ -2594,7 +2602,12 @@
                     label,
                     hpFill: label.querySelector('.bot-hp-fill'),
                     vel: new THREE.Vector3(),
-                    targetPoint: COURTYARD_SPAWNS[(i + 2) % COURTYARD_SPAWNS.length].clone(),
+                    targetPoint: (profile.preferWall ? RAMPART_SPAWNS : COURTYARD_SPAWNS)[(i + 2) % 5].clone(),
+                    navPath: [],
+                    navGoal: null,
+                    navRefresh: 0,
+                    navStuck: 0,
+                    navLastPosition: mesh.position.clone(),
                     attackTimer: 1.4 + Math.random() * 1.4,
                     walkCycle: Math.random() * 10,
                     hitFlashTimer: 0,
@@ -2959,9 +2972,8 @@
             const dx = pos.x - bot.mesh.position.x;
             const dz = pos.z - bot.mesh.position.z;
             const dy = pos.y - bot.mesh.position.y;
-            // Ground melee combatants should not chase enemies on inaccessible ramparts.
-            if (bot.range < 7 && Math.abs(dy) > 4.5) return Infinity;
-            return Math.hypot(dx, dz, dy * 0.65);
+            // Height adds a targeting penalty; use the ramp network when it connects.
+            return Math.hypot(dx, dz, dy * 1.2);
         }
 
         function arenaTargetCount(type, id, excludeId) {
@@ -4109,6 +4121,11 @@
                         bot.mesh._parts.helmetGroup.visible = true;
                         const spawns = bot.preferWall ? RAMPART_SPAWNS : COURTYARD_SPAWNS;
                         bot.mesh.position.copy(chooseArenaRespawn(spawns, bot, true));
+                        bot.navPath.length = 0;
+                        bot.navGoal = null;
+                        bot.navRefresh = 0;
+                        bot.navStuck = 0;
+                        bot.navLastPosition.copy(bot.mesh.position);
                         bot.mesh.rotation.x = 0;
                         bot.mesh.rotation.z = 0;
                         bot.mesh.scale.set(1, 1, 1);
@@ -4140,34 +4157,89 @@
                     moveTarget = bot.targetPoint;
                 }
 
-                const dir = new THREE.Vector3().subVectors(moveTarget, bot.mesh.position);
-                dir.y = 0;
-                if (dir.lengthSq() > 0.01) {
-                    dir.normalize();
-                    bot.mesh.rotation.y = Math.atan2(dir.x, dir.z);
-                    // Musketeers and archers hold distance; melee fighters close in.
-                    const stopDist = targetPosition
-                        ? (bot.range > 8 ? Math.min(bot.range * 0.58, 15) : bot.range * 0.70)
-                        : 2.6;
-                    const flatArenaDist = targetPosition
-                        ? Math.hypot(targetPosition.x - bot.mesh.position.x,
-                            targetPosition.z - bot.mesh.position.z) : Infinity;
-                    if (flatArenaDist > stopDist) {
-                        bot.mesh.position.x += dir.x * bot.speed * dt;
-                        bot.mesh.position.z += dir.z * bot.speed * dt;
-                        bot.walkCycle += dt * 10;
-                        bot.mesh._parts.leftLeg.rotation.x = Math.sin(bot.walkCycle) * 0.65;
-                        bot.mesh._parts.rightLeg.rotation.x = -Math.sin(bot.walkCycle) * 0.65;
-                        if (bot.mesh._parts.leftArm) {
-                            bot.mesh._parts.leftArm.rotation.x = bot.role === 'knight' ? -0.45 : -Math.sin(bot.walkCycle) * 0.4;
+                // Navigation 2.0: route around world colliders and refresh moving-target paths.
+                const botGround = {
+                    x: bot.mesh.position.x, z: bot.mesh.position.z,
+                    y: navigator.heightAt(bot.mesh.position.x, bot.mesh.position.z)
+                };
+                const goal = {
+                    x: moveTarget.x, z: moveTarget.z,
+                    y: navigator.heightAt(moveTarget.x, moveTarget.z)
+                };
+                const directRoute = navigator.clearSegment(botGround, goal);
+                const hasClearShot = !!(targetPosition &&
+                    arenaLineOfSight(bot, targetPosition, arenaTarget.type === 'player'));
+                const stopDist = targetPosition
+                    ? (bot.range > 8 ? Math.min(bot.range * 0.58, 15) : bot.range * 0.70)
+                    : 2.6;
+                const flatArenaDist = targetPosition
+                    ? Math.hypot(targetPosition.x - bot.mesh.position.x,
+                        targetPosition.z - bot.mesh.position.z) : Infinity;
+                // Ranged bots keep relocating if an obstacle blocks their line of fire.
+                const needsApproach = !targetPosition || flatArenaDist > stopDist || !hasClearShot;
+
+                bot.navRefresh -= dt;
+                if (!directRoute && needsApproach &&
+                    (!bot.navGoal || bot.navRefresh <= 0 ||
+                     Math.hypot(goal.x - bot.navGoal.x, goal.z - bot.navGoal.z) > 4)) {
+                    bot.navPath = navigator.findPath(botGround, goal);
+                    bot.navGoal = goal;
+                    bot.navRefresh = 0.75 + bot.id * 0.13;
+                }
+                if (directRoute) {
+                    bot.navPath.length = 0;
+                    bot.navGoal = goal;
+                }
+
+                let steerTarget = null;
+                if (directRoute) {
+                    steerTarget = goal;
+                } else if (bot.navPath.length) {
+                    while (bot.navPath.length > 1 &&
+                        Math.hypot(bot.navPath[0].x - botGround.x,
+                            bot.navPath[0].z - botGround.z) < 1.3) bot.navPath.shift();
+                    steerTarget = bot.navPath[0];
+                }
+                if (needsApproach && steerTarget) {
+                    const stepDir = new THREE.Vector3(
+                        steerTarget.x - botGround.x, 0, steerTarget.z - botGround.z);
+                    const remaining = stepDir.length();
+                    if (remaining > 0.1) {
+                        stepDir.normalize();
+                        bot.mesh.rotation.y = Math.atan2(stepDir.x, stepDir.z);
+                        const beforeX = bot.mesh.position.x, beforeZ = bot.mesh.position.z;
+                        const newPos = navigator.safeAdvance(botGround, stepDir,
+                            Math.min(bot.speed * dt, remaining));
+                        bot.mesh.position.x = newPos.x;
+                        bot.mesh.position.z = newPos.z;
+                        const madeProgress = Math.hypot(newPos.x-beforeX,newPos.z-beforeZ);
+                        if (madeProgress > 0.025) {
+                            bot.navStuck = 0;
+                            bot.walkCycle += dt * 10;
+                            bot.mesh._parts.leftLeg.rotation.x = Math.sin(bot.walkCycle) * 0.65;
+                            bot.mesh._parts.rightLeg.rotation.x = -Math.sin(bot.walkCycle) * 0.65;
+                            if (bot.mesh._parts.leftArm) {
+                                bot.mesh._parts.leftArm.rotation.x = bot.role === 'knight'
+                                    ? -0.45 : -Math.sin(bot.walkCycle) * 0.4;
+                            }
+                            if (bot.mesh._parts.capeMesh) {
+                                bot.mesh._parts.capeMesh.rotation.x = 0.32 +
+                                    Math.sin(bot.walkCycle * 1.5) * 0.12;
+                            }
+                        } else {
+                            bot.navStuck += dt;
+                            if (bot.navStuck > 0.55) {
+                                bot.navPath.length = 0;
+                                bot.navRefresh = 0;
+                                bot.navStuck = 0;
+                            }
                         }
-                        if (bot.mesh._parts.capeMesh) {
-                            bot.mesh._parts.capeMesh.rotation.x = 0.32 + Math.sin(bot.walkCycle * 1.5) * 0.12;
-                        }
-                    } else {
-                        bot.mesh._parts.leftLeg.rotation.x = THREE.MathUtils.lerp(bot.mesh._parts.leftLeg.rotation.x, 0, dt * 8);
-                        bot.mesh._parts.rightLeg.rotation.x = THREE.MathUtils.lerp(bot.mesh._parts.rightLeg.rotation.x, 0, dt * 8);
                     }
+                } else {
+                    bot.mesh._parts.leftLeg.rotation.x = THREE.MathUtils.lerp(
+                        bot.mesh._parts.leftLeg.rotation.x, 0, dt * 8);
+                    bot.mesh._parts.rightLeg.rotation.x = THREE.MathUtils.lerp(
+                        bot.mesh._parts.rightLeg.rotation.x, 0, dt * 8);
                 }
 
                 // Hit reaction is visibly different from walk/breath cycle.
@@ -4186,10 +4258,10 @@
                     bot.mesh._parts.rightArm.rotation.x = -Math.PI / 3 - swingBoost + Math.sin(nowSec * 3 + bot.id) * 0.05;
                 }
 
-                if (!bot.preferWall || bot.mesh.position.y < 5) {
-                    const groundY = getRampHeightAt(bot.mesh.position.x, bot.mesh.position.z);
-                    bot.mesh.position.y = THREE.MathUtils.lerp(bot.mesh.position.y, groundY, dt * 10);
-                }
+                // Ramp and upper-walkway elevation remain consistent with the route.
+                const navHeight = navigator.heightAt(bot.mesh.position.x, bot.mesh.position.z);
+                bot.mesh.position.y = THREE.MathUtils.lerp(bot.mesh.position.y,
+                    navHeight, Math.min(1, dt * 10));
 
                 // Every active fighter attacks their chosen arena opponent, bot OR player.
                 if (isGameActive && arenaTarget && arenaDist <= bot.range) {
@@ -4252,6 +4324,7 @@
             mode: 'serbest-arena',
             botCount: bots.length,
             bots: bots.map(b => ({ name: b.name, hp: b.hp, dead: b.dead,
+                remainingWaypoints: b.navPath.length, navigationStuckTime: b.navStuck,
                 target: b.arenaTargetType === 'bot' && bots[b.arenaTargetId]
                     ? bots[b.arenaTargetId].name : b.arenaTargetType,
                 arenaKills: b.arenaKills })),
