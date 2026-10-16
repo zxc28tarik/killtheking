@@ -2617,6 +2617,8 @@
                     navRefresh: 0,
                     navStuck: 0,
                     navLastPosition: mesh.position.clone(),
+                    tacticMode: 'patrol', tacticGoal: null, tacticTargetKey: null,
+                    tacticLastTarget: null, tacticRefresh: 0,
                     attackTimer: 1.4 + Math.random() * 1.4,
                     walkCycle: Math.random() * 10,
                     hitFlashTimer: 0,
@@ -3079,6 +3081,18 @@
             return arenaSightRay.intersectObjects(worldMeshes, false).length === 0;
         }
 
+        // Tactical vantage checks use the same world occlusion as real shots.
+        function arenaCanSeeFrom(point, targetPos, targetIsPlayer) {
+            const origin = new THREE.Vector3(point.x, point.y + 1.8, point.z);
+            const end = targetPos.clone();
+            end.y += targetIsPlayer ? 1.0 : 1.65;
+            const direction = end.sub(origin), distance = direction.length();
+            if (distance < 0.01) return true;
+            arenaSightRay.set(origin, direction.multiplyScalar(1 / distance));
+            arenaSightRay.near = 0.12;
+            arenaSightRay.far = Math.max(0.12, distance - 0.55);
+            return arenaSightRay.intersectObjects(worldMeshes, false).length === 0;
+        }
         function arenaShotTracer(start, end, isArrow) {
             const path = end.clone().sub(start);
             const length = path.length();
@@ -4136,6 +4150,11 @@
                         bot.navRefresh = 0;
                         bot.navStuck = 0;
                         bot.navLastPosition.copy(bot.mesh.position);
+                        bot.tacticGoal = null;
+                        bot.tacticTargetKey = null;
+                        bot.tacticLastTarget = null;
+                        bot.tacticRefresh = 0;
+                        bot.tacticMode = 'patrol';
                         bot.mesh.rotation.x = 0;
                         bot.mesh.rotation.z = 0;
                         bot.mesh.scale.set(1, 1, 1);
@@ -4176,17 +4195,43 @@
                     x: moveTarget.x, z: moveTarget.z,
                     y: navigator.heightAt(moveTarget.x, moveTarget.z)
                 };
-                const directRoute = navigator.clearSegment(botGround, goal);
                 const hasClearShot = !!(targetPosition &&
                     arenaLineOfSight(bot, targetPosition, arenaTarget.type === 'player'));
-                const stopDist = targetPosition
-                    ? (bot.range > 8 ? Math.min(bot.range * 0.58, 15) : bot.range * 0.70)
-                    : 2.6;
-                const flatArenaDist = targetPosition
-                    ? Math.hypot(targetPosition.x - bot.mesh.position.x,
-                        targetPosition.z - bot.mesh.position.z) : Infinity;
-                // Ranged bots keep relocating if an obstacle blocks their line of fire.
-                const needsApproach = !targetPosition || flatArenaDist > stopDist || !hasClearShot;
+                let needsApproach = true;
+                if (targetPosition) {
+                    const key = arenaTarget.type + ':' + (arenaTarget.id == null ? 'player' : arenaTarget.id);
+                    const moved = !bot.tacticLastTarget ||
+                        Math.hypot(bot.tacticLastTarget.x - targetPosition.x,
+                            bot.tacticLastTarget.z - targetPosition.z) > 5;
+                    bot.tacticRefresh -= dt;
+                    if (key !== bot.tacticTargetKey || moved || bot.tacticRefresh <= 0) {
+                        const tactic = ArenaCombatTactics.plan({
+                            role: bot.role, from: botGround, target: targetPosition,
+                            range: bot.range, hasLineOfSight: hasClearShot,
+                            navigator, seed: bot.id,
+                            canSeeFrom: (candidate, opponent) => arenaCanSeeFrom(
+                                candidate, opponent, arenaTarget.type === 'player')
+                        });
+                        bot.tacticMode = tactic.mode;
+                        bot.tacticGoal = tactic.goal;
+                        bot.tacticTargetKey = key;
+                        bot.tacticLastTarget = targetPosition.clone();
+                        bot.tacticRefresh = 0.68 + bot.id * 0.09;
+                        bot.navPath.length = 0;
+                        bot.navRefresh = 0;
+                    }
+                    needsApproach = bot.tacticMode !== 'hold';
+                    if (bot.tacticGoal) {
+                        goal.x = bot.tacticGoal.x;
+                        goal.z = bot.tacticGoal.z;
+                        goal.y = bot.tacticGoal.y;
+                    }
+                } else {
+                    bot.tacticMode = 'patrol';
+                    bot.tacticGoal = null;
+                    bot.tacticTargetKey = null;
+                }
+                const directRoute = navigator.clearSegment(botGround, goal);
 
                 bot.navRefresh -= dt;
                 if (!directRoute && needsApproach &&
@@ -4241,11 +4286,17 @@
                             if (bot.navStuck > 0.55) {
                                 bot.navPath.length = 0;
                                 bot.navRefresh = 0;
+                                bot.tacticRefresh = 0;
                                 bot.navStuck = 0;
                             }
                         }
                     }
                 } else {
+                    // While holding fire position, face the selected opponent.
+                    if (targetPosition) {
+                        const facing = targetPosition.clone().sub(bot.mesh.position);
+                        if (facing.lengthSq() > 0.04) bot.mesh.rotation.y = Math.atan2(facing.x, facing.z);
+                    }
                     bot.mesh._parts.leftLeg.rotation.x = THREE.MathUtils.lerp(
                         bot.mesh._parts.leftLeg.rotation.x, 0, dt * 8);
                     bot.mesh._parts.rightLeg.rotation.x = THREE.MathUtils.lerp(
@@ -4335,6 +4386,7 @@
             botCount: bots.length,
             bots: bots.map(b => ({ name: b.name, hp: b.hp, dead: b.dead,
                 remainingWaypoints: b.navPath.length, navigationStuckTime: b.navStuck,
+                tacticalMode: b.tacticMode,
                 target: b.arenaTargetType === 'bot' && bots[b.arenaTargetId]
                     ? bots[b.arenaTargetId].name : b.arenaTargetType,
                 arenaKills: b.arenaKills })),
