@@ -23,7 +23,7 @@
         const radius = config.radius == null ? 0.67 : config.radius;
         const clearance = config.clearance == null ? 2.65 : config.clearance;
         const maxStepHeight = config.maxStepHeight == null ? 1.8 : config.maxStepHeight;
-        const level = config.upperLevel == null ? 7.4 : config.upperLevel;
+        const level = config.upperLevel == null ? 7 : config.upperLevel;
         const upperEdge = config.upperEdge == null ? 38.75 : config.upperEdge;
         const bounds = colliders || [];
         const slopes = ramps || [];
@@ -33,7 +33,8 @@
                 if (x < ramp.minX - EPS || x > ramp.maxX + EPS ||
                     z < ramp.minZ - EPS || z > ramp.maxZ + EPS) continue;
                 let factor = 0;
-                if (ramp.dir === 'N') factor = (ramp.maxZ - z) / (ramp.maxZ - ramp.minZ);
+                if (ramp.dir === 'NN') factor = (ramp.maxZ - z) / (ramp.maxZ - ramp.minZ - 1.5);
+                else if (ramp.dir === 'N') factor = (ramp.maxZ - z) / (ramp.maxZ - ramp.minZ);
                 else if (ramp.dir === 'S') factor = (z - ramp.minZ) / (ramp.maxZ - ramp.minZ);
                 else if (ramp.dir === 'W') factor = (ramp.maxX - x) / (ramp.maxX - ramp.minX);
                 return ramp.startY + Math.max(0, Math.min(1, factor)) * (ramp.endY - ramp.startY);
@@ -43,8 +44,8 @@
 
         function heightAt(x, z) {
             const sloped = rampAt(x, z);
-            if (sloped !== null) return sloped;
-            return Math.abs(x) >= upperEdge || Math.abs(z) >= upperEdge ? level : 0;
+            const wallSurface = Math.abs(x) >= upperEdge || Math.abs(z) >= upperEdge ? level : 0;
+            return sloped === null ? wallSurface : Math.max(sloped, wallSurface);
         }
 
         function walkableAt(x, z, y = heightAt(x, z)) {
@@ -93,6 +94,61 @@
             }
             return adjacent;
         });
+
+        // Narrow ramp landings can fall between grid samples. Every added
+        // link undergoes the same collider and height validation as normal movement.
+        function connectRampLandings() {
+            const baseCount = grid.length;
+            const anchors = [];
+            for (const ramp of slopes) {
+                if (ramp.dir === 'S') {
+                    const x = ramp.maxX - 2.75, z = ramp.maxZ;
+                    anchors.push([{x,z:z-1},{x,z},{x:ramp.maxX-1.5,z},
+                        {x:ramp.maxX-.25,z}]);
+                } else if (ramp.dir === 'N') {
+                    const x = ramp.minX + 2.75, z = ramp.minZ;
+                    anchors.push([{x,z:z+1},{x,z},{x:ramp.minX+1.5,z},
+                        {x:ramp.minX+.25,z}]);
+                } else if (ramp.dir === 'W') {
+                    const x = ramp.minX, z = ramp.maxZ;
+                    anchors.push([{x:x+1,z:z-2.75},{x:x+.5,z:z-1.5},
+                        {x,z:z-1.5},{x,z:z-.25}]);
+                }
+            }
+            for (const chain of anchors) {
+                let previous = null;
+                for (const point of chain) {
+                    const y = heightAt(point.x, point.z);
+                    if (!walkableAt(point.x,point.z,y)) { previous = null; continue; }
+                    const node = {x:point.x,y,z:point.z,id:grid.length,walkable:true};
+                    grid.push(node);
+                    links.push([]);
+                    if (previous !== null && clearSegment(grid[previous],node)) {
+                        const dist=Math.hypot(node.x-grid[previous].x,node.z-grid[previous].z);
+                        links[previous].push({id:node.id,cost:dist});
+                        links[node.id].push({id:previous,cost:dist});
+                    }
+                    previous=node.id;
+                }
+            }
+            for (let a=baseCount;a<grid.length;a++) {
+                const node=grid[a];
+                for (let b=0;b<a;b++) {
+                    const other=grid[b];
+                    if (!other.walkable) continue;
+                    const planar=Math.hypot(node.x-other.x,node.z-other.z);
+                    if (planar<0.01 || planar>step*1.55 ||
+                        Math.abs(node.y-other.y)>maxStepHeight ||
+                        !clearSegment(node,other)) continue;
+                    if (!links[a].some(edge=>edge.id===b)) {
+                        const cost=planar+Math.abs(node.y-other.y)*.35;
+                        links[a].push({id:b,cost});
+                        links[b].push({id:a,cost});
+                    }
+                }
+            }
+        }
+        connectRampLandings();
 
         function nearest(position) {
             let best = null, bestDist = Infinity;
