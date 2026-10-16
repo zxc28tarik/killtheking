@@ -41,7 +41,7 @@ test('many blade samples still select only one contact per swing',()=>{
  assert.equal(result.angle,0);
 });
 test('game integrates ordered sword spear dagger contact and removes old fallback',()=>{
- assert.match(game,/arenaPlayerMeleeContact\(cls.id === 1 \? 'spear' : 'sword', cls.range\)/);
+ assert.match(game,/ArenaWeaponSweep\.begin\(cls.id === 1 \? 'spear' : 'sword'/);
  assert.match(game,/arenaPlayerMeleeContact\('dagger', 5.2\)/);
  assert.match(game,/raycaster.intersectObjects\(targets, false\)/);
  assert.match(game,/return \{kind:'world',distance:hit.distance\}/);

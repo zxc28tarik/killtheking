@@ -1838,6 +1838,7 @@
         };
 
         const keys = {};
+        let activeWeaponSwing = null;
         let isGameActive = false;
         let mouseSensitivity = 1.0;
         let playerCharGroup = null;
@@ -1856,6 +1857,7 @@
         };
 
         window.selectClass = function(idx) {
+            activeWeaponSwing = null;
             player.classIdx = idx;
             const cls = CLASSES[idx];
             player.maxHp = cls.maxHp;
@@ -3395,20 +3397,18 @@
             if (cls.type === 'melee') {
                 sfx.playMeleeSwing(cls.id === 1 ? 0.85 : (player.comboStep === 0 ? 1.0 : 1.18));
 
-                // Momentum bonus for Pikeman, proportional to movement speed.
+                // Damage is resolved throughout the visible animation, not on click.
                 const horizSpeed = Math.hypot(player.vel.x, player.vel.z);
                 const speedRatio = Math.max(1.0, horizSpeed / 13.5);
                 const momentumBonus = cls.id === 1 ? Math.round((speedRatio - 1.0) * 65) : 0;
-                const tag = momentumBonus >= 20 ? '⚡ HIZ ' : '';
-                // Sword: broad sampled arc; spear: narrow thrust. Resolve
-                // only ONE first unobstructed contact per attack.
-                const contact = arenaPlayerMeleeContact(cls.id === 1 ? 'spear' : 'sword', cls.range);
-                if (contact && contact.kind === 'barrel') {
-                    triggerBarrelExplosion(contact.barrel);
-                } else if (contact && contact.kind === 'bot') {
-                    const damage = (contact.isHead ? cls.headshotDamage : cls.damage) + momentumBonus;
-                    damageBot(contact.bot, damage, contact.isHead, cls.weaponName, tag, contact.point);
-                }
+                activeWeaponSwing = ArenaWeaponSweep.begin(cls.id === 1 ? 'spear' : 'sword',
+                    cls.range, player.comboStep);
+                activeWeaponSwing.classIdx = player.classIdx;
+                activeWeaponSwing.damage = cls.damage;
+                activeWeaponSwing.headshotDamage = cls.headshotDamage;
+                activeWeaponSwing.bonus = momentumBonus;
+                activeWeaponSwing.weaponName = cls.weaponName;
+                activeWeaponSwing.tag = momentumBonus >= 20 ? '⚡ HIZ ' : '';
             }
             // [3] 1600 FLINTLOCK MUSKET
             else if (cls.type === 'hitscan') {
@@ -3520,6 +3520,7 @@
                 menuOverlay.classList.add('hidden');
             } else {
                 isGameActive = false;
+                activeWeaponSwing = null;
                 menuOverlay.classList.remove('hidden');
             }
         });
@@ -4086,6 +4087,51 @@
                 }
             }
 
+            // Trace the animated sword arc or spear thrust on each frame.
+            if (activeWeaponSwing && isGameActive && player.classIdx === activeWeaponSwing.classIdx) {
+                const swing = activeWeaponSwing;
+                const origin = (player.isThirdPerson ? player.pos : camera.position).clone();
+                const orientation = camera.quaternion.clone();
+                // One nearest-hit raycast for static world, barrels and live fighters.
+                const targets = [...worldMeshes];
+                bots.filter(b => !b.dead).forEach(b => b.mesh.traverse(c => {
+                    if (c.isMesh) targets.push(c);
+                }));
+                barrels.filter(b => b.active).forEach(b => b.group.traverse(c => {
+                    if (c.isMesh) targets.push(c);
+                }));
+                const impact = ArenaWeaponSweep.advance(swing, dt, (localFrom, localTo) => {
+                    const from = origin.clone().add(new THREE.Vector3(
+                        localFrom.x, localFrom.y, localFrom.z).applyQuaternion(orientation));
+                    const to = origin.clone().add(new THREE.Vector3(
+                        localTo.x, localTo.y, localTo.z).applyQuaternion(orientation));
+                    const direction = to.sub(from);
+                    const length = direction.length();
+                    if (length < 0.001) return null;
+                    raycaster.set(from, direction.multiplyScalar(1 / length));
+                    raycaster.near = 0.001;
+                    raycaster.far = length;
+                    const hit = raycaster.intersectObjects(targets, false)[0];
+                    if (!hit) return null;
+                    const index = hit.object.userData.botIndex;
+                    if (index !== undefined && bots[index] && !bots[index].dead)
+                        return {kind:'bot',bot:bots[index],point:hit.point,
+                            isHead:!!hit.object.userData.isHead,distance:hit.distance};
+                    const barrelIndex = hit.object.userData.barrelIndex;
+                    if (barrelIndex !== undefined && barrels[barrelIndex] && barrels[barrelIndex].active)
+                        return {kind:'barrel',barrel:barrels[barrelIndex],distance:hit.distance};
+                    return {kind:'world',distance:hit.distance};
+                });
+                if (impact && impact.kind === 'barrel') triggerBarrelExplosion(impact.barrel);
+                else if (impact && impact.kind === 'bot') {
+                    const damage = (impact.isHead ? swing.headshotDamage : swing.damage) + swing.bonus;
+                    damageBot(impact.bot, damage, impact.isHead, swing.weaponName, swing.tag, impact.point);
+                }
+                if (swing.finished || swing.resolved) activeWeaponSwing = null;
+            } else if (activeWeaponSwing && (!isGameActive || player.classIdx !== activeWeaponSwing.classIdx)) {
+                activeWeaponSwing = null;
+            }
+
             // 3. Update Physical Arrows, Wind Trails & Sticking Impact
             for (let i = arrows.length - 1; i >= 0; i--) {
                 const arr = arrows[i];
@@ -4519,7 +4565,8 @@
                 arenaKills: b.arenaKills })),
             playerKills: player.kills,
             playerParries: player.parries,
-            playerDeaths: player.deaths
+            playerDeaths: player.deaths,
+            weaponSwingActive: !!activeWeaponSwing
         });
         window.onload = function() {
             animate();
