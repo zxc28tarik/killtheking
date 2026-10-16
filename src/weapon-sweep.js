@@ -19,9 +19,20 @@
             const dx=(side ? -0.06 : 0.06)*extent;
             return {x:dx,y:-0.22,z:-extent};
         }
-        const angle=(side ? 1 : -1)*(0.48-0.96*p);
+        // Match the on-screen blade's rest and sweep: no lateral jump at start/end.
+        const angle=(side ? 1 : -1)*(0.48-0.96*p)*Math.sin(Math.PI*p);
         const extension=reach*(0.75+0.12*Math.sin(Math.PI*p));
         return {x:Math.sin(angle)*extension,y:-0.18-0.08*Math.sin(Math.PI*p),z:-Math.cos(angle)*extension};
+    }
+    // A shared attack phase ties the collision proxy to the existing viewmodel.
+    // No new meshes/materials; the sword's rendered tilt follows this phase.
+    function visualPose(kind, side, progress) {
+        const p=Math.max(0,Math.min(1,progress));
+        const envelope=Math.sin(Math.PI*p);
+        if (kind==='spear') return {rotationX:0,rotationZ:0,offsetZ:-envelope*0.72};
+        const sampled=pose('sword',1,side,p);
+        const angle=Math.atan2(sampled.x,-sampled.z);
+        return {rotationX:-envelope*1.15,rotationZ:-angle*0.85,offsetZ:-envelope*0.25};
     }
     function begin(kind,reach,side=0){
         if(!['sword','spear'].includes(kind)||!Number.isFinite(reach)||reach<=0)throw Error('Invalid swing');
@@ -90,5 +101,5 @@
         if(swing.elapsed>=swing.duration-EPS)swing.finished=true;
         return null;
     }
-    return {begin,advance,pose,withinReach,DURATION,ACTIVE_START,ACTIVE_END};
+    return {begin,advance,pose,visualPose,withinReach,DURATION,ACTIVE_START,ACTIVE_END};
 });
