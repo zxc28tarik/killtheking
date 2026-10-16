@@ -3025,6 +3025,18 @@
             victim.arenaLockTime = 0;
         }
 
+        // Combat foundation: prevent strikes and hitscan shots from hitting through stone/props.
+        // Only static world colliders participate; characters are checked separately.
+        function arenaWorldBlockBetween(from, to) {
+            const displacement = to.clone().sub(from);
+            const distance = displacement.length();
+            if (distance <= 0.15) return false;
+            arenaSightRay.set(from, displacement.multiplyScalar(1 / distance));
+            arenaSightRay.near = 0.05;
+            arenaSightRay.far = distance - 0.10;
+            return arenaSightRay.intersectObjects(worldMeshes, false).length > 0;
+        }
+
         function arenaLineOfSight(bot, targetPos, targetIsPlayer) {
             const origin = arenaAimOrigin.copy(bot.mesh.position);
             origin.y += 1.8;
@@ -3093,7 +3105,8 @@
             const targetPos = arenaActorPosition(target.type, target.id);
             if (!targetPos) return;
             const isRanged = bot.role === 'archer' || bot.role === 'musket';
-            if (isRanged && !arenaLineOfSight(bot, targetPos, target.type === 'player')) return;
+            // Melee combatants also require a clear path; walls block every weapon type.
+            if (!arenaLineOfSight(bot, targetPos, target.type === 'player')) return;
             const origin = bot.mesh.position.clone().add(new THREE.Vector3(0, 1.8, 0));
             const targetPoint = targetPos.clone().add(new THREE.Vector3(0, target.type === 'player' ? 1.0 : 1.65, 0));
             const shotDir = targetPoint.clone().sub(origin).normalize();
@@ -3152,7 +3165,7 @@
             const hits = raycaster.intersectObjects(barrelMeshes, false);
             if (hits.length > 0) {
                 const barrel = barrels[hits[0].object.userData.barrelIndex];
-                if (barrel) {
+                if (barrel && !arenaWorldBlockBetween(camera.position, hits[0].point)) {
                     triggerHitmarker(false);
                     triggerBarrelExplosion(barrel);
                     return true;
@@ -3181,7 +3194,9 @@
                 bots.forEach(bot => {
                     if (bot.dead) return;
                     const toBot = bot.mesh.position.clone().sub(player.pos);
-                    if (toBot.length() < 6.5 && forward.dot(toBot.normalize()) > 0.5) {
+                    if (toBot.length() < 6.5 && forward.dot(toBot.normalize()) > 0.5 &&
+                        !arenaWorldBlockBetween(player.pos.clone().add(new THREE.Vector3(0, 1.5, 0)),
+                            bot.mesh.position.clone().add(new THREE.Vector3(0, 1.5, 0)))) {
                         damageBot(bot, 85, false, 'Kalkan Çarpması', '🛡️ ');
                         bot.mesh.position.addScaledVector(forward, 4.5);
                     }
@@ -3218,7 +3233,7 @@
                 const botCenter = bot.mesh.position.clone().add(new THREE.Vector3(0, 1.5, 0));
                 if (botCenter.distanceTo(camera.position) <= 5.2) {
                     const toBot = botCenter.clone().sub(camera.position).normalize();
-                    if (dir.dot(toBot) > 0.68) {
+                    if (dir.dot(toBot) > 0.68 && !arenaWorldBlockBetween(camera.position, botCenter)) {
                         damageBot(bot, 75, false, 'Süngü / Hançer', '🗡️ ');
                         break;
                     }
@@ -3268,7 +3283,7 @@
                 bots.filter(b => !b.dead).forEach(b => b.mesh.traverse(c => { if (c.isMesh) botMeshes.push(c); }));
                 const hits = raycaster.intersectObjects(botMeshes, false);
 
-                if (hits.length > 0) {
+                if (hits.length > 0 && !arenaWorldBlockBetween(camera.position, hits[0].point)) {
                     const hit = hits[0];
                     const bot = bots[hit.object.userData.botIndex];
                     const isHead = !!hit.object.userData.isHead;
@@ -3282,7 +3297,9 @@
                         const botCenter = bot.mesh.position.clone().add(new THREE.Vector3(0, 1.5, 0));
                         if (botCenter.distanceTo(camera.position) <= cls.range) {
                             const toBot = botCenter.sub(camera.position).normalize();
-                            if (dir.dot(toBot) > (cls.id === 0 ? 0.70 : 0.84)) {
+                            if (dir.dot(toBot) > (cls.id === 0 ? 0.70 : 0.84) &&
+                                !arenaWorldBlockBetween(camera.position,
+                                    bot.mesh.position.clone().add(new THREE.Vector3(0, 1.5, 0)))) {
                                 damageBot(bot, cls.damage + momentumBonus, false, cls.weaponName, tag);
                                 break;
                             }
@@ -3311,7 +3328,7 @@
                     bots.filter(b => !b.dead).forEach(b => b.mesh.traverse(c => { if (c.isMesh) botMeshes.push(c); }));
                     const hits = raycaster.intersectObjects(botMeshes, false);
 
-                    if (hits.length > 0) {
+                    if (hits.length > 0 && !arenaWorldBlockBetween(camera.position, hits[0].point)) {
                         const hit = hits[0];
                         const bot = bots[hit.object.userData.botIndex];
                         const isHead = !!hit.object.userData.isHead;
