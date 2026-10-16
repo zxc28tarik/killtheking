@@ -1209,7 +1209,7 @@
             addBox(0, wallH + 2.5, -arenaHalf - 2, 92, 5, 1.5, darkStoneMat, true);
             addBox(0, wallH + 2.5, arenaHalf + 2, 92, 5, 1.5, darkStoneMat, true);
             addBox(-arenaHalf - 2, wallH + 2.5, 0, 1.5, 5, 88, darkStoneMat, true);
-            addBox(arenaHalf - 2, wallH + 2.5, 0, 1.5, 5, 88, darkStoneMat, true);
+            addBox(arenaHalf + 2, wallH + 2.5, 0, 1.5, 5, 88, darkStoneMat, true);
 
             // Merlons
             for (let i = -32; i <= 32; i += 6) {
@@ -1254,9 +1254,11 @@
             createSiegeCannon(0, 12.0, -25, 0);
 
             // Wooden Siege Ramps
-            createRamp(-36.5, 0, 7, 5, 16, 'N');
-            createRamp(36.5, 0, 7, 5, 16, 'S');
-            createRamp(12, 0, 36.5, 16, 5, 'W');
+            createRamp(-36.5, 0, 7, 7.5, 16, 'N');
+            createRamp(36.5, 0, 7, 7.5, 16, 'S');
+            createRamp(15, 0, 7, 16, 7.5, 'W');
+            // North-wall access ramp in the gap between crenellations.
+            createRamp(-23, 0, 7, 3, 15, 'NN');
 
             // Central Platform & Crates
             addBox(0, 0.9, 2, 12, 1.8, 12, stoneMat, true);
@@ -1321,12 +1323,17 @@
                 const h = startY + (endY - startY) * t;
                 if (dir === 'N') {
                     const sz = d / steps;
-                    const z = (cx < 0 ? 4 : -4) + (d / 2) - (i + 0.5) * sz;
+                    const z = (cx < 0 ? 3 : -4) + (d / 2) - (i + 0.5) * sz;
                     addBox(cx, h / 2, z, w, h, sz, woodMat, false);
                 } else if (dir === 'S') {
                     const sz = d / steps;
-                    const z = -4 - (d / 2) + (i + 0.5) * sz;
+                    const z = -7 - (d / 2) + (i + 0.5) * sz;
                     addBox(cx, h / 2, z, w, h, sz, woodMat, false);
+                } else if (dir === 'NN') {
+                    const sz = d / steps;
+                    const z = -25 - (i + 0.5) * sz;
+                    const northHeight = Math.min(endY, h * steps / 9);
+                    addBox(cx, northHeight / 2, z, w, northHeight, sz, woodMat, false);
                 } else if (dir === 'W') {
                     const sx = w / steps;
                     const x = cx + (w / 2) - (i + 0.5) * sx;
@@ -1334,9 +1341,11 @@
                 }
             }
             if (dir === 'N') {
-                ramps.push({ minX: cx - w / 2, maxX: cx + w / 2, minZ: 4 - d / 2, maxZ: 4 + d / 2, startY, endY, dir: 'N' });
+                ramps.push({ minX: cx - w / 2, maxX: cx + w / 2, minZ: 3 - d / 2, maxZ: 3 + d / 2, startY, endY, dir: 'N' });
             } else if (dir === 'S') {
-                ramps.push({ minX: cx - w / 2, maxX: cx + w / 2, minZ: -4 - d / 2, maxZ: -4 + d / 2, startY, endY, dir: 'S' });
+                ramps.push({ minX: cx - w / 2, maxX: cx + w / 2, minZ: -7 - d / 2, maxZ: -7 + d / 2, startY, endY, dir: 'S' });
+            } else if (dir === 'NN') {
+                ramps.push({ minX: cx - w / 2, maxX: cx + w / 2, minZ: -40, maxZ: -25, startY, endY, dir: 'NN' });
             } else if (dir === 'W') {
                 ramps.push({ minX: cx - w / 2, maxX: cx + w / 2, minZ: 36.5 - d / 2, maxZ: 36.5 + d / 2, startY, endY, dir: 'W' });
             }
@@ -1948,7 +1957,7 @@
 
         // A* grid built once from the castle's existing collision geometry and ramps.
         const navigator = ArenaNavigation.createNavigator(colliders, ramps,
-            { min: -42.5, max: 42.5, upperEdge: 39 });
+            { min: -43.75, max: 43.75, step: 1.25, upperEdge: 39.5, upperLevel: 7 });
         const bots = [];
         // Use the known level-design spawn pool, but prefer locations away from living fighters.
         function chooseArenaRespawn(pool, excludedBot = null, includePlayer = true) {
@@ -3535,7 +3544,8 @@
             for (const r of ramps) {
                 if (x >= r.minX && x <= r.maxX && z >= r.minZ && z <= r.maxZ) {
                     let t = 0;
-                    if (r.dir === 'N') t = (r.maxZ - z) / (r.maxZ - r.minZ);
+                    if (r.dir === 'NN') t = (r.maxZ - z) / (r.maxZ - r.minZ - 1.5);
+                    else if (r.dir === 'N') t = (r.maxZ - z) / (r.maxZ - r.minZ);
                     else if (r.dir === 'S') t = (z - r.minZ) / (r.maxZ - r.minZ);
                     else if (r.dir === 'W') t = (r.maxX - x) / (r.maxX - r.minX);
                     return r.startY + Math.max(0, Math.min(1, t)) * (r.endY - r.startY);
