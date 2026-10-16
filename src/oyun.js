@@ -2626,6 +2626,7 @@
                     tacticLastTarget: null, tacticRefresh: 0,
                     attackTimer: 1.4 + Math.random() * 1.4,
                     staggerTime: 0,
+                    meleeWindup: 0,
                     walkCycle: Math.random() * 10,
                     hitFlashTimer: 0,
                     hitReactionTime: 0,
@@ -3182,6 +3183,7 @@
                 player.shieldParryTime = 0;
                 player.parries++;
                 bot.staggerTime = ArenaCombatDefense.STAGGER_DURATION;
+                bot.meleeWindup = 0;
                 bot.attackTimer = Math.max(bot.attackTimer, 0.8);
                 bot.hitReactionTime = 0.24;
                 bot.hitFlashTimer = 0.15;
@@ -4198,6 +4200,7 @@
                         bot.mesh.scale.set(1, 1, 1);
                         bot.hitReactionTime = 0;
                         bot.staggerTime = 0;
+                        bot.meleeWindup = 0;
                         bot.attackTimer = 0.8 + Math.random() * 0.8;
                         bot.arenaTargetType = null;
                         bot.arenaTargetId = null;
@@ -4368,10 +4371,27 @@
                 bot.mesh.position.y = THREE.MathUtils.lerp(bot.mesh.position.y,
                     navHeight, Math.min(1, dt * 10));
 
-                // Every active fighter attacks their chosen arena opponent, bot OR player.
-                if (isGameActive && arenaTarget && arenaDist <= bot.range) {
+                // Melee attacks telegraph before they land, enabling reactive parries.
+                if (bot.meleeWindup > 0) {
+                    bot.meleeWindup = Math.max(0, bot.meleeWindup - dt);
+                    if (bot.mesh._parts.rightArm) bot.mesh._parts.rightArm.rotation.x = -2.15;
+                    if (!isGameActive || !arenaTarget || arenaDist > bot.range ||
+                        !arenaLineOfSight(bot, targetPosition, arenaTarget.type === 'player')) {
+                        bot.meleeWindup = 0;
+                        bot.attackTimer = 0.35;
+                    } else if (bot.meleeWindup <= 0) {
+                        arenaBotAttack(bot, arenaTarget, arenaDist);
+                    }
+                } else if (isGameActive && arenaTarget && arenaDist <= bot.range) {
                     bot.attackTimer -= dt;
-                    if (bot.attackTimer <= 0) arenaBotAttack(bot, arenaTarget, arenaDist);
+                    if (bot.attackTimer <= 0) {
+                        if (bot.role === 'knight' || bot.role === 'pikeman') {
+                            bot.meleeWindup = 0.36;
+                            bot.attackTimer = 0;
+                        } else {
+                            arenaBotAttack(bot, arenaTarget, arenaDist);
+                        }
+                    }
                 } else if (bot.attackTimer > 0) {
                     bot.attackTimer -= dt * 0.45;
                 }
@@ -4430,7 +4450,7 @@
             botCount: bots.length,
             bots: bots.map(b => ({ name: b.name, hp: b.hp, dead: b.dead,
                 remainingWaypoints: b.navPath.length, navigationStuckTime: b.navStuck,
-                tacticalMode: b.tacticMode,
+                tacticalMode: b.tacticMode, meleeWindup: b.meleeWindup,
                 target: b.arenaTargetType === 'bot' && bots[b.arenaTargetId]
                     ? bots[b.arenaTargetId].name : b.arenaTargetType,
                 arenaKills: b.arenaKills })),
