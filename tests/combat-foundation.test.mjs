@@ -49,7 +49,9 @@ test('player shots and bot melee use world occlusion checks', () => {
   assert.match(source, /if \(!arenaLineOfSight\(bot, targetPos, target.type === 'player'\)\) return;/);
   assert.match(source, /if \(hits.length > 0 && !arenaWorldBlockBetween\(camera.position, hits\[0\].point\)\)/);
   assert.match(source, /if \(barrel && !arenaWorldBlockBetween\(camera.position, hits\[0\].point\)\)/);
-  assert.ok((source.match(/!arenaWorldBlockBetween\(/g) || []).length >= 6);
+  assert.match(source, /ArenaMeleeContact\.selectContact\(/);
+  assert.match(source, /const hits = raycaster\.intersectObjects\(targets, false\)/);
+  assert.match(source, /return \{kind:'world',distance:hit\.distance\}/);
 });
 
 test('bots retain free-for-all combat without awarding player kills', () => {

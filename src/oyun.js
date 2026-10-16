@@ -2627,6 +2627,11 @@
                     attackTimer: 1.4 + Math.random() * 1.4,
                     staggerTime: 0,
                     meleeWindup: 0,
+                    guardTime: 0,
+                    guardParryTime: 0,
+                    guardCooldown: 0,
+                    guardFacingYaw: 0,
+                    guardAttempts: 0,
                     walkCycle: Math.random() * 10,
                     hitFlashTimer: 0,
                     hitReactionTime: 0,
@@ -3118,6 +3123,30 @@
 
         function damageBotFromBot(attacker, victim, damage) {
             if (!attacker || attacker.dead || !victim || victim.dead || attacker.id === victim.id) return;
+            // Knight defenders must raise their shield DURING an observed wind-up.
+            // Never retroactively decide to parry when a hit is registered.
+            if (victim.role === 'knight' && victim.guardTime > 0) {
+                const defense = ArenaCombatDefense.assessShield({
+                    shielding: true, defender: victim.mesh.position,
+                    attacker: attacker.mesh.position, yaw: victim.guardFacingYaw,
+                    parryTime: victim.guardParryTime,
+                    melee: attacker.role === 'knight' || attacker.role === 'pikeman'
+                });
+                if (defense.kind === 'parry') {
+                    attacker.staggerTime = ArenaCombatDefense.STAGGER_DURATION;
+                    attacker.meleeWindup = 0;
+                    victim.guardParryTime = 0;
+                    victim.guardTime = 0;
+                    const spark = victim.mesh.position.clone().add(new THREE.Vector3(0, 1.8, 0));
+                    spawnHitSparks(spark, false, 'Kalkan');
+                    sfx.playMetalClang();
+                    return;
+                }
+                if (defense.kind === 'block') {
+                    damage = Math.round(damage * defense.multiplier);
+                    sfx.playMetalClang();
+                }
+            }
             victim.hp = Math.max(0, victim.hp - damage);
             const lethal = victim.hp <= 0;
             const delta = victim.mesh.position.clone().sub(attacker.mesh.position);
@@ -3244,6 +3273,41 @@
             return false;
         }
 
+        // Ordered sampled blade contact: world, active barrels and living bots
+        // share a nearest-hit ray; walls cannot be bypassed by fallback detection.
+        function arenaPlayerMeleeContact(kind, range) {
+            const targets = [...worldMeshes];
+            bots.filter(b => !b.dead).forEach(b => b.mesh.traverse(c => {
+                if (c.isMesh) targets.push(c);
+            }));
+            barrels.filter(b => b.active).forEach(b => b.group.traverse(c => {
+                if (c.isMesh) targets.push(c);
+            }));
+            const initialDir = new THREE.Vector3(0, 0, -1)
+                .applyQuaternion(camera.quaternion).normalize();
+            return ArenaMeleeContact.selectContact({kind, reach: range,
+                castRay(angle, reach) {
+                    const dir = initialDir.clone().applyAxisAngle(
+                        new THREE.Vector3(0, 1, 0), angle);
+                    raycaster.set(camera.position, dir);
+                    raycaster.near = 0.01;
+                    raycaster.far = reach;
+                    const hits = raycaster.intersectObjects(targets, false);
+                    if (!hits.length) return null;
+                    const hit = hits[0];
+                    const index = hit.object.userData.botIndex;
+                    const barrelIndex = hit.object.userData.barrelIndex;
+                    if (index !== undefined && bots[index] && !bots[index].dead)
+                        return {kind:'bot', bot:bots[index], point:hit.point,
+                            isHead:!!hit.object.userData.isHead, distance:hit.distance};
+                    if (barrelIndex !== undefined && barrels[barrelIndex] && barrels[barrelIndex].active)
+                        return {kind:'barrel', barrel:barrels[barrelIndex],
+                            point:hit.point,distance:hit.distance};
+                    return {kind:'world',distance:hit.distance};
+                }
+            });
+        }
+
         // Quick Melee [F] or [V] (Bayonet / Dagger / Shield Bash / Spear Surge)
         function performQuickAbilityOrMelee() {
             if (!isGameActive) return;
@@ -3295,19 +3359,11 @@
             registerWeaponSwing('melee');
             sfx.playMeleeSwing(1.35);
 
-            if (checkBarrelHit(5.0)) return;
-
-            const dir = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion).normalize();
-            for (const bot of bots) {
-                if (bot.dead) continue;
-                const botCenter = bot.mesh.position.clone().add(new THREE.Vector3(0, 1.5, 0));
-                if (botCenter.distanceTo(camera.position) <= 5.2) {
-                    const toBot = botCenter.clone().sub(camera.position).normalize();
-                    if (dir.dot(toBot) > 0.68 && !arenaWorldBlockBetween(camera.position, botCenter)) {
-                        damageBot(bot, 75, false, 'Süngü / Hançer', '🗡️ ');
-                        break;
-                    }
-                }
+            const contact = arenaPlayerMeleeContact('dagger', 5.2);
+            if (contact && contact.kind === 'barrel') {
+                triggerBarrelExplosion(contact.barrel);
+            } else if (contact && contact.kind === 'bot') {
+                damageBot(contact.bot, 75, false, 'Süngü / Hançer', '🗡️ ', contact.point);
             }
         }
 
@@ -3339,42 +3395,19 @@
             if (cls.type === 'melee') {
                 sfx.playMeleeSwing(cls.id === 1 ? 0.85 : (player.comboStep === 0 ? 1.0 : 1.18));
 
-                if (checkBarrelHit(cls.range)) return;
-
-                // Momentum bonus for Pikeman (scales with horizontal speed!)
+                // Momentum bonus for Pikeman, proportional to movement speed.
                 const horizSpeed = Math.hypot(player.vel.x, player.vel.z);
                 const speedRatio = Math.max(1.0, horizSpeed / 13.5);
                 const momentumBonus = cls.id === 1 ? Math.round((speedRatio - 1.0) * 65) : 0;
                 const tag = momentumBonus >= 20 ? '⚡ HIZ ' : '';
-
-                raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
-                raycaster.far = cls.range;
-                const botMeshes = [];
-                bots.filter(b => !b.dead).forEach(b => b.mesh.traverse(c => { if (c.isMesh) botMeshes.push(c); }));
-                const hits = raycaster.intersectObjects(botMeshes, false);
-
-                if (hits.length > 0 && !arenaWorldBlockBetween(camera.position, hits[0].point)) {
-                    const hit = hits[0];
-                    const bot = bots[hit.object.userData.botIndex];
-                    const isHead = !!hit.object.userData.isHead;
-                    if (bot) {
-                        const totalDmg = (isHead ? cls.headshotDamage : cls.damage) + momentumBonus;
-                        damageBot(bot, totalDmg, isHead, cls.weaponName, tag, hit.point);
-                    }
-                } else {
-                    for (const bot of bots) {
-                        if (bot.dead) continue;
-                        const botCenter = bot.mesh.position.clone().add(new THREE.Vector3(0, 1.5, 0));
-                        if (botCenter.distanceTo(camera.position) <= cls.range) {
-                            const toBot = botCenter.sub(camera.position).normalize();
-                            if (dir.dot(toBot) > (cls.id === 0 ? 0.70 : 0.84) &&
-                                !arenaWorldBlockBetween(camera.position,
-                                    bot.mesh.position.clone().add(new THREE.Vector3(0, 1.5, 0)))) {
-                                damageBot(bot, cls.damage + momentumBonus, false, cls.weaponName, tag);
-                                break;
-                            }
-                        }
-                    }
+                // Sword: broad sampled arc; spear: narrow thrust. Resolve
+                // only ONE first unobstructed contact per attack.
+                const contact = arenaPlayerMeleeContact(cls.id === 1 ? 'spear' : 'sword', cls.range);
+                if (contact && contact.kind === 'barrel') {
+                    triggerBarrelExplosion(contact.barrel);
+                } else if (contact && contact.kind === 'bot') {
+                    const damage = (contact.isHead ? cls.headshotDamage : cls.damage) + momentumBonus;
+                    damageBot(contact.bot, damage, contact.isHead, cls.weaponName, tag, contact.point);
                 }
             }
             // [3] 1600 FLINTLOCK MUSKET
@@ -4201,6 +4234,9 @@
                         bot.hitReactionTime = 0;
                         bot.staggerTime = 0;
                         bot.meleeWindup = 0;
+                        bot.guardTime = 0;
+                        bot.guardParryTime = 0;
+                        bot.guardCooldown = 0;
                         bot.attackTimer = 0.8 + Math.random() * 0.8;
                         bot.arenaTargetType = null;
                         bot.arenaTargetId = null;
@@ -4219,6 +4255,28 @@
                 const toPlayer = new THREE.Vector3().subVectors(player.pos, bot.mesh.position);
                 const flatToPlayer = new THREE.Vector3(toPlayer.x, 0, toPlayer.z);
                 const distToPlayer = flatToPlayer.length();
+                // Bot guard starts in response to visible melee preparation,
+                // not after getting hit. Some knights attempt a late precise read.
+                bot.guardCooldown = Math.max(0, bot.guardCooldown - dt);
+                bot.guardTime = Math.max(0, bot.guardTime - dt);
+                bot.guardParryTime = Math.max(0, bot.guardParryTime - dt);
+                if (bot.role === 'knight' && bot.guardCooldown <= 0) {
+                    const threat = bots.find(other => other !== bot && !other.dead &&
+                        other.meleeWindup > 0 && other.arenaTargetType === 'bot' &&
+                        other.arenaTargetId === bot.id &&
+                        other.mesh.position.distanceTo(bot.mesh.position) < 8 &&
+                        arenaLineOfSight(other, bot.mesh.position, false));
+                    const lateRead = threat && (bot.id + threat.id + bot.guardAttempts) % 3 === 0;
+                    if (threat && (!lateRead || threat.meleeWindup <= 0.18)) {
+                        const dx = threat.mesh.position.x - bot.mesh.position.x;
+                        const dz = threat.mesh.position.z - bot.mesh.position.z;
+                        bot.guardFacingYaw = Math.atan2(-dx, -dz);
+                        bot.guardTime = 0.8;
+                        bot.guardParryTime = lateRead ? 0.23 : 0;
+                        bot.guardCooldown = 2.4;
+                        bot.guardAttempts++;
+                    }
+                }
                 const arenaTarget = chooseArenaTarget(bot);
                 const targetPosition = arenaTarget ? arenaTarget.position : null;
                 const arenaDist = arenaTarget
@@ -4366,6 +4424,10 @@
                     bot.mesh._parts.rightArm.rotation.x = -Math.PI / 3 - swingBoost + Math.sin(nowSec * 3 + bot.id) * 0.05;
                 }
 
+                if (bot.guardTime > 0 && bot.mesh._parts.leftArm) {
+                    bot.mesh._parts.leftArm.rotation.x = -1.25;
+                }
+
                 // Ramp and upper-walkway elevation remain consistent with the route.
                 const navHeight = navigator.heightAt(bot.mesh.position.x, bot.mesh.position.z);
                 bot.mesh.position.y = THREE.MathUtils.lerp(bot.mesh.position.y,
@@ -4451,6 +4513,7 @@
             bots: bots.map(b => ({ name: b.name, hp: b.hp, dead: b.dead,
                 remainingWaypoints: b.navPath.length, navigationStuckTime: b.navStuck,
                 tacticalMode: b.tacticMode, meleeWindup: b.meleeWindup,
+                guarding: b.guardTime > 0, guardParryTime: b.guardParryTime,
                 target: b.arenaTargetType === 'bot' && bots[b.arenaTargetId]
                     ? bots[b.arenaTargetId].name : b.arenaTargetType,
                 arenaKills: b.arenaKills })),
