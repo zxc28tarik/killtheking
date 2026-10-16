@@ -1821,6 +1821,8 @@
             isSliding: false,
             isThirdPerson: false,
             walkCycle: 0,
+            // TPS pose is visual-only; movement/collisions stay in player physics.
+            tpsMotionState: ArenaCharacterMotion.createState(),
             hp: 100,
             maxHp: 100,
             classIdx: 3, // Starts as 1600 Musketeer
@@ -1866,6 +1868,7 @@
 
         window.toggleThirdPerson = function() {
             player.isThirdPerson = !player.isThirdPerson;
+            player.tpsMotionState = ArenaCharacterMotion.createState();
             weaponHolder.visible = !player.isThirdPerson;
             if (playerCharGroup) {
                 playerCharGroup.visible = player.isThirdPerson;
@@ -1878,6 +1881,7 @@
 
         window.selectClass = function(idx) {
             activeWeaponSwing = null;
+            player.tpsMotionState = ArenaCharacterMotion.createState();
             player.classIdx = idx;
             const cls = CLASSES[idx];
             player.maxHp = cls.maxHp;
@@ -3268,6 +3272,7 @@
                 addScorePopup('YENİDEN DOĞDUN!', 'text-rose-400');
                 const sp = chooseArenaRespawn(COURTYARD_SPAWNS, null, false);
                 player.pos.set(sp.x, sp.y + 1.5, sp.z);
+                player.tpsMotionState = ArenaCharacterMotion.createState();
                 // The killer returns to fighting the whole arena, not camping the respawn.
                 bot.arenaTargetType = null;
                 bot.arenaTargetId = null;
@@ -3816,13 +3821,7 @@
         let fpsTimer = 0;
 
         // Procedural animation of existing joint groups only; no mesh replacement.
-        function applyBotMotion(bot, dt, distance = 0) {
-            const pose = ArenaCharacterMotion.update(bot.motionState, dt, {
-                travel: distance, role: bot.role, windup: bot.meleeWindup,
-                strike: bot.strikePoseTime, guard: bot.guardTime > 0,
-                stagger: bot.staggerTime, hit: bot.hitReactionTime
-            });
-            const parts = bot.mesh._parts;
+        function blendArticulatedRig(parts, pose, dt) {
             const rate = Math.min(1, dt * 15);
             parts.leftLeg.rotation.x = THREE.MathUtils.lerp(parts.leftLeg.rotation.x, pose.leftLeg, rate);
             parts.rightLeg.rotation.x = THREE.MathUtils.lerp(parts.rightLeg.rotation.x, pose.rightLeg, rate);
@@ -3834,6 +3833,33 @@
             }
             if (parts.head) parts.head.rotation.x = THREE.MathUtils.lerp(parts.head.rotation.x, pose.headX, rate);
             if (parts.capeMesh) parts.capeMesh.rotation.x = THREE.MathUtils.lerp(parts.capeMesh.rotation.x, pose.capeX, rate);
+        }
+
+        // TPS player shares the bot rig solver but never changes gameplay physics.
+        function applyPlayerTpsMotion(model, dt, groundTravel) {
+            if (!model || !model._parts) return;
+            const roles = ['knight', 'pikeman', 'archer', 'musket'];
+            const attackLevel = Math.max(0, Math.min(1,
+                player.attackAnimTime / (CLASSES[player.classIdx].type === 'melee' ? .82 : 1)));
+            const pose = ArenaCharacterMotion.update(player.tpsMotionState, dt, {
+                travel: player.onGround && !player.isSliding ? groundTravel : 0,
+                role: roles[player.classIdx],
+                guard: player.classIdx === 0 && player.isShielding,
+                strike: .25 * attackLevel,
+                sliding: player.onGround && player.isSliding,
+                airborne: !player.onGround,
+                hit: 0, stagger: 0
+            });
+            blendArticulatedRig(model._parts, pose, dt);
+        }
+
+        function applyBotMotion(bot, dt, distance = 0) {
+            const pose = ArenaCharacterMotion.update(bot.motionState, dt, {
+                travel: distance, role: bot.role, windup: bot.meleeWindup,
+                strike: bot.strikePoseTime, guard: bot.guardTime > 0,
+                stagger: bot.staggerTime, hit: bot.hitReactionTime
+            });
+            blendArticulatedRig(bot.mesh._parts, pose, dt);
             bot.strikePoseTime = Math.max(0, bot.strikePoseTime - dt);
         }
 
@@ -3995,7 +4021,12 @@
                 player.vel.z = THREE.MathUtils.lerp(player.vel.z, moveDir.z * targetSpeed, accel * dt);
 
                 player.vel.y -= 30.0 * dt;
+                // Drive TPS footfall by actual post-collision translation, not velocity
+                // (bots and players may have high velocity while pressed against walls).
+                const oldTPSX = player.pos.x, oldTPSZ = player.pos.z;
                 resolvePlayerCollisions(dt);
+                const actualGroundTravel = Math.hypot(player.pos.x-oldTPSX, player.pos.z-oldTPSZ);
+                const safeGroundTravel = actualGroundTravel < 3.5 ? actualGroundTravel : 0;
 
                 const horizSpeed = Math.hypot(player.vel.x, player.vel.z);
                 const displaySpeed = Math.round((horizSpeed / 14.5) * cls.speed);
@@ -4033,23 +4064,7 @@
                     playerCharGroup.rotation.y = player.yaw + Math.PI;
 
                     const activeModel = playerClassModels[player.classIdx];
-                    if (activeModel && activeModel._parts) {
-                        if (horizSpeed > 1.2) {
-                            player.walkCycle += dt * 12;
-                            activeModel._parts.leftLeg.rotation.x = Math.sin(player.walkCycle) * 0.65;
-                            activeModel._parts.rightLeg.rotation.x = -Math.sin(player.walkCycle) * 0.65;
-                            activeModel._parts.leftArm.rotation.x = -Math.sin(player.walkCycle) * 0.35;
-                        } else {
-                            activeModel._parts.leftLeg.rotation.x = 0;
-                            activeModel._parts.rightLeg.rotation.x = 0;
-                            activeModel._parts.leftArm.rotation.x = player.isShielding ? -0.85 : 0;
-                        }
-                        const atkAnim = Math.sin(player.attackAnimTime * Math.PI);
-                        activeModel._parts.rightArm.rotation.x = -Math.PI / 3 - atkAnim * 0.95;
-                        if (activeModel._parts.capeMesh) {
-                            activeModel._parts.capeMesh.rotation.x = 0.16 + Math.min(0.65, horizSpeed * 0.025) + Math.sin(performance.now() * 0.008) * 0.06;
-                        }
-                    }
+                    applyPlayerTpsMotion(activeModel, dt, safeGroundTravel);
                 } else {
                     camera.position.copy(player.pos);
                 }
@@ -4660,6 +4675,7 @@
             playerKills: player.kills,
             playerParries: player.parries,
             playerDeaths: player.deaths,
+            playerTPSWalkBlend: player.tpsMotionState.weight,
             weaponSwingActive: !!activeWeaponSwing,
             lastWeaponSwingRaycasts,
             // Only sampled when inspected; doesn't add work to the game loop.
