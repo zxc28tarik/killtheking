@@ -162,45 +162,62 @@
             return best;
         }
 
-        // Deterministic A*, bounded and only called at target changes/cooldown.
-        function findPath(start, goal, maxNodes = 1400) {
-            const a = nearest(start), b = nearest(goal);
-            if (!a || !b) return [];
-            if (a.id === b.id) return [{x:b.x,y:b.y,z:b.z}];
-            const g = new Float64Array(grid.length).fill(Infinity);
-            const parent = new Int32Array(grid.length).fill(-1);
-            const closed = new Uint8Array(grid.length);
-            const open = [a.id];
-            g[a.id]=0;
-            let expanded = 0;
-            while(open.length && expanded < maxNodes) {
-                let chosen=0, best=Infinity;
-                for (let n=0;n<open.length;n++) {
-                    const id=open[n], p=grid[id];
-                    const h=Math.hypot(p.x-b.x,p.z-b.z)+Math.abs(p.y-b.y)*2;
-                    const value=g[id]+h;
-                    if(value<best) {best=value;chosen=n;}
+        // Binary-heap A*: explore complete connected castle routes efficiently.
+        function findPath(start, goal, maxNodes = grid.length) {
+            const a=nearest(start), b=nearest(goal);
+            if(!a || !b)return [];
+            if(a.id===b.id)return [{x:b.x,y:b.y,z:b.z}];
+            const g=new Float64Array(grid.length).fill(Infinity);
+            const parent=new Int32Array(grid.length).fill(-1);
+            const closed=new Uint8Array(grid.length), heap=[];
+            const heuristic = id => {
+                const p=grid[id];
+                return Math.hypot(p.x-b.x,p.z-b.z)+Math.abs(p.y-b.y)*.35;
+            };
+            function enqueue(id,cost) {
+                const entry={id,cost,priority:cost+heuristic(id)};
+                heap.push(entry);
+                for(let i=heap.length-1;i>0;) {
+                    const p=(i-1)>>1;
+                    if(heap[p].priority<=heap[i].priority)break;
+                    [heap[i],heap[p]]=[heap[p],heap[i]];i=p;
                 }
-                const current=open.splice(chosen,1)[0];
-                if (current===b.id) {
-                    const path=[];
-                    let id=current;
+            }
+            function dequeue() {
+                const first=heap[0],tail=heap.pop();
+                if(heap.length) {
+                    heap[0]=tail;
+                    for(let i=0;;) {
+                        const l=i*2+1,r=l+1;let best=i;
+                        if(l<heap.length && heap[l].priority<heap[best].priority)best=l;
+                        if(r<heap.length && heap[r].priority<heap[best].priority)best=r;
+                        if(best===i)break;
+                        [heap[i],heap[best]]=[heap[best],heap[i]];i=best;
+                    }
+                }
+                return first;
+            }
+            g[a.id]=0;enqueue(a.id,0);
+            let expanded=0;
+            while(heap.length && expanded<maxNodes) {
+                const entry=dequeue(),current=entry.id;
+                if(closed[current] || entry.cost>g[current]+EPS)continue;
+                if(current===b.id) {
+                    const path=[];let id=current;
                     while(id!==-1 && path.length<=grid.length) {
                         const p=grid[id];path.push({x:p.x,y:p.y,z:p.z});
-                        if (id===a.id) break;
+                        if(id===a.id)break;
                         id=parent[id];
                     }
-                    path.reverse();
-                    return path.slice(1);
+                    path.reverse();return path.slice(1);
                 }
-                if (closed[current]) continue;
                 closed[current]=1;expanded++;
                 for(const edge of links[current]) {
                     if(closed[edge.id])continue;
-                    const score=g[current]+edge.cost;
-                    if(score+EPS<g[edge.id]) {
-                        g[edge.id]=score;parent[edge.id]=current;
-                        if(!open.includes(edge.id))open.push(edge.id);
+                    const cost=g[current]+edge.cost;
+                    if(cost+EPS<g[edge.id]) {
+                        g[edge.id]=cost;parent[edge.id]=current;
+                        enqueue(edge.id,cost);
                     }
                 }
             }
