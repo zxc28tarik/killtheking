@@ -1817,6 +1817,9 @@
             // Right-Click / Secondary Ability States
             isRMBDown: false,
             isShielding: false,
+            shieldParryTime: 0,
+            shieldParryCooldown: 0,
+            parries: 0,
             abilityCooldown: 0,
             quickMeleeTime: 0,
             // Camera Feel (Sway & Shake)
@@ -1862,6 +1865,8 @@
             player.isDrawingBow = false;
             player.bowCharge = 0;
             player.isShielding = false;
+            player.shieldParryTime = 0;
+            player.shieldParryCooldown = 0;
             player.ammo = 1;
 
             document.getElementById('reload-indicator').classList.add('hidden');
@@ -2620,6 +2625,7 @@
                     tacticMode: 'patrol', tacticGoal: null, tacticTargetKey: null,
                     tacticLastTarget: null, tacticRefresh: 0,
                     attackTimer: 1.4 + Math.random() * 1.4,
+                    staggerTime: 0,
                     walkCycle: Math.random() * 10,
                     hitFlashTimer: 0,
                     hitReactionTime: 0,
@@ -3143,7 +3149,7 @@
         }
 
         function arenaBotAttack(bot, target, targetDistance) {
-            if (!target || !isGameActive || bot.dead) return;
+            if (!target || !isGameActive || bot.dead || bot.staggerTime > 0) return;
             const targetPos = arenaActorPosition(target.type, target.id);
             if (!targetPos) return;
             const isRanged = bot.role === 'archer' || bot.role === 'musket';
@@ -3165,10 +3171,30 @@
                 return;
             }
             let incomingDmg = bot.damage;
-            if (player.isShielding) {
-                incomingDmg = Math.round(incomingDmg * 0.25);
+            const defense = ArenaCombatDefense.assessShield({
+                shielding: player.classIdx === 0 && player.isShielding,
+                defender: player.pos, attacker: bot.mesh.position,
+                yaw: player.yaw, parryTime: player.shieldParryTime,
+                melee: !isRanged
+            });
+            if (defense.kind === 'parry') {
+                // Parry interrupts the attacker; no kill, heal or credit.
+                player.shieldParryTime = 0;
+                player.parries++;
+                bot.staggerTime = ArenaCombatDefense.STAGGER_DURATION;
+                bot.attackTimer = Math.max(bot.attackTimer, 0.8);
+                bot.hitReactionTime = 0.24;
+                bot.hitFlashTimer = 0.15;
                 sfx.playMetalClang();
-                addScorePopup('🛡️ KALKAN BLOKLADI!', 'text-sky-300');
+                addScorePopup('⚔️ KUSURSUZ SAVUŞTURMA!', 'text-amber-300');
+                document.getElementById('hud-status-badge').textContent = '⚔️ PARRY BAŞARILI';
+                updateHUD();
+                return;
+            }
+            if (defense.kind === 'block') {
+                incomingDmg = Math.round(incomingDmg * defense.multiplier);
+                sfx.playMetalClang();
+                addScorePopup('🛡️ ÖNDEN BLOK!', 'text-sky-300');
             } else {
                 sfx.playPlayerHit();
                 player.shakeIntensity = Math.max(player.shakeIntensity, 0.19);
@@ -3492,10 +3518,14 @@
             } else if (e.button === 2) {
                 player.isRMBDown = true;
                 if (player.classIdx === 0) {
-                    // Knight raises shield!
+                    // Fresh shield raise grants a short parry, never spammable.
+                    if (!player.isShielding && player.shieldParryCooldown <= 0) {
+                        player.shieldParryTime = ArenaCombatDefense.PARRY_DURATION;
+                        player.shieldParryCooldown = ArenaCombatDefense.PARRY_COOLDOWN;
+                    }
                     player.isShielding = true;
                     document.getElementById('shield-overlay').style.opacity = '1';
-                    document.getElementById('hud-status-badge').textContent = '🛡️ KALKAN AÇIK';
+                    document.getElementById('hud-status-badge').textContent = player.shieldParryTime > 0 ? '⚔️ SAVUŞTURMA PENCERESİ' : '🛡️ KALKAN AÇIK';
                 } else if (player.classIdx === 1) {
                     // Pikeman triggers Kargı Hücumu!
                     performQuickAbilityOrMelee();
@@ -3513,6 +3543,7 @@
             } else if (e.button === 2) {
                 player.isRMBDown = false;
                 player.isShielding = false;
+                player.shieldParryTime = 0;
                 document.getElementById('shield-overlay').style.opacity = '0';
                 document.getElementById('ads-overlay').style.opacity = '0';
                 document.getElementById('crosshair').style.transform = 'scale(1)';
@@ -3727,6 +3758,13 @@
 
         function updateGame(dt) {
             arenaClock += dt;
+            if (player.shieldParryTime > 0) {
+                player.shieldParryTime = Math.max(0, player.shieldParryTime - dt);
+                if (player.shieldParryTime === 0 && player.isShielding) {
+                    document.getElementById('hud-status-badge').textContent = '🛡️ KALKAN AÇIK';
+                }
+            }
+            player.shieldParryCooldown = Math.max(0, player.shieldParryCooldown - dt);
             const cls = CLASSES[player.classIdx];
 
             // Decay muzzle flash light
@@ -4159,6 +4197,7 @@
                         bot.mesh.rotation.z = 0;
                         bot.mesh.scale.set(1, 1, 1);
                         bot.hitReactionTime = 0;
+                        bot.staggerTime = 0;
                         bot.attackTimer = 0.8 + Math.random() * 0.8;
                         bot.arenaTargetType = null;
                         bot.arenaTargetId = null;
@@ -4167,6 +4206,11 @@
                         bot.arenaAggroId = null;
                         bot.arenaAggroUntil = 0;
                     }
+                    return;
+                }
+                if (bot.staggerTime > 0) {
+                    bot.staggerTime = Math.max(0, bot.staggerTime - dt);
+                    bot.attackTimer = Math.max(bot.attackTimer, 0.2);
                     return;
                 }
                 const toPlayer = new THREE.Vector3().subVectors(player.pos, bot.mesh.position);
@@ -4391,6 +4435,7 @@
                     ? bots[b.arenaTargetId].name : b.arenaTargetType,
                 arenaKills: b.arenaKills })),
             playerKills: player.kills,
+            playerParries: player.parries,
             playerDeaths: player.deaths
         });
         window.onload = function() {
