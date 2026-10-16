@@ -42,6 +42,7 @@ test('all 90 castle spawn-to-spawn pairs route with verified wall clearance',()=
   for(let i=0;i<starts.length;i++)for(let j=0;j<goals.length;j++){
    if(starts===goals&&i===j)continue;
    const start=nav.nearest(asPoint(starts[i])),goal=nav.nearest(asPoint(goals[j]));
+   assert.equal(nav.isReachable(start,goal),true,'Connected castle route must be reachable');
    const route=nav.findPath(start,goal);
    assert.ok(route.length>0,`Unreachable ${JSON.stringify(starts[i])} -> ${JSON.stringify(goals[j])}`);
    let previous=start;
