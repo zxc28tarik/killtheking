@@ -2627,6 +2627,11 @@
                     attackTimer: 1.4 + Math.random() * 1.4,
                     staggerTime: 0,
                     meleeWindup: 0,
+                    guardTime: 0,
+                    guardParryTime: 0,
+                    guardCooldown: 0,
+                    guardFacingYaw: 0,
+                    guardAttempts: 0,
                     walkCycle: Math.random() * 10,
                     hitFlashTimer: 0,
                     hitReactionTime: 0,
@@ -3118,6 +3123,30 @@
 
         function damageBotFromBot(attacker, victim, damage) {
             if (!attacker || attacker.dead || !victim || victim.dead || attacker.id === victim.id) return;
+            // Knight defenders must raise their shield DURING an observed wind-up.
+            // Never retroactively decide to parry when a hit is registered.
+            if (victim.role === 'knight' && victim.guardTime > 0) {
+                const defense = ArenaCombatDefense.assessShield({
+                    shielding: true, defender: victim.mesh.position,
+                    attacker: attacker.mesh.position, yaw: victim.guardFacingYaw,
+                    parryTime: victim.guardParryTime,
+                    melee: attacker.role === 'knight' || attacker.role === 'pikeman'
+                });
+                if (defense.kind === 'parry') {
+                    attacker.staggerTime = ArenaCombatDefense.STAGGER_DURATION;
+                    attacker.meleeWindup = 0;
+                    victim.guardParryTime = 0;
+                    victim.guardTime = 0;
+                    const spark = victim.mesh.position.clone().add(new THREE.Vector3(0, 1.8, 0));
+                    spawnHitSparks(spark, false, 'Kalkan');
+                    sfx.playMetalClang();
+                    return;
+                }
+                if (defense.kind === 'block') {
+                    damage = Math.round(damage * defense.multiplier);
+                    sfx.playMetalClang();
+                }
+            }
             victim.hp = Math.max(0, victim.hp - damage);
             const lethal = victim.hp <= 0;
             const delta = victim.mesh.position.clone().sub(attacker.mesh.position);
@@ -4205,6 +4234,9 @@
                         bot.hitReactionTime = 0;
                         bot.staggerTime = 0;
                         bot.meleeWindup = 0;
+                        bot.guardTime = 0;
+                        bot.guardParryTime = 0;
+                        bot.guardCooldown = 0;
                         bot.attackTimer = 0.8 + Math.random() * 0.8;
                         bot.arenaTargetType = null;
                         bot.arenaTargetId = null;
@@ -4223,6 +4255,28 @@
                 const toPlayer = new THREE.Vector3().subVectors(player.pos, bot.mesh.position);
                 const flatToPlayer = new THREE.Vector3(toPlayer.x, 0, toPlayer.z);
                 const distToPlayer = flatToPlayer.length();
+                // Bot guard starts in response to visible melee preparation,
+                // not after getting hit. Some knights attempt a late precise read.
+                bot.guardCooldown = Math.max(0, bot.guardCooldown - dt);
+                bot.guardTime = Math.max(0, bot.guardTime - dt);
+                bot.guardParryTime = Math.max(0, bot.guardParryTime - dt);
+                if (bot.role === 'knight' && bot.guardCooldown <= 0) {
+                    const threat = bots.find(other => other !== bot && !other.dead &&
+                        other.meleeWindup > 0 && other.arenaTargetType === 'bot' &&
+                        other.arenaTargetId === bot.id &&
+                        other.mesh.position.distanceTo(bot.mesh.position) < 8 &&
+                        arenaLineOfSight(other, bot.mesh.position, false));
+                    const lateRead = threat && (bot.id + threat.id + bot.guardAttempts) % 3 === 0;
+                    if (threat && (!lateRead || threat.meleeWindup <= 0.18)) {
+                        const dx = threat.mesh.position.x - bot.mesh.position.x;
+                        const dz = threat.mesh.position.z - bot.mesh.position.z;
+                        bot.guardFacingYaw = Math.atan2(-dx, -dz);
+                        bot.guardTime = 0.8;
+                        bot.guardParryTime = lateRead ? 0.23 : 0;
+                        bot.guardCooldown = 2.4;
+                        bot.guardAttempts++;
+                    }
+                }
                 const arenaTarget = chooseArenaTarget(bot);
                 const targetPosition = arenaTarget ? arenaTarget.position : null;
                 const arenaDist = arenaTarget
@@ -4370,6 +4424,10 @@
                     bot.mesh._parts.rightArm.rotation.x = -Math.PI / 3 - swingBoost + Math.sin(nowSec * 3 + bot.id) * 0.05;
                 }
 
+                if (bot.guardTime > 0 && bot.mesh._parts.leftArm) {
+                    bot.mesh._parts.leftArm.rotation.x = -1.25;
+                }
+
                 // Ramp and upper-walkway elevation remain consistent with the route.
                 const navHeight = navigator.heightAt(bot.mesh.position.x, bot.mesh.position.z);
                 bot.mesh.position.y = THREE.MathUtils.lerp(bot.mesh.position.y,
@@ -4455,6 +4513,7 @@
             bots: bots.map(b => ({ name: b.name, hp: b.hp, dead: b.dead,
                 remainingWaypoints: b.navPath.length, navigationStuckTime: b.navStuck,
                 tacticalMode: b.tacticMode, meleeWindup: b.meleeWindup,
+                guarding: b.guardTime > 0, guardParryTime: b.guardParryTime,
                 target: b.arenaTargetType === 'bot' && bots[b.arenaTargetId]
                     ? bots[b.arenaTargetId].name : b.arenaTargetType,
                 arenaKills: b.arenaKills })),
