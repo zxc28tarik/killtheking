@@ -150,6 +150,24 @@
         }
         connectRampLandings();
 
+        // Label connected regions once; firing-point planners can reject
+        // disconnected areas without running A* for every candidate.
+        const regions = new Int32Array(grid.length).fill(-1);
+        let regionCount = 0;
+        for (let i = 0; i < grid.length; i++) {
+            if (!grid[i].walkable || regions[i] !== -1) continue;
+            const queue = [i];
+            regions[i] = regionCount;
+            for (let head = 0; head < queue.length; head++) {
+                for (const edge of links[queue[head]]) {
+                    if (regions[edge.id] !== -1) continue;
+                    regions[edge.id] = regionCount;
+                    queue.push(edge.id);
+                }
+            }
+            regionCount++;
+        }
+
         function nearest(position) {
             let best = null, bestDist = Infinity;
             for (const node of grid) {
@@ -160,6 +178,19 @@
                 if (cost < bestDist) { best=node; bestDist=cost; }
             }
             return best;
+        }
+
+        // Endpoint attachment and region connectivity together prevent a
+        // candidate from snapping through a wall or off a ramp.
+        function isReachable(start, goal) {
+            if (!walkableAt(start.x, start.z, start.y == null ? heightAt(start.x, start.z) : start.y) ||
+                !walkableAt(goal.x, goal.z, goal.y == null ? heightAt(goal.x, goal.z) : goal.y)) return false;
+            const a = nearest(start), b = nearest(goal);
+            if (!a || !b || regions[a.id] !== regions[b.id]) return false;
+            const attachLimit = step * 1.85;
+            if (Math.hypot(start.x-a.x, start.z-a.z) > attachLimit ||
+                Math.hypot(goal.x-b.x, goal.z-b.z) > attachLimit) return false;
+            return clearSegment(start, a) && clearSegment(b, goal);
         }
 
         // Binary-heap A*: explore complete connected castle routes efficiently.
@@ -242,8 +273,8 @@
             return pos;
         }
 
-        return { heightAt, walkableAt, clearSegment, findPath, nearest, safeAdvance,
-                 stats:{cells:grid.length,walkable:grid.filter(n=>n.walkable).length} };
+        return { heightAt, walkableAt, clearSegment, findPath, nearest, safeAdvance, isReachable,
+                 stats:{cells:grid.length,walkable:grid.filter(n=>n.walkable).length,regions:regionCount} };
     }
 
     return {createNavigator};
