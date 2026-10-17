@@ -13,6 +13,17 @@
    throw Error('Expected arena status snapshot');
   const bots=snapshot.bots;
   const botNames=new Set(bots.map(b=>String(b.name)));
+  const tracked=snapshot.telemetry||null;
+  const slots=tracked?tracked.targetSlots:null;
+  const totalSlots=slots?Object.values(slots).reduce((n,v)=>n+asCount(v),0):0;
+  const overTime=slots?{
+   sampleCount:asCount(tracked.samples),
+   fighterObservations:totalSlots,
+   otherBots:asCount(slots.bot),player:asCount(slots.player),
+   none:asCount(slots.none),invalidSelf:asCount(slots.invalidSelf),
+   botTargetShare:totalSlots?slots.bot/totalSlots:null,
+   playerTargetShare:totalSlots?slots.player/totalSlots:null
+  }:null;
   const duration=Number.isFinite(snapshot.matchDurationSeconds)
    ? snapshot.matchDurationSeconds:240;
   const remaining=Number.isFinite(snapshot.matchRemaining)
@@ -51,8 +62,19 @@
    botDeathsTotal:fighters.reduce((n,b)=>n+b.deaths,0),
    targetingAtSnapshot:targeting,
    navigationStuckCandidates:fighters.filter(b=>b.remainingWaypoints>0&&b.navigationStuckSeconds>=2).map(b=>b.name),
+   killsByDirection:tracked?{...tracked.kills}:null,
+   playerKillsByClass:tracked?tracked.classKills.slice():null,
+   targetingOverTime:overTime,
+   navigationStuckSamples:tracked?{...tracked.stuckSamples}:null,
+   recentKills:tracked?tracked.recentKills.map(k=>({...k})):[],
+   scoreCrossCheck:tracked?{
+    playerKillsAgree:tracked.kills.playerToBot===asCount(snapshot.playerKills),
+    playerDeathsAgree:tracked.kills.botToPlayer===asCount(snapshot.playerDeaths),
+    totalBotKillsAgree:tracked.kills.botToPlayer+tracked.kills.botToBot===
+     fighters.reduce((sum,bot)=>sum+bot.kills,0)
+   }:null,
    fighters,standings,
-   notes:'Target counts are instantaneous; bot kills include bot-vs-player and bot-vs-bot kills. Class is the current selection, not a full-round history.'
+   notes:'Target counts are instantaneous; sampled targets are approximate one-second fighter observations, not attack counts. Kill directions are recorded on lethal combat events. Class selection is current; classKills tracks player kills at time of kill, not exposure time.'
   };
  }
  return {summarize};
