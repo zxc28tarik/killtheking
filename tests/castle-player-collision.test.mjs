@@ -46,8 +46,8 @@ test('200 seeded high-speed moves inside the real castle cannot end in solid wal
 });
 test('runtime wires swept player movement before vertical floor calculation',()=>{
  assert.match(game,/ArenaPlayerCollision\.move\(\{/);
- assert.match(game,/if \(swept\.hitX\) player\.vel\.x = 0/);
- assert.match(game,/if \(swept\.hitZ\) player\.vel\.z = 0/);
+ assert.match(game,/if \(swept\.hitX \|\| terrain\.hitX\) player\.vel\.x = 0/);
+ assert.match(game,/if \(swept\.hitZ \|\| terrain\.hitZ\) player\.vel\.z = 0/);
  const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
  assert.ok(html.indexOf('src/player-collision.js')>=0);
  assert.ok(html.indexOf('src/player-collision.js')<html.indexOf('src/oyun.js'));
