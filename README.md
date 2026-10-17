@@ -18,6 +18,7 @@ The Three.js r128 engine and game CSS/JavaScript are committed locally. Chakra P
 - `tests/` — Node regression checks
 - `.github/workflows/ci.yml` — GitHub Actions checks
 - `docs/ROADMAP.md` — comprehensive prioritized plan
+- `docs/ACTIVE_DEVELOPMENT_PLAN.md` — **current checked-off P1–P2 action plan**, priorities, dependencies and acceptance gates
 - `docs/DEVLOG.md` — verified changes, evidence and limitations
 
 ## First delivered milestone: Combat Foundation v2 (partial)
