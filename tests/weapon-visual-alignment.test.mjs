@@ -59,6 +59,6 @@ test('visual tip anchors are geometry-only invisible markers',()=>{
 test('attack damage and free-for-all combat remain unchanged',()=>{
  const source=readFileSync(new URL('../src/oyun.js',import.meta.url),'utf8');
  assert.match(source,/ArenaWeaponSweep\.advance\(swing, dt,/);
- assert.match(source,/damageBot\(impact\.bot, damage, impact\.isHead, swing\.weaponName/);
+ assert.match(source,/damageBot\(impact\.bot, damage, zone === 'head', swing\.weaponName/);
  assert.match(source,/chooseArenaTarget\(bot\)/);
 });
