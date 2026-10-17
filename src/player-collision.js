@@ -93,6 +93,44 @@
   }
   return {x,z,hitX,hitZ,recovered:start.corrected};
  }
+ // Ramp side faces have abrupt elevation; real entrances rise gradually.
+ // Probe the full player's footprint to avoid half-entering a tall ramp.
+ function terrainHeight(x,z,radius,groundAt){
+  return Math.max(groundAt(x,z),groundAt(x-radius,z),groundAt(x+radius,z),
+   groundAt(x,z-radius),groundAt(x,z+radius));
+ }
+ function terrainTransition({from,to,radius,height,groundAt}){
+  if(typeof groundAt!=='function')throw new Error('groundAt required');
+  const length=Math.hypot(to.x-from.x,to.z-from.z);
+  const probes=Math.max(1,Math.ceil(length/.35));
+  const foot=from.y-height;
+  let last={x:from.x,z:from.z};
+  let previous=terrainHeight(from.x,from.z,radius,groundAt);
+  for(let i=1;i<=probes;i++){
+   const t=i/probes;
+   const point={x:from.x+(to.x-from.x)*t,z:from.z+(to.z-from.z)*t};
+   const next=terrainHeight(point.x,point.z,radius,groundAt);
+   // Discontinuous RISE from below is a wall, not a climbable slope.
+   // A fighter jumping legitimately ABOVE the platform may land on it.
+   if(next-previous>.65&&foot<next-.65)return {...last,blocked:true};
+   last=point;previous=next;
+  }
+  return {x:to.x,z:to.z,blocked:false};
+ }
+ function limitRampEntry({from,to,radius,height,groundAt}){
+  const primary=terrainTransition({from,to,radius,height,groundAt});
+  if(!primary.blocked)return {...primary,hitX:false,hitZ:false};
+  const onlyX=terrainTransition({from,to:{x:to.x,z:from.z},radius,height,groundAt});
+  const onlyZ=terrainTransition({from,to:{x:from.x,z:to.z},radius,height,groundAt});
+  if(!onlyX.blocked&&onlyZ.blocked)return {x:onlyX.x,z:from.z,hitX:false,hitZ:true};
+  if(onlyX.blocked&&!onlyZ.blocked)return {x:from.x,z:onlyZ.z,hitX:true,hitZ:false};
+  if(!onlyX.blocked&&!onlyZ.blocked){
+   const dx=Math.abs(to.x-from.x),dz=Math.abs(to.z-from.z);
+   return dx>=dz?{x:onlyX.x,z:from.z,hitX:false,hitZ:true}:
+    {x:from.x,z:onlyZ.z,hitX:true,hitZ:false};
+  }
+  return {x:primary.x,z:primary.z,hitX:true,hitZ:true};
+ }
  function overlaps(point,radius,height,solids){
   for(const c of solids){
    if(!verticalBlocking(c,point.y,point.y-height))continue;
@@ -100,5 +138,5 @@
   }
   return false;
  }
- return {move,overlaps,verticalBlocking};
+ return {move,overlaps,verticalBlocking,limitRampEntry,terrainTransition};
 });
