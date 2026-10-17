@@ -30,9 +30,10 @@
 - [x] **PR #29 (A2 hazırlığı, draft, PR #28 üstüne):** FFA yönlere ayrılmış gerçek öldürmeler, 1 saniyelik örneklerle bot hedef dağılımı, sınıf vuruş anı kayıtları, navigasyon sıkışma gözlemleri, skor mutabakatı ve sonuç ekranından çevrim dışı JSON rapor indirme. 203/203 Node test, HTML build PASS. **Denge kalibrasyonu ve GPU kabulü yapılmadı.**
 - [x] **PR #30 (A2 AI güvenliği, draft, PR #29 üstüne):** Rotada 0,55 sn sonrasında kontrollü yeniden planlama; 3,2 sn boyunca ilerlemeyen botun erişilemeyen hedefi kısa süreliğine değiştirmesi; ışınlanma veya duvar içinden geçiş yok. Sürekli sıkışma sayacı artık rota yenilemesinde sıfırlanmıyor. Node ve offline CI PASS; GPU kabulü yapılmadı.
 - [x] **PR #31 (A3 ilk animasyon cila, draft, PR #30 üstüne):** Botların hareket/taktik hedefi dönüşleri en kısa açıdan kademeli; yalnız mevcut mesh dönüşüne etki eder, fizik ve hasar değişmez. Boş waypoint sırasında sıkışma raporlaması düzeltildi. **217/217 Node testi + offline paket PASS**, fakat gerçek FPS/TPS video/görsel kabulü yapılmadı.
-- [ ] **A0 #27:** dört dakikalık WebGL uçtan uca oynanış kabulü hâlâ açık. Gerçek oynanış kabul edilene kadar PR #28–#31 draft kalır.
+- [x] **PR #32 (A2 Bot Combat 2.1, draft, PR #31 üstüne):** Şövalye/kargı/okçu/tüfekçi botlarında rol bazlı saldırı ritmi, görülebilir menzilli nişan hazırlığı, gerçek ön yöne nişan kontrolü, hedef değişince vuruşun iptali, yakın dövüş oyuncusuna şövalye kalkan tepkisi ve vurulan menzilli botta kısa güvenli yana hareket. Bot hasarları 14–20 → 19–25 bandında ölçülü artırıldı; oyuncu hasarı, fizik, görseller ve altı botlu FFA korundu. **Gerçek tarayıcıda zorluk ve denge onayı yapılmadı.** Ayrıntı: `docs/AI_COMBAT_2_1_BALANCE.md`.
+- [ ] **A0 #27:** dört dakikalık WebGL uçtan uca oynanış kabulü hâlâ açık. Gerçek oynanış kabul edilene kadar PR #28–#32 draft kalır.
 - [ ] **Sıradaki gerçek test:** PR #29 paketiyle 2, 4, 8 dakika, yeniden oynama, sonuç JSON indirme ve dört sınıfta toplam 10+ dakika oynanış denemesi. Rehber: `docs/A2_COMBAT_BALANCE_QA.md`.
-- [ ] **Bağımlılık sırası:** PR #28 → #29 → #30 → #31 → ana dal. AI savaş dengesi ve animasyon görüntü kabulü sonrasında A4/A5'e geçilir.
+- [ ] **Bağımlılık sırası:** PR #28 → #29 → #30 → #31 → #32 → ana dal. Bot hasarları ve zekâsı kullanıcı oynanışında onaylanmadan A4/A5 içerik geliştirmesine geçilmez.
 
 ## İş sırası ve bağımlılıklar
 

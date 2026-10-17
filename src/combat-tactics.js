@@ -10,7 +10,8 @@
     const TOL = 1e-6;
     const sqrtHalf = Math.SQRT1_2;
     const DIRECTIONS = [[1,0],[sqrtHalf,sqrtHalf],[0,1],[-sqrtHalf,sqrtHalf],[-1,0],[-sqrtHalf,-sqrtHalf],[0,-1],[sqrtHalf,-sqrtHalf]];
-    function plan({role, from, target, range, hasLineOfSight, navigator, canSeeFrom, seed = 0}) {
+    function plan({role, from, target, range, hasLineOfSight, navigator, canSeeFrom,
+        seed = 0, underPressure = false}) {
         const dx = target.x - from.x, dz = target.z - from.z;
         const distance = Math.hypot(dx, dz);
         const nx = distance > TOL ? dx / distance : 1, nz = distance > TOL ? dz / distance : 0;
@@ -28,12 +29,17 @@
             const direction = away ? -1 : 1;
             const start = point(from.x, from.z);
             const sign = (seed & 1) ? 1 : -1;
-            const vectors = [
-                [nx * direction, nz * direction],
-                [-nz * sign, nx * sign], [nz * sign, -nx * sign],
-                [nx * direction * 0.65 - nz * 0.76 * sign, nz * direction * 0.65 + nx * 0.76 * sign],
-                [nx * direction * 0.65 + nz * 0.76 * sign, nz * direction * 0.65 - nx * 0.76 * sign]
-            ];
+            const side1 = [-nz * sign, nx * sign];
+            const side2 = [nz * sign, -nx * sign];
+            const angled1 = [nx * direction * 0.65 - nz * 0.76 * sign,
+                nz * direction * 0.65 + nx * 0.76 * sign];
+            const angled2 = [nx * direction * 0.65 + nz * 0.76 * sign,
+                nz * direction * 0.65 - nx * 0.76 * sign];
+            // Retreat gets distance first; evasive strafe must try lateral lanes
+            // before moving TOWARD the opponent, especially under fire.
+            const vectors = away
+                ? [[nx * direction, nz * direction],side1,side2,angled1,angled2]
+                : [side1,side2,angled1,angled2,[nx,nz]];
             for (const [vx,vz] of vectors) {
                 for (const scale of [1, 0.6]) {
                     const candidate = point(from.x + vx * spacing * scale, from.z + vz * spacing * scale);
@@ -73,6 +79,9 @@
             return approach();
         }
         if (distance > Math.min(range * 0.76, preferred + 5)) return approach();
+        // Keep a pressured archer/musketeer moving while still using validated
+        // A* reachable positions; never grant extra damage or see through walls.
+        if (underPressure) return dodge(false, 4.5);
         return hold();
     }
     return {plan};
