@@ -1,35 +1,40 @@
 # A2 — Serbest Arena savaş dengesi ölçüm kılavuzu
 
-**Durum:** Kod hazırlığı (A2); **gerçek GPU oynanış kabulü bekliyor**. Bu belge sonuç/denge onayı değildir.
+**Durum:** PR #29 üzerinde kod ve otomatik testler; **gerçek Chrome/Edge WebGL kabulü bekliyor**. Bu belge başarıyla sonuçlandırılmış denge testi değildir.
 
-## Amaç
-Dört sınıfın karşılaştırmalı öldürme/ölüm davranışını, botların yalnız oyuncuya saldırmak yerine birbirlerini hedeflemesini ve navigasyon sıkışmalarını gözlemlemek. Bu aşama hız, hasar, görsel, sınıf veya bot sayısını değiştirmez.
+## Ne kaydediyoruz?
 
-## Nasıl test edilir?
-1. Chrome/Edge'de offline HTML'yi aç. F12 > Console'da `window.krunkerArenaBalanceReport()` çağır. Bu nesne **yalnız mevcut andaki** FFA skorlarını ve anlık hedefleri raporlar.
-2. Her sınıf (şövalye, piyade/kargı, okçu, tüfekçi) ile aynı süre ve aynı haritada 10 dakika oyna. **Maç sırasında sınıf değiştirme**: rapor yalnız geçerli sınıfı gösterir, değişiklik geçmişini tutmaz.
-3. Oynanış esnasında farklı zamanlarda `window.krunkerArenaBalanceReport().targetingAtSnapshot` çıktısını incele. `otherBots` alanı botların o andaki diğer bot hedeflerini sayar. Sıfır tek başına hedefleme hatası kanıtlamaz; zaman boyunca gözlemle.
-4. Raporun `fighters` ve `standings` alanlarını karşılaştır, oyuncu K/D ve sınıflar arası aşırı üstünlük olup olmadığına bak. `navigationStuckCandidates` listesine düşen isimler yalnız potansiyel sıkışma göstergesidir; gerçek konumda doğrula.
-5. Duvar arkasından mermi/ok isabetini ve yakın dövüş temasını görsel olarak ayrıca kontrol et. Otomatik Node testleri fiziksel WebGL hatalarını görmez.
+- **Gerçek öldürmeler:** `killsByDirection.playerToBot`, `botToPlayer`, `botToBot` yalnız öldürücü vuruşta güncellenir. Böylece bot-bot öldürmeleri, botların oyuncuyu öldürmeleriyle karışmaz.
+- **Hedef tercihleri:** `targetingOverTime` oynanan oyun zamanı içinde yaklaşık her saniye, hayatta olan her botun hedefini örnekler. `botTargetShare` hedef anlık gözlemlerinin toplamı içindeki diğer-bot hedef payıdır. Bu değer saldırı sayısı veya vurma oranı **değildir**.
+- **Sıkışma örnekleri:** `navigationStuckSamples` bot başına potansiyel rota takılmalarını sayar; görsel doğrulama gerekir.
+- **Sınıf katkısı:** `playerKillsByClass` her oyuncu öldürmesini vuruş anında seçili olan sınıfa kaydeder. **Sınıfta geçirilen süreyi** kaydetmez; sınıflar arasında hasar/denge sonucu çıkarmak için yeterli değildir.
+- **Tutarlılık:** `scoreCrossCheck` telemetri olaylarını oyun skoruyla karşılaştırır. Normal maçta tüm eşitlikler `true` olmalı.
+- **Son 24 olay:** `recentKills` sınırlı örnek tutar; toplam öldürme sayıları bundan bağımsız olarak tam sayılır.
 
-### Örnek tarayıcı komutları
+Her yeni maç başladığında ölçümler sıfırlanır, duraklatılan maçta örnekleme işlemez. Hiçbir telemetri internetten gönderilmez.
+
+## Kolay test akışı
+
+1. GitHub Actions'taki en güncel PR #29 `killtheking-playable-html` paketini indirip çıkart; HTML'yi Chrome veya Edge'de aç.
+2. Şimdilik **4 dakika varsayılan** FFA'yı oyna. TAB canlı sıralamayı gösterir. ESC ile duraklatmayı dene.
+3. Maç sonunda **TEST RAPORU (JSON)** düğmesine bas. `KillTheKing_FFA_QA_4min.json` benzeri dosyayı kaydet. Rapor hem sonuç tablosunu hem de ölçüm özetini içerir.
+4. 2 ve 8 dakikalık maçlarda aynı süreci tekrarla. Yeni maça geçildiğinde skor ve telemetri tamamen sıfırlanmalı.
+5. Dört sınıfın her biri için **en az 10 dakika toplam oynanış** hedefle; tek maç en fazla 8 dakika olduğundan aynı sınıfla art arda maçlar oyna. Raporları ayrı ayrı tut.
+6. Surlar/kapı, rampalar ve ateş noktalarında dolaş; duvar arkasından isabet, botların sıkışması ve yanlış sınıf/respawn davranışını gözle kontrol et.
+
+İsteğe bağlı geliştirici konsolu komutları:
 
 ```js
-// O anki ölçüm
-console.table(window.krunkerArenaBalanceReport().fighters);
-console.log(window.krunkerArenaBalanceReport().targetingAtSnapshot);
-
-// İsteğe bağlı 1 saniyelik gözlem (Console'da çalıştır)
-const qaSamples = [];
-const qaInterval = setInterval(() => qaSamples.push(window.krunkerArenaBalanceReport()), 1000);
-// Durdurmak için:
-clearInterval(qaInterval);
-console.table(qaSamples.map(s => ({ second: s.elapsedSeconds,
-  botTargets: s.targetingAtSnapshot.otherBots,
-  playerTargets: s.targetingAtSnapshot.player,
-  suspectedStuck: s.navigationStuckCandidates.length })));
+// Maçın o ana kadarki kümülatif istatistikleri
+const qa = window.krunkerArenaBalanceReport();
+console.log(qa.killsByDirection, qa.targetingOverTime, qa.scoreCrossCheck);
+console.table(qa.fighters);
+// O anki bot hedefleri (yalnız anlık ölçüm)
+console.log(qa.targetingAtSnapshot);
 ```
 
-**İstatistik yorumu:** `botKillsTotal`, botların oyuncuyu öldürdüğü olayları da içerir; tamamını bot-bot öldürmeleri olarak yorumlama. `targetingAtSnapshot` zaman aralığı/olasılık değil, sadece gözlem anıdır. Sınıf için hasar/AI değişikliği yalnız ölçüm + kullanıcı oynanış geri bildirimi sonrasında.
+## Yorumlama uyarıları ve kabul kapısı
 
-**Kabul kapısı:** Dört sınıfın 10+ dakikalık gerçek maç denemeleri, bağımsız bot-bot savaşının doğrulanması, bariz duvar arkası isabeti ve tek sınıfın mutlak üstünlüğü bulunmaması. A0 (#27) GPU kabulü halen ayrı açık görevdir.
+Gerçek tarayıcı testleri olmadan AI dengelendi veya maç kararlı sonucu çıkarma. Bot hedefleri bir saniyelik yaklaşık örneklerdir, bütün atakların dökümü değildir. Sadece `kill` dağılımına bakarak silah dengesi ayarlanamaz; sınıfta geçirilen süre, isabetler, parry ve duvar engeli videolarla birlikte değerlendirilmelidir.
+
+**Kabul:** A0 issue #27 tam 4 dakikalık GPU maç/replay; A1 2/4/8 süre/ESC/TAB denemeleri; A2 dört sınıfla 10+ dakika gerçek oynanış, diğer botları hedefleyen savaşlar, kapı/sur sıkışma kontrolü, skorların ve indirilen raporun tutarlılığı. Node testleri yalnız otomatik doğrulama kapısıdır.
