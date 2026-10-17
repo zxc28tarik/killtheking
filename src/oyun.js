@@ -3576,8 +3576,60 @@
         const matchResultsOverlay = document.getElementById('match-results-overlay');
         const matchResultsTable = document.getElementById('match-results-table');
         const matchWinnerTitle = document.getElementById('match-winner-title');
+        const matchDurationLabel = document.getElementById('match-duration-label');
+        const liveScoreboardOverlay = document.getElementById('match-live-scoreboard');
+        const liveScoreboardTable = document.getElementById('match-live-table');
+        const matchDurationButtons = [...document.querySelectorAll('[data-duration-seconds]')];
+        let tabScoreboardHeld = false;
+        let scoreboardRefreshSeconds = 0;
+
+        function hideLiveScoreboard() {
+            tabScoreboardHeld = false;
+            liveScoreboardOverlay.classList.add('hidden');
+            liveScoreboardOverlay.setAttribute('aria-hidden', 'true');
+        }
+
+        function renderLiveScoreboard() {
+            if (!tabScoreboardHeld || arenaMatch.phase !== 'playing') return;
+            const standings = ArenaMatch.leaderboard(player, bots);
+            liveScoreboardTable.replaceChildren();
+            for (const entry of standings) {
+                const row = document.createElement('div');
+                row.className = 'match-live-row' + (entry.isPlayer ? ' is-player' : '');
+                for (const value of [entry.rank, entry.name, entry.kills, entry.deaths, entry.kd.toFixed(2)]) {
+                    const cell = document.createElement('span');
+                    cell.className = 'match-live-cell';
+                    cell.textContent = String(value);
+                    row.appendChild(cell);
+                }
+                liveScoreboardTable.appendChild(row);
+            }
+            liveScoreboardOverlay.classList.remove('hidden');
+            liveScoreboardOverlay.setAttribute('aria-hidden', 'false');
+        }
+
+        function syncMatchDurationControls() {
+            const editable = arenaMatch.phase === 'menu';
+            matchDurationButtons.forEach(button => {
+                const selected = Number(button.dataset.durationSeconds) === arenaMatch.durationSeconds;
+                button.disabled = !editable;
+                button.classList.toggle('selected', selected);
+                button.setAttribute('aria-pressed', String(selected));
+            });
+            matchDurationLabel.textContent = ArenaMatch.clock(arenaMatch.durationSeconds);
+        }
+
+        matchDurationButtons.forEach(button => button.addEventListener('click', () => {
+            if (arenaMatch.phase !== 'menu') return;
+            ArenaMatch.configure(arenaMatch, Number(button.dataset.durationSeconds));
+            matchTimeSeconds = arenaMatch.remaining;
+            document.getElementById('hud-timer').textContent = ArenaMatch.clock(matchTimeSeconds);
+            syncMatchDurationControls();
+        }));
 
         function resetFreeForAllRound() {
+            hideLiveScoreboard();
+            scoreboardRefreshSeconds = 0;
             player.kills = 0;
             player.deaths = 0;
             player.streak = 0;
@@ -3648,6 +3700,7 @@
             document.getElementById('bow-charge-ui').classList.add('hidden');
             document.getElementById('shield-overlay').style.opacity = '0';
             ArenaMatch.begin(arenaMatch);
+            syncMatchDurationControls();
             matchTimeSeconds = arenaMatch.remaining;
             document.getElementById('hud-timer').textContent = ArenaMatch.clock(matchTimeSeconds);
             matchResultsOverlay.classList.add('hidden');
@@ -3655,7 +3708,9 @@
         }
 
         function showMatchResults() {
+            hideLiveScoreboard();
             const result = ArenaMatch.finish(arenaMatch, player, bots);
+            matchDurationLabel.textContent = ArenaMatch.clock(result.seconds);
             isGameActive = false;
             activeWeaponSwing = null;
             Object.keys(keys).forEach(key => { keys[key] = false; });
@@ -3692,6 +3747,7 @@
                 resetFreeForAllRound();
             else ArenaMatch.resume(arenaMatch);
             isGameActive = arenaMatch.phase === 'playing';
+            syncMatchDurationControls();
             menuOverlay.classList.add('hidden');
             if (canvas.requestPointerLock) canvas.requestPointerLock();
         });
@@ -3704,7 +3760,11 @@
         });
         document.getElementById('match-menu-btn').addEventListener('click', () => {
             arenaMatch.phase = 'menu';
-            arenaMatch.result = null;
+            ArenaMatch.configure(arenaMatch, arenaMatch.durationSeconds);
+            matchTimeSeconds = arenaMatch.remaining;
+            document.getElementById('hud-timer').textContent = ArenaMatch.clock(matchTimeSeconds);
+            syncMatchDurationControls();
+            hideLiveScoreboard();
             isGameActive = false;
             matchResultsOverlay.classList.add('hidden');
             menuOverlay.classList.remove('hidden');
@@ -3717,9 +3777,11 @@
                 isGameActive = arenaMatch.phase === 'playing';
                 if (isGameActive) menuOverlay.classList.add('hidden');
             } else {
+                hideLiveScoreboard();
                 if (arenaMatch.phase === 'playing') ArenaMatch.pause(arenaMatch);
                 isGameActive = false;
                 activeWeaponSwing = null;
+                syncMatchDurationControls();
                 if (arenaMatch.phase !== 'results') {
                     menuOverlay.classList.remove('hidden');
                     playBtn.textContent = arenaMatch.phase === 'paused'
@@ -3793,6 +3855,18 @@
         window.addEventListener('contextmenu', e => e.preventDefault());
 
         window.addEventListener('keydown', (e) => {
+            if (e.code === 'Tab') {
+                // Keep native TAB keyboard navigation usable in the menu and results.
+                if (isGameActive && arenaMatch.phase === 'playing') {
+                    e.preventDefault();
+                    tabScoreboardHeld = true;
+                    if (!e.repeat) {
+                        renderLiveScoreboard();
+                        scoreboardRefreshSeconds = 0.15;
+                    }
+                }
+                return;
+            }
             keys[e.code] = true;
             if (e.code === 'Digit1') selectClass(0);
             if (e.code === 'Digit2') selectClass(1);
@@ -3805,7 +3879,22 @@
         });
 
         window.addEventListener('keyup', (e) => {
+            if (e.code === 'Tab') {
+                if (tabScoreboardHeld) e.preventDefault();
+                hideLiveScoreboard();
+                return;
+            }
             keys[e.code] = false;
+        });
+        window.addEventListener('blur', () => {
+            hideLiveScoreboard();
+            Object.keys(keys).forEach(key => { keys[key] = false; });
+            if (arenaMatch.phase === 'playing') {
+                ArenaMatch.pause(arenaMatch);
+                isGameActive = false;
+                if (document.pointerLockElement === canvas && document.exitPointerLock)
+                    document.exitPointerLock();
+            }
         });
 
         const speedLinesCanvas = document.getElementById('speed-lines-canvas');
@@ -3985,7 +4074,8 @@
         // ============================================================================
         let lastTime = performance.now();
         const arenaMatch = ArenaMatch.create();
-        let matchTimeSeconds = ArenaMatch.DURATION;
+        let matchTimeSeconds = arenaMatch.remaining;
+        syncMatchDurationControls();
         let fpsFrames = 0;
         let fpsTimer = 0;
 
@@ -4801,6 +4891,13 @@
             matchTimeSeconds = arenaMatch.remaining;
             document.getElementById('hud-timer').textContent = ArenaMatch.clock(matchTimeSeconds);
             if (matchFinished) showMatchResults();
+            if (tabScoreboardHeld && arenaMatch.phase === 'playing') {
+                scoreboardRefreshSeconds -= dt;
+                if (scoreboardRefreshSeconds <= 0) {
+                    renderLiveScoreboard();
+                    scoreboardRefreshSeconds = 0.15;
+                }
+            }
 
             renderRadar();
 
@@ -4833,6 +4930,8 @@
             mode: 'serbest-arena',
             matchPhase: arenaMatch.phase,
             matchRemaining: arenaMatch.remaining,
+            matchDurationSeconds: arenaMatch.durationSeconds,
+            liveScoreboardVisible: !liveScoreboardOverlay.classList.contains('hidden'),
             matchResults: arenaMatch.result,
             matchStandings: ArenaMatch.leaderboard(player, bots),
             botCount: bots.length,

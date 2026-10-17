@@ -204,11 +204,21 @@
         </div>
     </div>
 
+    <!-- Hold TAB during play: uses the exact same FFA standings as match results. -->
+    <div id="match-live-scoreboard" class="hidden" aria-hidden="true">
+        <section class="match-live-panel" aria-label="Canlı FFA skor tablosu">
+            <div class="match-live-heading"><strong>SERBEST ARENA</strong><span>CANLI SIRALAMA • TAB</span></div>
+            <div class="match-live-head"><span>#</span><span>OYUNCU</span><span>ÖLD.</span><span>ÖLÜM</span><span>K/D</span></div>
+            <div id="match-live-table" class="match-live-table"></div>
+            <p class="match-live-hint">En çok öldürme kazanır • Eşitlikte az ölüm öne geçer</p>
+        </section>
+    </div>
+
     <!-- End-of-match scoreboard: matches existing HUD style without changing arena art. -->
     <div id="match-results-overlay" class="hidden fixed inset-0 z-40 bg-slate-950/95 backdrop-blur-lg flex items-center justify-center p-4 overflow-y-auto">
         <section class="w-full max-w-2xl rounded-xl border-2 border-amber-500/70 bg-slate-900/95 p-5 sm:p-8 shadow-2xl my-auto">
             <div class="text-center mb-5">
-                <div class="text-xs font-black tracking-widest text-sky-300 krunker-text">SERBEST ARENA • 04:00 DAKİKALIK MAÇ</div>
+                <div class="text-xs font-black tracking-widest text-sky-300 krunker-text">SERBEST ARENA • <span id="match-duration-label">04:00</span> DAKİKALIK MAÇ</div>
                 <h2 id="match-winner-title" class="text-2xl sm:text-4xl font-black text-amber-400 krunker-text mt-3">MAÇ SONUCU</h2>
                 <p class="text-sm text-slate-300 mt-2">En fazla öldürme kazanır. Eşitlikte daha az ölüm öne geçer.</p>
             </div>
@@ -355,6 +365,15 @@
                 </div>
             </div>
 
+            <!-- Duration applies to the next round; changing it mid-round is disabled. -->
+            <div class="match-duration-picker" id="match-duration-controls" role="group" aria-label="Maç süresi seçimi">
+                <strong>MAÇ SÜRESİ</strong>
+                <button type="button" data-duration-seconds="120" aria-pressed="false">02:00</button>
+                <button type="button" data-duration-seconds="240" aria-pressed="true" class="selected">04:00 • VARSAYILAN</button>
+                <button type="button" data-duration-seconds="480" aria-pressed="false">08:00</button>
+                <span class="match-duration-help">6 bot • Herkes herkese karşı • Maç sırasında kilitli</span>
+            </div>
+
             <!-- Controls Guide & Play CTA -->
             <div class="flex flex-col md:flex-row justify-between items-center gap-4 bg-slate-950/80 p-4 rounded-xl border border-white/10">
                 <div class="grid grid-cols-2 sm:grid-cols-3 gap-x-5 gap-y-1.5 text-xs sm:text-sm text-gray-300">
@@ -364,6 +383,7 @@
                     <div><strong class="text-emerald-400">SAĞ TIK:</strong> Kalkan / Hücum / Zoom</div>
                     <div><strong class="text-rose-400">F veya V:</strong> Süngü / Kalkan Çarpması</div>
                     <div><strong class="text-amber-400">[P] &amp; [H]:</strong> 3. Şahıs Karakter &amp; Atmosfer</div>
+                    <div><strong class="text-sky-400">[TAB]:</strong> Basılı tut: canlı sıralama</div>
                 </div>
 
                 <button id="play-btn" class="w-full md:w-auto px-8 py-4 bg-gradient-to-b from-amber-400 to-amber-600 hover:from-amber-300 hover:to-amber-500 text-slate-950 font-black text-xl rounded-lg shadow-[0_0_25px_rgba(245,158,11,0.55)] border-2 border-amber-200 tracking-wider uppercase transition transform active:scale-95 cursor-pointer">
