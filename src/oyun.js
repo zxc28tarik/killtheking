@@ -3771,6 +3771,26 @@
             menuOverlay.classList.add('hidden');
             if (canvas.requestPointerLock) canvas.requestPointerLock();
         });
+        // Optional local diagnostic export after a round; no network or gameplay mutation.
+        document.getElementById('match-qa-export-btn').addEventListener('click', () => {
+            if (arenaMatch.phase !== 'results' || !arenaMatch.result) return;
+            const report = {
+                schema: 'killtheking-ffa-qa-v1',
+                matchResult: arenaMatch.result,
+                metrics: window.krunkerArenaBalanceReport()
+            };
+            const blob = new Blob([JSON.stringify(report, null, 2)],
+                {type:'application/json'});
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'KillTheKing_FFA_QA_' +
+                Math.round(arenaMatch.durationSeconds / 60) + 'min.json';
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+        });
         document.getElementById('match-menu-btn').addEventListener('click', () => {
             arenaMatch.phase = 'menu';
             ArenaMatch.configure(arenaMatch, arenaMatch.durationSeconds);
