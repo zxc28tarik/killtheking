@@ -49,5 +49,5 @@ test('melee bots telegraph an attack before applying damage',()=>{
  }
  assert.match(src,/if \(bot\.meleeWindup > 0\)/);
  assert.match(src,/arenaLineOfSight\(bot, targetPosition, arenaTarget\.type === 'player'\)/);
- assert.match(src,/bot\.meleeWindup = 0;\s*bot\.attackTimer = 0\.35/);
+ assert.match(src,/bot\.meleeWindup = 0;\s*bot\.windupTargetKey = null;\s*bot\.attackTimer = 0\.35/);
 });
