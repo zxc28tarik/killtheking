@@ -3009,6 +3009,10 @@
             if (bot.hp <= 0) {
                 player.kills++;
                 bot.arenaDeaths++;
+                ArenaTelemetry.recordKill(arenaTelemetry, 'player', 'bot:' + bot.id, {
+                    classIdx:player.classIdx, weapon:weaponName,
+                    second:arenaMatch.durationSeconds - arenaMatch.remaining
+                });
                 player.streak++;
                 player.hp = Math.min(player.maxHp, player.hp + 30);
                 updateHUD();
@@ -3234,6 +3238,9 @@
             if (lethal) {
                 attacker.arenaKills++;
                 victim.arenaDeaths++;
+                ArenaTelemetry.recordKill(arenaTelemetry, 'bot:' + attacker.id,
+                    'bot:' + victim.id, {weapon:attacker.weapon,
+                        second:arenaMatch.durationSeconds - arenaMatch.remaining});
                 addKillFeed(attacker.name, attacker.weapon, victim.name, false);
                 victim.dead = true;
                 victim.hp = 0;
@@ -3310,6 +3317,10 @@
             if (player.hp <= 0) {
                 player.deaths++;
                 bot.arenaKills++;
+                ArenaTelemetry.recordKill(arenaTelemetry, 'bot:' + bot.id, 'player', {
+                    weapon:bot.weapon,
+                    second:arenaMatch.durationSeconds - arenaMatch.remaining
+                });
                 player.streak = 0;
                 player.hp = player.maxHp;
                 addKillFeed(bot.name, bot.weapon, 'Sen_1600', false);
@@ -3630,6 +3641,8 @@
         function resetFreeForAllRound() {
             hideLiveScoreboard();
             scoreboardRefreshSeconds = 0;
+            ArenaTelemetry.reset(arenaTelemetry);
+            telemetrySampleAccumulator = 0;
             player.kills = 0;
             player.deaths = 0;
             player.streak = 0;
@@ -3757,6 +3770,26 @@
             isGameActive = true;
             menuOverlay.classList.add('hidden');
             if (canvas.requestPointerLock) canvas.requestPointerLock();
+        });
+        // Optional local diagnostic export after a round; no network or gameplay mutation.
+        document.getElementById('match-qa-export-btn').addEventListener('click', () => {
+            if (arenaMatch.phase !== 'results' || !arenaMatch.result) return;
+            const report = {
+                schema: 'killtheking-ffa-qa-v1',
+                matchResult: arenaMatch.result,
+                metrics: window.krunkerArenaBalanceReport()
+            };
+            const blob = new Blob([JSON.stringify(report, null, 2)],
+                {type:'application/json'});
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'KillTheKing_FFA_QA_' +
+                Math.round(arenaMatch.durationSeconds / 60) + 'min.json';
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
         });
         document.getElementById('match-menu-btn').addEventListener('click', () => {
             arenaMatch.phase = 'menu';
@@ -4074,6 +4107,8 @@
         // ============================================================================
         let lastTime = performance.now();
         const arenaMatch = ArenaMatch.create();
+        const arenaTelemetry = ArenaTelemetry.create();
+        let telemetrySampleAccumulator = 0;
         let matchTimeSeconds = arenaMatch.remaining;
         syncMatchDurationControls();
         let fpsFrames = 0;
@@ -4886,6 +4921,14 @@
                 }
             });
 
+            // Observations every game-time second; pausing stops updateGame entirely.
+            // Sampling is measurement-only: never influences targeting or damage.
+            telemetrySampleAccumulator += dt;
+            if (telemetrySampleAccumulator >= 1) {
+                ArenaTelemetry.sampleTargets(arenaTelemetry, bots);
+                telemetrySampleAccumulator -= 1;
+            }
+
             // 6. Match Timer, Radar & FPS Counter
             const matchFinished = ArenaMatch.tick(arenaMatch, dt);
             matchTimeSeconds = arenaMatch.remaining;
@@ -4932,10 +4975,13 @@
             matchRemaining: arenaMatch.remaining,
             matchDurationSeconds: arenaMatch.durationSeconds,
             liveScoreboardVisible: !liveScoreboardOverlay.classList.contains('hidden'),
+            telemetry: ArenaTelemetry.snapshot(arenaTelemetry),
             matchResults: arenaMatch.result,
             matchStandings: ArenaMatch.leaderboard(player, bots),
+            playerClassIdx: player.classIdx,
+            playerClassName: CLASSES[player.classIdx].name,
             botCount: bots.length,
-            bots: bots.map(b => ({ name: b.name, hp: b.hp, dead: b.dead,
+            bots: bots.map(b => ({ name: b.name, role: b.role, weapon: b.weapon, hp: b.hp, dead: b.dead,
                 remainingWaypoints: b.navPath.length, navigationStuckTime: b.navStuck,
                 tacticalMode: b.tacticMode, meleeWindup: b.meleeWindup,
                 guarding: b.guardTime > 0, guardParryTime: b.guardParryTime,
@@ -4958,6 +5004,8 @@
                     return {x:local.x,y:local.y,z:local.z};
                 })() : null
         });
+        // Read-only A2 combat balance QA: computed only on explicit developer inspection.
+        window.krunkerArenaBalanceReport = () => ArenaQAReport.summarize(window.krunkerArenaStatus());
         window.onload = function() {
             animate();
         };

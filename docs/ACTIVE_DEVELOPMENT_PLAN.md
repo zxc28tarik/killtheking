@@ -2,8 +2,8 @@
 
 **Güncelleme:** 17 Ekim 2026  
 **Ana depo:** zxc28tarik/killtheking  
-**Güncel doğrulanan main:** f156bd91d09aa98344f6120a3688240223b404a1  
-**Test:** GitHub Actions 175/175 PASS; otomatik çevrim dışı HTML paketi 14 gömülü JS bloğuyla başarılı.  
+**Güncel doğrulanan main:** 78f5df889cf0832b47133c73f85ef017be304fb8  
+**Temel main testi:** 175/175 PASS (PR #26 sonrası), derlenebilir offline HTML. **PR #29 geliştirme dalı:** 203/203 Node testi PASS ve offline paket başarıyla oluşturuldu. Bu branch sonucu main veya gerçek GPU kabulü değildir.  
 **Bu belge yaşayan uygulama planıdır.** Eski docs/ROADMAP.md ürün kapsamını açıklar; buradaki ilerleme işaretleri ve öncelikler güncel uygulama durumunu gösterir.
 
 ## Sabit ürün kuralları
@@ -23,6 +23,14 @@
 - [x] Animasyon 2.0 temeli: bot ile TPS oyuncuda mesafe temelli yürüme; kalkan, saldırı, zıplama, kayma, darbe/ölüm pozları.
 - [x] **P1 Maç Sistemi 1.0 kodu (PR #26):** 240 saniyede FFA maç sonu, 7 katılımcı sıralaması, kazanan, sonuç ekranı, tekrar oyna ve ana menü. Botun oyuncuyu öldürmesi de skora dahil.
 - [x] Çalışan GH Actions paketi ve en son 175/175 Node testi. **Gerçek GPU/WebGL kabulü bununla eşdeğer değildir.**
+
+## Devam eden geliştirme dalları — kodlanmış, henüz kabul edilmemiş
+
+- [x] **PR #28 (A1, draft, main'e birleştirilmedi):** TAB basılı canlı 7 kişilik sıralama; menüde 2 / 4 / 8 dakika; varsayılan 4 dakika; ESC/pointer-lock testleri. CI başarılı. **Gerçek Chrome/Edge kabulü yapılmadı.**
+- [x] **PR #29 (A2 hazırlığı, draft, PR #28 üstüne):** FFA yönlere ayrılmış gerçek öldürmeler, 1 saniyelik örneklerle bot hedef dağılımı, sınıf vuruş anı kayıtları, navigasyon sıkışma gözlemleri, skor mutabakatı ve sonuç ekranından çevrim dışı JSON rapor indirme. 203/203 Node test, HTML build PASS. **Denge kalibrasyonu ve GPU kabulü yapılmadı.**
+- [ ] **A0 #27:** dört dakikalık WebGL uçtan uca oynanış kabulü hâlâ açık. Gerçek oynanış kabul edilene kadar PR #28 / #29 draft kalır.
+- [ ] **Sıradaki gerçek test:** PR #29 paketiyle 2, 4, 8 dakika, yeniden oynama, sonuç JSON indirme ve dört sınıfta toplam 10+ dakika oynanış denemesi. Rehber: `docs/A2_COMBAT_BALANCE_QA.md`.
+- [ ] **Bağımlılık sırası:** #28 → #29 → ana dal; sonraki A3/A4 içerik geliştirmesi bu kalite kapısı geçildikten sonra.
 
 ## İş sırası ve bağımlılıklar
 
