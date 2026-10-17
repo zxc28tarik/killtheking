@@ -35,7 +35,7 @@ test('jumping fully above low obstacle may cross it',()=>{
  const p=sweep(actor(0,0,7),250,0,[box(4.9,5.1,-3,3,0,3)]);
  assert.ok(p.x>12 && !p.hitX);
 });
-test('high wall blocks when player's head vertically overlaps it',()=>{
+test('high wall blocks when player head vertically overlaps it',()=>{
  const p=sweep(actor(0,0,8),250,0,[box(4.9,5.1,-3,3,7,13)]);
  assert.equal(p.hitX,true);
 });
