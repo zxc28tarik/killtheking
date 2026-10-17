@@ -42,7 +42,11 @@ test('parry state is isolated to player knight, bot attacks and freeze',()=>{
 
 test('melee bots telegraph an attack before applying damage',()=>{
  const src=readFileSync(new URL('../src/oyun.js',import.meta.url),'utf8');
- assert.match(src,/bot\.meleeWindup = 0\.36/);
+ assert.match(src,/bot\.meleeWindup = ArenaBotOffense\.windup\(bot\.role\)/);
+ const O=require('../src/arena-bot-offense.js');
+ for(const role of ['knight','pikeman']){
+  assert.ok(O.windup(role)>=.30,'melee attack windup stays reactable');
+ }
  assert.match(src,/if \(bot\.meleeWindup > 0\)/);
  assert.match(src,/arenaLineOfSight\(bot, targetPosition, arenaTarget\.type === 'player'\)/);
  assert.match(src,/bot\.meleeWindup = 0;\s*bot\.attackTimer = 0\.35/);
