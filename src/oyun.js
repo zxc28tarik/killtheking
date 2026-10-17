@@ -3856,8 +3856,9 @@
 
         window.addEventListener('keydown', (e) => {
             if (e.code === 'Tab') {
-                e.preventDefault();
+                // Keep native TAB keyboard navigation usable in the menu and results.
                 if (isGameActive && arenaMatch.phase === 'playing') {
+                    e.preventDefault();
                     tabScoreboardHeld = true;
                     if (!e.repeat) {
                         renderLiveScoreboard();
@@ -3879,7 +3880,7 @@
 
         window.addEventListener('keyup', (e) => {
             if (e.code === 'Tab') {
-                e.preventDefault();
+                if (tabScoreboardHeld) e.preventDefault();
                 hideLiveScoreboard();
                 return;
             }
