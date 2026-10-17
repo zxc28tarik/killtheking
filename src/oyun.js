@@ -278,8 +278,8 @@
                 maxHp: 130,
                 type: 'melee',
                 range: 5.5,
-                damage: 65,
-                headshotDamage: 100,
+                damage: 20,
+                headshotDamage: 30,
                 cooldown: 0.34,
                 svgIcon: `<svg width="95" height="26" viewBox="0 0 100 30" fill="none"><path d="M10 15H75L88 15L75 11H10V15Z" fill="#E5E7EB"/><path d="M22 6V24H27V6H22Z" fill="#F59E0B"/><rect x="6" y="12" width="16" height="6" fill="#78350F"/><circle cx="5" cy="15" r="4" fill="#F59E0B"/></svg>`
             },
@@ -294,8 +294,8 @@
                 maxHp: 110,
                 type: 'melee',
                 range: 8.2,
-                damage: 70,
-                headshotDamage: 115,
+                damage: 35,
+                headshotDamage: 52.5,
                 cooldown: 0.44,
                 svgIcon: `<svg width="110" height="24" viewBox="0 0 110 26" fill="none"><rect x="4" y="11" width="80" height="4" fill="#92400E"/><polygon points="84,7 106,13 84,19" fill="#E5E7EB"/><rect x="78" y="9" width="6" height="8" fill="#DC2626"/></svg>`
             },
@@ -310,9 +310,9 @@
                 maxHp: 100,
                 type: 'bow',
                 range: 110,
-                damage: 60,
-                headshotDamage: 165,
-                cooldown: 0.25,
+                damage: 23,
+                headshotDamage: 34.5,
+                cooldown: 4,
                 svgIcon: `<svg width="90" height="28" viewBox="0 0 90 32" fill="none"><path d="M35 2C55 8 55 24 35 30" stroke="#92400E" stroke-width="4" fill="none"/><line x1="35" y1="2" x2="35" y2="30" stroke="#E5E7EB" stroke-width="1.5"/><line x1="20" y1="16" x2="72" y2="16" stroke="#D97706" stroke-width="2.5"/><polygon points="72,12 82,16 72,20" fill="#E5E7EB"/></svg>`
             },
             {
@@ -326,10 +326,10 @@
                 maxHp: 100,
                 type: 'hitscan',
                 range: 150,
-                damage: 115,
-                headshotDamage: 220,
-                cooldown: 0.30,
-                reloadTime: 1.65,
+                damage: 90,
+                headshotDamage: 135,
+                cooldown: 15,
+                reloadTime: 15,
                 svgIcon: `<svg width="115" height="26" viewBox="0 0 115 28" fill="none"><rect x="28" y="9" width="82" height="4" fill="#9CA3AF"/><path d="M6 22L28 13H65V17H32L14 25H6V22Z" fill="#78350F"/><rect x="36" y="5" width="7" height="5" fill="#D1D5DB"/></svg>`
             }
         ];
@@ -1976,12 +1976,12 @@
         // 7. DISTINCT AI MEDIEVAL BOTS v2.0 (Knights, Pikemen, Tower Archers, Musketeers)
         // ============================================================================
         const BOT_PROFILES = [
-            { name: 'Şövalye_34', role: 'knight', weapon: 'Kılıç & Kalkan', color: 0xb91c1c, range: 3.9, speed: 9.8, damage: 19, preferWall: false },
-            { name: 'Ahmet_1600', role: 'musket', weapon: 'Tüfek', color: 0x78350f, range: 34.0, speed: 7.4, damage: 25, preferWall: true },
-            { name: 'Mızraklı_Kurt', role: 'pikeman', weapon: 'Kargı', color: 0x1d4ed8, range: 5.8, speed: 10.4, damage: 21, preferWall: false },
-            { name: 'Okçu_Reis', role: 'archer', weapon: 'Uzun Yay', color: 0x15803d, range: 32.0, speed: 8.2, damage: 20, preferWall: true },
+            { name: 'Şövalye_34', role: 'knight', weapon: 'Kılıç & Kalkan', color: 0xb91c1c, range: 3.9, speed: 9.8, damage: 20, preferWall: false },
+            { name: 'Ahmet_1600', role: 'musket', weapon: 'Tüfek', color: 0x78350f, range: 34.0, speed: 7.4, damage: 90, preferWall: true },
+            { name: 'Mızraklı_Kurt', role: 'pikeman', weapon: 'Kargı', color: 0x1d4ed8, range: 5.8, speed: 10.4, damage: 35, preferWall: false },
+            { name: 'Okçu_Reis', role: 'archer', weapon: 'Uzun Yay', color: 0x15803d, range: 32.0, speed: 8.2, damage: 23, preferWall: true },
             { name: 'Kara_Şövalye', role: 'knight', weapon: 'Çelik Kılıç', color: 0x374151, range: 3.9, speed: 9.5, damage: 20, preferWall: false },
-            { name: 'Yeniçeri_Ali', role: 'musket', weapon: 'Tüfek', color: 0x991b1b, range: 30.0, speed: 7.8, damage: 24, preferWall: false }
+            { name: 'Yeniçeri_Ali', role: 'musket', weapon: 'Tüfek', color: 0x991b1b, range: 30.0, speed: 7.8, damage: 90, preferWall: false }
         ];
 
         const COURTYARD_SPAWNS = [
@@ -2595,6 +2595,13 @@
 
             group.add(leftLeg, rightLeg, torsoGroup, head, helmetGroup, leftArm, rightArm);
             group._parts = { leftLeg, rightLeg, leftArm, rightArm, head, torso: torsoGroup, helmetGroup, capeMesh };
+            // The existing illustrated meshes double as anatomical hit regions.
+            // Classify by parent rig rather than a global vertical guess where possible.
+            for (const [part,zone] of [[leftLeg,'leg'],[rightLeg,'leg'],
+                [leftArm,'arm'],[rightArm,'arm'],[torsoGroup,'body'],
+                [head,'head'],[helmetGroup,'head']]) {
+                part.traverse(child => { if (child.isMesh) child.userData.hitZone = zone; });
+            }
             return group;
         }
 
