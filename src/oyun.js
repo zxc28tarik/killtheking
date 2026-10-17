@@ -3113,8 +3113,8 @@
             }
             const candidates = [];
             for (const other of bots) {
-                if (other.id === bot.id || other.dead ||
-                    !ArenaBotRecovery.allows(bot.navRecovery, 'bot:' + other.id)) continue;
+                if (other.id === bot.id || other.dead) continue;
+                if (!ArenaBotRecovery.allows(bot.navRecovery, 'bot:' + other.id)) continue;
                 const dist = arenaTargetDistance(bot, 'bot', other.id);
                 if (dist >= maxDetection) continue;
                 const attackers = arenaTargetCount('bot', other.id, bot.id);
