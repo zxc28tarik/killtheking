@@ -8,9 +8,24 @@
 })(typeof globalThis!=='undefined'?globalThis:this,function(){
  'use strict';
  const DURATION=240;
- function create(){return {phase:'menu',remaining:DURATION,result:null};}
+ const DURATIONS=Object.freeze([120,240,480]);
+ function validateDuration(seconds){
+  if(!DURATIONS.includes(seconds))throw Error('Invalid match duration');
+  return seconds;
+ }
+ function create(seconds=DURATION){
+  return {phase:'menu',durationSeconds:validateDuration(seconds),remaining:seconds,result:null};
+ }
+ function configure(match,seconds){
+  validateDuration(seconds);
+  if(match.phase!=='menu'&&match.phase!=='results')throw Error('Cannot change duration during a match');
+  match.durationSeconds=seconds;
+  match.remaining=seconds;
+  match.result=null;
+  return match;
+ }
  function begin(match){
-  match.phase='playing';match.remaining=DURATION;match.result=null;
+  match.phase='playing';match.remaining=match.durationSeconds;match.result=null;
   return match;
  }
  function pause(match){if(match.phase==='playing')match.phase='paused';return match.phase;}
@@ -44,12 +59,12 @@
   const rows=leaderboard(player,bots);
   const winner=rows[0];
   match.result={winnerId:winner.id,winnerName:winner.name,playerWon:winner.isPlayer,
-   standings:rows,seconds:DURATION};
+   standings:rows,seconds:match.durationSeconds};
   return match.result;
  }
  function clock(seconds){
   const n=Math.max(0,Math.ceil(seconds));
   return String(Math.floor(n/60)).padStart(2,'0')+':'+String(n%60).padStart(2,'0');
  }
- return {DURATION,create,begin,pause,resume,tick,leaderboard,finish,clock};
+ return {DURATION,DURATIONS,create,configure,begin,pause,resume,tick,leaderboard,finish,clock};
 });
