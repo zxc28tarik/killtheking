@@ -1976,12 +1976,12 @@
         // 7. DISTINCT AI MEDIEVAL BOTS v2.0 (Knights, Pikemen, Tower Archers, Musketeers)
         // ============================================================================
         const BOT_PROFILES = [
-            { name: 'Şövalye_34', role: 'knight', weapon: 'Kılıç & Kalkan', color: 0xb91c1c, range: 3.9, speed: 9.8, damage: 14, preferWall: false },
-            { name: 'Ahmet_1600', role: 'musket', weapon: 'Tüfek', color: 0x78350f, range: 34.0, speed: 7.4, damage: 20, preferWall: true },
-            { name: 'Mızraklı_Kurt', role: 'pikeman', weapon: 'Kargı', color: 0x1d4ed8, range: 5.8, speed: 10.4, damage: 16, preferWall: false },
-            { name: 'Okçu_Reis', role: 'archer', weapon: 'Uzun Yay', color: 0x15803d, range: 32.0, speed: 8.2, damage: 15, preferWall: true },
-            { name: 'Kara_Şövalye', role: 'knight', weapon: 'Çelik Kılıç', color: 0x374151, range: 3.9, speed: 9.5, damage: 15, preferWall: false },
-            { name: 'Yeniçeri_Ali', role: 'musket', weapon: 'Tüfek', color: 0x991b1b, range: 30.0, speed: 7.8, damage: 19, preferWall: false }
+            { name: 'Şövalye_34', role: 'knight', weapon: 'Kılıç & Kalkan', color: 0xb91c1c, range: 3.9, speed: 9.8, damage: 19, preferWall: false },
+            { name: 'Ahmet_1600', role: 'musket', weapon: 'Tüfek', color: 0x78350f, range: 34.0, speed: 7.4, damage: 25, preferWall: true },
+            { name: 'Mızraklı_Kurt', role: 'pikeman', weapon: 'Kargı', color: 0x1d4ed8, range: 5.8, speed: 10.4, damage: 21, preferWall: false },
+            { name: 'Okçu_Reis', role: 'archer', weapon: 'Uzun Yay', color: 0x15803d, range: 32.0, speed: 8.2, damage: 20, preferWall: true },
+            { name: 'Kara_Şövalye', role: 'knight', weapon: 'Çelik Kılıç', color: 0x374151, range: 3.9, speed: 9.5, damage: 20, preferWall: false },
+            { name: 'Yeniçeri_Ali', role: 'musket', weapon: 'Tüfek', color: 0x991b1b, range: 30.0, speed: 7.8, damage: 24, preferWall: false }
         ];
 
         const COURTYARD_SPAWNS = [
@@ -2665,9 +2665,10 @@
                     navLastPosition: mesh.position.clone(),
                     tacticMode: 'patrol', tacticGoal: null, tacticTargetKey: null,
                     tacticLastTarget: null, tacticRefresh: 0,
-                    attackTimer: 1.4 + Math.random() * 1.4,
+                    attackTimer: 0.85 + Math.random() * 0.75,
                     staggerTime: 0,
                     meleeWindup: 0,
+                    rangedWindup: 0,
                     guardTime: 0,
                     guardParryTime: 0,
                     guardCooldown: 0,
@@ -3272,10 +3273,15 @@
             const isRanged = bot.role === 'archer' || bot.role === 'musket';
             // Melee combatants also require a clear path; walls block every weapon type.
             if (!arenaLineOfSight(bot, targetPos, target.type === 'player')) return;
+            // The bot must actually face its opponent; its shot cannot land sideways.
+            if (!ArenaBotOffense.facing(bot.role, bot.mesh.rotation.y, bot.mesh.position, targetPos)) {
+                bot.attackTimer = Math.max(bot.attackTimer, 0.18);
+                return;
+            }
             const origin = bot.mesh.position.clone().add(new THREE.Vector3(0, 1.8, 0));
             const targetPoint = targetPos.clone().add(new THREE.Vector3(0, target.type === 'player' ? 1.0 : 1.65, 0));
             const shotDir = targetPoint.clone().sub(origin).normalize();
-            bot.attackTimer = (isRanged ? 1.75 : 1.45) + Math.random() * 1.15;
+            bot.attackTimer = ArenaBotOffense.nextCooldown(bot.role, Math.random());
             bot.strikePoseTime = isRanged ? 0.17 : 0.25;
             if (isRanged) {
                 arenaShotTracer(origin, targetPoint, bot.role === 'archer');
@@ -3705,6 +3711,7 @@
                 bot.hitReactionTime = 0;
                 bot.staggerTime = 0;
                 bot.meleeWindup = 0;
+                bot.rangedWindup = 0;
                 bot.strikePoseTime = 0;
                 bot.motionState = ArenaCharacterMotion.createState();
                 bot.guardTime = 0;
@@ -4710,6 +4717,7 @@
                         bot.hitReactionTime = 0;
                         bot.staggerTime = 0;
                         bot.meleeWindup = 0;
+                        bot.rangedWindup = 0;
                         bot.strikePoseTime = 0;
                         bot.motionState = ArenaCharacterMotion.createState();
                         bot.guardTime = 0;
@@ -4745,10 +4753,20 @@
                         other.arenaTargetId === bot.id &&
                         other.mesh.position.distanceTo(bot.mesh.position) < 8 &&
                         arenaLineOfSight(other, bot.mesh.position, false));
-                    const lateRead = threat && (bot.id + threat.id + bot.guardAttempts) % 3 === 0;
-                    if (threat && (!lateRead || threat.meleeWindup <= 0.18)) {
-                        const dx = threat.mesh.position.x - bot.mesh.position.x;
-                        const dz = threat.mesh.position.z - bot.mesh.position.z;
+                    // Knights also react to a visible player's melee wind-up rather than
+                    // holding their shield only against other bots.
+                    const playerMeleeThreat = !threat && ArenaBotOffense.playerMeleeThreat({
+                        classIdx:player.classIdx, attackTime:player.attackAnimTime,
+                        distance:distToPlayer, visible:arenaLineOfSight(bot, player.pos, true)
+                    });
+                    const lateRead = threat
+                        ? (bot.id + threat.id + bot.guardAttempts) % 3 === 0
+                        : (bot.id + bot.guardAttempts) % 3 === 0;
+                    if ((threat || playerMeleeThreat) &&
+                        (!lateRead || (threat ? threat.meleeWindup <= 0.18 : player.attackAnimTime <= 0.42))) {
+                        const threatPos = threat ? threat.mesh.position : player.pos;
+                        const dx = threatPos.x - bot.mesh.position.x;
+                        const dz = threatPos.z - bot.mesh.position.z;
                         bot.guardFacingYaw = Math.atan2(-dx, -dz);
                         bot.guardTime = 0.8;
                         bot.guardParryTime = lateRead ? 0.23 : 0;
@@ -4913,8 +4931,28 @@
                 bot.mesh.position.y = THREE.MathUtils.lerp(bot.mesh.position.y,
                     navHeight, Math.min(1, dt * 10));
 
-                // Melee attacks telegraph before they land, enabling reactive parries.
-                if (bot.meleeWindup > 0) {
+                // Aim towards any visible opponent within weapon reach while preparing
+                // an attack, without rotating the movement vector or changing A* routes.
+                if (targetPosition && hasClearShot && arenaDist <= bot.range) {
+                    const dx = targetPosition.x - bot.mesh.position.x;
+                    const dz = targetPosition.z - bot.mesh.position.z;
+                    if (Math.hypot(dx, dz) > 0.05) {
+                        bot.mesh.rotation.y = ArenaCharacterMotion.turnToward(
+                            bot.mesh.rotation.y, Math.atan2(dx, dz), dt, 12);
+                    }
+                }
+                // Melee and ranged bots telegraph before striking, leaving a chance
+                // to move behind a wall or parry; all attacks still require clear sight.
+                if (bot.rangedWindup > 0) {
+                    bot.rangedWindup = Math.max(0, bot.rangedWindup - dt);
+                    if (!arenaTarget || arenaDist > bot.range ||
+                        !arenaLineOfSight(bot, targetPosition, arenaTarget.type === 'player')) {
+                        bot.rangedWindup = 0;
+                        bot.attackTimer = 0.35;
+                    } else if (bot.rangedWindup <= 0) {
+                        arenaBotAttack(bot, arenaTarget, arenaDist);
+                    }
+                } else if (bot.meleeWindup > 0) {
                     bot.meleeWindup = Math.max(0, bot.meleeWindup - dt);
                     // Motion layer renders the attack preparation pose.
                     if (!isGameActive || !arenaTarget || arenaDist > bot.range ||
@@ -4928,10 +4966,12 @@
                     bot.attackTimer -= dt;
                     if (bot.attackTimer <= 0) {
                         if (bot.role === 'knight' || bot.role === 'pikeman') {
-                            bot.meleeWindup = 0.36;
+                            bot.meleeWindup = ArenaBotOffense.windup(bot.role);
                             bot.attackTimer = 0;
                         } else {
-                            arenaBotAttack(bot, arenaTarget, arenaDist);
+                            bot.rangedWindup = ArenaBotOffense.windup(bot.role);
+                            bot.strikePoseTime = Math.max(bot.strikePoseTime, 0.16);
+                            bot.attackTimer = 0;
                         }
                     }
                 } else if (bot.attackTimer > 0) {
