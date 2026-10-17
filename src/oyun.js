@@ -1849,6 +1849,9 @@
             // Bow drawing
             isDrawingBow: false,
             bowCharge: 0,
+            // Persistent across mid-round class switches: switching cannot reload early.
+            lastBowShotAt: -Infinity,
+            lastMusketShotAt: -Infinity,
             // Right-Click / Secondary Ability States
             isRMBDown: false,
             isShielding: false,
@@ -1907,7 +1910,12 @@
             player.isShielding = false;
             player.shieldParryTime = 0;
             player.shieldParryCooldown = 0;
-            player.ammo = 1;
+            player.ammo = ArenaWeaponBalance.ready(player.lastMusketShotAt, arenaClock, 'musket') ? 1 : 0;
+            if (idx === 3 && player.ammo === 0) {
+                player.isReloading = true;
+                player.reloadTimer = Math.max(0, ArenaWeaponBalance.SHOT_INTERVAL.musket -
+                    (arenaClock - player.lastMusketShotAt));
+            }
 
             document.getElementById('reload-indicator').classList.add('hidden');
             document.getElementById('bow-charge-ui').classList.add('hidden');
@@ -3480,7 +3488,8 @@
             if (contact && contact.kind === 'barrel') {
                 triggerBarrelExplosion(contact.barrel);
             } else if (contact && contact.kind === 'bot') {
-                damageBot(contact.bot, 75, false, 'Süngü / Hançer', '🗡️ ', contact.point);
+                damageBot(contact.bot, ArenaWeaponBalance.damage('dagger','body'), false,
+                    'Süngü / Hançer', '🗡️ ', contact.point);
             }
         }
 
@@ -3495,6 +3504,8 @@
             }
 
             if (player.attackCooldown > 0 || player.isReloading) return;
+            if (cls.id === 3 && !ArenaWeaponBalance.ready(
+                player.lastMusketShotAt, arenaClock, 'musket')) return;
 
             if (cls.id === 3 && player.ammo <= 0) {
                 startReload();
@@ -3515,7 +3526,9 @@
                 // Damage is resolved throughout the visible animation, not on click.
                 const horizSpeed = Math.hypot(player.vel.x, player.vel.z);
                 const speedRatio = Math.max(1.0, horizSpeed / 13.5);
-                const momentumBonus = cls.id === 1 ? Math.round((speedRatio - 1.0) * 65) : 0;
+                // Skill reward remains, but cannot erase the intended 3-hit baseline.
+                const momentumBonus = cls.id === 1
+                    ? Math.min(12, Math.round((speedRatio - 1.0) * 7)) : 0;
                 activeWeaponSwing = ArenaWeaponSweep.begin(cls.id === 1 ? 'spear' : 'sword',
                     cls.range, player.comboStep);
                 activeWeaponSwing.classIdx = player.classIdx;
@@ -3529,6 +3542,7 @@
             else if (cls.type === 'hitscan') {
                 sfx.playMusketBoom();
                 player.ammo = 0;
+                player.lastMusketShotAt = arenaClock;
                 player.shakeIntensity = 0.35;
                 muzzleLight.position.copy(camera.position).addScaledVector(dir, 1.2);
                 muzzleLight.intensity = 3.5;
@@ -3549,9 +3563,11 @@
                     if (hits.length > 0 && !arenaWorldBlockBetween(camera.position, hits[0].point)) {
                         const hit = hits[0];
                         const bot = bots[hit.object.userData.botIndex];
-                        const isHead = !!hit.object.userData.isHead;
+                        const zone = ArenaWeaponBalance.zoneFromMesh(
+                            hit.object, hit.point.y, bot ? bot.mesh.position.y : 0);
                         if (bot) {
-                            damageBot(bot, isHead ? cls.headshotDamage : cls.damage, isHead, cls.weaponName, '', hit.point);
+                            damageBot(bot, ArenaWeaponBalance.damage('musket',zone),
+                                zone === 'head', cls.weaponName, '', hit.point);
                         }
                     }
                 }
@@ -3569,7 +3585,9 @@
             const charge = Math.max(0.25, player.bowCharge);
             player.isDrawingBow = false;
             player.bowCharge = 0;
-            player.attackCooldown = 0.25;
+            if (!ArenaWeaponBalance.ready(player.lastBowShotAt, arenaClock,'bow')) return;
+            player.lastBowShotAt = arenaClock;
+            player.attackCooldown = ArenaWeaponBalance.SHOT_INTERVAL.bow;
             player.attackAnimTime = 1.0;
             registerWeaponSwing('bow');
             document.getElementById('bow-charge-ui').classList.add('hidden');
@@ -3684,6 +3702,8 @@
             player.isSliding = false;
             player.currentHeight = player.standHeight;
             player.ammo = 1;
+            player.lastBowShotAt = -Infinity;
+            player.lastMusketShotAt = -Infinity;
             player.isReloading = false;
             player.reloadTimer = 0;
             player.attackCooldown = 0;
@@ -3877,7 +3897,8 @@
             if (e.button === 0) {
                 if (player.classIdx === 2) {
                     // Start drawing bow
-                    if (player.attackCooldown <= 0) {
+                    if (player.attackCooldown <= 0 &&
+                        ArenaWeaponBalance.ready(player.lastBowShotAt, arenaClock,'bow')) {
                         player.isDrawingBow = true;
                         player.bowCharge = 0.1;
                         document.getElementById('bow-charge-ui').classList.remove('hidden');
@@ -4565,8 +4586,12 @@
                 }
                 if (impact && impact.kind === 'barrel') triggerBarrelExplosion(impact.barrel);
                 else if (impact && impact.kind === 'bot') {
-                    const damage = (impact.isHead ? swing.headshotDamage : swing.damage) + swing.bonus;
-                    damageBot(impact.bot, damage, impact.isHead, swing.weaponName, swing.tag, impact.point);
+                    const kind = swing.classIdx === 1 ? 'spear' : 'sword';
+                    const zone = impact.isHead ? 'head'
+                        : ArenaWeaponBalance.zoneFromAim(impact.point && impact.point.y,
+                            impact.bot.mesh.position.y);
+                    const damage = ArenaWeaponBalance.damage(kind,zone) + swing.bonus;
+                    damageBot(impact.bot, damage, zone === 'head', swing.weaponName, swing.tag, impact.point);
                 }
                 if (swing.finished || swing.resolved) {
                     lastWeaponSwingRaycasts = swing.raycastCount || 0;
@@ -4621,10 +4646,11 @@
                         scene.remove(arr.mesh);
                     } else if (impact.type === 'bot') {
                         const bot = impact.target;
-                        const isHead = impact.point.y - bot.mesh.position.y > 2.15;
+                        const zone = ArenaWeaponBalance.zoneFromAim(
+                            impact.point.y, bot.mesh.position.y);
                         const bowCls = CLASSES[2];
-                        const baseDmg = isHead ? bowCls.headshotDamage : Math.round(bowCls.damage * (0.55 + arr.charge * 0.75));
-                        damageBot(bot, baseDmg, isHead, bowCls.weaponName, '', arr.mesh.position);
+                        const baseDmg = ArenaWeaponBalance.damage('bow',zone,arr.charge);
+                        damageBot(bot, baseDmg, zone === 'head', bowCls.weaponName, '', arr.mesh.position);
                         scene.remove(arr.mesh);
                     } else {
                         if (isGameActive && arr.mesh.position.distanceTo(player.pos) < 35) sfx.playArrowThud();
