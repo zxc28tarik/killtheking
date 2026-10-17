@@ -2661,6 +2661,7 @@
                     navGoal: null,
                     navRefresh: 0,
                     navStuck: 0,
+                    navRecovery: ArenaBotRecovery.create(),
                     navLastPosition: mesh.position.clone(),
                     tacticMode: 'patrol', tacticGoal: null, tacticTargetKey: null,
                     tacticLastTarget: null, tacticRefresh: 0,
@@ -3092,7 +3093,9 @@
             if (bot.dead || !isGameActive) return null;
             const maxDetection = bot.range > 8 ? 43 : 33;
             // A bot retaliates against a recent attacker if that attacker is reachable.
-            if (bot.arenaAggroType && arenaClock < bot.arenaAggroUntil) {
+            if (bot.arenaAggroType && arenaClock < bot.arenaAggroUntil &&
+                ArenaBotRecovery.allows(bot.navRecovery, bot.arenaAggroType + ':' +
+                    (bot.arenaAggroType === 'player' ? 'player' : bot.arenaAggroId))) {
                 const aggroDist = arenaTargetDistance(bot, bot.arenaAggroType, bot.arenaAggroId);
                 if (aggroDist < maxDetection + 9) {
                     setArenaTarget(bot, bot.arenaAggroType, bot.arenaAggroId);
@@ -3102,12 +3105,16 @@
             }
             const currentPos = arenaActorPosition(bot.arenaTargetType, bot.arenaTargetId);
             const currentDist = arenaTargetDistance(bot, bot.arenaTargetType, bot.arenaTargetId);
-            if (currentPos && currentDist < maxDetection + 5 && arenaClock < bot.arenaLockTime) {
+            if (currentPos && currentDist < maxDetection + 5 &&
+                arenaClock < bot.arenaLockTime &&
+                ArenaBotRecovery.allows(bot.navRecovery, bot.arenaTargetType + ':' +
+                    (bot.arenaTargetType === 'player' ? 'player' : bot.arenaTargetId))) {
                 return { type: bot.arenaTargetType, id: bot.arenaTargetId, position: currentPos };
             }
             const candidates = [];
             for (const other of bots) {
-                if (other.id === bot.id || other.dead) continue;
+                if (other.id === bot.id || other.dead ||
+                    !ArenaBotRecovery.allows(bot.navRecovery, 'bot:' + other.id)) continue;
                 const dist = arenaTargetDistance(bot, 'bot', other.id);
                 if (dist >= maxDetection) continue;
                 const attackers = arenaTargetCount('bot', other.id, bot.id);
@@ -3117,7 +3124,9 @@
             }
             const playerDistance = arenaTargetDistance(bot, 'player', null);
             // At most one normal bot pursues the player at once; retaliation is separate.
-            if (playerDistance < Math.min(maxDetection, 26) && arenaTargetCount('player', null, bot.id) === 0) {
+            if (playerDistance < Math.min(maxDetection, 26) &&
+                ArenaBotRecovery.allows(bot.navRecovery, 'player:player') &&
+                arenaTargetCount('player', null, bot.id) === 0) {
                 // Bots deliberately prefer other available opponents to a player dogpile.
                 candidates.push({ type: 'player', id: null, position: player.pos,
                     score: playerDistance + 14 + Math.random() * 7 });
@@ -3686,6 +3695,7 @@
                 bot.navGoal = null;
                 bot.navRefresh = 0;
                 bot.navStuck = 0;
+                ArenaBotRecovery.reset(bot.navRecovery);
                 bot.navLastPosition.copy(bot.mesh.position);
                 bot.tacticGoal = null;
                 bot.tacticTargetKey = null;
@@ -4687,6 +4697,7 @@
                         bot.navGoal = null;
                         bot.navRefresh = 0;
                         bot.navStuck = 0;
+                        ArenaBotRecovery.reset(bot.navRecovery);
                         bot.navLastPosition.copy(bot.mesh.position);
                         bot.tacticGoal = null;
                         bot.tacticTargetKey = null;
@@ -4745,7 +4756,7 @@
                         bot.guardAttempts++;
                     }
                 }
-                const arenaTarget = chooseArenaTarget(bot);
+                let arenaTarget = chooseArenaTarget(bot);
                 const targetPosition = arenaTarget ? arenaTarget.position : null;
                 const arenaDist = arenaTarget
                     ? arenaTargetDistance(bot, arenaTarget.type, arenaTarget.id) : Infinity;
@@ -4829,11 +4840,13 @@
                     steerTarget = bot.navPath[0];
                 }
                 let animationTravel = 0;
+                let recoveryAttempting = needsApproach && !steerTarget && !directRoute;
                 if (needsApproach && steerTarget) {
                     const stepDir = new THREE.Vector3(
                         steerTarget.x - botGround.x, 0, steerTarget.z - botGround.z);
                     const remaining = stepDir.length();
                     if (remaining > 0.1) {
+                        recoveryAttempting = true;
                         stepDir.normalize();
                         bot.mesh.rotation.y = Math.atan2(stepDir.x, stepDir.z);
                         const beforeX = bot.mesh.position.x, beforeZ = bot.mesh.position.z;
@@ -4842,18 +4855,7 @@
                         bot.mesh.position.x = newPos.x;
                         bot.mesh.position.z = newPos.z;
                         const madeProgress = Math.hypot(newPos.x-beforeX,newPos.z-beforeZ);
-                        if (madeProgress > 0.025) {
-                            bot.navStuck = 0;
-                            animationTravel = madeProgress;
-                        } else {
-                            bot.navStuck += dt;
-                            if (bot.navStuck > 0.55) {
-                                bot.navPath.length = 0;
-                                bot.navRefresh = 0;
-                                bot.tacticRefresh = 0;
-                                bot.navStuck = 0;
-                            }
-                        }
+                        if (madeProgress > 0.025) animationTravel = madeProgress;
                     }
                 } else {
                     // Hold tactical facing but ease the walk animation to idle.
@@ -4861,6 +4863,34 @@
                         const facing = targetPosition.clone().sub(bot.mesh.position);
                         if (facing.lengthSq() > 0.04) bot.mesh.rotation.y = Math.atan2(facing.x, facing.z);
                     }
+                }
+                const recovery = ArenaBotRecovery.advance(bot.navRecovery, dt, {
+                    attempting: recoveryAttempting, travel: animationTravel,
+                    targetKey: arenaTarget ? arenaTarget.type + ':' +
+                        (arenaTarget.type === 'player' ? 'player' : arenaTarget.id) : null
+                });
+                // This reports actual sustained obstruction rather than resetting after
+                // every retry; movement still only uses navigator.safeAdvance.
+                bot.navStuck = bot.navRecovery.blockedFor;
+                if (recovery.replan) {
+                    bot.navPath.length = 0;
+                    bot.navGoal = null;
+                    bot.navRefresh = 0;
+                    bot.tacticRefresh = 0;
+                }
+                if (recovery.retarget) {
+                    // Stop pursuing an opponent behind an inaccessible route, briefly
+                    // omit that opponent from candidate selection, and repath normally.
+                    bot.arenaTargetType = null;
+                    bot.arenaTargetId = null;
+                    bot.arenaLockTime = 0;
+                    bot.arenaAggroType = null;
+                    bot.arenaAggroId = null;
+                    bot.arenaAggroUntil = 0;
+                    bot.tacticGoal = null;
+                    bot.tacticTargetKey = null;
+                    bot.meleeWindup = 0;
+                    arenaTarget = null; // Prevent a stale same-frame combat strike.
                 }
 
                 // Hit reaction is visibly different from walk/breath cycle.
