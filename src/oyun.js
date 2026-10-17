@@ -3672,11 +3672,17 @@
                 from: player.pos, velocity: player.vel, dt,
                 radius: rad, height: h, colliders
             });
-            player.pos.x = swept.x;
-            player.pos.z = swept.z;
-            // Stop only velocity into a solid, preserve sliding along surfaces.
-            if (swept.hitX) player.vel.x = 0;
-            if (swept.hitZ) player.vel.z = 0;
+            // A wooden ramp is a walkable slope from its entrance but a
+            // raised vertical side from the courtyard. Reject side teleports.
+            const terrain = ArenaPlayerCollision.limitRampEntry({
+                from: player.pos, to: {x: swept.x, z: swept.z},
+                radius: rad, height: h, groundAt: getRampHeightAt
+            });
+            player.pos.x = terrain.x;
+            player.pos.z = terrain.z;
+            // Keep tangential slide-hop movement; stop only blocked axes.
+            if (swept.hitX || terrain.hitX) player.vel.x = 0;
+            if (swept.hitZ || terrain.hitZ) player.vel.z = 0;
 
             player.pos.y += player.vel.y * dt;
             let floorY = getRampHeightAt(player.pos.x, player.pos.z);
