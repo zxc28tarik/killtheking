@@ -3666,30 +3666,17 @@
         function resolvePlayerCollisions(dt) {
             const rad = player.radius;
             const h = player.currentHeight;
-
-            player.pos.x += player.vel.x * dt;
-            for (const c of colliders) {
-                if (player.pos.y > c.minY && player.pos.y - h < c.maxY - 0.5) {
-                    if (player.pos.z + rad > c.minZ && player.pos.z - rad < c.maxZ) {
-                        if (player.pos.x + rad > c.minX && player.pos.x - rad < c.maxX) {
-                            if (player.vel.x > 0) player.pos.x = c.minX - rad;
-                            else if (player.vel.x < 0) player.pos.x = c.maxX + rad;
-                        }
-                    }
-                }
-            }
-
-            player.pos.z += player.vel.z * dt;
-            for (const c of colliders) {
-                if (player.pos.y > c.minY && player.pos.y - h < c.maxY - 0.5) {
-                    if (player.pos.x + rad > c.minX && player.pos.x - rad < c.maxX) {
-                        if (player.pos.z + rad > c.minZ && player.pos.z - rad < c.maxZ) {
-                            if (player.vel.z > 0) player.pos.z = c.minZ - rad;
-                            else if (player.vel.z < 0) player.pos.z = c.maxZ + rad;
-                        }
-                    }
-                }
-            }
+            // Sweep the entire player footprint across each frame: endpoint
+            // overlap tests let high-speed slide-hops pass through narrow walls.
+            const swept = ArenaPlayerCollision.move({
+                from: player.pos, velocity: player.vel, dt,
+                radius: rad, height: h, colliders
+            });
+            player.pos.x = swept.x;
+            player.pos.z = swept.z;
+            // Stop only velocity into a solid, preserve sliding along surfaces.
+            if (swept.hitX) player.vel.x = 0;
+            if (swept.hitZ) player.vel.z = 0;
 
             player.pos.y += player.vel.y * dt;
             let floorY = getRampHeightAt(player.pos.x, player.pos.z);
