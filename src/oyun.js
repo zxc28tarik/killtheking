@@ -2669,6 +2669,7 @@
                     staggerTime: 0,
                     meleeWindup: 0,
                     rangedWindup: 0,
+                    windupTargetKey: null,
                     guardTime: 0,
                     guardParryTime: 0,
                     guardCooldown: 0,
@@ -3722,6 +3723,7 @@
                 bot.staggerTime = 0;
                 bot.meleeWindup = 0;
                 bot.rangedWindup = 0;
+                bot.windupTargetKey = null;
                 bot.strikePoseTime = 0;
                 bot.motionState = ArenaCharacterMotion.createState();
                 bot.guardTime = 0;
@@ -4729,6 +4731,7 @@
                         bot.staggerTime = 0;
                         bot.meleeWindup = 0;
                         bot.rangedWindup = 0;
+                        bot.windupTargetKey = null;
                         bot.strikePoseTime = 0;
                         bot.motionState = ArenaCharacterMotion.createState();
                         bot.guardTime = 0;
@@ -4924,6 +4927,8 @@
                     bot.tacticGoal = null;
                     bot.tacticTargetKey = null;
                     bot.meleeWindup = 0;
+                    bot.rangedWindup = 0;
+                    bot.windupTargetKey = null;
                     arenaTarget = null; // Prevent a stale same-frame combat strike.
                 }
 
@@ -4953,13 +4958,19 @@
                             bot.mesh.rotation.y, Math.atan2(dx, dz), dt, 12);
                     }
                 }
+                // A windup belongs to a specific opponent; it cannot silently
+                // switch to a different fighter during its final frame.
+                const attackTargetKey = arenaTarget ? arenaTarget.type + ':' +
+                    (arenaTarget.type === 'player' ? 'player' : arenaTarget.id) : null;
                 // Melee and ranged bots telegraph before striking, leaving a chance
                 // to move behind a wall or parry; all attacks still require clear sight.
                 if (bot.rangedWindup > 0) {
                     bot.rangedWindup = Math.max(0, bot.rangedWindup - dt);
-                    if (!arenaTarget || arenaDist > bot.range ||
+                    if (!arenaTarget || attackTargetKey !== bot.windupTargetKey ||
+                        arenaDist > bot.range ||
                         !arenaLineOfSight(bot, targetPosition, arenaTarget.type === 'player')) {
                         bot.rangedWindup = 0;
+                        bot.windupTargetKey = null;
                         bot.attackTimer = 0.35;
                     } else if (bot.rangedWindup <= 0) {
                         arenaBotAttack(bot, arenaTarget, arenaDist);
@@ -4967,9 +4978,12 @@
                 } else if (bot.meleeWindup > 0) {
                     bot.meleeWindup = Math.max(0, bot.meleeWindup - dt);
                     // Motion layer renders the attack preparation pose.
-                    if (!isGameActive || !arenaTarget || arenaDist > bot.range ||
+                    if (!isGameActive || !arenaTarget ||
+                        attackTargetKey !== bot.windupTargetKey ||
+                        arenaDist > bot.range ||
                         !arenaLineOfSight(bot, targetPosition, arenaTarget.type === 'player')) {
                         bot.meleeWindup = 0;
+                        bot.windupTargetKey = null;
                         bot.attackTimer = 0.35;
                     } else if (bot.meleeWindup <= 0) {
                         arenaBotAttack(bot, arenaTarget, arenaDist);
@@ -4977,6 +4991,7 @@
                 } else if (isGameActive && arenaTarget && arenaDist <= bot.range) {
                     bot.attackTimer -= dt;
                     if (bot.attackTimer <= 0) {
+                        bot.windupTargetKey = attackTargetKey;
                         if (bot.role === 'knight' || bot.role === 'pikeman') {
                             bot.meleeWindup = ArenaBotOffense.windup(bot.role);
                             bot.attackTimer = 0;
