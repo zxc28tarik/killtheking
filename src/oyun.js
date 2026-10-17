@@ -1907,6 +1907,8 @@
             player.hp = cls.maxHp;
             player.isReloading = false;
             player.reloadTimer = 0;
+            // Per-weapon shot stamps enforce 4/15s even after class switching.
+            player.attackCooldown = 0;
             player.isDrawingBow = false;
             player.bowCharge = 0;
             player.isShielding = false;
@@ -3520,7 +3522,7 @@
                 return;
             }
 
-            player.attackCooldown = cls.cooldown;
+            player.attackCooldown = cls.id === 3 ? 0.30 : cls.cooldown;
             player.attackAnimTime = cls.type === 'melee' ? 0.82 : 1.0;
             registerWeaponSwing(cls.id === 3 ? 'musket' : cls.id === 1 ? 'spear' : 'melee');
             player.comboStep = (player.comboStep + 1) % 2;
@@ -3629,7 +3631,9 @@
             if (player.classIdx !== 3 || player.isReloading || player.ammo === 1) return;
             sfx.playReloadStep(1);
             player.isReloading = true;
-            player.reloadTimer = CLASSES[3].reloadTime;
+            player.reloadTimer = Math.max(0.01,
+                ArenaWeaponBalance.SHOT_INTERVAL.musket -
+                (arenaClock - player.lastMusketShotAt));
             player.lastReloadStep = 1;
             document.getElementById('reload-indicator').classList.remove('hidden');
             updateHUD();
