@@ -85,5 +85,5 @@ test('new match and respawn reset recovery state while FFA target rules remain i
  assert.match(game,/ArenaBotRecovery\.reset\(bot\.navRecovery\)/);
  assert.match(game,/arenaTargetCount\('player', null, bot\.id\) === 0/);
  assert.match(game,/chooseArenaTarget\(bot\)/);
- assert.match(game,/bot\.navRecovery: /g)===false;
+ assert.match(game,/navRecovery: ArenaBotRecovery\.create\(\)/);
 });
