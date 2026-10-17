@@ -1107,6 +1107,20 @@
             barrel.castShadow = true;
             g.add(carriage, barrel);
             scene.add(g);
+            // Solid cannon carriage/wheels/barrel: the original geometry was
+            // rendered without a physical obstacle, letting players pass through.
+            const cos = Math.abs(Math.cos(rotY)), sin = Math.abs(Math.sin(rotY));
+            const halfX = cos * 0.95 + sin * 1.65;
+            const halfZ = sin * 0.95 + cos * 1.65;
+            colliders.push({
+                minX: x - halfX, maxX: x + halfX,
+                minY: y + 0.04, maxY: y + 1.50,
+                minZ: z - halfZ, maxZ: z + halfZ
+            });
+            // Melee/musket visibility must respect the same real meshes.
+            g.traverse(child => {
+                if (child.isMesh) worldMeshes.push(child);
+            });
         }
 
         function createJumpPad(x, z) {
