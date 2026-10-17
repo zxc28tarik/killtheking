@@ -2993,7 +2993,7 @@
             bot.hitFlashTimer = 0.17;
             bot.hitReactionTime = lethal ? 0.38 : 0.24;
             if (!lethal) {
-                bot.underFireUntil = arenaClock + 2;
+                bot.underFireUntil = (typeof arenaClock === 'number' ? arenaClock : 0) + 2;
                 bot.tacticRefresh = 0;
             }
             bot.hitLeanSign = (player.pos.x < bot.mesh.position.x) ? -1 : 1;
@@ -3243,7 +3243,7 @@
             victim.hitFlashTimer = 0.17;
             victim.hitReactionTime = lethal ? 0.38 : 0.24;
             if (!lethal) {
-                victim.underFireUntil = arenaClock + 2;
+                victim.underFireUntil = (typeof arenaClock === 'number' ? arenaClock : 0) + 2;
                 victim.tacticRefresh = 0;
             }
             victim.hitLeanSign = delta.x < 0 ? -1 : 1;
