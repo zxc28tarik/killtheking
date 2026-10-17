@@ -74,7 +74,7 @@
      fighters.reduce((sum,bot)=>sum+bot.kills,0)
    }:null,
    fighters,standings,
-   notes:'Target counts are instantaneous; sampled targets are approximate one-second fighter observations, not attack counts. Kill directions are recorded on lethal combat events. Class selection is current; classKills tracks player kills at time of kill, not exposure time.'
+   notes:'Target counts are instantaneous; sampled targets are approximate one-second fighter observations, not attack counts. Bot kills include bot-vs-player and bot-vs-bot events. Kill directions are recorded on lethal combat events. Class selection is current; classKills tracks player kills at time of kill, not exposure time.'
   };
  }
  return {summarize};
