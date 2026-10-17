@@ -66,11 +66,19 @@
   }
   return {leftLeg,rightLeg,leftArm,rightArm,torsoX,torsoZ,headX,capeX,locomotionWeight:w};
  }
+ // Visual-only shortest-arc turn. Movement direction and collisions stay unchanged.
+ function turnToward(current,target,dt,rate=10){
+  if(!Number.isFinite(current)||!Number.isFinite(target))return current;
+  if(!Number.isFinite(dt)||dt<=0)return current;
+  const step=clamp(dt,0,.05)*clamp(rate,0,30);
+  const delta=Math.atan2(Math.sin(target-current),Math.cos(target-current));
+  return current+clamp(delta,-step,step);
+ }
  function deathPose(progress,fallDirection=1){
   const p=smooth(clamp(progress,0,1));
   return {leftLeg:.48*p,rightLeg:-.26*p,leftArm:-.65*p,
     rightArm:-1.05+.80*p,torsoX:-.2*p,torsoZ:fallDirection*.10*p,
     headX:.20*p,capeX:.15};
  }
- return {createState,update,deathPose};
+ return {createState,update,deathPose,turnToward};
 });
