@@ -1822,6 +1822,8 @@
         // ============================================================================
         // 6. PLAYER STATE & KRUNKER SLIDE-HOPPING / ABILITY MECHANICS
         // ============================================================================
+        // Declared before initial selectClass(3) to avoid pre-init TDZ.
+        let arenaClock = 0;
         const player = {
             pos: new THREE.Vector3(0, 2.5, 28),
             vel: new THREE.Vector3(0, 0, 0),
@@ -3075,7 +3077,6 @@
         // FREE-FOR-ALL ARENA AI: six independent fighters + the player.
         // This module deliberately keeps the original model, rendering and player combat.
         // ============================================================================
-        let arenaClock = 0;
         const arenaSightRay = new THREE.Raycaster();
         const arenaAimTmp = new THREE.Vector3();
         const arenaAimOrigin = new THREE.Vector3();
@@ -3306,7 +3307,9 @@
             const origin = bot.mesh.position.clone().add(new THREE.Vector3(0, 1.8, 0));
             const targetPoint = targetPos.clone().add(new THREE.Vector3(0, target.type === 'player' ? 1.0 : 1.65, 0));
             const shotDir = targetPoint.clone().sub(origin).normalize();
-            bot.attackTimer = ArenaBotOffense.nextCooldown(bot.role, Math.random());
+            bot.attackTimer = isRanged
+                ? ArenaWeaponBalance.SHOT_INTERVAL[bot.role === 'archer' ? 'bow' : 'musket']
+                : ArenaBotOffense.nextCooldown(bot.role, Math.random());
             bot.strikePoseTime = isRanged ? 0.17 : 0.25;
             if (isRanged) {
                 arenaShotTracer(origin, targetPoint, bot.role === 'archer');
@@ -3314,12 +3317,17 @@
             }
             // Shots aimed into the arena do not get free extra player damage.
             // Same hit/health logic for bot-vs-bot, without player-specific rewards.
+            const weapon = ArenaWeaponBalance.weaponForRole(bot.role);
+            // Bot aiming is imperfect: body most often, rare head or limb hits.
+            const zone = ArenaWeaponBalance.botAimZone(bot.role, Math.random());
+            const impactDamage = ArenaWeaponBalance.damage(weapon, zone,
+                bot.role === 'archer' ? 0.5 : 1);
             if (target.type === 'bot') {
                 const enemy = bots[target.id];
-                if (enemy && !enemy.dead) damageBotFromBot(bot, enemy, bot.damage);
+                if (enemy && !enemy.dead) damageBotFromBot(bot, enemy, impactDamage);
                 return;
             }
-            let incomingDmg = bot.damage;
+            let incomingDmg = impactDamage;
             const defense = ArenaCombatDefense.assessShield({
                 shielding: player.classIdx === 0 && player.isShielding,
                 defender: player.pos, attacker: bot.mesh.position,
@@ -4292,7 +4300,8 @@
             }
 
             if (player.isDrawingBow) {
-                player.bowCharge = Math.min(1.0, player.bowCharge + dt * 1.15);
+                player.bowCharge = Math.min(1.0, player.bowCharge +
+                    dt / ArenaWeaponBalance.BOW_DRAW_SECONDS);
                 const pct = Math.round(player.bowCharge * 100);
                 document.getElementById('bow-charge-label').textContent = pct >= 100 ? '🔥 TAM GERİLDİ (%100)!' : `YAY GERİLİYOR: %${pct}`;
                 document.getElementById('bow-charge-fill').style.width = `${pct}%`;
