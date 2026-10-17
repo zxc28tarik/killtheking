@@ -19,7 +19,10 @@ function strike({guardTime=0,parry=0,attackerZ=-2,role='knight'}={}) {
    mesh:{position:new THREE.Vector3(),scale:{set(){}}},label:{style:{}},name:'Knight'};
  const fn=vm.runInNewContext('('+source.slice(start,end)+')',{
     THREE,ArenaCombatDefense:defense,sfx:{playMetalClang(){clang++}},
-    spawnHitSparks(){},markArenaAggro(){aggro++},addKillFeed(){killFeeds++}
+    spawnHitSparks(){},markArenaAggro(){aggro++},addKillFeed(){killFeeds++},
+    // Bot-knockback navigation is validated in bot-knockback-safety.test.mjs.
+    // Keep this isolated VM test focused on defense/damage and score attribution.
+    applyBotWorldKnockback(){}
  });
  fn(attacker,victim,20);
  return {attacker,victim,clang,aggro,killFeeds};
