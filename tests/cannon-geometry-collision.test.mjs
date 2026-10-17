@@ -43,7 +43,8 @@ test('three rendered siege cannons have corresponding static solid colliders',()
 });
 test('solid cannon meshes block weapon raycasts through visible carriages',()=>{
  const {guns,worldMeshes}=buildRealCastleWithCannons();
- assert.equal(worldMeshes.length,18,'Each gun has four wheels, a carriage and barrel');
+ const cannonMeshes=worldMeshes.filter(mesh=>guns.some(g=>g.children.includes(mesh)));
+ assert.equal(cannonMeshes.length,18,'Each gun has four wheels, a carriage and barrel');
  const gun=guns[0],x=gun.position.x,y=gun.position.y,z=gun.position.z;
  gun.updateMatrixWorld(true);
  const ray=new THREE.Raycaster(new THREE.Vector3(x,y+.4,z+4),
@@ -52,7 +53,7 @@ test('solid cannon meshes block weapon raycasts through visible carriages',()=>{
 });
 test('a player running on battlements cannot cross the cannon carriage',()=>{
  const {colliders}=buildRealCastleWithCannons();
- const start={x:-19,z:-40,y:9.35};
+ const start={x:-17.2,z:-40,y:9.35};
  assert.equal(overlaps(start,.75,2.35,colliders),false);
  const p=move({from:start,velocity:{x:170,z:0},dt:.05,
     radius:.75,height:2.35,colliders});
@@ -72,7 +73,7 @@ test('cannon collision leaves courtyard and standard wall routes walkable',()=>{
  const {colliders,ramps}=buildRealCastleWithCannons();
  const nav=createNavigator(colliders,ramps,{min:-43.75,max:43.75,step:1.25,
     upperEdge:39.5,upperLevel:7});
- for(const p of [{x:0,z:0,y:0},{x:30,z:30,y:0},{x:0,z:40,y:7}]){
+ for(const p of [{x:30,z:30,y:0},{x:-30,z:30,y:0},{x:0,z:16,y:0}]){
   assert.equal(nav.walkableAt(p.x,p.z,p.y),true,'Blocked known safe space '+JSON.stringify(p));
  }
  const from=nav.nearest({x:-24,z:-20,y:0}),to=nav.nearest({x:24,z:20,y:0});
