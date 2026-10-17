@@ -4934,8 +4934,10 @@
             liveScoreboardVisible: !liveScoreboardOverlay.classList.contains('hidden'),
             matchResults: arenaMatch.result,
             matchStandings: ArenaMatch.leaderboard(player, bots),
+            playerClassIdx: player.classIdx,
+            playerClassName: CLASSES[player.classIdx].name,
             botCount: bots.length,
-            bots: bots.map(b => ({ name: b.name, hp: b.hp, dead: b.dead,
+            bots: bots.map(b => ({ name: b.name, role: b.role, weapon: b.weapon, hp: b.hp, dead: b.dead,
                 remainingWaypoints: b.navPath.length, navigationStuckTime: b.navStuck,
                 tacticalMode: b.tacticMode, meleeWindup: b.meleeWindup,
                 guarding: b.guardTime > 0, guardParryTime: b.guardParryTime,
@@ -4958,6 +4960,8 @@
                     return {x:local.x,y:local.y,z:local.z};
                 })() : null
         });
+        // Read-only A2 combat balance QA: computed only on explicit developer inspection.
+        window.krunkerArenaBalanceReport = () => ArenaQAReport.summarize(window.krunkerArenaStatus());
         window.onload = function() {
             animate();
         };
