@@ -89,3 +89,23 @@ test('visual banners and trees remain decorative, not new wall obstacles',()=>{
  assert.ok(!overlaps({x:28,z:26,y:2.35},.75,2.35,colliders),
    'Open courtyard beside tree foliage should remain navigable');
 });
+
+test('all 90 castle spawn-point routes remain available with physical cannons',()=>{
+ const {colliders,ramps}=buildRealCastleWithCannons();
+ const nav=createNavigator(colliders,ramps,{min:-43.75,max:43.75,step:1.25,
+     upperEdge:39.5,upperLevel:7});
+ const courtyard=[[-24,2,-20],[24,2,-20],[-25,2,20],[25,2,20],[0,2,-16]];
+ const rampart=[[-39,9,-10],[39,9,10],[0,9,40],[-18,9,-40],[18,9,-40]];
+ let checked=0;
+ for(const a of [courtyard,rampart])for(const b of [courtyard,rampart]){
+  for(let i=0;i<a.length;i++)for(let j=0;j<b.length;j++){
+   if(a===b&&i===j)continue;
+   const start=nav.nearest({x:a[i][0],y:a[i][1],z:a[i][2]});
+   const end=nav.nearest({x:b[j][0],y:b[j][1],z:b[j][2]});
+   const path=nav.findPath(start,end);
+   assert.ok(path.length>0,'Physical cannon disconnected '+JSON.stringify([a[i],b[j]]));
+   checked++;
+  }
+ }
+ assert.equal(checked,90);
+});
