@@ -3009,6 +3009,10 @@
             if (bot.hp <= 0) {
                 player.kills++;
                 bot.arenaDeaths++;
+                ArenaTelemetry.recordKill(arenaTelemetry, 'player', 'bot:' + bot.id, {
+                    classIdx:player.classIdx, weapon:weaponName,
+                    second:arenaMatch.durationSeconds - arenaMatch.remaining
+                });
                 player.streak++;
                 player.hp = Math.min(player.maxHp, player.hp + 30);
                 updateHUD();
@@ -3234,6 +3238,9 @@
             if (lethal) {
                 attacker.arenaKills++;
                 victim.arenaDeaths++;
+                ArenaTelemetry.recordKill(arenaTelemetry, 'bot:' + attacker.id,
+                    'bot:' + victim.id, {weapon:attacker.weapon,
+                        second:arenaMatch.durationSeconds - arenaMatch.remaining});
                 addKillFeed(attacker.name, attacker.weapon, victim.name, false);
                 victim.dead = true;
                 victim.hp = 0;
@@ -3310,6 +3317,10 @@
             if (player.hp <= 0) {
                 player.deaths++;
                 bot.arenaKills++;
+                ArenaTelemetry.recordKill(arenaTelemetry, 'bot:' + bot.id, 'player', {
+                    weapon:bot.weapon,
+                    second:arenaMatch.durationSeconds - arenaMatch.remaining
+                });
                 player.streak = 0;
                 player.hp = player.maxHp;
                 addKillFeed(bot.name, bot.weapon, 'Sen_1600', false);
@@ -3630,6 +3641,8 @@
         function resetFreeForAllRound() {
             hideLiveScoreboard();
             scoreboardRefreshSeconds = 0;
+            ArenaTelemetry.reset(arenaTelemetry);
+            telemetrySampleAccumulator = 0;
             player.kills = 0;
             player.deaths = 0;
             player.streak = 0;
@@ -4074,6 +4087,8 @@
         // ============================================================================
         let lastTime = performance.now();
         const arenaMatch = ArenaMatch.create();
+        const arenaTelemetry = ArenaTelemetry.create();
+        let telemetrySampleAccumulator = 0;
         let matchTimeSeconds = arenaMatch.remaining;
         syncMatchDurationControls();
         let fpsFrames = 0;
@@ -4886,6 +4901,14 @@
                 }
             });
 
+            // Observations every game-time second; pausing stops updateGame entirely.
+            // Sampling is measurement-only: never influences targeting or damage.
+            telemetrySampleAccumulator += dt;
+            if (telemetrySampleAccumulator >= 1) {
+                ArenaTelemetry.sampleTargets(arenaTelemetry, bots);
+                telemetrySampleAccumulator -= 1;
+            }
+
             // 6. Match Timer, Radar & FPS Counter
             const matchFinished = ArenaMatch.tick(arenaMatch, dt);
             matchTimeSeconds = arenaMatch.remaining;
@@ -4932,6 +4955,7 @@
             matchRemaining: arenaMatch.remaining,
             matchDurationSeconds: arenaMatch.durationSeconds,
             liveScoreboardVisible: !liveScoreboardOverlay.classList.contains('hidden'),
+            telemetry: ArenaTelemetry.snapshot(arenaTelemetry),
             matchResults: arenaMatch.result,
             matchStandings: ArenaMatch.leaderboard(player, bots),
             playerClassIdx: player.classIdx,
