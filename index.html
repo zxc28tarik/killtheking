@@ -204,6 +204,25 @@
         </div>
     </div>
 
+    <!-- End-of-match scoreboard: matches existing HUD style without changing arena art. -->
+    <div id="match-results-overlay" class="hidden fixed inset-0 z-40 bg-slate-950/95 backdrop-blur-lg flex items-center justify-center p-4 overflow-y-auto">
+        <section class="w-full max-w-2xl rounded-xl border-2 border-amber-500/70 bg-slate-900/95 p-5 sm:p-8 shadow-2xl my-auto">
+            <div class="text-center mb-5">
+                <div class="text-xs font-black tracking-widest text-sky-300 krunker-text">SERBEST ARENA • 04:00 DAKİKALIK MAÇ</div>
+                <h2 id="match-winner-title" class="text-2xl sm:text-4xl font-black text-amber-400 krunker-text mt-3">MAÇ SONUCU</h2>
+                <p class="text-sm text-slate-300 mt-2">En fazla öldürme kazanır. Eşitlikte daha az ölüm öne geçer.</p>
+            </div>
+            <div class="grid grid-cols-[2.5rem_1fr_3rem_3rem_3.5rem] gap-2 px-3 py-2 text-xs font-extrabold text-amber-300 krunker-text">
+                <span>#</span><span>OYUNCU</span><span>ÖLD.</span><span>ÖLÜM</span><span>K/D</span>
+            </div>
+            <div id="match-results-table" class="flex flex-col gap-1.5 max-h-[45vh] overflow-y-auto"></div>
+            <div class="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
+                <button id="match-replay-btn" class="px-7 py-3 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-black krunker-text">TEKRAR OYNA</button>
+                <button id="match-menu-btn" class="px-7 py-3 rounded-lg bg-slate-700 hover:bg-slate-600 border border-amber-500/40 text-white font-black krunker-text">ANA MENÜ</button>
+            </div>
+        </section>
+    </div>
+
     <!-- ==================== START / PAUSE MENU OVERLAY (v3.0 HD) ==================== -->
     <div id="menu-overlay" class="fixed inset-0 z-30 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
         <div class="max-w-5xl w-full bg-slate-900/95 border-2 border-amber-500/60 rounded-xl shadow-2xl p-5 sm:p-7 flex flex-col gap-5 my-auto">
@@ -365,6 +384,7 @@
     <script src="src/model-weapon-contact.js"></script>
     <script src="src/character-motion.js"></script>
     <script src="src/player-collision.js"></script>
+    <script src="src/match-flow.js"></script>
     <script src="src/oyun.js"></script>
 
 </body></html>
