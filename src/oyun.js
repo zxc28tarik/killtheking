@@ -2679,6 +2679,7 @@
                     strikePoseTime: 0,
                     hitFlashTimer: 0,
                     hitReactionTime: 0,
+                    underFireUntil: 0,
                     hitLeanSign: 1,
                     dead: false,
                     respawnTimer: 0,
@@ -2991,6 +2992,10 @@
             const lethal = bot.hp <= 0;
             bot.hitFlashTimer = 0.17;
             bot.hitReactionTime = lethal ? 0.38 : 0.24;
+            if (!lethal) {
+                bot.underFireUntil = arenaClock + 2;
+                bot.tacticRefresh = 0;
+            }
             bot.hitLeanSign = (player.pos.x < bot.mesh.position.x) ? -1 : 1;
             bot.mesh.scale.set(lethal ? 1.17 : 1.10, lethal ? 0.86 : 0.91, 1.08);
             // Small impact displacement; does not change nominal damage or weapon range.
@@ -3237,6 +3242,10 @@
             delta.y = 0;
             victim.hitFlashTimer = 0.17;
             victim.hitReactionTime = lethal ? 0.38 : 0.24;
+            if (!lethal) {
+                victim.underFireUntil = arenaClock + 2;
+                victim.tacticRefresh = 0;
+            }
             victim.hitLeanSign = delta.x < 0 ? -1 : 1;
             victim.mesh.scale.set(lethal ? 1.17 : 1.10, lethal ? 0.86 : 0.91, 1.08);
             if (delta.lengthSq() > 0.0001) {
@@ -3709,6 +3718,7 @@
                 bot.tacticRefresh = 0;
                 bot.tacticMode = 'patrol';
                 bot.hitReactionTime = 0;
+                bot.underFireUntil = 0;
                 bot.staggerTime = 0;
                 bot.meleeWindup = 0;
                 bot.rangedWindup = 0;
@@ -4715,6 +4725,7 @@
                         bot.mesh.rotation.z = 0;
                         bot.mesh.scale.set(1, 1, 1);
                         bot.hitReactionTime = 0;
+                        bot.underFireUntil = 0;
                         bot.staggerTime = 0;
                         bot.meleeWindup = 0;
                         bot.rangedWindup = 0;
@@ -4810,6 +4821,7 @@
                         const tactic = ArenaCombatTactics.plan({
                             role: bot.role, from: botGround, target: targetPosition,
                             range: bot.range, hasLineOfSight: hasClearShot,
+                            underPressure: arenaClock < bot.underFireUntil,
                             navigator, seed: bot.id,
                             canSeeFrom: (candidate, opponent) => arenaCanSeeFrom(
                                 candidate, opponent, arenaTarget.type === 'player')
