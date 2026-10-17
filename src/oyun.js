@@ -2688,7 +2688,8 @@
                     arenaAggroType: null,
                     arenaAggroId: null,
                     arenaAggroUntil: 0,
-                    arenaKills: 0
+                    arenaKills: 0,
+                    arenaDeaths: 0
                 };
 
                 mesh.traverse(child => {
@@ -3007,6 +3008,7 @@
 
             if (bot.hp <= 0) {
                 player.kills++;
+                bot.arenaDeaths++;
                 player.streak++;
                 player.hp = Math.min(player.maxHp, player.hp + 30);
                 updateHUD();
@@ -3231,6 +3233,7 @@
             // Bot-vs-bot blows must NEVER show a player hitmarker or heal/score the player.
             if (lethal) {
                 attacker.arenaKills++;
+                victim.arenaDeaths++;
                 addKillFeed(attacker.name, attacker.weapon, victim.name, false);
                 victim.dead = true;
                 victim.hp = 0;
@@ -3306,6 +3309,7 @@
             player.hp -= incomingDmg;
             if (player.hp <= 0) {
                 player.deaths++;
+                bot.arenaKills++;
                 player.streak = 0;
                 player.hp = player.maxHp;
                 addKillFeed(bot.name, bot.weapon, 'Sen_1600', false);
@@ -3569,6 +3573,113 @@
         const playBtn = document.getElementById('play-btn');
         const sensSlider = document.getElementById('sens-slider');
         const sensValue = document.getElementById('sens-value');
+        const matchResultsOverlay = document.getElementById('match-results-overlay');
+        const matchResultsTable = document.getElementById('match-results-table');
+        const matchWinnerTitle = document.getElementById('match-winner-title');
+
+        function resetFreeForAllRound() {
+            player.kills = 0;
+            player.deaths = 0;
+            player.streak = 0;
+            player.hp = player.maxHp;
+            player.vel.set(0, 0, 0);
+            player.onGround = false;
+            player.isSliding = false;
+            player.currentHeight = player.standHeight;
+            player.ammo = 1;
+            player.isReloading = false;
+            player.reloadTimer = 0;
+            player.attackCooldown = 0;
+            player.attackAnimTime = 0;
+            player.weaponKick = 0;
+            player.shakeIntensity = 0;
+            player.shieldParryTime = 0;
+            player.shieldParryCooldown = 0;
+            player.isShielding = false;
+            player.bowCharge = 0;
+            player.isDrawingBow = false;
+            player.bhopChain = 0;
+            player.tpsMotionState = ArenaCharacterMotion.createState();
+            activeWeaponSwing = null;
+            impactHoldSeconds = 0;
+            const safeSpawn = chooseArenaRespawn(COURTYARD_SPAWNS, null, false);
+            player.pos.set(safeSpawn.x, safeSpawn.y + player.currentHeight, safeSpawn.z);
+            bots.forEach(bot => {
+                bot.arenaKills = 0;
+                bot.arenaDeaths = 0;
+                bot.hp = bot.maxHp;
+                bot.dead = false;
+                bot.respawnTimer = 0;
+                bot.hasHelmet = true;
+                bot.mesh._parts.helmetGroup.visible = true;
+                bot.mesh.rotation.x = 0;
+                bot.mesh.rotation.z = 0;
+                bot.mesh.scale.set(1, 1, 1);
+                bot.mesh.position.copy(chooseArenaRespawn(
+                    bot.preferWall ? RAMPART_SPAWNS : COURTYARD_SPAWNS, bot, false));
+                bot.navPath.length = 0;
+                bot.navGoal = null;
+                bot.navRefresh = 0;
+                bot.navStuck = 0;
+                bot.navLastPosition.copy(bot.mesh.position);
+                bot.tacticGoal = null;
+                bot.tacticTargetKey = null;
+                bot.tacticLastTarget = null;
+                bot.tacticRefresh = 0;
+                bot.tacticMode = 'patrol';
+                bot.hitReactionTime = 0;
+                bot.staggerTime = 0;
+                bot.meleeWindup = 0;
+                bot.strikePoseTime = 0;
+                bot.motionState = ArenaCharacterMotion.createState();
+                bot.guardTime = 0;
+                bot.guardParryTime = 0;
+                bot.guardCooldown = 0;
+                bot.attackTimer = 0.8 + Math.random() * 0.8;
+                bot.arenaTargetType = null;
+                bot.arenaTargetId = null;
+                bot.arenaLockTime = 0;
+                bot.arenaAggroType = null;
+                bot.arenaAggroId = null;
+                bot.arenaAggroUntil = 0;
+            });
+            document.getElementById('kill-feed').replaceChildren();
+            document.getElementById('reload-indicator').classList.add('hidden');
+            document.getElementById('bow-charge-ui').classList.add('hidden');
+            document.getElementById('shield-overlay').style.opacity = '0';
+            ArenaMatch.begin(arenaMatch);
+            matchTimeSeconds = arenaMatch.remaining;
+            document.getElementById('hud-timer').textContent = ArenaMatch.clock(matchTimeSeconds);
+            matchResultsOverlay.classList.add('hidden');
+            updateHUD();
+        }
+
+        function showMatchResults() {
+            const result = ArenaMatch.finish(arenaMatch, player, bots);
+            isGameActive = false;
+            activeWeaponSwing = null;
+            Object.keys(keys).forEach(key => { keys[key] = false; });
+            menuOverlay.classList.add('hidden');
+            matchResultsTable.replaceChildren();
+            matchWinnerTitle.textContent = result.playerWon
+                ? '🏆 KUŞATMAYI KAZANDIN!'
+                : '🏆 KAZANAN: ' + result.winnerName;
+            result.standings.forEach(entry => {
+                const line = document.createElement('div');
+                line.className = 'grid grid-cols-[2.5rem_1fr_3rem_3rem_3.5rem] items-center gap-2 rounded-lg px-3 py-2 border border-white/10 ' +
+                    (entry.isPlayer ? 'bg-amber-500/20 text-amber-200' : 'bg-slate-800/80 text-slate-100');
+                for (const value of [entry.rank, entry.name, entry.kills, entry.deaths, entry.kd.toFixed(2)]) {
+                    const cell = document.createElement('span');
+                    cell.className = 'text-sm sm:text-base font-bold krunker-text truncate';
+                    cell.textContent = String(value);
+                    line.appendChild(cell);
+                }
+                matchResultsTable.appendChild(line);
+            });
+            matchResultsOverlay.classList.remove('hidden');
+            if (document.pointerLockElement === canvas && document.exitPointerLock)
+                document.exitPointerLock();
+        }
 
         sensSlider.addEventListener('input', (e) => {
             mouseSensitivity = parseFloat(e.target.value);
@@ -3577,19 +3688,43 @@
 
         playBtn.addEventListener('click', () => {
             sfx.init();
+            if (arenaMatch.phase === 'menu' || arenaMatch.phase === 'results')
+                resetFreeForAllRound();
+            else ArenaMatch.resume(arenaMatch);
+            isGameActive = arenaMatch.phase === 'playing';
             menuOverlay.classList.add('hidden');
-            isGameActive = true;
             if (canvas.requestPointerLock) canvas.requestPointerLock();
+        });
+
+        document.getElementById('match-replay-btn').addEventListener('click', () => {
+            resetFreeForAllRound();
+            isGameActive = true;
+            menuOverlay.classList.add('hidden');
+            if (canvas.requestPointerLock) canvas.requestPointerLock();
+        });
+        document.getElementById('match-menu-btn').addEventListener('click', () => {
+            arenaMatch.phase = 'menu';
+            arenaMatch.result = null;
+            isGameActive = false;
+            matchResultsOverlay.classList.add('hidden');
+            menuOverlay.classList.remove('hidden');
+            playBtn.textContent = 'YENİ MAÇ BAŞLAT';
         });
 
         document.addEventListener('pointerlockchange', () => {
             if (document.pointerLockElement === canvas) {
-                isGameActive = true;
-                menuOverlay.classList.add('hidden');
+                if (arenaMatch.phase === 'paused') ArenaMatch.resume(arenaMatch);
+                isGameActive = arenaMatch.phase === 'playing';
+                if (isGameActive) menuOverlay.classList.add('hidden');
             } else {
+                if (arenaMatch.phase === 'playing') ArenaMatch.pause(arenaMatch);
                 isGameActive = false;
                 activeWeaponSwing = null;
-                menuOverlay.classList.remove('hidden');
+                if (arenaMatch.phase !== 'results') {
+                    menuOverlay.classList.remove('hidden');
+                    playBtn.textContent = arenaMatch.phase === 'paused'
+                        ? 'MAÇA DEVAM ET' : 'KUŞATMAYA GİR (BAŞLA)';
+                }
             }
         });
 
@@ -3849,7 +3984,8 @@
         // 13. MAIN GAME LOOP v2.0
         // ============================================================================
         let lastTime = performance.now();
-        let matchTimeSeconds = 240;
+        const arenaMatch = ArenaMatch.create();
+        let matchTimeSeconds = ArenaMatch.DURATION;
         let fpsFrames = 0;
         let fpsTimer = 0;
 
@@ -4661,11 +4797,10 @@
             });
 
             // 6. Match Timer, Radar & FPS Counter
-            matchTimeSeconds -= dt;
-            if (matchTimeSeconds <= 0) matchTimeSeconds = 240;
-            const mins = String(Math.floor(matchTimeSeconds / 60)).padStart(2, '0');
-            const secs = String(Math.floor(matchTimeSeconds % 60)).padStart(2, '0');
-            document.getElementById('hud-timer').textContent = `${mins}:${secs}`;
+            const matchFinished = ArenaMatch.tick(arenaMatch, dt);
+            matchTimeSeconds = arenaMatch.remaining;
+            document.getElementById('hud-timer').textContent = ArenaMatch.clock(matchTimeSeconds);
+            if (matchFinished) showMatchResults();
 
             renderRadar();
 
@@ -4689,13 +4824,17 @@
                 impactHoldSeconds = Math.max(0, impactHoldSeconds - dt);
                 gameDt *= 0.16;
             }
-            updateGame(gameDt);
+            if (isGameActive && arenaMatch.phase === 'playing') updateGame(gameDt);
             renderer.render(scene, camera);
         }
 
         // Read-only runtime snapshot for arena QA; no controls or game state changes.
         window.krunkerArenaStatus = () => ({
             mode: 'serbest-arena',
+            matchPhase: arenaMatch.phase,
+            matchRemaining: arenaMatch.remaining,
+            matchResults: arenaMatch.result,
+            matchStandings: ArenaMatch.leaderboard(player, bots),
             botCount: bots.length,
             bots: bots.map(b => ({ name: b.name, hp: b.hp, dead: b.dead,
                 remainingWaypoints: b.navPath.length, navigationStuckTime: b.navStuck,
@@ -4704,7 +4843,7 @@
                 walkBlend: b.motionState.weight, strikePoseTime: b.strikePoseTime,
                 target: b.arenaTargetType === 'bot' && bots[b.arenaTargetId]
                     ? bots[b.arenaTargetId].name : b.arenaTargetType,
-                arenaKills: b.arenaKills })),
+                arenaKills: b.arenaKills, arenaDeaths: b.arenaDeaths })),
             playerKills: player.kills,
             playerParries: player.parries,
             playerDeaths: player.deaths,
