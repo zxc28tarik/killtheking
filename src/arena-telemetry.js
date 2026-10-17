@@ -57,8 +57,9 @@
     else if(aliveIds.has(bot.arenaTargetId))category='bot';
    }
    state.targetSlots[category]++;
-   if(bot.navPath&&bot.navPath.length>0&&
-      Number.isFinite(bot.navStuck)&&bot.navStuck>=2){
+   // Repath intentionally clears navPath while a bot can remain stuck.
+   // Use the continuous stuck timer rather than waypoint presence.
+   if(Number.isFinite(bot.navStuck)&&bot.navStuck>=2){
     const id=String(bot.id);
     state.stuckSamples[id]=(state.stuckSamples[id]||0)+1;
    }

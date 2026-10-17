@@ -4848,7 +4848,8 @@
                     if (remaining > 0.1) {
                         recoveryAttempting = true;
                         stepDir.normalize();
-                        bot.mesh.rotation.y = Math.atan2(stepDir.x, stepDir.z);
+                        bot.mesh.rotation.y = ArenaCharacterMotion.turnToward(
+                            bot.mesh.rotation.y, Math.atan2(stepDir.x, stepDir.z), dt);
                         const beforeX = bot.mesh.position.x, beforeZ = bot.mesh.position.z;
                         const newPos = navigator.safeAdvance(botGround, stepDir,
                             Math.min(bot.speed * dt, remaining));
@@ -4861,7 +4862,10 @@
                     // Hold tactical facing but ease the walk animation to idle.
                     if (targetPosition) {
                         const facing = targetPosition.clone().sub(bot.mesh.position);
-                        if (facing.lengthSq() > 0.04) bot.mesh.rotation.y = Math.atan2(facing.x, facing.z);
+                        if (facing.lengthSq() > 0.04) {
+                            bot.mesh.rotation.y = ArenaCharacterMotion.turnToward(
+                                bot.mesh.rotation.y, Math.atan2(facing.x, facing.z), dt);
+                        }
                     }
                 }
                 const recovery = ArenaBotRecovery.advance(bot.navRecovery, dt, {

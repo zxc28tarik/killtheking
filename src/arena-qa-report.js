@@ -61,7 +61,7 @@
    botKillsTotal:fighters.reduce((n,b)=>n+b.kills,0),
    botDeathsTotal:fighters.reduce((n,b)=>n+b.deaths,0),
    targetingAtSnapshot:targeting,
-   navigationStuckCandidates:fighters.filter(b=>b.remainingWaypoints>0&&b.navigationStuckSeconds>=2).map(b=>b.name),
+   navigationStuckCandidates:fighters.filter(b=>b.navigationStuckSeconds>=2).map(b=>b.name),
    killsByDirection:tracked?{...tracked.kills}:null,
    playerKillsByClass:tracked?tracked.classKills.slice():null,
    targetingOverTime:overTime,
