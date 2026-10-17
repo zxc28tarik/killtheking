@@ -2940,6 +2940,32 @@
             setTimeout(() => { if (item.parentNode) item.remove(); }, 6500);
         }
 
+        // Combat impulses must obey the same castle colliders as navigation.
+        // Raw mesh.position.addScaledVector bypassed wall/ramp checks and could
+        // push bots through parapets during hits or the shield-bash ability.
+        function applyBotWorldKnockback(bot, direction, distance) {
+            if (!bot || !(distance > 0)) return 0;
+            const planar = Math.hypot(direction.x, direction.z);
+            if (planar < 0.000001) return 0;
+            const x = bot.mesh.position.x, z = bot.mesh.position.z;
+            const origin = {x, z, y: navigator.heightAt(x, z)};
+            const next = navigator.safeAdvance(origin,
+                {x: direction.x / planar, z: direction.z / planar}, distance);
+            if (!navigator.walkableAt(next.x, next.z, next.y)) return 0;
+            const actual = Math.hypot(next.x - x, next.z - z);
+            bot.mesh.position.x = next.x;
+            bot.mesh.position.z = next.z;
+            if (actual > 0.025) {
+                // An impulse invalidates the old AI route; replan from safe ground.
+                bot.navPath.length = 0;
+                bot.navGoal = null;
+                bot.navRefresh = 0;
+                bot.navStuck = 0;
+                bot.tacticRefresh = 0;
+            }
+            return actual;
+        }
+
         function damageBot(bot, dmg, isHeadshot, weaponName, prefixTag = '', impactPoint = null) {
             if (!bot || bot.dead) return;
             bot.hp -= dmg;
@@ -2953,7 +2979,7 @@
             // Small impact displacement; does not change nominal damage or weapon range.
             const knock = bot.mesh.position.clone().sub(player.pos);
             knock.y = 0;
-            if (knock.lengthSq() > 0.0001) bot.mesh.position.addScaledVector(knock.normalize(), lethal ? 0.35 : 0.16);
+            if (knock.lengthSq() > 0.0001) applyBotWorldKnockback(bot, knock, lethal ? 0.35 : 0.16);
             triggerHitmarker(isHeadshot, lethal);
             registerConfirmedHit(weaponName, isHeadshot, lethal, dmg);
 
@@ -3184,7 +3210,7 @@
             victim.hitLeanSign = delta.x < 0 ? -1 : 1;
             victim.mesh.scale.set(lethal ? 1.17 : 1.10, lethal ? 0.86 : 0.91, 1.08);
             if (delta.lengthSq() > 0.0001) {
-                victim.mesh.position.addScaledVector(delta.normalize(), lethal ? 0.34 : 0.14);
+                applyBotWorldKnockback(victim, delta, lethal ? 0.34 : 0.14);
             }
             const impactPoint = victim.mesh.position.clone().add(new THREE.Vector3(0, 1.7, 0));
             spawnHitSparks(impactPoint, false, attacker.weapon);
@@ -3362,7 +3388,7 @@
                         !arenaWorldBlockBetween(player.pos.clone().add(new THREE.Vector3(0, 1.5, 0)),
                             bot.mesh.position.clone().add(new THREE.Vector3(0, 1.5, 0)))) {
                         damageBot(bot, 85, false, 'Kalkan Çarpması', '🛡️ ');
-                        bot.mesh.position.addScaledVector(forward, 4.5);
+                        applyBotWorldKnockback(bot, forward, 4.5);
                     }
                 });
                 updateHUD();
