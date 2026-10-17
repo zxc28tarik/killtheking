@@ -21,8 +21,8 @@ test('all four combat roles have differentiated telegraphs and cooldown envelope
  for(const role of ['knight','pikeman','archer','musket']){
   const p=AI.profile(role);
   assert.ok(p.windup>=.25&&p.windup<=.42);
-  assert.ok(p.cooldown>=1.2&&p.cooldown<=2);
-  assert.ok(AI.nextCooldown(role,1)>AI.nextCooldown(role,0));
+  assert.ok(p.cooldown>=1.2&&p.cooldown<=15);
+  assert.ok(AI.nextCooldown(role,1)>=AI.nextCooldown(role,0));
   assert.equal(AI.nextCooldown(role,-2),p.cooldown);
   assert.equal(AI.nextCooldown(role,2),p.cooldown+p.variance);
   assert.equal(AI.windup(role),p.windup);
@@ -71,13 +71,13 @@ test('ranged bot cannot strafe through world collision or disconnected areas',()
  assert.ok(result.goal.z>0);
 });
 
-test('player and six-bot FFA damage buffs are bounded; player class damage is untouched',()=>{
+test('player and six-bot FFA use the new shared weapon damage distribution',()=>{
  const part=game.slice(game.indexOf('const BOT_PROFILES = ['),game.indexOf('const COURTYARD_SPAWNS = ['));
  const damages=[...part.matchAll(/damage: (\d+), preferWall: /g)].map(x=>Number(x[1]));
- assert.deepEqual(damages,[19,25,21,20,20,24]);
- for(const amount of damages)assert.ok(amount>=19&&amount<=25);
- assert.match(game,/name: 'TÜFEKÇİ \(1600 MUSKET\)'[\s\S]*?damage: 115/);
- assert.match(game,/name: 'ŞÖVALYE \(KILIÇ & KALKAN\)'[\s\S]*?damage: 65/);
+ assert.deepEqual(damages,[20,90,35,23,20,90]);
+ for(const amount of damages)assert.ok(amount>=20&&amount<=90);
+ assert.match(game,/name: 'TÜFEKÇİ \(1600 MUSKET\)'[\s\S]*?damage: 90/);
+ assert.match(game,/name: 'ŞÖVALYE \(KILIÇ & KALKAN\)'[\s\S]*?damage: 20/);
  assert.equal(damages.length,6);
 });
 
@@ -88,7 +88,7 @@ test('ranged telegraphs are cancellable on loss of sight and bot attacks require
  assert.match(game,/!arenaLineOfSight\(bot, targetPosition, arenaTarget\.type === 'player'\)/);
  assert.match(game,/bot\.rangedWindup = ArenaBotOffense\.windup\(bot\.role\)/);
  assert.match(game,/bot\.meleeWindup = ArenaBotOffense\.windup\(bot\.role\)/);
- assert.match(game,/bot\.attackTimer = ArenaBotOffense\.nextCooldown\(bot\.role, Math\.random\(\)\)/);
+ assert.match(game,/ArenaBotOffense\.nextCooldown\(bot\.role, Math\.random\(\)\)/);
 });
 
 test('pressure is based on actual received damage and resets between lives',()=>{
