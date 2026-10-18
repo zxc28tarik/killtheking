@@ -1406,20 +1406,7 @@
             // Ground mesh and texture repeat cover the entire 20x area.
             // A small generated tiling texture breaks up flat green without
             // adding geometry or modifying any accepted 3D character art.
-            const grassTile=document.createElement('canvas');
-            grassTile.width=64;grassTile.height=64;
-            const grassCtx=grassTile.getContext('2d');
-            grassCtx.fillStyle='#6b9a3b';
-            grassCtx.fillRect(0,0,64,64);
-            for(let i=0;i<180;i++){
-                const x=(i*37)%64,z=(i*23+i*i)%64;
-                grassCtx.fillStyle=i%3===0?'#709f42':i%3===1?'#659038':'#769f48';
-                grassCtx.fillRect(x,z,1+(i%3),1+(i%2));
-            }
-            const grassTexture=new THREE.CanvasTexture(grassTile);
-            grassTexture.wrapS=grassTexture.wrapT=THREE.RepeatWrapping;
-            grassTexture.repeat.set(64,64);
-            grassTexture.magFilter=THREE.NearestFilter;
+            const grassTexture=ArenaMeadowGrass.createTexture(THREE,document);
             const grassGround=new THREE.Mesh(
                 new THREE.PlaneGeometry(112*spec.linearScale,112*spec.linearScale),
                 new THREE.MeshStandardMaterial({
@@ -1429,6 +1416,13 @@
             grassGround.receiveShadow=true;
             scene.add(grassGround);
             worldMeshes.push(grassGround);
+            // Rich decorative turf across the full square, including its open
+            // fighting center. Low-poly instancing preserves 20x-map FPS.
+            const grassDetail=(typeof window.matchMedia==='function'
+                &&window.matchMedia('(pointer: coarse)').matches)
+                ?ArenaMeadowGrass.MOBILE_COUNT:ArenaMeadowGrass.DESKTOP_COUNT;
+            const grassTufts=ArenaMeadowGrass.createInstancedTufts(THREE,spec,grassDetail);
+            scene.add(grassTufts);
             const leafMat=new THREE.MeshStandardMaterial({color:0x477a32,roughness:.95});
             const pathwayMat=new THREE.MeshStandardMaterial({color:0x7c6848,roughness:.94});
             const meadowMaterials={wood:woodMat,stone:darkStoneMat,leaves:leafMat,path:pathwayMat};
