@@ -1194,6 +1194,7 @@
             barrels.push(barrelObj);
         }
 
+        const castleBegin = scene.children.length;
         function buildCastleArena() {
             const floorMesh = new THREE.Mesh(
                 new THREE.PlaneGeometry(110, 110),
@@ -1386,7 +1387,6 @@
         // Keep both arenas as independent, toggleable scene/object batches.
         // Swapping a map changes *real* collision, raycast and AI navigation arrays;
         // merely hiding castle meshes would leave invisible walls behind.
-        const castleBegin = scene.children.length;
         buildCastleArena();
         const castleVisuals = scene.children.slice(castleBegin);
         const castleMapData = {
