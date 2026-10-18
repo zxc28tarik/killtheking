@@ -204,10 +204,18 @@
         </div>
     </div>
 
+    <!-- Optional offline team match scoreboard, hidden in default FFA. -->
+    <div id="hud-team-score" class="hidden fixed top-20 left-1/2 -translate-x-1/2 z-20 pointer-events-none hud-box rounded-lg px-4 py-2 text-xs sm:text-base font-black krunker-text text-center">
+        <span class="text-sky-300">MAVİ <strong id="hud-team-blue">0</strong></span>
+        <span class="mx-3 text-gray-300">—</span>
+        <span class="text-rose-400">KIRMIZI <strong id="hud-team-red">0</strong></span>
+    </div>
+
     <!-- Hold TAB during play: uses the exact same FFA standings as match results. -->
     <div id="match-live-scoreboard" class="hidden" aria-hidden="true">
         <section class="match-live-panel" aria-label="Canlı FFA skor tablosu">
-            <div class="match-live-heading"><strong>SERBEST ARENA</strong><span>CANLI SIRALAMA • TAB</span></div>
+            <div class="match-live-heading"><strong id="match-live-mode">SERBEST ARENA</strong><span>CANLI SIRALAMA • TAB</span></div>
+            <p id="match-live-team-score" class="hidden text-center font-bold text-xs text-sky-200 mb-2"></p>
             <div class="match-live-head"><span>#</span><span>OYUNCU</span><span>ÖLD.</span><span>ÖLÜM</span><span>K/D</span></div>
             <div id="match-live-table" class="match-live-table"></div>
             <p class="match-live-hint">En çok öldürme kazanır • Eşitlikte az ölüm öne geçer</p>
@@ -218,8 +226,9 @@
     <div id="match-results-overlay" class="hidden fixed inset-0 z-40 bg-slate-950/95 backdrop-blur-lg flex items-center justify-center p-4 overflow-y-auto">
         <section class="w-full max-w-2xl rounded-xl border-2 border-amber-500/70 bg-slate-900/95 p-5 sm:p-8 shadow-2xl my-auto">
             <div class="text-center mb-5">
-                <div class="text-xs font-black tracking-widest text-sky-300 krunker-text">SERBEST ARENA • <span id="match-duration-label">04:00</span> DAKİKALIK MAÇ</div>
+                <div class="text-xs font-black tracking-widest text-sky-300 krunker-text"><span id="match-results-mode-label">SERBEST ARENA</span> • <span id="match-duration-label">04:00</span> DAKİKALIK MAÇ</div>
                 <h2 id="match-winner-title" class="text-2xl sm:text-4xl font-black text-amber-400 krunker-text mt-3">MAÇ SONUCU</h2>
+                <div id="match-team-results" class="hidden mt-3 p-2 rounded border border-sky-500/50 font-extrabold text-base text-sky-200 krunker-text"></div>
                 <p class="text-sm text-slate-300 mt-2">En fazla öldürme kazanır. Eşitlikte daha az ölüm öne geçer.</p>
             </div>
             <div class="grid grid-cols-[2.5rem_1fr_3rem_3rem_3.5rem] gap-2 px-3 py-2 text-xs font-extrabold text-amber-300 krunker-text">
@@ -366,6 +375,14 @@
                 </div>
             </div>
 
+            <!-- Game mode can only change from the main menu, never during a round. -->
+            <div id="match-mode-controls" class="match-duration-picker" role="group" aria-label="Oyun modu">
+                <strong>OYUN MODU</strong>
+                <button type="button" data-arena-mode="ffa" class="selected" aria-pressed="true">SERBEST ARENA (FFA)</button>
+                <button type="button" data-arena-mode="tdm" aria-pressed="false">TAKIM SAVAŞI (4v3)</button>
+                <span id="match-mode-hint" class="match-duration-help">6 bağımsız bot • Herkes herkese karşı</span>
+            </div>
+
             <!-- Duration applies to the next round; changing it mid-round is disabled. -->
             <div class="match-duration-picker" id="match-duration-controls" role="group" aria-label="Maç süresi seçimi">
                 <strong>MAÇ SÜRESİ</strong>
@@ -412,6 +429,7 @@
     <script src="src/arena-bot-offense.js"></script>
     <script src="src/weapon-balance.js"></script>
     <script src="src/combat-hit-3d.js"></script>
+    <script src="src/arena-teams.js"></script>
     <script src="src/oyun.js"></script>
 
 </body></html>
