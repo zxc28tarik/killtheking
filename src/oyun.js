@@ -2033,12 +2033,11 @@
         function chooseArenaRespawn(pool, excludedBot = null, includePlayer = true) {
             const team = excludedBot ? botTeam(excludedBot) : ArenaTeams.PLAYER_TEAM;
             const candidates = ArenaTeams.spawnCandidates(pool,arenaMode,team);
-            const threats = bots.filter(other => other !== excludedBot && !other.dead &&
-                (arenaMode !== 'tdm' || botTeam(other) !== team))
+            // All living actors count for clearance: even a same-team ally
+            // should not spawn directly on top of a teammate.
+            const threats = bots.filter(other => other !== excludedBot && !other.dead)
                 .map(other => other.mesh.position);
-            if (includePlayer && isGameActive &&
-                (arenaMode !== 'tdm' || team !== ArenaTeams.PLAYER_TEAM))
-                threats.push(player.pos);
+            if (includePlayer && isGameActive) threats.push(player.pos);
             const preferred = ArenaSpawnSafety.chooseSpawn(candidates, threats);
             // Use the nearest valid point so a new fighter cannot spawn in battlements.
             const cell = navigator.nearest(preferred);
