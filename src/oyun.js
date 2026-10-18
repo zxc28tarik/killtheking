@@ -1383,7 +1383,60 @@
             }
         }
 
+        // Keep both arenas as independent, toggleable scene/object batches.
+        // Swapping a map changes *real* collision, raycast and AI navigation arrays;
+        // merely hiding castle meshes would leave invisible walls behind.
+        const castleBegin = scene.children.length;
         buildCastleArena();
+        const castleVisuals = scene.children.slice(castleBegin);
+        const castleMapData = {
+            colliders:colliders.slice(),ramps:ramps.slice(),
+            worldMeshes:worldMeshes.slice(),torches:torches.slice(),
+            jumpPads:jumpPads.slice(),barrels:barrels.slice(),
+            visuals:castleVisuals,
+            navigation:{min:-43.75,max:43.75,step:1.25,upperEdge:39.5,upperLevel:7}
+        };
+        function clearArenaGeometry() {
+            colliders.length=0;ramps.length=0;worldMeshes.length=0;
+            torches.length=0;jumpPads.length=0;barrels.length=0;
+        }
+        function buildMeadowSquare() {
+            const spec=ArenaMeadowLayout.spec();
+            const grassGround=new THREE.Mesh(new THREE.PlaneGeometry(112,112),
+                new THREE.MeshStandardMaterial({
+                    color:0x6b9a3b,roughness:.96,metalness:0
+                }));
+            grassGround.rotation.x=-Math.PI/2;
+            grassGround.receiveShadow=true;
+            scene.add(grassGround);
+            worldMeshes.push(grassGround);
+            const leafMat=new THREE.MeshStandardMaterial({color:0x477a32,roughness:.95});
+            const pathwayMat=new THREE.MeshStandardMaterial({color:0x7c6848,roughness:.94});
+            const meadowMaterials={wood:woodMat,stone:darkStoneMat,leaves:leafMat,path:pathwayMat};
+            for(const box of spec.boxes){
+                addBox(box.x,box.y,box.z,box.w,box.h,box.d,
+                    meadowMaterials[box.material],box.solid,box.solid);
+            }
+            return spec;
+        }
+        // The meadow contains no castle ramps, explosive barrels or launch pads.
+        const meadowBegin=scene.children.length;
+        clearArenaGeometry();
+        const meadowSpec=buildMeadowSquare();
+        const meadowMapData={
+            colliders:colliders.slice(),ramps:ramps.slice(),
+            worldMeshes:worldMeshes.slice(),torches:torches.slice(),
+            jumpPads:jumpPads.slice(),barrels:barrels.slice(),
+            visuals:scene.children.slice(meadowBegin),
+            navigation:meadowSpec.navigation
+        };
+        meadowMapData.visuals.forEach(obj=>{obj.visible=false;});
+        clearArenaGeometry();
+        for(const [active,items] of [
+            [colliders,castleMapData.colliders],[ramps,castleMapData.ramps],
+            [worldMeshes,castleMapData.worldMeshes],[torches,castleMapData.torches],
+            [jumpPads,castleMapData.jumpPads],[barrels,castleMapData.barrels]
+        ])active.push(...items);
 
         // ============================================================================
         // 5. FIRST-PERSON 3D WEAPON VIEWMODELS v4.0 REALISTIC (Forged Steel, Walnut & Flintlock)
@@ -1901,6 +1954,7 @@
         let lastWeaponSwingRaycasts = 0;
         let isGameActive = false;
         let arenaMode = 'ffa'; // Default stays the approved everyone-vs-everyone mode.
+        let arenaMap = 'castle'; // Original castle remains the default.
         let mouseSensitivity = gameSettings.sensitivity;
         let playerCharGroup = null;
         const playerClassModels = [];
@@ -2039,8 +2093,34 @@
         ];
 
         // A* grid built once from the castle's existing collision geometry and ramps.
-        const navigator = ArenaNavigation.createNavigator(colliders, ramps,
-            { min: -43.75, max: 43.75, step: 1.25, upperEdge: 39.5, upperLevel: 7 });
+        let navigator = ArenaNavigation.createNavigator(
+            colliders, ramps, castleMapData.navigation);
+        function switchArenaMap(map) {
+            if(!['castle','meadow'].includes(map))throw Error('Invalid arena map');
+            if(map===arenaMap)return;
+            const selected=map==='castle'?castleMapData:meadowMapData;
+            for(const [active,items] of [
+                [colliders,selected.colliders],[ramps,selected.ramps],
+                [worldMeshes,selected.worldMeshes],[torches,selected.torches],
+                [jumpPads,selected.jumpPads],[barrels,selected.barrels]
+            ]){active.length=0;active.push(...items);}
+            castleMapData.visuals.forEach(obj=>{obj.visible=map==='castle';});
+            meadowMapData.visuals.forEach(obj=>{obj.visible=map==='meadow';});
+            castleMapData.barrels.forEach(barrel=>{
+                barrel.label.style.display=map==='castle'&&barrel.active?'block':'none';
+            });
+            // Build a fresh A* graph against the selected map's actual solids.
+            // Old navigator instances must not retain the shared mutable arrays.
+            navigator=ArenaNavigation.createNavigator(colliders,ramps,selected.navigation);
+            arenaMap=map;
+        }
+        function arenaSpawnPool(preferWall=false) {
+            if(arenaMap==='meadow'){
+                const source=preferWall?meadowSpec.rangedSpawns:meadowSpec.courtyardSpawns;
+                return source.map(p=>new THREE.Vector3(p[0],p[1],p[2]));
+            }
+            return preferWall?RAMPART_SPAWNS:COURTYARD_SPAWNS;
+        }
         const bots = [];
         function botTeam(bot) { return ArenaTeams.teamForBot(bot.id); }
         function arenaCanTarget(bot,type,id) {
