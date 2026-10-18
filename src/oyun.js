@@ -3339,20 +3339,28 @@
                 if (!shot.point) return;
                 targetPoint = new THREE.Vector3(shot.point.x,shot.point.y,shot.point.z);
             }
+            // Resolve against actual animated mesh triangles for AI opponents;
+            // the invisible FPS player is represented by intersectable 3D volumes.
+            const hit3d = !isRanged ? null : target.type === 'bot'
+                ? ArenaCombatHit3D.resolveBot(THREE, origin, targetPoint,
+                    bots[target.id] && bots[target.id].mesh)
+                : ArenaCombatHit3D.resolvePlayer(THREE, origin, targetPoint, player);
             const shotDir = targetPoint.clone().sub(origin).normalize();
             bot.attackTimer = isRanged ? cadence
                 : ArenaBotOffense.nextCooldown(bot.role, Math.random());
             bot.strikePoseTime = isRanged ? 0.17 : 0.25;
             if (isRanged) {
                 bot.lastRangedShotAt = arenaClock;
-                arenaShotTracer(origin, targetPoint, bot.role === 'archer');
+                const visualEndpoint = hit3d ? hit3d.point : targetPoint;
+                arenaShotTracer(origin, visualEndpoint, bot.role === 'archer');
                 if (bot.role === 'musket') spawnSmokeCloud(origin, shotDir, 8, 1.0);
-                // Visible misses, lateral shots and blocked impact paths never damage.
-                if (!shot.hit || arenaWorldBlockBetween(origin,targetPoint)) return;
+                // An actual triangle or 3D body-volume intersection is required.
+                // Existing static-world collision remains authoritative.
+                if (!hit3d || arenaWorldBlockBetween(origin,hit3d.point)) return;
             }
             // Both AI and human participants use the same weapon+zone damage table.
             // Close-range strikes hit the body; ranged impacts derive from the actual aim.
-            const zone = isRanged ? shot.zone : 'body';
+            const zone = isRanged ? hit3d.zone : 'body';
             const impactDamage = ArenaWeaponBalance.damage(weapon, zone,
                 bot.role === 'archer' ? 0.5 : 1);
             if (target.type === 'bot') {
@@ -4252,7 +4260,8 @@
 
         function applyBotMotion(bot, dt, distance = 0) {
             const pose = ArenaCharacterMotion.update(bot.motionState, dt, {
-                travel: distance, role: bot.role, windup: bot.meleeWindup,
+                travel: distance, role: bot.role,
+                windup: Math.max(bot.meleeWindup,bot.rangedWindup),
                 strike: bot.strikePoseTime, guard: bot.guardTime > 0,
                 stagger: bot.staggerTime, hit: bot.hitReactionTime
             });
