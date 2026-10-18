@@ -12,7 +12,7 @@
 - Sadece görseller değil, aktif dünya objeleri, **çarpışma kutuları, yükselti/rampalar, mermi raycast yüzeyleri, A* navigasyonu ve doğuş havuzları** da haritayla değişir. Gizli kale duvarları meydanda engel olmaz.
 - **16 çimenlik doğuş noktası**: iki sekizer havuz; başlangıçlar genişletilmiş orta savaş bölgesine yayılır, böylece yedi katılımcı haritanın uzak köşelerinde birbirini hiç göremeden kalmaz. Sağ/sol TDM tarafları korunur.
 - Oyuncu ölümü, bot doğuşları, bot devriyesi ve tekrar oynama aktif haritayı kullanır.
-- Radar ölçeği, **kamera uzak kesme mesafesi (350 → 800)** ve sonuç ekranında harita adı güncellenir. Haritadaki uzun takip/temas mesafesi için **bot hedef edinme sınırı (280 birim)** artırılır; gerçek silah menzilleri ve isabet hasarı değişmez.
+- Radar ölçeği, **kamera uzak kesme mesafesi (350 → 1000)**, büyüyen gökyüzü kubbesi ve açık alana uygun sis yoğunluğu ve sonuç ekranında harita adı güncellenir. Haritadaki uzun takip/temas mesafesi için **bot hedef edinme sınırı (280 birim)** artırılır; gerçek silah menzilleri ve isabet hasarı değişmez.
 - FFA, 4v3 TDM, 2/4/8dk süre, dört silah sınıfı, bot zekâsı, onaylanan yeni okçu ritmi ve silah hasarları, ses/grafik ayarları ve slide-hop korunur.
 
 ## Otomatik kanıt
