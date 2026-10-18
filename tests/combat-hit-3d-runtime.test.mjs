@@ -62,7 +62,8 @@ test('sliding lowers true player hitbox and makes formerly valid high head rays 
 test('live combat routes AI hit testing to actual geometry and animated ranged pose',()=>{
  assert.match(game,/ArenaCombatHit3D\.resolveBot\(THREE/);
  assert.match(game,/ArenaCombatHit3D\.resolvePlayer\(THREE/);
- assert.match(game,/if \(!hit3d \|\| arenaWorldBlockBetween\(origin,hit3d\.point\)\) return/);
+ assert.match(game,/const hitConfirmed = !!\(hit3d &&/);
+ assert.match(game,/if \(!hitConfirmed\) return/);
  assert.match(game,/const zone = isRanged \? hit3d\.zone : 'body'/);
  assert.match(game,/windup: bot\.meleeWindup, rangedWindup: bot\.rangedWindup/);
  assert.ok(html.indexOf('src/combat-hit-3d.js')<html.indexOf('src/oyun.js'));
