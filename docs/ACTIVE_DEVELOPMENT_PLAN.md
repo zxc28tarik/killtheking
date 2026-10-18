@@ -70,9 +70,9 @@ Teknik ayrıntılar ve test rehberi: `docs/COMBAT_P0_STABILIZATION.md`.
 
 ## A5 ikinci harita — Büyük Açık Çimenlik Meydan (18 Ekim 2026)
 
-- [x] **Kullanıcı tema kararı:** İkinci harita **büyük açık çimenlik alanda meydan**. 98×98 düz çimenlik, orta 58×58 engelsiz, yalnız çevrede alçak ahşap çitler/dört ağaç/az siper; mevcut kale korunur.
+- [x] **Kullanıcı ölçek güncellemesi:** İkinci harita büyük açık çimenlik meydan olarak kaldı; toplam alanı **tam 20×**, boyutları yaklaşık **438×438**; merkezi açık alan **259×259**. Ağaç ve siperler yalnız kenarlarda, özgün kaleye dokunulmadı.
 - [x] Menüde KALE / BÜYÜK ÇİMENLİK MEYDAN seçimi; maç içinde değiştirme kilitli; çarpışma, worldMesh raycast, A* bot rotaları, 16 güvenli doğuş, FFA/TDM, radar ve tekrar oynama haritaya bağlı.
-- [x] **311/311 Node test + offline HTML CI başarılı.** İki harita gerçek fizik listesiyle değiştirilir; orijinal kale 90 rota/dört rampa/üç top regresyonları korunur.
+- [x] **311/311 Node test + offline HTML CI başarılı.** 20× ölçeğe göre sahne zemini, kamera menzili, bot hedef tespiti, spawn ve A* navigasyon düzeltildi; orijinal kale 90 rota/dört rampa/üç top regresyonları korunur.
 - [ ] Chrome/Edge GPU oyun kabulü: iki harita, yüksek hızlı sınır çitlerine çarpışma, tüm botların açık alanda FFA/TDM dövüşü, maç/replay ve 30+ dakika performans. Ayrıntı: docs/A5_OPEN_GRASS_SQUARE_QA.md.
 - [ ] Taslak PR zinciri kullanıcı kabulü ve test çıktılarıyla birleştirilecek; A6 ileri ses/arayüz, A7 30+ dakika stres, A8 resmi ilk tam sürüm tamamlanmadı.
 
