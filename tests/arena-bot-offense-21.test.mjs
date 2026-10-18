@@ -97,7 +97,8 @@ test('pressure is based on actual received damage and resets between lives',()=>
  assert.match(game,/underPressure: arenaClock < bot\.underFireUntil/);
  assert.match(game,/bot\.underFireUntil = 0/);
  assert.match(game,/bot\.rangedWindup = 0/);
- assert.match(game,/const playerMeleeThreat = !threat && ArenaBotOffense\.playerMeleeThreat/);
+ assert.match(game,/const playerMeleeThreat = !threat && arenaCanTarget\(bot,'player',null\) &&/);
+ assert.match(game,/ArenaBotOffense\.playerMeleeThreat\(/);
  assert.match(game,/bot\.guardCooldown = 2\.4/);
 });
 
