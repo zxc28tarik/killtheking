@@ -1903,8 +1903,11 @@
             player.tpsMotionState = ArenaCharacterMotion.createState();
             player.classIdx = idx;
             const cls = CLASSES[idx];
+            // Preserve the current health fraction when switching during a match.
+            const healthFraction = player.maxHp > 0
+                ? Math.max(0,Math.min(1,player.hp/player.maxHp)) : 1;
             player.maxHp = cls.maxHp;
-            player.hp = cls.maxHp;
+            player.hp = isGameActive ? healthFraction*cls.maxHp : cls.maxHp;
             player.isReloading = false;
             player.reloadTimer = 0;
             // Per-weapon shot stamps enforce 4/15s even after class switching.
@@ -1921,7 +1924,9 @@
                     (arenaClock - player.lastMusketShotAt));
             }
 
-            document.getElementById('reload-indicator').classList.add('hidden');
+            player.lastReloadStep = 1;
+            document.getElementById('reload-indicator').classList.toggle('hidden',
+                !(idx === 3 && player.isReloading));
             document.getElementById('bow-charge-ui').classList.add('hidden');
             document.getElementById('shield-overlay').style.opacity = '0';
             document.getElementById('ads-overlay').style.opacity = '0';
@@ -2614,6 +2619,10 @@
                 [head,'head'],[helmetGroup,'head']]) {
                 part.traverse(child => { if (child.isMesh) child.userData.hitZone = zone; });
             }
+            // Carried blades and gun barrels are not vulnerable body parts.
+            weaponMount.traverse(child => {
+                if (child.isMesh) child.userData.hitZone = 'ignore';
+            });
             return group;
         }
 
@@ -2685,6 +2694,7 @@
                     tacticMode: 'patrol', tacticGoal: null, tacticTargetKey: null,
                     tacticLastTarget: null, tacticRefresh: 0,
                     attackTimer: 0.85 + Math.random() * 0.75,
+                    lastRangedShotAt: -Infinity,
                     staggerTime: 0,
                     meleeWindup: 0,
                     rangedWindup: 0,
@@ -3307,21 +3317,42 @@
                 return;
             }
             const origin = bot.mesh.position.clone().add(new THREE.Vector3(0, 1.8, 0));
-            const targetPoint = targetPos.clone().add(new THREE.Vector3(0, target.type === 'player' ? 1.0 : 1.65, 0));
+            const weapon = ArenaWeaponBalance.weaponForRole(bot.role);
+            const cadence = isRanged
+                ? ArenaWeaponBalance.SHOT_INTERVAL[weapon] : null;
+            // Absolute shot time survives death/respawn and temporary target loss.
+            if (isRanged && !ArenaWeaponBalance.ready(bot.lastRangedShotAt,arenaClock,weapon)) {
+                bot.attackTimer = Math.max(bot.attackTimer,
+                    cadence-(arenaClock-bot.lastRangedShotAt));
+                return;
+            }
+            let shot = null;
+            let targetPoint = targetPos.clone().add(
+                new THREE.Vector3(0,target.type === 'player' ? 1.0 : 1.65,0));
+            if (isRanged) {
+                const targetBase = target.type === 'player'
+                    ? {x:player.pos.x,y:player.pos.y-player.currentHeight,z:player.pos.z}
+                    : targetPos;
+                shot = ArenaWeaponBalance.aimedShot(
+                    bot.role,origin,targetBase,Math.random(),Math.random(),
+                    target.type === 'player' && player.isSliding ? 1.9 : 3);
+                if (!shot.point) return;
+                targetPoint = new THREE.Vector3(shot.point.x,shot.point.y,shot.point.z);
+            }
             const shotDir = targetPoint.clone().sub(origin).normalize();
-            bot.attackTimer = isRanged
-                ? ArenaWeaponBalance.SHOT_INTERVAL[bot.role === 'archer' ? 'bow' : 'musket']
+            bot.attackTimer = isRanged ? cadence
                 : ArenaBotOffense.nextCooldown(bot.role, Math.random());
             bot.strikePoseTime = isRanged ? 0.17 : 0.25;
             if (isRanged) {
+                bot.lastRangedShotAt = arenaClock;
                 arenaShotTracer(origin, targetPoint, bot.role === 'archer');
                 if (bot.role === 'musket') spawnSmokeCloud(origin, shotDir, 8, 1.0);
+                // Visible misses, lateral shots and blocked impact paths never damage.
+                if (!shot.hit || arenaWorldBlockBetween(origin,targetPoint)) return;
             }
-            // Shots aimed into the arena do not get free extra player damage.
-            // Same hit/health logic for bot-vs-bot, without player-specific rewards.
-            const weapon = ArenaWeaponBalance.weaponForRole(bot.role);
-            // Bot aiming is imperfect: body most often, rare head or limb hits.
-            const zone = ArenaWeaponBalance.botAimZone(bot.role, Math.random());
+            // Both AI and human participants use the same weapon+zone damage table.
+            // Close-range strikes hit the body; ranged impacts derive from the actual aim.
+            const zone = isRanged ? shot.zone : 'body';
             const impactDamage = ArenaWeaponBalance.damage(weapon, zone,
                 bot.role === 'archer' ? 0.5 : 1);
             if (target.type === 'bot') {
@@ -3567,7 +3598,9 @@
                     raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
                     raycaster.far = cls.range;
                     const botMeshes = [];
-                    bots.filter(b => !b.dead).forEach(b => b.mesh.traverse(c => { if (c.isMesh) botMeshes.push(c); }));
+                    bots.filter(b => !b.dead).forEach(b => b.mesh.traverse(c => {
+                        if (c.isMesh && c.userData.hitZone !== 'ignore') botMeshes.push(c);
+                    }));
                     const hits = raycaster.intersectObjects(botMeshes, false);
 
                     if (hits.length > 0 && !arenaWorldBlockBetween(camera.position, hits[0].point)) {
@@ -3736,6 +3769,7 @@
             bots.forEach(bot => {
                 bot.arenaKills = 0;
                 bot.arenaDeaths = 0;
+                bot.lastRangedShotAt = -Infinity;
                 bot.hp = bot.maxHp;
                 bot.dead = false;
                 bot.respawnTimer = 0;
@@ -4536,7 +4570,9 @@
                 for (const mesh of worldMeshes) targets.push(mesh);
                 for (const bot of bots) {
                     if (bot.dead || !ArenaWeaponSweep.withinReach(origin, bot.mesh.position, swing.reach, 4)) continue;
-                    bot.mesh.traverse(c => { if (c.isMesh) targets.push(c); });
+                    bot.mesh.traverse(c => {
+                        if (c.isMesh && c.userData.hitZone !== 'ignore') targets.push(c);
+                    });
                 }
                 for (const barrel of barrels) {
                     if (!barrel.active || !ArenaWeaponSweep.withinReach(origin, barrel.pos, swing.reach, 4)) continue;
@@ -4565,6 +4601,8 @@
                     const index = hit.object.userData.botIndex;
                     if (index !== undefined && bots[index] && !bots[index].dead)
                         return {kind:'bot',bot:bots[index],point:hit.point,
+                            hitZone:ArenaWeaponBalance.zoneFromMesh(
+                                hit.object,hit.point.y,bots[index].mesh.position.y),
                             isHead:!!hit.object.userData.isHead,distance:hit.distance};
                     const barrelIndex = hit.object.userData.barrelIndex;
                     if (barrelIndex !== undefined && barrels[barrelIndex] && barrels[barrelIndex].active)
@@ -4600,9 +4638,9 @@
                 if (impact && impact.kind === 'barrel') triggerBarrelExplosion(impact.barrel);
                 else if (impact && impact.kind === 'bot') {
                     const kind = swing.classIdx === 1 ? 'spear' : 'sword';
-                    const zone = impact.isHead ? 'head'
+                    const zone = impact.hitZone || (impact.isHead ? 'head'
                         : ArenaWeaponBalance.zoneFromAim(impact.point && impact.point.y,
-                            impact.bot.mesh.position.y);
+                            impact.bot.mesh.position.y));
                     const damage = ArenaWeaponBalance.damage(kind,zone) + swing.bonus;
                     damageBot(impact.bot, damage, zone === 'head', swing.weaponName, swing.tag, impact.point);
                 }

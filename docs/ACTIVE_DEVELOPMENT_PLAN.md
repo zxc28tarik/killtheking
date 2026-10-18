@@ -35,6 +35,17 @@
 - [ ] **Sıradaki gerçek test:** PR #29 paketiyle 2, 4, 8 dakika, yeniden oynama, sonuç JSON indirme ve dört sınıfta toplam 10+ dakika oynanış denemesi. Rehber: `docs/A2_COMBAT_BALANCE_QA.md`.
 - [ ] **Bağımlılık sırası:** PR #28 → #29 → #30 → #31 → #32 → ana dal. Bot hasarları ve zekâsı kullanıcı oynanışında onaylanmadan A4/A5 içerik geliştirmesine geçilmez.
 
+## P0 savaş sistemi kararlılığı — 18 Ekim 2026
+
+- [x] Geliştirme dalı `codex/combat-p0-hit-validation-fire-cap`: silah/gövde/kafa/kol/bacak hasar paylaştırma, bot menzilli atışlarının ıskalayabilmesi, gerçek silah meshi ile uzuv temasının ayrılması, 4/15 saniyelik mutlak atış zaman sınırları, oyun içi sınıf değiştirmede can suistimalinin kapatılması.
+- [x] **248/248 otomatik test + çevrim dışı HTML paketleme başarılı.** Bu sonuç yalnız geliştirme dalının CI kanıtıdır, canlı GPU/WebGL oynanış kabulü değildir.
+- [ ] P0 gerçek tarayıcı kabulü: hareketli oyuncuya bot tüfek/okçu atışlarının doğru isabet/ıskalama ve engel kontrolleri, parry, geri dönüş/restart, sınıf değişimi.
+- [ ] PR #28–#32 ve yeni silah dalı sıralı gözden geçirme/merge işlemleri yapılacak. `main` henüz son P1/A2/A3 değişikliklerini içermiyor.
+- [ ] **Takım modu:** `src/arena-teams.js` saf modül olarak mevcut; UI, tüm hedefleme/hasar akışı, takım spawn'ları ve bitiş ekranına henüz bağlanmadı. Oynanabilir TDM diye işaretlenemez.
+- [ ] **İkinci harita:** tema kullanıcı tarafından seçilmeden üretime geçilmeyecek.
+
+Teknik ayrıntılar ve test rehberi: `docs/COMBAT_P0_STABILIZATION.md`.
+
 ## İş sırası ve bağımlılıklar
 
 ### A0 — ÖNCE: Maç Sistemi 1.0 oynanış kabulü (P1, 1–2 gün)
