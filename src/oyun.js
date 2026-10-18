@@ -3325,6 +3325,23 @@
             }
         }
 
+        // Friendly bodies intercept AI projectiles instead of becoming invisible
+        // cover the shooter can fire through. The check uses real 3D ray impacts.
+        function arenaFriendlyShotBlock(bot,origin,impact) {
+            if (arenaMode !== 'tdm' || !impact) return false;
+            for (const ally of bots) {
+                if (ally === bot || ally.dead || botTeam(ally) !== botTeam(bot)) continue;
+                const first = ArenaCombatHit3D.resolveBot(THREE,origin,impact.point,ally.mesh);
+                if (first && first.distance < impact.distance - 0.04) return true;
+            }
+            if (botTeam(bot) === ArenaTeams.PLAYER_TEAM) {
+                const playerBlock = ArenaCombatHit3D.resolvePlayer(THREE,origin,impact.point,player);
+                if (playerBlock && playerBlock.distance < impact.distance - 0.04)
+                    return true;
+            }
+            return false;
+        }
+
         function arenaBotAttack(bot, target, targetDistance) {
             if (!target || !isGameActive || bot.dead || bot.staggerTime > 0) return;
             if (!arenaCanTarget(bot,target.type,target.id)) return;
@@ -3379,7 +3396,8 @@
                 // An actual triangle or 3D body-volume intersection is required.
                 // Existing static-world collision remains authoritative.
                 const hitConfirmed = !!(hit3d &&
-                    !arenaWorldBlockBetween(origin,hit3d.point));
+                    !arenaWorldBlockBetween(origin,hit3d.point) &&
+                    !arenaFriendlyShotBlock(bot,origin,hit3d));
                 ArenaTelemetry.recordRangedShot(arenaTelemetry,bot.role,
                     hitConfirmed ? hit3d.zone : null);
                 if (!hitConfirmed) return;
