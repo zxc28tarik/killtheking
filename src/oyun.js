@@ -3312,21 +3312,42 @@
                 return;
             }
             const origin = bot.mesh.position.clone().add(new THREE.Vector3(0, 1.8, 0));
-            const targetPoint = targetPos.clone().add(new THREE.Vector3(0, target.type === 'player' ? 1.0 : 1.65, 0));
+            const weapon = ArenaWeaponBalance.weaponForRole(bot.role);
+            const cadence = isRanged
+                ? ArenaWeaponBalance.SHOT_INTERVAL[weapon] : null;
+            // Absolute shot time survives death/respawn and temporary target loss.
+            if (isRanged && !ArenaWeaponBalance.ready(bot.lastRangedShotAt,arenaClock,weapon)) {
+                bot.attackTimer = Math.max(bot.attackTimer,
+                    cadence-(arenaClock-bot.lastRangedShotAt));
+                return;
+            }
+            let shot = null;
+            let targetPoint = targetPos.clone().add(
+                new THREE.Vector3(0,target.type === 'player' ? 1.0 : 1.65,0));
+            if (isRanged) {
+                const targetBase = target.type === 'player'
+                    ? {x:player.pos.x,y:player.pos.y-player.currentHeight,z:player.pos.z}
+                    : targetPos;
+                shot = ArenaWeaponBalance.aimedShot(
+                    bot.role,origin,targetBase,Math.random(),Math.random(),
+                    target.type === 'player' && player.isSliding ? 1.9 : 3);
+                if (!shot.point) return;
+                targetPoint = new THREE.Vector3(shot.point.x,shot.point.y,shot.point.z);
+            }
             const shotDir = targetPoint.clone().sub(origin).normalize();
-            bot.attackTimer = isRanged
-                ? ArenaWeaponBalance.SHOT_INTERVAL[bot.role === 'archer' ? 'bow' : 'musket']
+            bot.attackTimer = isRanged ? cadence
                 : ArenaBotOffense.nextCooldown(bot.role, Math.random());
             bot.strikePoseTime = isRanged ? 0.17 : 0.25;
             if (isRanged) {
+                bot.lastRangedShotAt = arenaClock;
                 arenaShotTracer(origin, targetPoint, bot.role === 'archer');
                 if (bot.role === 'musket') spawnSmokeCloud(origin, shotDir, 8, 1.0);
+                // Visible misses, lateral shots and blocked impact paths never damage.
+                if (!shot.hit || arenaWorldBlockBetween(origin,targetPoint)) return;
             }
-            // Shots aimed into the arena do not get free extra player damage.
-            // Same hit/health logic for bot-vs-bot, without player-specific rewards.
-            const weapon = ArenaWeaponBalance.weaponForRole(bot.role);
-            // Bot aiming is imperfect: body most often, rare head or limb hits.
-            const zone = ArenaWeaponBalance.botAimZone(bot.role, Math.random());
+            // Both AI and human participants use the same weapon+zone damage table.
+            // Close-range strikes hit the body; ranged impacts derive from the actual aim.
+            const zone = isRanged ? shot.zone : 'body';
             const impactDamage = ArenaWeaponBalance.damage(weapon, zone,
                 bot.role === 'archer' ? 0.5 : 1);
             if (target.type === 'bot') {
