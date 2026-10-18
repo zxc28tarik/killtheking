@@ -1903,8 +1903,11 @@
             player.tpsMotionState = ArenaCharacterMotion.createState();
             player.classIdx = idx;
             const cls = CLASSES[idx];
+            // Preserve the current health fraction when switching during a match.
+            const healthFraction = player.maxHp > 0
+                ? Math.max(0,Math.min(1,player.hp/player.maxHp)) : 1;
             player.maxHp = cls.maxHp;
-            player.hp = cls.maxHp;
+            player.hp = isGameActive ? healthFraction*cls.maxHp : cls.maxHp;
             player.isReloading = false;
             player.reloadTimer = 0;
             // Per-weapon shot stamps enforce 4/15s even after class switching.
@@ -1921,7 +1924,9 @@
                     (arenaClock - player.lastMusketShotAt));
             }
 
-            document.getElementById('reload-indicator').classList.add('hidden');
+            player.lastReloadStep = 1;
+            document.getElementById('reload-indicator').classList.toggle('hidden',
+                !(idx === 3 && player.isReloading));
             document.getElementById('bow-charge-ui').classList.add('hidden');
             document.getElementById('shield-overlay').style.opacity = '0';
             document.getElementById('ads-overlay').style.opacity = '0';
