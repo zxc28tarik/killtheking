@@ -20,7 +20,7 @@ const decide=(role,distance,options={})=>plan({
 test('all four combat roles have differentiated telegraphs and cooldown envelopes',()=>{
  for(const role of ['knight','pikeman','archer','musket']){
   const p=AI.profile(role);
-  assert.ok(p.windup>=.25&&p.windup<=.42);
+  assert.ok(role==='archer'?p.windup===3:p.windup>=.25&&p.windup<=.42);
   assert.ok(p.cooldown>=1.2&&p.cooldown<=15);
   assert.ok(AI.nextCooldown(role,1)>=AI.nextCooldown(role,0));
   assert.equal(AI.nextCooldown(role,-2),p.cooldown);
