@@ -1881,6 +1881,7 @@
         let activeWeaponSwing = null;
         let lastWeaponSwingRaycasts = 0;
         let isGameActive = false;
+        let arenaMode = 'ffa'; // Default stays the approved everyone-vs-everyone mode.
         let mouseSensitivity = 1.0;
         let playerCharGroup = null;
         const playerClassModels = [];
@@ -2021,12 +2022,23 @@
         const navigator = ArenaNavigation.createNavigator(colliders, ramps,
             { min: -43.75, max: 43.75, step: 1.25, upperEdge: 39.5, upperLevel: 7 });
         const bots = [];
+        function botTeam(bot) { return ArenaTeams.teamForBot(bot.id); }
+        function arenaCanTarget(bot,type,id) {
+            if (arenaMode !== 'tdm') return true;
+            const targetTeam = type === 'player' ? ArenaTeams.PLAYER_TEAM
+                : bots[id] ? ArenaTeams.teamForBot(bots[id].id) : null;
+            return !!targetTeam && ArenaTeams.mayTarget(arenaMode,botTeam(bot),targetTeam);
+        }
         // Use the known level-design spawn pool, but prefer locations away from living fighters.
         function chooseArenaRespawn(pool, excludedBot = null, includePlayer = true) {
+            const team = excludedBot ? botTeam(excludedBot) : ArenaTeams.PLAYER_TEAM;
+            const candidates = ArenaTeams.spawnCandidates(pool,arenaMode,team);
+            // All living actors count for clearance: even a same-team ally
+            // should not spawn directly on top of a teammate.
             const threats = bots.filter(other => other !== excludedBot && !other.dead)
                 .map(other => other.mesh.position);
             if (includePlayer && isGameActive) threats.push(player.pos);
-            const preferred = ArenaSpawnSafety.chooseSpawn(pool, threats);
+            const preferred = ArenaSpawnSafety.chooseSpawn(candidates, threats);
             // Use the nearest valid point so a new fighter cannot spawn in battlements.
             const cell = navigator.nearest(preferred);
             return cell ? new THREE.Vector3(cell.x, cell.y, cell.z) : preferred;
@@ -2670,6 +2682,7 @@
 
                 const botObj = {
                     id: i,
+                    teamId: ArenaTeams.teamForBot(i),
                     name: profile.name,
                     role: profile.role,
                     weapon: profile.weapon,
@@ -3016,6 +3029,8 @@
 
         function damageBot(bot, dmg, isHeadshot, weaponName, prefixTag = '', impactPoint = null) {
             if (!bot || bot.dead) return;
+            // In team matches player's blue teammates cannot be harmed by friendly fire.
+            if (!ArenaTeams.canDamage(arenaMode,ArenaTeams.PLAYER_TEAM,botTeam(bot))) return;
             bot.hp -= dmg;
             // A player's attack draws THIS bot's attention, not the entire arena.
             if (bot.hp > 0) markArenaAggro(bot, 'player', null);
@@ -3129,6 +3144,7 @@
             const maxDetection = bot.range > 8 ? 43 : 33;
             // A bot retaliates against a recent attacker if that attacker is reachable.
             if (bot.arenaAggroType && arenaClock < bot.arenaAggroUntil &&
+                arenaCanTarget(bot,bot.arenaAggroType,bot.arenaAggroId) &&
                 ArenaBotRecovery.allows(bot.navRecovery, bot.arenaAggroType + ':' +
                     (bot.arenaAggroType === 'player' ? 'player' : bot.arenaAggroId))) {
                 const aggroDist = arenaTargetDistance(bot, bot.arenaAggroType, bot.arenaAggroId);
@@ -3141,6 +3157,7 @@
             const currentPos = arenaActorPosition(bot.arenaTargetType, bot.arenaTargetId);
             const currentDist = arenaTargetDistance(bot, bot.arenaTargetType, bot.arenaTargetId);
             if (currentPos && currentDist < maxDetection + 5 &&
+                arenaCanTarget(bot,bot.arenaTargetType,bot.arenaTargetId) &&
                 arenaClock < bot.arenaLockTime &&
                 ArenaBotRecovery.allows(bot.navRecovery, bot.arenaTargetType + ':' +
                     (bot.arenaTargetType === 'player' ? 'player' : bot.arenaTargetId))) {
@@ -3149,6 +3166,7 @@
             const candidates = [];
             for (const other of bots) {
                 if (other.id === bot.id || other.dead) continue;
+                if (!arenaCanTarget(bot,'bot',other.id)) continue;
                 if (!ArenaBotRecovery.allows(bot.navRecovery, 'bot:' + other.id)) continue;
                 const dist = arenaTargetDistance(bot, 'bot', other.id);
                 if (dist >= maxDetection) continue;
@@ -3160,6 +3178,7 @@
             const playerDistance = arenaTargetDistance(bot, 'player', null);
             // At most one normal bot pursues the player at once; retaliation is separate.
             if (playerDistance < Math.min(maxDetection, 26) &&
+                arenaCanTarget(bot,'player',null) &&
                 ArenaBotRecovery.allows(bot.navRecovery, 'player:player') &&
                 arenaTargetCount('player', null, bot.id) === 0) {
                 // Bots deliberately prefer other available opponents to a player dogpile.
@@ -3241,6 +3260,7 @@
 
         function damageBotFromBot(attacker, victim, damage) {
             if (!attacker || attacker.dead || !victim || victim.dead || attacker.id === victim.id) return;
+            if (!ArenaTeams.canDamage(arenaMode,botTeam(attacker),botTeam(victim))) return;
             // Knight defenders must raise their shield DURING an observed wind-up.
             // Never retroactively decide to parry when a hit is registered.
             if (victim.role === 'knight' && victim.guardTime > 0) {
@@ -3304,8 +3324,26 @@
             }
         }
 
+        // Friendly bodies intercept AI projectiles instead of becoming invisible
+        // cover the shooter can fire through. The check uses real 3D ray impacts.
+        function arenaFriendlyShotBlock(bot,origin,impact) {
+            if (arenaMode !== 'tdm' || !impact) return false;
+            for (const ally of bots) {
+                if (ally === bot || ally.dead || botTeam(ally) !== botTeam(bot)) continue;
+                const first = ArenaCombatHit3D.resolveBot(THREE,origin,impact.point,ally.mesh);
+                if (first && first.distance < impact.distance - 0.04) return true;
+            }
+            if (botTeam(bot) === ArenaTeams.PLAYER_TEAM) {
+                const playerBlock = ArenaCombatHit3D.resolvePlayer(THREE,origin,impact.point,player);
+                if (playerBlock && playerBlock.distance < impact.distance - 0.04)
+                    return true;
+            }
+            return false;
+        }
+
         function arenaBotAttack(bot, target, targetDistance) {
             if (!target || !isGameActive || bot.dead || bot.staggerTime > 0) return;
+            if (!arenaCanTarget(bot,target.type,target.id)) return;
             const targetPos = arenaActorPosition(target.type, target.id);
             if (!targetPos) return;
             const isRanged = bot.role === 'archer' || bot.role === 'musket';
@@ -3357,7 +3395,8 @@
                 // An actual triangle or 3D body-volume intersection is required.
                 // Existing static-world collision remains authoritative.
                 const hitConfirmed = !!(hit3d &&
-                    !arenaWorldBlockBetween(origin,hit3d.point));
+                    !arenaWorldBlockBetween(origin,hit3d.point) &&
+                    !arenaFriendlyShotBlock(bot,origin,hit3d));
                 ArenaTelemetry.recordRangedShot(arenaTelemetry,bot.role,
                     hitConfirmed ? hit3d.zone : null);
                 if (!hitConfirmed) return;
@@ -3698,6 +3737,10 @@
         const liveScoreboardOverlay = document.getElementById('match-live-scoreboard');
         const liveScoreboardTable = document.getElementById('match-live-table');
         const matchDurationButtons = [...document.querySelectorAll('[data-duration-seconds]')];
+        const matchModeButtons = [...document.querySelectorAll('[data-arena-mode]')];
+        const matchModeHint = document.getElementById('match-mode-hint');
+        const teamHud = document.getElementById('hud-team-score');
+        const teamResults = document.getElementById('match-team-results');
         let tabScoreboardHeld = false;
         let scoreboardRefreshSeconds = 0;
 
@@ -3707,9 +3750,61 @@
             liveScoreboardOverlay.setAttribute('aria-hidden', 'true');
         }
 
+        let lastTeamHud = '';
+        function renderTeamHUD() {
+            const enabled = arenaMode === 'tdm';
+            teamHud.classList.toggle('hidden',!enabled);
+            if (!enabled) {
+                lastTeamHud = '';
+                return;
+            }
+            const scores = ArenaTeams.scores(arenaMode,player,bots);
+            const key = scores.blue+':'+scores.red;
+            if (key !== lastTeamHud) {
+                document.getElementById('hud-team-blue').textContent = scores.blue;
+                document.getElementById('hud-team-red').textContent = scores.red;
+                lastTeamHud = key;
+            }
+        }
+        function updateTeamAppearance() {
+            bots.forEach(bot => {
+                const label = bot.label.firstElementChild;
+                if (label) label.style.color = arenaMode !== 'tdm' ? ''
+                    : botTeam(bot) === 'blue' ? '#7dd3fc' : '#fda4af';
+            });
+        }
+
+        function syncMatchModeControls() {
+            matchModeButtons.forEach(button => {
+                const selected = button.dataset.arenaMode === arenaMode;
+                button.disabled = arenaMatch.phase !== 'menu';
+                button.classList.toggle('selected', selected);
+                button.setAttribute('aria-pressed',String(selected));
+            });
+            matchModeHint.textContent = arenaMode === 'tdm'
+                ? 'Mavi: sen + 3 bot • Kırmızı: 3 bot • Dost ateşi kapalı'
+                : '6 bağımsız bot • Herkes herkese karşı';
+        }
+
+        matchModeButtons.forEach(button => button.addEventListener('click', () => {
+            if (arenaMatch.phase !== 'menu') return;
+            arenaMode = ArenaTeams.validate(button.dataset.arenaMode);
+            syncMatchModeControls();
+            renderTeamHUD();
+            updateTeamAppearance();
+        }));
+
         function renderLiveScoreboard() {
             if (!tabScoreboardHeld || arenaMatch.phase !== 'playing') return;
             const standings = ArenaMatch.leaderboard(player, bots);
+            document.getElementById('match-live-mode').textContent =
+                arenaMode === 'tdm' ? 'TAKIM SAVAŞI • 4v3' : 'SERBEST ARENA';
+            const teamLiveScore = document.getElementById('match-live-team-score');
+            teamLiveScore.classList.toggle('hidden',arenaMode !== 'tdm');
+            if (arenaMode === 'tdm') {
+                const points = ArenaTeams.scores(arenaMode,player,bots);
+                teamLiveScore.textContent = 'MAVİ '+points.blue+' — '+points.red+' KIRMIZI';
+            }
             liveScoreboardTable.replaceChildren();
             for (const entry of standings) {
                 const row = document.createElement('div');
@@ -3717,7 +3812,11 @@
                 for (const value of [entry.rank, entry.name, entry.kills, entry.deaths, entry.kd.toFixed(2)]) {
                     const cell = document.createElement('span');
                     cell.className = 'match-live-cell';
-                    cell.textContent = String(value);
+                    const team = entry.isPlayer ? ArenaTeams.PLAYER_TEAM
+                        : ArenaTeams.teamForBot(Number(entry.id.slice(4)));
+                    cell.textContent = arenaMode === 'tdm' && value === entry.name
+                        ? (team === 'blue' ? '🔵 ' : '🔴 ') + entry.name
+                        : String(value);
                     row.appendChild(cell);
                 }
                 liveScoreboardTable.appendChild(row);
@@ -3831,20 +3930,36 @@
             matchTimeSeconds = arenaMatch.remaining;
             document.getElementById('hud-timer').textContent = ArenaMatch.clock(matchTimeSeconds);
             matchResultsOverlay.classList.add('hidden');
+            lastTeamHud = '';
+            renderTeamHUD();
+            updateTeamAppearance();
+            syncMatchModeControls();
             updateHUD();
         }
 
         function showMatchResults() {
             hideLiveScoreboard();
             const result = ArenaMatch.finish(arenaMatch, player, bots);
+            const teamResult = ArenaTeams.result(arenaMode,player,bots);
+            if (teamResult) Object.assign(result,teamResult);
             matchDurationLabel.textContent = ArenaMatch.clock(result.seconds);
+            document.getElementById('match-results-mode-label').textContent =
+                arenaMode === 'tdm' ? 'TAKIM SAVAŞI • 4v3' : 'SERBEST ARENA';
+            teamResults.classList.toggle('hidden',arenaMode !== 'tdm');
+            if (teamResult) {
+                teamResults.textContent = 'MAVİ '+teamResult.scores.blue+
+                    ' — '+teamResult.scores.red+' KIRMIZI';
+            }
             isGameActive = false;
             activeWeaponSwing = null;
             Object.keys(keys).forEach(key => { keys[key] = false; });
             menuOverlay.classList.add('hidden');
             matchResultsTable.replaceChildren();
-            matchWinnerTitle.textContent = result.playerWon
-                ? '🏆 KUŞATMAYI KAZANDIN!'
+            matchWinnerTitle.textContent = arenaMode === 'tdm'
+                ? (teamResult.winner === 'draw' ? '🤝 TAKIMLAR BERABERE!'
+                    : teamResult.playerWon ? '🏆 MAVİ TAKIM KAZANDI!'
+                    : '🏆 KIRMIZI TAKIM KAZANDI!')
+                : result.playerWon ? '🏆 KUŞATMAYI KAZANDIN!'
                 : '🏆 KAZANAN: ' + result.winnerName;
             result.standings.forEach(entry => {
                 const line = document.createElement('div');
@@ -3853,7 +3968,11 @@
                 for (const value of [entry.rank, entry.name, entry.kills, entry.deaths, entry.kd.toFixed(2)]) {
                     const cell = document.createElement('span');
                     cell.className = 'text-sm sm:text-base font-bold krunker-text truncate';
-                    cell.textContent = String(value);
+                    const team = entry.isPlayer ? ArenaTeams.PLAYER_TEAM
+                        : ArenaTeams.teamForBot(Number(entry.id.slice(4)));
+                    cell.textContent = arenaMode === 'tdm' && value === entry.name
+                        ? (team === 'blue' ? '🔵 ' : '🔴 ') + entry.name
+                        : String(value);
                     line.appendChild(cell);
                 }
                 matchResultsTable.appendChild(line);
@@ -3875,6 +3994,7 @@
             else ArenaMatch.resume(arenaMatch);
             isGameActive = arenaMatch.phase === 'playing';
             syncMatchDurationControls();
+            syncMatchModeControls();
             menuOverlay.classList.add('hidden');
             if (canvas.requestPointerLock) canvas.requestPointerLock();
         });
@@ -3889,7 +4009,8 @@
         document.getElementById('match-qa-export-btn').addEventListener('click', () => {
             if (arenaMatch.phase !== 'results' || !arenaMatch.result) return;
             const report = {
-                schema: 'killtheking-ffa-qa-v1',
+                schema: 'killtheking-match-qa-v2',
+                mode: arenaMode,
                 matchResult: arenaMatch.result,
                 metrics: window.krunkerArenaBalanceReport()
             };
@@ -3898,7 +4019,7 @@
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            link.download = 'KillTheKing_FFA_QA_' +
+            link.download = 'KillTheKing_' + arenaMode.toUpperCase() + '_QA_' +
                 Math.round(arenaMatch.durationSeconds / 60) + 'min.json';
             document.body.appendChild(link);
             link.click();
@@ -3911,6 +4032,7 @@
             matchTimeSeconds = arenaMatch.remaining;
             document.getElementById('hud-timer').textContent = ArenaMatch.clock(matchTimeSeconds);
             syncMatchDurationControls();
+            syncMatchModeControls();
             hideLiveScoreboard();
             isGameActive = false;
             matchResultsOverlay.classList.add('hidden');
@@ -4190,10 +4312,13 @@
                 }
             });
 
-            // Enemies (Red dots)
+            // FFA all enemies red; TDM blue allies and red enemies.
             radarCtx.fillStyle = '#ef4444';
             bots.forEach(bot => {
                 if (bot.dead) return;
+                if (arenaMode === 'tdm') {
+                    radarCtx.fillStyle = botTeam(bot) === 'blue' ? '#38bdf8' : '#ef4444';
+                }
                 radarCtx.beginPath();
                 radarCtx.arc(cx + bot.mesh.position.x * scale, cy + bot.mesh.position.z * scale, 3.2, 0, Math.PI * 2);
                 radarCtx.fill();
@@ -4226,6 +4351,7 @@
         let telemetrySampleAccumulator = 0;
         let matchTimeSeconds = arenaMatch.remaining;
         syncMatchDurationControls();
+        syncMatchModeControls();
         let fpsFrames = 0;
         let fpsTimer = 0;
 
@@ -4866,7 +4992,8 @@
                         arenaLineOfSight(other, bot.mesh.position, false));
                     // Knights also react to a visible player's melee wind-up rather than
                     // holding their shield only against other bots.
-                    const playerMeleeThreat = !threat && ArenaBotOffense.playerMeleeThreat({
+                    const playerMeleeThreat = !threat && arenaCanTarget(bot,'player',null) &&
+                        ArenaBotOffense.playerMeleeThreat({
                         classIdx:player.classIdx, attackTime:player.attackAnimTime,
                         distance:distToPlayer, visible:arenaLineOfSight(bot, player.pos, true)
                     });
@@ -5132,6 +5259,7 @@
             matchTimeSeconds = arenaMatch.remaining;
             document.getElementById('hud-timer').textContent = ArenaMatch.clock(matchTimeSeconds);
             if (matchFinished) showMatchResults();
+            renderTeamHUD();
             if (tabScoreboardHeld && arenaMatch.phase === 'playing') {
                 scoreboardRefreshSeconds -= dt;
                 if (scoreboardRefreshSeconds <= 0) {
@@ -5168,7 +5296,8 @@
 
         // Read-only runtime snapshot for arena QA; no controls or game state changes.
         window.krunkerArenaStatus = () => ({
-            mode: 'serbest-arena',
+            mode: arenaMode,
+            teamScores: ArenaTeams.scores(arenaMode,player,bots),
             matchPhase: arenaMatch.phase,
             matchRemaining: arenaMatch.remaining,
             matchDurationSeconds: arenaMatch.durationSeconds,
@@ -5179,7 +5308,8 @@
             playerClassIdx: player.classIdx,
             playerClassName: CLASSES[player.classIdx].name,
             botCount: bots.length,
-            bots: bots.map(b => ({ name: b.name, role: b.role, weapon: b.weapon, hp: b.hp, dead: b.dead,
+            bots: bots.map(b => ({ name: b.name, role: b.role, team: botTeam(b),
+                weapon: b.weapon, hp: b.hp, dead: b.dead,
                 remainingWaypoints: b.navPath.length, navigationStuckTime: b.navStuck,
                 tacticalMode: b.tacticMode, meleeWindup: b.meleeWindup,
                 guarding: b.guardTime > 0, guardParryTime: b.guardParryTime,

@@ -46,6 +46,14 @@
 
 Teknik ayrıntılar ve test rehberi: `docs/COMBAT_P0_STABILIZATION.md`.
 
+## A4 uygulama güncellemesi — 18 Ekim 2026
+
+- [x] **A4 Takım Savaşı kodu (bu özellik dalı):** FFA varsayılan korunarak menüden 4v3 offline TDM seçimi; oyuncu + 3 mavi müttefik / 3 kırmızı düşman, dost ateşi ve dost hedefleme engeli, takım taraflı güvenli spawn, takım skor HUD, TAB, sonuç/beraberlik, tekrar oynama ve JSON QA raporu.
+- [x] Dost karakterlerin bot mermilerini geçirme riski için 3D müttefik görüş-kesme testi, yeni Node/VM regresyonları ve eski FFA testleri.
+- [ ] **A4 gerçek tarayıcı kabulü devam ediyor:** Chrome/Edge 4 dakika tam takım savaşı, spawn/AI, dost ateşi, 2/4/8 dakika, ESC/TAB/replay, skor; bakınız `docs/A4_OFFLINE_TDM_QA.md`.
+- [ ] Bağımlılık PR zinciri `#28 → #29 → #30 → #31 → #32 → #33 → #34 → #35 → A4 PR` incelenecek; kullanıcı WebGL onayı olmadan `main` birleştirilmeyecek. Mevcut oyunun özgün grafik ve hareket hissi korunacak.
+- [ ] A5 ikinci harita için tema kararı bekliyor. A6–A8 ve 30+ dakika stres kontrolü henüz bitmedi.
+
 ## İş sırası ve bağımlılıklar
 
 ### A0 — ÖNCE: Maç Sistemi 1.0 oynanış kabulü (P1, 1–2 gün)
