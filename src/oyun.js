@@ -3720,6 +3720,10 @@
         const liveScoreboardOverlay = document.getElementById('match-live-scoreboard');
         const liveScoreboardTable = document.getElementById('match-live-table');
         const matchDurationButtons = [...document.querySelectorAll('[data-duration-seconds]')];
+        const matchModeButtons = [...document.querySelectorAll('[data-arena-mode]')];
+        const matchModeHint = document.getElementById('match-mode-hint');
+        const teamHud = document.getElementById('hud-team-score');
+        const teamResults = document.getElementById('match-team-results');
         let tabScoreboardHeld = false;
         let scoreboardRefreshSeconds = 0;
 
@@ -3729,9 +3733,45 @@
             liveScoreboardOverlay.setAttribute('aria-hidden', 'true');
         }
 
+        function renderTeamHUD() {
+            const enabled = arenaMode === 'tdm';
+            teamHud.classList.toggle('hidden',!enabled);
+            if (!enabled) return;
+            const scores = ArenaTeams.scores(arenaMode,player,bots);
+            document.getElementById('hud-team-blue').textContent = scores.blue;
+            document.getElementById('hud-team-red').textContent = scores.red;
+        }
+
+        function syncMatchModeControls() {
+            matchModeButtons.forEach(button => {
+                const selected = button.dataset.arenaMode === arenaMode;
+                button.disabled = arenaMatch.phase !== 'menu';
+                button.classList.toggle('selected', selected);
+                button.setAttribute('aria-pressed',String(selected));
+            });
+            matchModeHint.textContent = arenaMode === 'tdm'
+                ? 'Mavi: sen + 3 bot • Kırmızı: 3 bot • Dost ateşi kapalı'
+                : '6 bağımsız bot • Herkes herkese karşı';
+        }
+
+        matchModeButtons.forEach(button => button.addEventListener('click', () => {
+            if (arenaMatch.phase !== 'menu') return;
+            arenaMode = ArenaTeams.validate(button.dataset.arenaMode);
+            syncMatchModeControls();
+            renderTeamHUD();
+        }));
+
         function renderLiveScoreboard() {
             if (!tabScoreboardHeld || arenaMatch.phase !== 'playing') return;
             const standings = ArenaMatch.leaderboard(player, bots);
+            document.getElementById('match-live-mode').textContent =
+                arenaMode === 'tdm' ? 'TAKIM SAVAŞI • 4v3' : 'SERBEST ARENA';
+            const teamLiveScore = document.getElementById('match-live-team-score');
+            teamLiveScore.classList.toggle('hidden',arenaMode !== 'tdm');
+            if (arenaMode === 'tdm') {
+                const points = ArenaTeams.scores(arenaMode,player,bots);
+                teamLiveScore.textContent = 'MAVİ '+points.blue+' — '+points.red+' KIRMIZI';
+            }
             liveScoreboardTable.replaceChildren();
             for (const entry of standings) {
                 const row = document.createElement('div');
@@ -3853,20 +3893,34 @@
             matchTimeSeconds = arenaMatch.remaining;
             document.getElementById('hud-timer').textContent = ArenaMatch.clock(matchTimeSeconds);
             matchResultsOverlay.classList.add('hidden');
+            renderTeamHUD();
+            syncMatchModeControls();
             updateHUD();
         }
 
         function showMatchResults() {
             hideLiveScoreboard();
             const result = ArenaMatch.finish(arenaMatch, player, bots);
+            const teamResult = ArenaTeams.result(arenaMode,player,bots);
+            if (teamResult) Object.assign(result,teamResult);
             matchDurationLabel.textContent = ArenaMatch.clock(result.seconds);
+            document.getElementById('match-results-mode-label').textContent =
+                arenaMode === 'tdm' ? 'TAKIM SAVAŞI • 4v3' : 'SERBEST ARENA';
+            teamResults.classList.toggle('hidden',arenaMode !== 'tdm');
+            if (teamResult) {
+                teamResults.textContent = 'MAVİ '+teamResult.scores.blue+
+                    ' — '+teamResult.scores.red+' KIRMIZI';
+            }
             isGameActive = false;
             activeWeaponSwing = null;
             Object.keys(keys).forEach(key => { keys[key] = false; });
             menuOverlay.classList.add('hidden');
             matchResultsTable.replaceChildren();
-            matchWinnerTitle.textContent = result.playerWon
-                ? '🏆 KUŞATMAYI KAZANDIN!'
+            matchWinnerTitle.textContent = arenaMode === 'tdm'
+                ? (teamResult.winner === 'draw' ? '🤝 TAKIMLAR BERABERE!'
+                    : teamResult.playerWon ? '🏆 MAVİ TAKIM KAZANDI!'
+                    : '🏆 KIRMIZI TAKIM KAZANDI!')
+                : result.playerWon ? '🏆 KUŞATMAYI KAZANDIN!'
                 : '🏆 KAZANAN: ' + result.winnerName;
             result.standings.forEach(entry => {
                 const line = document.createElement('div');
@@ -3897,6 +3951,7 @@
             else ArenaMatch.resume(arenaMatch);
             isGameActive = arenaMatch.phase === 'playing';
             syncMatchDurationControls();
+            syncMatchModeControls();
             menuOverlay.classList.add('hidden');
             if (canvas.requestPointerLock) canvas.requestPointerLock();
         });
@@ -3911,7 +3966,8 @@
         document.getElementById('match-qa-export-btn').addEventListener('click', () => {
             if (arenaMatch.phase !== 'results' || !arenaMatch.result) return;
             const report = {
-                schema: 'killtheking-ffa-qa-v1',
+                schema: 'killtheking-match-qa-v2',
+                mode: arenaMode,
                 matchResult: arenaMatch.result,
                 metrics: window.krunkerArenaBalanceReport()
             };
@@ -3920,7 +3976,7 @@
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            link.download = 'KillTheKing_FFA_QA_' +
+            link.download = 'KillTheKing_' + arenaMode.toUpperCase() + '_QA_' +
                 Math.round(arenaMatch.durationSeconds / 60) + 'min.json';
             document.body.appendChild(link);
             link.click();
@@ -3933,6 +3989,7 @@
             matchTimeSeconds = arenaMatch.remaining;
             document.getElementById('hud-timer').textContent = ArenaMatch.clock(matchTimeSeconds);
             syncMatchDurationControls();
+            syncMatchModeControls();
             hideLiveScoreboard();
             isGameActive = false;
             matchResultsOverlay.classList.add('hidden');
@@ -4248,6 +4305,7 @@
         let telemetrySampleAccumulator = 0;
         let matchTimeSeconds = arenaMatch.remaining;
         syncMatchDurationControls();
+        syncMatchModeControls();
         let fpsFrames = 0;
         let fpsTimer = 0;
 
@@ -5155,6 +5213,7 @@
             matchTimeSeconds = arenaMatch.remaining;
             document.getElementById('hud-timer').textContent = ArenaMatch.clock(matchTimeSeconds);
             if (matchFinished) showMatchResults();
+            renderTeamHUD();
             if (tabScoreboardHeld && arenaMatch.phase === 'playing') {
                 scoreboardRefreshSeconds -= dt;
                 if (scoreboardRefreshSeconds <= 0) {
@@ -5191,7 +5250,8 @@
 
         // Read-only runtime snapshot for arena QA; no controls or game state changes.
         window.krunkerArenaStatus = () => ({
-            mode: 'serbest-arena',
+            mode: arenaMode,
+            teamScores: ArenaTeams.scores(arenaMode,player,bots),
             matchPhase: arenaMatch.phase,
             matchRemaining: arenaMatch.remaining,
             matchDurationSeconds: arenaMatch.durationSeconds,
@@ -5202,7 +5262,8 @@
             playerClassIdx: player.classIdx,
             playerClassName: CLASSES[player.classIdx].name,
             botCount: bots.length,
-            bots: bots.map(b => ({ name: b.name, role: b.role, weapon: b.weapon, hp: b.hp, dead: b.dead,
+            bots: bots.map(b => ({ name: b.name, role: b.role, team: botTeam(b),
+                weapon: b.weapon, hp: b.hp, dead: b.dead,
                 remainingWaypoints: b.navPath.length, navigationStuckTime: b.navStuck,
                 tacticalMode: b.tacticMode, meleeWindup: b.meleeWindup,
                 guarding: b.guardTime > 0, guardParryTime: b.guardParryTime,
