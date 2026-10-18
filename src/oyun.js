@@ -1,15 +1,31 @@
 
+        // Browser file:// storage may be blocked; use defaults without crashing.
+        const arenaSettingsStore = (() => {
+            try { return window.localStorage; } catch (_) { return null; }
+        })();
+        let gameSettings = ArenaSettings.load(arenaSettingsStore);
         // ============================================================================
         // 1. PROCEDURAL WEB AUDIO SYNTHESIZER v3.0 (Rich 1600s Sound Effects)
         // ============================================================================
         class SoundFX {
             constructor() {
                 this.ctx = null;
+                this.master = null;
+                this.volume = .8;
+            }
+            setVolume(value) {
+                this.volume = ArenaSettings.normalize({volume:value}).volume;
+                if (this.master) this.master.gain.value = this.volume;
             }
             init() {
                 if (!this.ctx) {
                     const AudioCtx = window.AudioContext || window.webkitAudioContext;
-                    if (AudioCtx) this.ctx = new AudioCtx();
+                    if (AudioCtx) {
+                        this.ctx = new AudioCtx();
+                        this.master = this.ctx.createGain();
+                        this.master.gain.value = this.volume;
+                        this.master.connect(this.ctx.destination);
+                    }
                 }
                 if (this.ctx && this.ctx.state === 'suspended') {
                     this.ctx.resume();
@@ -38,7 +54,7 @@
 
                 noise.connect(filter);
                 filter.connect(gain);
-                gain.connect(this.ctx.destination);
+                gain.connect((this.master || this.ctx.destination));
                 noise.start(now);
             }
             playMetalClang() {
@@ -53,7 +69,7 @@
                     gain.gain.setValueAtTime(0.12 / (idx + 1), now);
                     gain.gain.exponentialRampToValueAtTime(0.005, now + 0.22);
                     osc.connect(gain);
-                    gain.connect(this.ctx.destination);
+                    gain.connect((this.master || this.ctx.destination));
                     osc.start(now);
                     osc.stop(now + 0.22);
                 });
@@ -69,7 +85,7 @@
                 gain.gain.setValueAtTime(0.38, now);
                 gain.gain.exponentialRampToValueAtTime(0.01, now + 0.18);
                 osc.connect(gain);
-                gain.connect(this.ctx.destination);
+                gain.connect((this.master || this.ctx.destination));
                 osc.start(now);
                 osc.stop(now + 0.18);
             }
@@ -96,7 +112,7 @@
 
                 noise.connect(filter);
                 filter.connect(gain);
-                gain.connect(this.ctx.destination);
+                gain.connect((this.master || this.ctx.destination));
                 noise.start(now);
 
                 const osc = this.ctx.createOscillator();
@@ -107,7 +123,7 @@
                 oscGain.gain.setValueAtTime(0.55, now);
                 oscGain.gain.exponentialRampToValueAtTime(0.01, now + 0.28);
                 osc.connect(oscGain);
-                oscGain.connect(this.ctx.destination);
+                oscGain.connect((this.master || this.ctx.destination));
                 osc.start(now);
                 osc.stop(now + 0.28);
             }
@@ -134,7 +150,7 @@
 
                 noise.connect(filter);
                 filter.connect(gain);
-                gain.connect(this.ctx.destination);
+                gain.connect((this.master || this.ctx.destination));
                 noise.start(now);
             }
             playHitmarker(isHeadshot = false) {
@@ -148,7 +164,7 @@
                 gain.gain.setValueAtTime(0.4, now);
                 gain.gain.exponentialRampToValueAtTime(0.01, now + (isHeadshot ? 0.19 : 0.06));
                 osc.connect(gain);
-                gain.connect(this.ctx.destination);
+                gain.connect((this.master || this.ctx.destination));
                 osc.start(now);
                 osc.stop(now + (isHeadshot ? 0.19 : 0.06));
             }
@@ -177,7 +193,7 @@
                 const g = this.ctx.createGain();
                 g.gain.setValueAtTime(isHeadshot ? 0.25 : 0.18, now);
                 g.gain.exponentialRampToValueAtTime(0.001, now + duration);
-                src.connect(band); band.connect(g); g.connect(this.ctx.destination);
+                src.connect(band); band.connect(g); g.connect((this.master || this.ctx.destination));
                 src.start(now); src.stop(now + duration);
 
                 // Lower 'body' of the hit, heavier for melee and finishing blows
@@ -189,7 +205,7 @@
                 tone.frequency.exponentialRampToValueAtTime(58, now + 0.105);
                 body.gain.setValueAtTime(lethal ? 0.14 : 0.095, now);
                 body.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
-                tone.connect(body); body.connect(this.ctx.destination);
+                tone.connect(body); body.connect((this.master || this.ctx.destination));
                 tone.start(now); tone.stop(now + 0.125);
                 if (lethal) {
                     const confirm = this.ctx.createOscillator();
@@ -200,7 +216,7 @@
                     cg.gain.setValueAtTime(0.001, now);
                     cg.gain.setValueAtTime(0.075, now + 0.035);
                     cg.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
-                    confirm.connect(cg); cg.connect(this.ctx.destination);
+                    confirm.connect(cg); cg.connect((this.master || this.ctx.destination));
                     confirm.start(now + 0.035); confirm.stop(now + 0.165);
                 }
             }
@@ -214,7 +230,7 @@
                 osc.frequency.exponentialRampToValueAtTime(48, now + 0.13);
                 gain.gain.setValueAtTime(0.10, now);
                 gain.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
-                osc.connect(gain); gain.connect(this.ctx.destination);
+                osc.connect(gain); gain.connect((this.master || this.ctx.destination));
                 osc.start(now); osc.stop(now + 0.145);
             }
             playArrowThud() {
@@ -227,7 +243,7 @@
                 osc.frequency.exponentialRampToValueAtTime(62, now + 0.085);
                 gain.gain.setValueAtTime(0.095, now);
                 gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
-                osc.connect(gain); gain.connect(this.ctx.destination);
+                osc.connect(gain); gain.connect((this.master || this.ctx.destination));
                 osc.start(now); osc.stop(now + 0.095);
             }
             playJumpPad() {
@@ -241,7 +257,7 @@
                 gain.gain.setValueAtTime(0.35, now);
                 gain.gain.exponentialRampToValueAtTime(0.01, now + 0.28);
                 osc.connect(gain);
-                gain.connect(this.ctx.destination);
+                gain.connect((this.master || this.ctx.destination));
                 osc.start(now);
                 osc.stop(now + 0.28);
             }
@@ -256,12 +272,13 @@
                 gain.gain.setValueAtTime(0.16, now);
                 gain.gain.exponentialRampToValueAtTime(0.01, now + 0.09);
                 osc.connect(gain);
-                gain.connect(this.ctx.destination);
+                gain.connect((this.master || this.ctx.destination));
                 osc.start(now);
                 osc.stop(now + 0.09);
             }
         }
         const sfx = new SoundFX();
+        sfx.setVolume(gameSettings.volume);
 
         // ============================================================================
         // 2. WEAPON & CLASS DEFINITIONS v2.0 (1600s ERA)
@@ -802,7 +819,8 @@
         const canvas = document.getElementById('game-canvas');
         const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.setPixelRatio(
+            ArenaSettings.pixelRatio(gameSettings.quality,window.devicePixelRatio));
         renderer.shadowMap.enabled = true;
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         renderer.outputEncoding = THREE.sRGBEncoding;
@@ -1883,7 +1901,7 @@
         let lastWeaponSwingRaycasts = 0;
         let isGameActive = false;
         let arenaMode = 'ffa'; // Default stays the approved everyone-vs-everyone mode.
-        let mouseSensitivity = 1.0;
+        let mouseSensitivity = gameSettings.sensitivity;
         let playerCharGroup = null;
         const playerClassModels = [];
 
@@ -4008,10 +4026,38 @@
                 document.exitPointerLock();
         }
 
-        sensSlider.addEventListener('input', (e) => {
-            mouseSensitivity = parseFloat(e.target.value);
-            sensValue.textContent = `${mouseSensitivity.toFixed(1)}x`;
-        });
+        const volumeSlider = document.getElementById('arena-volume-slider');
+        const volumeValue = document.getElementById('arena-volume-value');
+        const qualitySelect = document.getElementById('arena-quality-select');
+        const lowMotionInput = document.getElementById('arena-low-motion');
+        function applySavedSettings() {
+            sensSlider.value = String(gameSettings.sensitivity);
+            mouseSensitivity = gameSettings.sensitivity;
+            sensValue.textContent = mouseSensitivity.toFixed(1) + 'x';
+            volumeSlider.value = String(Math.round(gameSettings.volume*100));
+            volumeValue.textContent = Math.round(gameSettings.volume*100) + '%';
+            qualitySelect.value = gameSettings.quality;
+            lowMotionInput.checked = gameSettings.lowMotion;
+            sfx.setVolume(gameSettings.volume);
+            const targetRatio = ArenaSettings.pixelRatio(
+                gameSettings.quality,window.devicePixelRatio);
+            if (Math.abs(renderer.getPixelRatio() - targetRatio) > .001)
+                renderer.setPixelRatio(targetRatio);
+        }
+        function changeSetting(patch) {
+            gameSettings = ArenaSettings.normalize({...gameSettings,...patch});
+            ArenaSettings.save(arenaSettingsStore,gameSettings);
+            applySavedSettings();
+        }
+        sensSlider.addEventListener('input', e =>
+            changeSetting({sensitivity:Number(e.target.value)}));
+        volumeSlider.addEventListener('input',e =>
+            changeSetting({volume:Number(e.target.value)/100}));
+        qualitySelect.addEventListener('change',e =>
+            changeSetting({quality:e.target.value}));
+        lowMotionInput.addEventListener('change',e =>
+            changeSetting({lowMotion:e.target.checked}));
+        applySavedSettings();
 
         playBtn.addEventListener('click', () => {
             sfx.init();
@@ -4641,8 +4687,12 @@
                 }
 
                 // First-Person vs [P] Third-Person Over-the-Shoulder Camera
-                camera.rotation.y = player.yaw + shakeX + player.cameraImpactYaw;
-                camera.rotation.x = player.pitch + shakeY + player.cameraImpactPitch;
+                const shakeScale = gameSettings.lowMotion ? 0 : 1;
+                const impactScale = gameSettings.lowMotion ? .25 : 1;
+                camera.rotation.y = player.yaw + shakeX*shakeScale +
+                    player.cameraImpactYaw*impactScale;
+                camera.rotation.x = player.pitch + shakeY*shakeScale +
+                    player.cameraImpactPitch*impactScale;
                 camera.rotation.z = THREE.MathUtils.lerp(camera.rotation.z, wantsSlide ? -0.035 : 0, dt * 10);
 
                 if (player.isThirdPerson && playerCharGroup) {

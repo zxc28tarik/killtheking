@@ -287,6 +287,26 @@
                 </div>
             </div>
 
+            <!-- Offline, persisted game preferences; no extra game dependency. -->
+            <div id="arena-settings-controls" class="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3 rounded-lg bg-slate-950/60 border border-white/10">
+                <label class="flex flex-col gap-1 text-xs font-extrabold text-sky-200 krunker-text">
+                    SES SEVİYESİ: <span id="arena-volume-value" class="text-white">80%</span>
+                    <input id="arena-volume-slider" type="range" min="0" max="100" step="5" value="80" class="accent-amber-500 cursor-pointer">
+                </label>
+                <label class="flex flex-col gap-1 text-xs font-extrabold text-sky-200 krunker-text">
+                    GRAFİK KALİTESİ
+                    <select id="arena-quality-select" class="bg-slate-800 text-white border border-slate-500 rounded px-2 py-2">
+                        <option value="high">YÜKSEK (ÖNERİLEN)</option>
+                        <option value="medium">ORTA</option>
+                        <option value="low">DÜŞÜK</option>
+                    </select>
+                </label>
+                <label class="flex items-center gap-2 text-xs font-extrabold text-sky-200 krunker-text cursor-pointer">
+                    <input id="arena-low-motion" type="checkbox" class="accent-amber-500 w-4 h-4">
+                    KAMERA SARSINTISINI AZALT
+                </label>
+            </div>
+
             <!-- Class Selection Grid (4 Upgraded v3.5 HD Classes) -->
             <div>
                 <div class="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-amber-400 mb-2.5 flex items-center justify-between">
@@ -431,6 +451,7 @@
     <script src="src/combat-hit-3d.js"></script>
     <script src="src/arena-teams.js"></script>
     <script src="src/arena-performance.js"></script>
+    <script src="src/arena-settings.js"></script>
     <script src="src/oyun.js"></script>
 
 </body></html>

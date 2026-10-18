@@ -60,6 +60,14 @@ Teknik ayrıntılar ve test rehberi: `docs/COMBAT_P0_STABILIZATION.md`.
 - [x] Erken bırakma, oyun duraklama, sekmeden çıkma, sınıf değiştirme, yeni maç ve okçu AI saldırı ritmi regresyon testleri. **282/282 Node PASS**, tek offline HTML/inline JS testleri PASS.
 - [ ] Gerçek Chrome/Edge oynanış ve 2sn kilit / 1sn toparlanma hissiyatı kullanıcının testini bekliyor. Ayrıntı: `docs/ARCHER_DRAW_RHYTHM_V2.md`.
 
+## A3/A7 + Archer V2 entegrasyonu ve A6 ayarları — 18 Ekim 2026
+
+- [x] **PR #39**: İki kardeş dalın kodu `codex/a3-a7-archer-integration` içinde birleştirildi. Okçu V2 1s toparlanma / 2s minimum germe / 3s tam germe korunurken A3 rampa animasyonu ve A7 FPS/1% low ölçümleri dahil edildi. **295/295 Node PASS**, offline build PASS; gerçek GPU kabulü bekliyor.
+- [x] **A6 ilk ayarlar paketi**: ses seviyesi için ana gain, kalıcı fare hassasiyeti, azaltılmış kamera sarsıntısı, Low/Medium/High pixel ratio ve file:// ortamında korumalı localStorage. QA kılavuzu `docs/A6_OFFLINE_SETTINGS_QA.md`.
+- [ ] A6 gerçek Chrome/Edge kontrolleri: tüm silah seslerinin mute/volume kontrolü, ayarların kaydı, FPS/çözünürlük değişimi, FFA/TDM menülerini koruma; ses kalabalığı ve erişilebilirliğin ileri iyileştirmeleri henüz tamamlanmadı.
+- [ ] **A5 ikinci harita teması kullanıcı kararı bekliyor**; grafikleri ve mevcut kaleyi değiştirmeden onaylı temaya göre harita üretilecek.
+- [ ] Tüm PR #28–#39 dallarının entegrasyon incelemesi, kullanıcı WebGL kabulü, 30 dakika stres, temiz resmi `main` sürümü ve A8 teslimi.
+
 ## İş sırası ve bağımlılıklar
 
 ### A0 — ÖNCE: Maç Sistemi 1.0 oynanış kabulü (P1, 1–2 gün)
