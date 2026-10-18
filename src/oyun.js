@@ -3733,13 +3733,28 @@
             liveScoreboardOverlay.setAttribute('aria-hidden', 'true');
         }
 
+        let lastTeamHud = '';
         function renderTeamHUD() {
             const enabled = arenaMode === 'tdm';
             teamHud.classList.toggle('hidden',!enabled);
-            if (!enabled) return;
+            if (!enabled) {
+                lastTeamHud = '';
+                return;
+            }
             const scores = ArenaTeams.scores(arenaMode,player,bots);
-            document.getElementById('hud-team-blue').textContent = scores.blue;
-            document.getElementById('hud-team-red').textContent = scores.red;
+            const key = scores.blue+':'+scores.red;
+            if (key !== lastTeamHud) {
+                document.getElementById('hud-team-blue').textContent = scores.blue;
+                document.getElementById('hud-team-red').textContent = scores.red;
+                lastTeamHud = key;
+            }
+        }
+        function updateTeamAppearance() {
+            bots.forEach(bot => {
+                const label = bot.label.firstElementChild;
+                if (label) label.style.color = arenaMode !== 'tdm' ? ''
+                    : botTeam(bot) === 'blue' ? '#7dd3fc' : '#fda4af';
+            });
         }
 
         function syncMatchModeControls() {
@@ -3759,6 +3774,7 @@
             arenaMode = ArenaTeams.validate(button.dataset.arenaMode);
             syncMatchModeControls();
             renderTeamHUD();
+            updateTeamAppearance();
         }));
 
         function renderLiveScoreboard() {
@@ -3779,7 +3795,11 @@
                 for (const value of [entry.rank, entry.name, entry.kills, entry.deaths, entry.kd.toFixed(2)]) {
                     const cell = document.createElement('span');
                     cell.className = 'match-live-cell';
-                    cell.textContent = String(value);
+                    const team = entry.isPlayer ? ArenaTeams.PLAYER_TEAM
+                        : ArenaTeams.teamForBot(Number(entry.id.slice(4)));
+                    cell.textContent = arenaMode === 'tdm' && value === entry.name
+                        ? (team === 'blue' ? '🔵 ' : '🔴 ') + entry.name
+                        : String(value);
                     row.appendChild(cell);
                 }
                 liveScoreboardTable.appendChild(row);
@@ -3893,7 +3913,9 @@
             matchTimeSeconds = arenaMatch.remaining;
             document.getElementById('hud-timer').textContent = ArenaMatch.clock(matchTimeSeconds);
             matchResultsOverlay.classList.add('hidden');
+            lastTeamHud = '';
             renderTeamHUD();
+            updateTeamAppearance();
             syncMatchModeControls();
             updateHUD();
         }
@@ -3929,7 +3951,11 @@
                 for (const value of [entry.rank, entry.name, entry.kills, entry.deaths, entry.kd.toFixed(2)]) {
                     const cell = document.createElement('span');
                     cell.className = 'text-sm sm:text-base font-bold krunker-text truncate';
-                    cell.textContent = String(value);
+                    const team = entry.isPlayer ? ArenaTeams.PLAYER_TEAM
+                        : ArenaTeams.teamForBot(Number(entry.id.slice(4)));
+                    cell.textContent = arenaMode === 'tdm' && value === entry.name
+                        ? (team === 'blue' ? '🔵 ' : '🔴 ') + entry.name
+                        : String(value);
                     line.appendChild(cell);
                 }
                 matchResultsTable.appendChild(line);
@@ -4269,10 +4295,13 @@
                 }
             });
 
-            // Enemies (Red dots)
+            // FFA all enemies red; TDM blue allies and red enemies.
             radarCtx.fillStyle = '#ef4444';
             bots.forEach(bot => {
                 if (bot.dead) return;
+                if (arenaMode === 'tdm') {
+                    radarCtx.fillStyle = botTeam(bot) === 'blue' ? '#38bdf8' : '#ef4444';
+                }
                 radarCtx.beginPath();
                 radarCtx.arc(cx + bot.mesh.position.x * scale, cy + bot.mesh.position.z * scale, 3.2, 0, Math.PI * 2);
                 radarCtx.fill();
