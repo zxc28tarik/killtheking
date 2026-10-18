@@ -395,6 +395,14 @@
                 </div>
             </div>
 
+            <!-- Independent arena selection; preserve the original castle by default. -->
+            <div id="arena-map-controls" class="match-duration-picker" role="group" aria-label="Harita seçimi">
+                <strong>HARİTA</strong>
+                <button type="button" data-arena-map="castle" aria-pressed="true" class="selected">🏰 KALE (ORİJİNAL)</button>
+                <button type="button" data-arena-map="meadow" aria-pressed="false">🌿 BÜYÜK ÇİMENLİK MEYDAN</button>
+                <span id="arena-map-hint" class="match-duration-help">Orijinal kale, surlar ve rampalar</span>
+            </div>
+
             <!-- Game mode can only change from the main menu, never during a round. -->
             <div id="match-mode-controls" class="match-duration-picker" role="group" aria-label="Oyun modu">
                 <strong>OYUN MODU</strong>
@@ -452,6 +460,7 @@
     <script src="src/arena-teams.js"></script>
     <script src="src/arena-performance.js"></script>
     <script src="src/arena-settings.js"></script>
+    <script src="src/arena-meadow-layout.js"></script>
     <script src="src/oyun.js"></script>
 
 </body></html>
