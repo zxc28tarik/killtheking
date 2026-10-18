@@ -3862,6 +3862,8 @@
         const matchDurationButtons = [...document.querySelectorAll('[data-duration-seconds]')];
         const matchModeButtons = [...document.querySelectorAll('[data-arena-mode]')];
         const matchModeHint = document.getElementById('match-mode-hint');
+        const mapButtons = [...document.querySelectorAll('[data-arena-map]')];
+        const mapHint = document.getElementById('arena-map-hint');
         const teamHud = document.getElementById('hud-team-score');
         const teamResults = document.getElementById('match-team-results');
         let tabScoreboardHeld = false;
@@ -3896,6 +3898,24 @@
                     : botTeam(bot) === 'blue' ? '#7dd3fc' : '#fda4af';
             });
         }
+
+        function syncArenaMapControls() {
+            const editable = arenaMatch.phase === 'menu';
+            mapButtons.forEach(button => {
+                const selected=button.dataset.arenaMap===arenaMap;
+                button.disabled=!editable;
+                button.classList.toggle('selected',selected);
+                button.setAttribute('aria-pressed',String(selected));
+            });
+            mapHint.textContent=arenaMap==='meadow'
+                ? 'Geniş ve düz çimenlik; açık görüş, yalnız kenarlarda az siper'
+                : 'Orijinal kale, surlar ve rampalar';
+        }
+        mapButtons.forEach(button=>button.addEventListener('click',()=>{
+            if(arenaMatch.phase!=='menu')return;
+            switchArenaMap(button.dataset.arenaMap);
+            syncArenaMapControls();
+        }));
 
         function syncMatchModeControls() {
             matchModeButtons.forEach(button => {
@@ -4060,6 +4080,7 @@
             renderTeamHUD();
             updateTeamAppearance();
             syncMatchModeControls();
+            syncArenaMapControls();
             updateHUD();
         }
 
@@ -4070,7 +4091,8 @@
             if (teamResult) Object.assign(result,teamResult);
             matchDurationLabel.textContent = ArenaMatch.clock(result.seconds);
             document.getElementById('match-results-mode-label').textContent =
-                arenaMode === 'tdm' ? 'TAKIM SAVAŞI • 4v3' : 'SERBEST ARENA';
+                (arenaMode === 'tdm' ? 'TAKIM SAVAŞI • 4v3' : 'SERBEST ARENA')+
+                (arenaMap==='meadow' ? ' • ÇİMENLİK MEYDAN' : ' • KALE');
             teamResults.classList.toggle('hidden',arenaMode !== 'tdm');
             if (teamResult) {
                 teamResults.textContent = 'MAVİ '+teamResult.scores.blue+
@@ -4149,6 +4171,7 @@
             isGameActive = arenaMatch.phase === 'playing';
             syncMatchDurationControls();
             syncMatchModeControls();
+            syncArenaMapControls();
             menuOverlay.classList.add('hidden');
             if (canvas.requestPointerLock) canvas.requestPointerLock();
         });
@@ -4188,6 +4211,7 @@
             document.getElementById('hud-timer').textContent = ArenaMatch.clock(matchTimeSeconds);
             syncMatchDurationControls();
             syncMatchModeControls();
+            syncArenaMapControls();
             hideLiveScoreboard();
             isGameActive = false;
             matchResultsOverlay.classList.add('hidden');
@@ -4519,6 +4543,7 @@
         let matchTimeSeconds = arenaMatch.remaining;
         syncMatchDurationControls();
         syncMatchModeControls();
+        syncArenaMapControls();
         const performanceSamples = ArenaPerformance.create();
         let fpsFrames = 0;
         let fpsTimer = 0;
