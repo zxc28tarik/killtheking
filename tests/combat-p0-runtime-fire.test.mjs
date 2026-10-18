@@ -32,6 +32,7 @@ function arena({rolls=[.5,.5],blocked=false,clock=100,playerHp=100}={}){
   damageBotFromBot:(a,b,d)=>hits.push(d),
   ArenaCombatDefense:{assessShield:()=>({kind:'hit'})},
   sfx:{playPlayerHit(){}},
+  setTimeout(){},
   updateHUD(){},
   document:{getElementById:()=>({style:{}})}
  };
