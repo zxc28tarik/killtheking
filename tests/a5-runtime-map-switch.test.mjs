@@ -25,6 +25,8 @@ function setup(){
  };
  const environment={
   arenaMap:'castle',castleMapData,meadowMapData,
+  camera:{far:350,updateProjectionMatrix(){environment.projectionUpdates++;}},
+  projectionUpdates:0,
   colliders:[...castleMapData.colliders],ramps:[...castleMapData.ramps],
   worldMeshes:[...castleMapData.worldMeshes],torches:[...castleMapData.torches],
   jumpPads:[...castleMapData.jumpPads],barrels:[...castleMapData.barrels],
@@ -48,6 +50,8 @@ test('switch to open meadow isolates castle wall colliders, raycasts and ramp pa
  assert.equal(a.env.jumpPads.length,0);
  assert.equal(a.env.barrels.length,0);
  assert.equal(a.env.navigator.map,'meadow');
+ assert.equal(a.env.camera.far,800);
+ assert.equal(a.env.projectionUpdates,1);
  assert.ok(a.castleLook.every(x=>!x.visible));
  assert.ok(a.meadowLook.every(x=>x.visible));
  assert.equal(a.originalBarrel.label.style.display,'none');
