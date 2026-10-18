@@ -35,6 +35,7 @@ function arena({rolls=[.5,.5],blocked=false,clock=100,playerHp=100}={}){
   ArenaTelemetry:{recordRangedShot(){}},arenaTelemetry:{},
   ArenaBotOffense:{facing:()=>true,nextCooldown:()=>1.5},
   arenaActorPosition:(type,id)=>type==='player'?player.pos:enemy.mesh.position,
+  arenaCanTarget:()=>true,
   arenaLineOfSight:()=>true,arenaWorldBlockBetween:()=>blocked,
   arenaShotTracer:(a,b)=>traces.push(b.clone()),spawnSmokeCloud:()=>{},
   damageBotFromBot:(a,b,d)=>hits.push(d),
