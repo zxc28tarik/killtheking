@@ -1881,6 +1881,7 @@
         let activeWeaponSwing = null;
         let lastWeaponSwingRaycasts = 0;
         let isGameActive = false;
+        let arenaMode = 'ffa'; // Default stays the approved everyone-vs-everyone mode.
         let mouseSensitivity = 1.0;
         let playerCharGroup = null;
         const playerClassModels = [];
@@ -2021,12 +2022,24 @@
         const navigator = ArenaNavigation.createNavigator(colliders, ramps,
             { min: -43.75, max: 43.75, step: 1.25, upperEdge: 39.5, upperLevel: 7 });
         const bots = [];
+        function botTeam(bot) { return ArenaTeams.teamForBot(bot.id); }
+        function arenaCanTarget(bot,type,id) {
+            if (arenaMode !== 'tdm') return true;
+            const targetTeam = type === 'player' ? ArenaTeams.PLAYER_TEAM
+                : bots[id] ? ArenaTeams.teamForBot(bots[id].id) : null;
+            return !!targetTeam && ArenaTeams.mayTarget(arenaMode,botTeam(bot),targetTeam);
+        }
         // Use the known level-design spawn pool, but prefer locations away from living fighters.
         function chooseArenaRespawn(pool, excludedBot = null, includePlayer = true) {
-            const threats = bots.filter(other => other !== excludedBot && !other.dead)
+            const team = excludedBot ? botTeam(excludedBot) : ArenaTeams.PLAYER_TEAM;
+            const candidates = ArenaTeams.spawnCandidates(pool,arenaMode,team);
+            const threats = bots.filter(other => other !== excludedBot && !other.dead &&
+                (arenaMode !== 'tdm' || botTeam(other) !== team))
                 .map(other => other.mesh.position);
-            if (includePlayer && isGameActive) threats.push(player.pos);
-            const preferred = ArenaSpawnSafety.chooseSpawn(pool, threats);
+            if (includePlayer && isGameActive &&
+                (arenaMode !== 'tdm' || team !== ArenaTeams.PLAYER_TEAM))
+                threats.push(player.pos);
+            const preferred = ArenaSpawnSafety.chooseSpawn(candidates, threats);
             // Use the nearest valid point so a new fighter cannot spawn in battlements.
             const cell = navigator.nearest(preferred);
             return cell ? new THREE.Vector3(cell.x, cell.y, cell.z) : preferred;
@@ -2670,6 +2683,7 @@
 
                 const botObj = {
                     id: i,
+                    teamId: ArenaTeams.teamForBot(i),
                     name: profile.name,
                     role: profile.role,
                     weapon: profile.weapon,
@@ -3016,6 +3030,8 @@
 
         function damageBot(bot, dmg, isHeadshot, weaponName, prefixTag = '', impactPoint = null) {
             if (!bot || bot.dead) return;
+            // In team matches player's blue teammates cannot be harmed by friendly fire.
+            if (!ArenaTeams.canDamage(arenaMode,ArenaTeams.PLAYER_TEAM,botTeam(bot))) return;
             bot.hp -= dmg;
             // A player's attack draws THIS bot's attention, not the entire arena.
             if (bot.hp > 0) markArenaAggro(bot, 'player', null);
@@ -3129,6 +3145,7 @@
             const maxDetection = bot.range > 8 ? 43 : 33;
             // A bot retaliates against a recent attacker if that attacker is reachable.
             if (bot.arenaAggroType && arenaClock < bot.arenaAggroUntil &&
+                arenaCanTarget(bot,bot.arenaAggroType,bot.arenaAggroId) &&
                 ArenaBotRecovery.allows(bot.navRecovery, bot.arenaAggroType + ':' +
                     (bot.arenaAggroType === 'player' ? 'player' : bot.arenaAggroId))) {
                 const aggroDist = arenaTargetDistance(bot, bot.arenaAggroType, bot.arenaAggroId);
@@ -3141,6 +3158,7 @@
             const currentPos = arenaActorPosition(bot.arenaTargetType, bot.arenaTargetId);
             const currentDist = arenaTargetDistance(bot, bot.arenaTargetType, bot.arenaTargetId);
             if (currentPos && currentDist < maxDetection + 5 &&
+                arenaCanTarget(bot,bot.arenaTargetType,bot.arenaTargetId) &&
                 arenaClock < bot.arenaLockTime &&
                 ArenaBotRecovery.allows(bot.navRecovery, bot.arenaTargetType + ':' +
                     (bot.arenaTargetType === 'player' ? 'player' : bot.arenaTargetId))) {
@@ -3149,6 +3167,7 @@
             const candidates = [];
             for (const other of bots) {
                 if (other.id === bot.id || other.dead) continue;
+                if (!arenaCanTarget(bot,'bot',other.id)) continue;
                 if (!ArenaBotRecovery.allows(bot.navRecovery, 'bot:' + other.id)) continue;
                 const dist = arenaTargetDistance(bot, 'bot', other.id);
                 if (dist >= maxDetection) continue;
@@ -3160,6 +3179,7 @@
             const playerDistance = arenaTargetDistance(bot, 'player', null);
             // At most one normal bot pursues the player at once; retaliation is separate.
             if (playerDistance < Math.min(maxDetection, 26) &&
+                arenaCanTarget(bot,'player',null) &&
                 ArenaBotRecovery.allows(bot.navRecovery, 'player:player') &&
                 arenaTargetCount('player', null, bot.id) === 0) {
                 // Bots deliberately prefer other available opponents to a player dogpile.
@@ -3241,6 +3261,7 @@
 
         function damageBotFromBot(attacker, victim, damage) {
             if (!attacker || attacker.dead || !victim || victim.dead || attacker.id === victim.id) return;
+            if (!ArenaTeams.canDamage(arenaMode,botTeam(attacker),botTeam(victim))) return;
             // Knight defenders must raise their shield DURING an observed wind-up.
             // Never retroactively decide to parry when a hit is registered.
             if (victim.role === 'knight' && victim.guardTime > 0) {
@@ -3306,6 +3327,7 @@
 
         function arenaBotAttack(bot, target, targetDistance) {
             if (!target || !isGameActive || bot.dead || bot.staggerTime > 0) return;
+            if (!arenaCanTarget(bot,target.type,target.id)) return;
             const targetPos = arenaActorPosition(target.type, target.id);
             if (!targetPos) return;
             const isRanged = bot.role === 'archer' || bot.role === 'musket';
@@ -4866,7 +4888,8 @@
                         arenaLineOfSight(other, bot.mesh.position, false));
                     // Knights also react to a visible player's melee wind-up rather than
                     // holding their shield only against other bots.
-                    const playerMeleeThreat = !threat && ArenaBotOffense.playerMeleeThreat({
+                    const playerMeleeThreat = !threat && arenaCanTarget(bot,'player',null) &&
+                        ArenaBotOffense.playerMeleeThreat({
                         classIdx:player.classIdx, attackTime:player.attackAnimTime,
                         distance:distToPlayer, visible:arenaLineOfSight(bot, player.pos, true)
                     });
