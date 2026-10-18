@@ -15,7 +15,8 @@ test('QA JSON download exists only in match-results panel and never replaces rep
 test('QA export includes final standings and telemetry without network upload',()=>{
  assert.match(game,/document\.getElementById\('match-qa-export-btn'\)\.addEventListener\('click'/);
  assert.match(game,/if \(arenaMatch\.phase !== 'results' \|\| !arenaMatch\.result\) return/);
- assert.match(game,/schema: 'killtheking-ffa-qa-v1'/);
+ assert.match(game,/schema: 'killtheking-match-qa-v2'/);
+ assert.match(game,/mode: arenaMode/);
  assert.match(game,/matchResult: arenaMatch\.result/);
  assert.match(game,/metrics: window\.krunkerArenaBalanceReport\(\)/);
  assert.match(game,/new Blob\(\[JSON\.stringify\(report, null, 2\)\]/);
