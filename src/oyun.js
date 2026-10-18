@@ -3266,7 +3266,7 @@
             // Larger meadow requires bots to discover opponents across its
             // broad central battlefield; attack weapon range is unchanged.
             const maxDetection = arenaMap === 'meadow'
-                ? 220 : bot.range > 8 ? 43 : 33;
+                ? 280 : bot.range > 8 ? 43 : 33;
             // A bot retaliates against a recent attacker if that attacker is reachable.
             if (bot.arenaAggroType && arenaClock < bot.arenaAggroUntil &&
                 arenaCanTarget(bot,bot.arenaAggroType,bot.arenaAggroId) &&
