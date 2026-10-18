@@ -2614,6 +2614,10 @@
                 [head,'head'],[helmetGroup,'head']]) {
                 part.traverse(child => { if (child.isMesh) child.userData.hitZone = zone; });
             }
+            // Carried blades and gun barrels are not vulnerable body parts.
+            weaponMount.traverse(child => {
+                if (child.isMesh) child.userData.hitZone = 'ignore';
+            });
             return group;
         }
 
@@ -2685,6 +2689,7 @@
                     tacticMode: 'patrol', tacticGoal: null, tacticTargetKey: null,
                     tacticLastTarget: null, tacticRefresh: 0,
                     attackTimer: 0.85 + Math.random() * 0.75,
+                    lastRangedShotAt: -Infinity,
                     staggerTime: 0,
                     meleeWindup: 0,
                     rangedWindup: 0,
@@ -3567,7 +3572,9 @@
                     raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
                     raycaster.far = cls.range;
                     const botMeshes = [];
-                    bots.filter(b => !b.dead).forEach(b => b.mesh.traverse(c => { if (c.isMesh) botMeshes.push(c); }));
+                    bots.filter(b => !b.dead).forEach(b => b.mesh.traverse(c => {
+                        if (c.isMesh && c.userData.hitZone !== 'ignore') botMeshes.push(c);
+                    }));
                     const hits = raycaster.intersectObjects(botMeshes, false);
 
                     if (hits.length > 0 && !arenaWorldBlockBetween(camera.position, hits[0].point)) {
@@ -3736,6 +3743,7 @@
             bots.forEach(bot => {
                 bot.arenaKills = 0;
                 bot.arenaDeaths = 0;
+                bot.lastRangedShotAt = -Infinity;
                 bot.hp = bot.maxHp;
                 bot.dead = false;
                 bot.respawnTimer = 0;
@@ -4536,7 +4544,9 @@
                 for (const mesh of worldMeshes) targets.push(mesh);
                 for (const bot of bots) {
                     if (bot.dead || !ArenaWeaponSweep.withinReach(origin, bot.mesh.position, swing.reach, 4)) continue;
-                    bot.mesh.traverse(c => { if (c.isMesh) targets.push(c); });
+                    bot.mesh.traverse(c => {
+                        if (c.isMesh && c.userData.hitZone !== 'ignore') targets.push(c);
+                    });
                 }
                 for (const barrel of barrels) {
                     if (!barrel.active || !ArenaWeaponSweep.withinReach(origin, barrel.pos, swing.reach, 4)) continue;
@@ -4565,6 +4575,8 @@
                     const index = hit.object.userData.botIndex;
                     if (index !== undefined && bots[index] && !bots[index].dead)
                         return {kind:'bot',bot:bots[index],point:hit.point,
+                            hitZone:ArenaWeaponBalance.zoneFromMesh(
+                                hit.object,hit.point.y,bots[index].mesh.position.y),
                             isHead:!!hit.object.userData.isHead,distance:hit.distance};
                     const barrelIndex = hit.object.userData.barrelIndex;
                     if (barrelIndex !== undefined && barrels[barrelIndex] && barrels[barrelIndex].active)
@@ -4600,9 +4612,9 @@
                 if (impact && impact.kind === 'barrel') triggerBarrelExplosion(impact.barrel);
                 else if (impact && impact.kind === 'bot') {
                     const kind = swing.classIdx === 1 ? 'spear' : 'sword';
-                    const zone = impact.isHead ? 'head'
+                    const zone = impact.hitZone || (impact.isHead ? 'head'
                         : ArenaWeaponBalance.zoneFromAim(impact.point && impact.point.y,
-                            impact.bot.mesh.position.y);
+                            impact.bot.mesh.position.y));
                     const damage = ArenaWeaponBalance.damage(kind,zone) + swing.bonus;
                     damageBot(impact.bot, damage, zone === 'head', swing.weaponName, swing.tag, impact.point);
                 }
