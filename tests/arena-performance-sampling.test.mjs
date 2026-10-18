@@ -55,7 +55,7 @@ test('drawcalls, triangles, geometry and texture count use renderer.info only',(
   [42,2300,120,8]);
 });
 test('runtime captures unscaled frame samples and only sorts on explicit report read',()=>{
- assert.match(game,/ArenaPerformance\.record\(performanceSamples,dt\)/);
+ assert.match(game,/ArenaPerformance\.record\(performanceSamples,rawDt\)/);
  assert.match(game,/window\.krunkerPerformanceReport = \(\) =>/);
  assert.match(game,/ArenaPerformance\.snapshot\(performanceSamples,renderer\)/);
  assert.match(game,/renderPerformance: window\.krunkerPerformanceReport\(\)/);
