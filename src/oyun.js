@@ -4039,8 +4039,10 @@
             qualitySelect.value = gameSettings.quality;
             lowMotionInput.checked = gameSettings.lowMotion;
             sfx.setVolume(gameSettings.volume);
-            renderer.setPixelRatio(ArenaSettings.pixelRatio(
-                gameSettings.quality,window.devicePixelRatio));
+            const targetRatio = ArenaSettings.pixelRatio(
+                gameSettings.quality,window.devicePixelRatio);
+            if (Math.abs(renderer.getPixelRatio() - targetRatio) > .001)
+                renderer.setPixelRatio(targetRatio);
         }
         function changeSetting(patch) {
             gameSettings = ArenaSettings.normalize({...gameSettings,...patch});
