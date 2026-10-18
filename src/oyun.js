@@ -5307,10 +5307,12 @@
         function animate() {
             requestAnimationFrame(animate);
             const now = performance.now();
-            const dt = Math.min(0.05, (now - lastTime) / 1000);
+            const rawDt = (now - lastTime) / 1000;
+            const dt = Math.min(0.05, rawDt);
             lastTime = now;
-            // Capture real wall-clock cadence, not slowdown scaled by hit freeze.
-            ArenaPerformance.record(performanceSamples,dt);
+            // Capture real wall-clock cadence, including >50ms stutters;
+            // game physics keeps its existing capped 50ms timestep.
+            ArenaPerformance.record(performanceSamples,rawDt);
 
             let gameDt = dt;
             if (impactHoldSeconds > 0) {
