@@ -22,7 +22,8 @@
   state.weight=clamp(state.weight,0,1);
   const step=Math.sin(state.phase),w=state.weight;
   const windup=clamp(signals.windup||0,0,.40)/.40;
-  const rangedWindup=clamp(signals.rangedWindup||0,0,.36)/.36;
+  const rangedDuration=signals.role==='archer'?3:.36;
+  const rangedWindup=clamp(signals.rangedWindup||0,0,rangedDuration)/rangedDuration;
   const strike=clamp(signals.strike||0,0,.25);
   const attackProgress=strike>0?1-strike/.25:0;
   const guarding=!!signals.guard;

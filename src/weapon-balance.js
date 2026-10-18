@@ -15,7 +15,28 @@
   bow:Object.freeze({minBody:14,halfBody:23,upperBody:25,maxBody:35})
  });
  const SHOT_INTERVAL=Object.freeze({bow:4,musket:15});
- const BOW_DRAW_SECONDS=1.5;
+ // One second after shooting for recovery; the next shot's remaining
+ // three seconds are spent drawing, not waiting with an idle bow.
+ // A quick draw cannot fire during its first two seconds. Holding for
+ // three seconds reaches full power. Total cadence stays <= 15/min.
+ const BOW_RECOVERY_SECONDS=1;
+ const BOW_MIN_DRAW_SECONDS=2;
+ const BOW_DRAW_SECONDS=3;
+ function bowStrength(elapsed){
+  return Number.isFinite(elapsed)?Math.min(1,Math.max(0,elapsed)/BOW_DRAW_SECONDS):0;
+ }
+ function bowCanDraw(lastShot,now){
+  return !Number.isFinite(lastShot)||now-lastShot>=BOW_RECOVERY_SECONDS-1e-9;
+ }
+ function bowCanRelease(lastShot,now,drawElapsed){
+  return Number.isFinite(drawElapsed)&&drawElapsed>=BOW_MIN_DRAW_SECONDS-1e-9&&
+    ready(lastShot,now,'bow');
+ }
+ function bowReleaseWait(lastShot,now,drawElapsed){
+  const drawRemaining=Math.max(0,BOW_MIN_DRAW_SECONDS-(Number.isFinite(drawElapsed)?drawElapsed:0));
+  const cadenceRemaining=Number.isFinite(lastShot)?Math.max(0,SHOT_INTERVAL.bow-(now-lastShot)):0;
+  return Math.max(drawRemaining,cadenceRemaining);
+ }
  const weaponForRole=role=>role==='knight'?'sword':role==='pikeman'?'spear':role==='archer'?'bow':'musket';
  function bowBody(charge){
   const c=Number.isFinite(charge)?Math.min(1,Math.max(0,charge)):0;
@@ -81,5 +102,7 @@
   // Non-omniscient: most AI shots target body; occasional imperfect limbs/head.
   return r<.05?'head':r<.14?'arm':r<.22?'leg':'body';
  }
- return {RULES,SHOT_INTERVAL,BOW_DRAW_SECONDS,weaponForRole,bowBody,damage,zoneFromMesh,zoneFromAim,ready,botAimZone,aimedShot};
+ return {RULES,SHOT_INTERVAL,BOW_RECOVERY_SECONDS,BOW_MIN_DRAW_SECONDS,
+ BOW_DRAW_SECONDS,bowStrength,bowCanDraw,bowCanRelease,bowReleaseWait,
+ weaponForRole,bowBody,damage,zoneFromMesh,zoneFromAim,ready,botAimZone,aimedShot};
 });
