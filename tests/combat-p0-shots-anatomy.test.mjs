@@ -34,7 +34,7 @@ test('wide lateral shots miss physically and must not deal damage',()=>{
   assert.ok(Number.isFinite(shot.point.x));
   assert.ok(Math.abs(shot.point.x)>.72);
  }
- const crouched=W.aimedShot('musket',origin,target,.5,.95,1.9);
+ const crouched=W.aimedShot('musket',origin,target,.5,.5,1.9);
  assert.equal(crouched.hit,true);
  assert.equal(crouched.zone,'body');
 });
