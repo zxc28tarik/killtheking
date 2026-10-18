@@ -54,6 +54,12 @@ Teknik ayrıntılar ve test rehberi: `docs/COMBAT_P0_STABILIZATION.md`.
 - [ ] Bağımlılık PR zinciri `#28 → #29 → #30 → #31 → #32 → #33 → #34 → #35 → A4 PR` incelenecek; kullanıcı WebGL onayı olmadan `main` birleştirilmeyecek. Mevcut oyunun özgün grafik ve hareket hissi korunacak.
 - [ ] A5 ikinci harita için tema kararı bekliyor. A6–A8 ve 30+ dakika stres kontrolü henüz bitmedi.
 
+## Okçu Germe Ritmi V2 — 18 Ekim 2026
+
+- [x] Atış sonrası **1sn toparlanma**, germe sırasında **ilk 2sn ok bırakamama**, **3sn tam güç** ve dakikada en fazla **15 ok** ritmi. Eski 4sn atış-sonrası bekleme, germe ile örtüştürülerek kaldırıldı. Okçu botlarda da 1sn toparlanma ve 3sn germe animasyonu.
+- [x] Erken bırakma, oyun duraklama, sekmeden çıkma, sınıf değiştirme, yeni maç ve okçu AI saldırı ritmi regresyon testleri. **282/282 Node PASS**, tek offline HTML/inline JS testleri PASS.
+- [ ] Gerçek Chrome/Edge oynanış ve 2sn kilit / 1sn toparlanma hissiyatı kullanıcının testini bekliyor. Ayrıntı: `docs/ARCHER_DRAW_RHYTHM_V2.md`.
+
 ## İş sırası ve bağımlılıklar
 
 ### A0 — ÖNCE: Maç Sistemi 1.0 oynanış kabulü (P1, 1–2 gün)
