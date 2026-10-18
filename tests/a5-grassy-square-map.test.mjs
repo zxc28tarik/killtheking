@@ -15,20 +15,21 @@ const bounds=spec.boxes.filter(b=>b.solid).map(b=>({
  minZ:b.z-b.d/2,maxZ:b.z+b.d/2
 }));
 
-test('user-selected meadow is exactly 20x more area than original grassy square',()=>{
- assert.equal(spec.areaMultiplier,20);
- assert.equal(Meadow.AREA_MULTIPLIER,20);
- assert.ok(Math.abs(spec.half-49*Math.sqrt(20))<1e-8);
- assert.ok(Math.abs(((2*spec.half)**2)/(98**2)-20)<1e-9);
- assert.deepEqual(spec.navigation,{min:-51*Math.sqrt(20),max:51*Math.sqrt(20),
-  step:1.5*Math.sqrt(20),upperEdge:1000,upperLevel:0});
+test('meadow is 15x bigger than 20x square (300x original area)',()=>{
+ assert.equal(spec.areaMultiplier,300);
+ assert.equal(spec.expansionMultiplier,15);
+ assert.equal(Meadow.AREA_MULTIPLIER,300);
+ assert.ok(Math.abs(spec.half-49*Math.sqrt(300))<1e-8);
+ assert.ok(Math.abs(((2*spec.half)**2)/(98**2)-300)<1e-9);
+ assert.deepEqual(spec.navigation,{min:-51*Math.sqrt(300),max:51*Math.sqrt(300),
+  step:1.5*Math.sqrt(300),upperEdge:1000,upperLevel:0});
  assert.equal(spec.navigation.step>6,true,'navigation should remain bounded on giant open map');
  assert.match(game,/let arenaMap = 'castle'/);
  assert.match(game,/function buildCastleArena\(\)/);
  assert.match(game,/function buildMeadowSquare\(\)/);
  assert.match(html,/data-arena-map="castle"/);
  assert.match(html,/data-arena-map="meadow"/);
- assert.match(html,/20× ÇİMENLİK MEYDAN/);
+ assert.match(html,/300× ÇİMENLİK MEYDAN/);
 });
 
 test('open central ~259x259 contains no solid tree, building, wall or cover',()=>{
@@ -63,7 +64,7 @@ test('meadow A* connects every spawn and real solid obstacles are respected',()=
  assert.equal(nav.walkableAt(Meadow.HALF,0,0),false,'solid east fence');
  assert.equal(nav.walkableAt(-40*Meadow.LINEAR_SCALE,
   -40*Meadow.LINEAR_SCALE,0),false,'tree trunk is solid');
- assert.ok(nav.stats.cells<6000,'map expansion must not create 20x nav grid');
+ assert.ok(nav.stats.cells<6000,'map expansion must not create a 300x nav grid');
  const selected=[...spec.courtyardSpawns,...spec.rangedSpawns]
    .map(([x,y,z])=>({x,y,z}));
  for(let i=0;i<selected.length;i++){
@@ -102,9 +103,9 @@ test('map switching swaps 3D visibility, colliders and AI navigation, never just
  assert.match(game,/castleMapData\.visuals\.forEach\(obj=>\{obj\.visible=map==='castle'/);
  assert.match(game,/meadowMapData\.visuals\.forEach\(obj=>\{obj\.visible=map==='meadow'/);
  assert.match(game,/navigator=ArenaNavigation\.createNavigator\(colliders,ramps,selected\.navigation\)/);
- assert.match(game,/camera\.far=map==='meadow'\?1000:350/);
+ assert.match(game,/camera\.far=map==='meadow'\?2400:350/);
  assert.match(game,/skyDomeMesh\.scale\.setScalar\(/);
- assert.match(game,/activeArenaFogMultiplier=map==='meadow'\?\.45:1/);
+ assert.match(game,/activeArenaFogMultiplier=map==='meadow'\?\.12:1/);
  assert.match(game,/new THREE\.PlaneGeometry\(112\*spec\.linearScale,112\*spec\.linearScale\)/);
  assert.match(game,/arenaSpawnPool\(bot\.preferWall\)/);
  assert.match(game,/arenaSpawnPool\(false\)/);

@@ -55,9 +55,9 @@ test('switch to open meadow isolates castle wall colliders, raycasts and ramp pa
  assert.equal(a.env.jumpPads.length,0);
  assert.equal(a.env.barrels.length,0);
  assert.equal(a.env.navigator.map,'meadow');
- assert.equal(a.env.camera.far,1000);
- assert.equal(a.env.skyDomeMesh.scale.value,2.5);
- assert.equal(a.env.scene.fog.density,.0046*.45);
+ assert.equal(a.env.camera.far,2400);
+ assert.equal(a.env.skyDomeMesh.scale.value,8);
+ assert.equal(a.env.scene.fog.density,.0046*.12);
  assert.equal(a.env.projectionUpdates,1);
  assert.ok(a.castleLook.every(x=>!x.visible));
  assert.ok(a.meadowLook.every(x=>x.visible));

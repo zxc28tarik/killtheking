@@ -6,6 +6,7 @@
 })(typeof globalThis!=='undefined'?globalThis:this,function(){
  'use strict';
  const DESKTOP_COUNT=32000, MOBILE_COUNT=14000, EDGE_INSET=4;
+ const NEAR_DESKTOP_COUNT=12000, NEAR_MOBILE_COUNT=4500, NEAR_TILE_SIZE=20;
  const PALETTE=Object.freeze([0x4e742c,0x5d8433,0x6e933c,0x779b43,0x86a149]);
  function random(seed){
   let state=seed>>>0;
@@ -91,6 +92,57 @@
   mesh.frustumCulled=false;
   return mesh;
  }
- return {DESKTOP_COUNT,MOBILE_COUNT,EDGE_INSET,PALETTE,
-  samplePositions,createTexture,createInstancedTufts};
+ // Fixed-size player-local grass pool: re-seed deterministic world tiles only
+ // when crossing a 20-unit boundary, so dense turf stays planted in place.
+ function createNearbyTufts(THREE,count=NEAR_DESKTOP_COUNT){
+  const geo=new THREE.BufferGeometry();
+  geo.setAttribute('position',new THREE.Float32BufferAttribute([
+   -.38,0,0,.38,0,0,0,1,0,
+   0,0,-.36,0,0,.36,0,1,.04,
+   -.26,0,-.25,.24,0,.25,0,.82,0
+  ],3));
+  geo.computeVertexNormals();
+  const mat=new THREE.MeshLambertMaterial({color:0xffffff,side:THREE.DoubleSide});
+  const mesh=new THREE.InstancedMesh(geo,mat,count);
+  mesh.name='Nearby meadow turf (visual only)';
+  mesh.castShadow=false;mesh.receiveShadow=false;mesh.frustumCulled=false;
+  mesh.userData.lastTileX=Infinity;mesh.userData.lastTileZ=Infinity;
+  return mesh;
+ }
+ function updateNearbyTufts(THREE,mesh,spec,x,z){
+  if(!mesh||!Number.isFinite(x)||!Number.isFinite(z))return false;
+  const tileX=Math.floor(x/NEAR_TILE_SIZE),tileZ=Math.floor(z/NEAR_TILE_SIZE);
+  if(mesh.userData.lastTileX===tileX&&mesh.userData.lastTileZ===tileZ)return false;
+  const tilesPerSide=10,tileCount=tilesPerSide*tilesPerSide;
+  const instancesPerTile=Math.ceil(mesh.count/tileCount);
+  const props=spec.boxes.filter(b=>b.solid);
+  const object=new THREE.Object3D(),color=new THREE.Color();
+  for(let i=0;i<mesh.count;i++){
+   const t=Math.floor(i/instancesPerTile),tileLocalX=t%tilesPerSide,
+    tileLocalZ=Math.floor(t/tilesPerSide);
+   const worldTileX=tileX+tileLocalX-5,worldTileZ=tileZ+tileLocalZ-5;
+   // Repeated overlap has the same tile index and deterministic blades.
+   const rng=random((Math.imul(worldTileX,73856093)^
+      Math.imul(worldTileZ,19349663)^Math.imul(i%instancesPerTile+1,83492791)^0xdecafbad)>>>0);
+   const offsetX=rng(),offsetZ=rng();
+   const px=(worldTileX+offsetX)*NEAR_TILE_SIZE;
+   const pz=(worldTileZ+offsetZ)*NEAR_TILE_SIZE;
+   const blocked=Math.abs(px)>=spec.half-EDGE_INSET||
+    Math.abs(pz)>=spec.half-EDGE_INSET||props.some(b=>
+      Math.abs(px-b.x)<b.w/2+.7&&Math.abs(pz-b.z)<b.d/2+.7);
+   object.position.set(px,.02,pz);
+   object.rotation.set(0,rng()*6.28318530718,0);
+   const size=.46+.3*rng(),height=.34+.44*rng();
+   object.scale.set(blocked?0:size,blocked?0:height,blocked?0:size);
+   object.updateMatrix();mesh.setMatrixAt(i,object.matrix);
+   mesh.setColorAt(i,color.setHex(PALETTE[Math.floor(rng()*PALETTE.length)]));
+  }
+  mesh.instanceMatrix.needsUpdate=true;
+  if(mesh.instanceColor)mesh.instanceColor.needsUpdate=true;
+  mesh.userData.lastTileX=tileX;mesh.userData.lastTileZ=tileZ;
+  return true;
+ }
+ return {DESKTOP_COUNT,MOBILE_COUNT,NEAR_DESKTOP_COUNT,NEAR_MOBILE_COUNT,
+  NEAR_TILE_SIZE,EDGE_INSET,PALETTE,samplePositions,createTexture,
+  createInstancedTufts,createNearbyTufts,updateNearbyTufts};
 });

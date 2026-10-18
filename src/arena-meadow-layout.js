@@ -1,5 +1,5 @@
-/* A5 — 20x playable grassland area, same modest obstacle footprint.
- * Multiply surface area, NOT width by twenty (which would be 400x area).
+/* A5 — second meadow map is now 15x larger than its accepted 20x area.
+ * Total area is 300x the original 98x98 square (linear scale = sqrt(300)).
  * Flat large field: keep bounded nav cell count, original visual scale of props,
  * and spawn a reasonable distance apart for seven-player offline combat.
  */
@@ -9,7 +9,9 @@
  root.ArenaMeadowLayout=api;
 })(typeof globalThis!=='undefined'?globalThis:this,function(){
  'use strict';
- const AREA_MULTIPLIER=20;
+ const PREVIOUS_AREA_MULTIPLIER=20;
+ const EXPANSION_MULTIPLIER=15;
+ const AREA_MULTIPLIER=PREVIOUS_AREA_MULTIPLIER*EXPANSION_MULTIPLIER;
  const LINEAR_SCALE=Math.sqrt(AREA_MULTIPLIER);
  const SPAWN_SCALE=2.8;
  const HALF=49*LINEAR_SCALE;
@@ -42,7 +44,7 @@
   for(const x of [-49,49])box(x*S,2,z*S,1.3,4,1.3,'wood',false);
  }
  // Actual trees and waist-height cover remain realistically small.
- // Their POSITIONS spread to meadow margins, leaving >=259x259 open center.
+ // Their positions spread to meadow margins, leaving >1000x1000 open center.
  for(const x of [-40,40]){
   for(const z of [-40,40]){
    box(x*S,2.35,z*S,1.4,4.7,1.4,'wood');
@@ -56,7 +58,7 @@
    box(x*S,2,z*S,3.7,.3,3.3,'wood',false);
   }
  }
- // Decorative grass/details occupy edges; true central fighting area stays clear.
+ // Decorative grass/details occupy edges; central fighting area stays clear.
  for(const z of [-43,43])box(0,.045,z*S,68*S,.09,3,'path',false);
  for(let i=0;i<160;i++){
   const x=(-45+(i*37%91))*S,z=(-44+(i*47%89))*S;
@@ -66,10 +68,12 @@
  const FROZEN=Object.freeze(boxes);
  function spec(){
   return {half:HALF,areaMultiplier:AREA_MULTIPLIER,
+   expansionMultiplier:EXPANSION_MULTIPLIER,
    linearScale:LINEAR_SCALE,spawnScale:SPAWN_SCALE,
    navigation:{...NAV},boxes:FROZEN.map(b=>({...b})),
    courtyardSpawns:COURTYARD.map(p=>p.slice()),
    rangedSpawns:RANGED.map(p=>p.slice())};
  }
- return {HALF,NAV,AREA_MULTIPLIER,LINEAR_SCALE,SPAWN_SCALE,spec};
+ return {HALF,NAV,AREA_MULTIPLIER,EXPANSION_MULTIPLIER,
+  PREVIOUS_AREA_MULTIPLIER,LINEAR_SCALE,SPAWN_SCALE,spec};
 });
