@@ -41,6 +41,6 @@ test('movement and impact state are untouched by visual-only heading helper',()=
  assert.match(game,/navigator\.safeAdvance\(botGround, stepDir/);
  assert.match(game,/ArenaCharacterMotion\.turnToward\(/);
  assert.match(game,/Math\.atan2\(stepDir\.x, stepDir\.z\), dt/);
- assert.match(game,/Math\.atan2\(facing\.x, facing\.z\), dt/);
+ assert.match(game,/Math\.atan2\(dx, dz\), dt/);
  assert.match(game,/chooseArenaTarget\(bot\)/);
 });
