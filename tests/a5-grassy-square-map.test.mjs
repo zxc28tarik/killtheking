@@ -15,22 +15,29 @@ const bounds=spec.boxes.filter(b=>b.solid).map(b=>({
  minZ:b.z-b.d/2,maxZ:b.z+b.d/2
 }));
 
-test('user-selected meadow is a large, open grassy square (castle remains the default)',()=>{
- assert.equal(spec.half,49);
- assert.deepEqual(spec.navigation,{min:-51,max:51,step:1.5,upperEdge:100,upperLevel:0});
+test('meadow is 15x bigger than 20x square (300x original area)',()=>{
+ assert.equal(spec.areaMultiplier,300);
+ assert.equal(spec.expansionMultiplier,15);
+ assert.equal(Meadow.AREA_MULTIPLIER,300);
+ assert.ok(Math.abs(spec.half-49*Math.sqrt(300))<1e-8);
+ assert.ok(Math.abs(((2*spec.half)**2)/(98**2)-300)<1e-9);
+ assert.deepEqual(spec.navigation,{min:-51*Math.sqrt(300),max:51*Math.sqrt(300),
+  step:1.5*Math.sqrt(300),upperEdge:1000,upperLevel:0});
+ assert.equal(spec.navigation.step>6,true,'navigation should remain bounded on giant open map');
  assert.match(game,/let arenaMap = 'castle'/);
  assert.match(game,/function buildCastleArena\(\)/);
  assert.match(game,/function buildMeadowSquare\(\)/);
  assert.match(html,/data-arena-map="castle"/);
  assert.match(html,/data-arena-map="meadow"/);
- assert.match(html,/BÜYÜK ÇİMENLİK MEYDAN/);
+ assert.match(html,/300× ÇİMENLİK MEYDAN/);
 });
 
-test('open central 58x58 contains no solid tree, building, wall or cover',()=>{
+test('open central ~259x259 contains no solid tree, building, wall or cover',()=>{
  assert.ok(spec.boxes.length>=35);
  for(const b of spec.boxes.filter(b=>b.solid)){
-  assert.ok(b.x+b.w/2<=-29||b.x-b.w/2>=29||
-    b.z+b.d/2<=-29||b.z-b.d/2>=29,
+  const open=29*Meadow.LINEAR_SCALE;
+  assert.ok(b.x+b.w/2<=-open||b.x-b.w/2>=open||
+    b.z+b.d/2<=-open||b.z-b.d/2>=open,
    'Solid entered central grass: '+JSON.stringify(b));
  }
  assert.equal(bounds.some(b=>0>=b.minX&&0<=b.maxX&&0>=b.minZ&&0<=b.maxZ),false);
@@ -53,9 +60,11 @@ test('meadow A* connects every spawn and real solid obstacles are respected',()=
  const nav=createNavigator(bounds,[],spec.navigation);
  assert.equal(nav.heightAt(0,0),0);
  assert.equal(nav.walkableAt(0,0,0),true);
- assert.equal(nav.walkableAt(-49,0,0),false,'solid west fence');
- assert.equal(nav.walkableAt(49,0,0),false,'solid east fence');
- assert.equal(nav.walkableAt(-40,-40,0),false,'tree trunk is solid');
+ assert.equal(nav.walkableAt(-Meadow.HALF,0,0),false,'solid west fence');
+ assert.equal(nav.walkableAt(Meadow.HALF,0,0),false,'solid east fence');
+ assert.equal(nav.walkableAt(-40*Meadow.LINEAR_SCALE,
+  -40*Meadow.LINEAR_SCALE,0),false,'tree trunk is solid');
+ assert.ok(nav.stats.cells<6000,'map expansion must not create a 300x nav grid');
  const selected=[...spec.courtyardSpawns,...spec.rangedSpawns]
    .map(([x,y,z])=>({x,y,z}));
  for(let i=0;i<selected.length;i++){
@@ -71,12 +80,13 @@ test('meadow A* connects every spawn and real solid obstacles are respected',()=
 
 test('high-speed slides cannot tunnel through meadow fences and side cover',()=>{
  const nav=createNavigator(bounds,[],spec.navigation);
+ const h=Meadow.HALF,s=Meadow.LINEAR_SCALE;
  for(const [from,velocity] of [
-  [{x:40,y:2.35,z:0},{x:250,z:0}],
-  [{x:-40,y:2.35,z:0},{x:-250,z:0}],
-  [{x:0,y:2.35,z:40},{x:0,z:250}],
-  [{x:0,y:2.35,z:-40},{x:0,z:-250}],
-  [{x:35,y:2.35,z:14},{x:120,z:0}]
+  [{x:h-9,y:2.35,z:0},{x:250,z:0}],
+  [{x:-h+9,y:2.35,z:0},{x:-250,z:0}],
+  [{x:0,y:2.35,z:h-9},{x:0,z:250}],
+  [{x:0,y:2.35,z:-h+9},{x:0,z:-250}],
+  [{x:37*s-9,y:2.35,z:14*s},{x:120,z:0}]
  ]){
   const p=move({from,velocity,dt:.1,radius:.75,height:2.35,colliders:bounds});
   assert.equal(overlaps({x:p.x,y:from.y,z:p.z},.75,2.35,bounds),false,
@@ -93,6 +103,10 @@ test('map switching swaps 3D visibility, colliders and AI navigation, never just
  assert.match(game,/castleMapData\.visuals\.forEach\(obj=>\{obj\.visible=map==='castle'/);
  assert.match(game,/meadowMapData\.visuals\.forEach\(obj=>\{obj\.visible=map==='meadow'/);
  assert.match(game,/navigator=ArenaNavigation\.createNavigator\(colliders,ramps,selected\.navigation\)/);
+ assert.match(game,/camera\.far=map==='meadow'\?2400:350/);
+ assert.match(game,/skyDomeMesh\.scale\.setScalar\(/);
+ assert.match(game,/activeArenaFogMultiplier=map==='meadow'\?\.12:1/);
+ assert.match(game,/new THREE\.PlaneGeometry\(112\*spec\.linearScale,112\*spec\.linearScale\)/);
  assert.match(game,/arenaSpawnPool\(bot\.preferWall\)/);
  assert.match(game,/arenaSpawnPool\(false\)/);
  assert.match(game,/if\(arenaMatch\.phase!=='menu'\)return/);

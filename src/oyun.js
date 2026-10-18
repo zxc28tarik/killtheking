@@ -887,6 +887,7 @@
         let sunHaloMesh = null;
         const skyClouds = [];
         let currentAtmosphereIdx = 0;
+        let activeArenaFogMultiplier = 1;
 
         const ATMOSPHERES = [
             {
@@ -977,7 +978,7 @@
                 skyDomeMesh.material.needsUpdate = true;
             }
             scene.fog.color.setHex(atmo.fogCol);
-            scene.fog.density = atmo.fogDensity;
+            scene.fog.density = atmo.fogDensity * activeArenaFogMultiplier;
 
             sunLight.color.setHex(atmo.sunCol);
             sunLight.intensity = atmo.sunIntensity;
@@ -1400,16 +1401,40 @@
             colliders.length=0;ramps.length=0;worldMeshes.length=0;
             torches.length=0;jumpPads.length=0;barrels.length=0;
         }
+        let meadowNearGrass=null;
         function buildMeadowSquare() {
             const spec=ArenaMeadowLayout.spec();
-            const grassGround=new THREE.Mesh(new THREE.PlaneGeometry(112,112),
+            // Ground mesh and stable turf detail cover the entire 300x original area.
+            // A small generated tiling texture breaks up flat green without
+            // adding geometry or modifying any accepted 3D character art.
+            const grassTexture=ArenaMeadowGrass.createTexture(THREE,document);
+            // Keep each grass pattern at its old physical size after 15x area growth.
+            const turfRepeats=56*Math.sqrt(ArenaMeadowLayout.EXPANSION_MULTIPLIER);
+            grassTexture.repeat.set(turfRepeats,turfRepeats);
+            const grassGround=new THREE.Mesh(
+                new THREE.PlaneGeometry(112*spec.linearScale,112*spec.linearScale),
                 new THREE.MeshStandardMaterial({
-                    color:0x6b9a3b,roughness:.96,metalness:0
+                    map:grassTexture,color:0xffffff,roughness:.96,metalness:0
                 }));
             grassGround.rotation.x=-Math.PI/2;
             grassGround.receiveShadow=true;
             scene.add(grassGround);
             worldMeshes.push(grassGround);
+            // Rich decorative turf across the full square, including its open
+            // fighting center. Low-poly instancing preserves large-map FPS.
+            const grassDetail=(typeof window.matchMedia==='function'
+                &&window.matchMedia('(pointer: coarse)').matches)
+                ?ArenaMeadowGrass.MOBILE_COUNT:ArenaMeadowGrass.DESKTOP_COUNT;
+            const grassTufts=ArenaMeadowGrass.createInstancedTufts(THREE,spec,grassDetail);
+            scene.add(grassTufts);
+            // Extra close-up blades stream a 200x200 zone around the player;
+            // no need to increase the global instance count 15x.
+            const nearGrassCount=(typeof window.matchMedia==='function'
+                &&window.matchMedia('(pointer: coarse)').matches)
+                ?ArenaMeadowGrass.NEAR_MOBILE_COUNT:ArenaMeadowGrass.NEAR_DESKTOP_COUNT;
+            meadowNearGrass=ArenaMeadowGrass.createNearbyTufts(THREE,nearGrassCount);
+            ArenaMeadowGrass.updateNearbyTufts(THREE,meadowNearGrass,spec,0,0);
+            scene.add(meadowNearGrass);
             const leafMat=new THREE.MeshStandardMaterial({color:0x477a32,roughness:.95});
             const pathwayMat=new THREE.MeshStandardMaterial({color:0x7c6848,roughness:.94});
             const meadowMaterials={wood:woodMat,stone:darkStoneMat,leaves:leafMat,path:pathwayMat};
@@ -2113,6 +2138,16 @@
             // Old navigator instances must not retain the shared mutable arrays.
             navigator=ArenaNavigation.createNavigator(colliders,ramps,selected.navigation);
             arenaMap=map;
+            // New ~1697-unit meadow requires enough draw distance for its edges.
+            // The original castle retains its 350-unit camera clip.
+            camera.far=map==='meadow'?2400:350;
+            camera.updateProjectionMatrix();
+            // Scale atmosphere, not sun or physical map geometry.
+            if(skyDomeMesh) skyDomeMesh.scale.setScalar(
+                map==='meadow'?8:1);
+            activeArenaFogMultiplier=map==='meadow'?.12:1;
+            scene.fog.density=ATMOSPHERES[currentAtmosphereIdx].fogDensity*
+                activeArenaFogMultiplier;
         }
         function arenaSpawnPool(preferWall=false) {
             if(arenaMap==='meadow'){
@@ -3241,7 +3276,10 @@
 
         function chooseArenaTarget(bot) {
             if (bot.dead || !isGameActive) return null;
-            const maxDetection = bot.range > 8 ? 43 : 33;
+            // Larger meadow requires bots to discover opponents across its
+            // broad central battlefield; attack weapon range is unchanged.
+            const maxDetection = arenaMap === 'meadow'
+                ? 280 : bot.range > 8 ? 43 : 33;
             // A bot retaliates against a recent attacker if that attacker is reachable.
             if (bot.arenaAggroType && arenaClock < bot.arenaAggroUntil &&
                 arenaCanTarget(bot,bot.arenaAggroType,bot.arenaAggroId) &&
@@ -3277,7 +3315,8 @@
             }
             const playerDistance = arenaTargetDistance(bot, 'player', null);
             // At most one normal bot pursues the player at once; retaliation is separate.
-            if (playerDistance < Math.min(maxDetection, 26) &&
+            if (playerDistance < Math.min(maxDetection,
+                    arenaMap==='meadow'?120:26) &&
                 arenaCanTarget(bot,'player',null) &&
                 ArenaBotRecovery.allows(bot.navRecovery, 'player:player') &&
                 arenaTargetCount('player', null, bot.id) === 0) {
@@ -3908,7 +3947,7 @@
                 button.setAttribute('aria-pressed',String(selected));
             });
             mapHint.textContent=arenaMap==='meadow'
-                ? 'Geniş ve düz çimenlik; açık görüş, yalnız kenarlarda az siper'
+                ? '300× toplam alan (son hâlinin 15 katı) • yaklaşık 1697×1697 • açık çimenlik'
                 : 'Orijinal kale, surlar ve rampalar';
         }
         mapButtons.forEach(button=>button.addEventListener('click',()=>{
@@ -5514,6 +5553,9 @@
                 gameDt *= 0.16;
             }
             if (isGameActive && arenaMatch.phase === 'playing') updateGame(gameDt);
+            if(arenaMap==='meadow'&&isGameActive)
+                ArenaMeadowGrass.updateNearbyTufts(THREE,meadowNearGrass,meadowSpec,
+                    player.pos.x,player.pos.z);
             renderer.render(scene, camera);
         }
 
