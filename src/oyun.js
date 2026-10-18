@@ -278,8 +278,8 @@
                 maxHp: 130,
                 type: 'melee',
                 range: 5.5,
-                damage: 65,
-                headshotDamage: 100,
+                damage: 20,
+                headshotDamage: 30,
                 cooldown: 0.34,
                 svgIcon: `<svg width="95" height="26" viewBox="0 0 100 30" fill="none"><path d="M10 15H75L88 15L75 11H10V15Z" fill="#E5E7EB"/><path d="M22 6V24H27V6H22Z" fill="#F59E0B"/><rect x="6" y="12" width="16" height="6" fill="#78350F"/><circle cx="5" cy="15" r="4" fill="#F59E0B"/></svg>`
             },
@@ -294,8 +294,8 @@
                 maxHp: 110,
                 type: 'melee',
                 range: 8.2,
-                damage: 70,
-                headshotDamage: 115,
+                damage: 35,
+                headshotDamage: 52.5,
                 cooldown: 0.44,
                 svgIcon: `<svg width="110" height="24" viewBox="0 0 110 26" fill="none"><rect x="4" y="11" width="80" height="4" fill="#92400E"/><polygon points="84,7 106,13 84,19" fill="#E5E7EB"/><rect x="78" y="9" width="6" height="8" fill="#DC2626"/></svg>`
             },
@@ -310,9 +310,9 @@
                 maxHp: 100,
                 type: 'bow',
                 range: 110,
-                damage: 60,
-                headshotDamage: 165,
-                cooldown: 0.25,
+                damage: 23,
+                headshotDamage: 34.5,
+                cooldown: 4,
                 svgIcon: `<svg width="90" height="28" viewBox="0 0 90 32" fill="none"><path d="M35 2C55 8 55 24 35 30" stroke="#92400E" stroke-width="4" fill="none"/><line x1="35" y1="2" x2="35" y2="30" stroke="#E5E7EB" stroke-width="1.5"/><line x1="20" y1="16" x2="72" y2="16" stroke="#D97706" stroke-width="2.5"/><polygon points="72,12 82,16 72,20" fill="#E5E7EB"/></svg>`
             },
             {
@@ -326,10 +326,10 @@
                 maxHp: 100,
                 type: 'hitscan',
                 range: 150,
-                damage: 115,
-                headshotDamage: 220,
-                cooldown: 0.30,
-                reloadTime: 1.65,
+                damage: 90,
+                headshotDamage: 135,
+                cooldown: 15,
+                reloadTime: 15,
                 svgIcon: `<svg width="115" height="26" viewBox="0 0 115 28" fill="none"><rect x="28" y="9" width="82" height="4" fill="#9CA3AF"/><path d="M6 22L28 13H65V17H32L14 25H6V22Z" fill="#78350F"/><rect x="36" y="5" width="7" height="5" fill="#D1D5DB"/></svg>`
             }
         ];
@@ -1822,6 +1822,8 @@
         // ============================================================================
         // 6. PLAYER STATE & KRUNKER SLIDE-HOPPING / ABILITY MECHANICS
         // ============================================================================
+        // Declared before initial selectClass(3) to avoid pre-init TDZ.
+        let arenaClock = 0;
         const player = {
             pos: new THREE.Vector3(0, 2.5, 28),
             vel: new THREE.Vector3(0, 0, 0),
@@ -1849,6 +1851,9 @@
             // Bow drawing
             isDrawingBow: false,
             bowCharge: 0,
+            // Persistent across mid-round class switches: switching cannot reload early.
+            lastBowShotAt: -Infinity,
+            lastMusketShotAt: -Infinity,
             // Right-Click / Secondary Ability States
             isRMBDown: false,
             isShielding: false,
@@ -1902,12 +1907,19 @@
             player.hp = cls.maxHp;
             player.isReloading = false;
             player.reloadTimer = 0;
+            // Per-weapon shot stamps enforce 4/15s even after class switching.
+            player.attackCooldown = 0;
             player.isDrawingBow = false;
             player.bowCharge = 0;
             player.isShielding = false;
             player.shieldParryTime = 0;
             player.shieldParryCooldown = 0;
-            player.ammo = 1;
+            player.ammo = ArenaWeaponBalance.ready(player.lastMusketShotAt, arenaClock, 'musket') ? 1 : 0;
+            if (idx === 3 && player.ammo === 0) {
+                player.isReloading = true;
+                player.reloadTimer = Math.max(0, ArenaWeaponBalance.SHOT_INTERVAL.musket -
+                    (arenaClock - player.lastMusketShotAt));
+            }
 
             document.getElementById('reload-indicator').classList.add('hidden');
             document.getElementById('bow-charge-ui').classList.add('hidden');
@@ -1976,12 +1988,12 @@
         // 7. DISTINCT AI MEDIEVAL BOTS v2.0 (Knights, Pikemen, Tower Archers, Musketeers)
         // ============================================================================
         const BOT_PROFILES = [
-            { name: 'Şövalye_34', role: 'knight', weapon: 'Kılıç & Kalkan', color: 0xb91c1c, range: 3.9, speed: 9.8, damage: 19, preferWall: false },
-            { name: 'Ahmet_1600', role: 'musket', weapon: 'Tüfek', color: 0x78350f, range: 34.0, speed: 7.4, damage: 25, preferWall: true },
-            { name: 'Mızraklı_Kurt', role: 'pikeman', weapon: 'Kargı', color: 0x1d4ed8, range: 5.8, speed: 10.4, damage: 21, preferWall: false },
-            { name: 'Okçu_Reis', role: 'archer', weapon: 'Uzun Yay', color: 0x15803d, range: 32.0, speed: 8.2, damage: 20, preferWall: true },
+            { name: 'Şövalye_34', role: 'knight', weapon: 'Kılıç & Kalkan', color: 0xb91c1c, range: 3.9, speed: 9.8, damage: 20, preferWall: false },
+            { name: 'Ahmet_1600', role: 'musket', weapon: 'Tüfek', color: 0x78350f, range: 34.0, speed: 7.4, damage: 90, preferWall: true },
+            { name: 'Mızraklı_Kurt', role: 'pikeman', weapon: 'Kargı', color: 0x1d4ed8, range: 5.8, speed: 10.4, damage: 35, preferWall: false },
+            { name: 'Okçu_Reis', role: 'archer', weapon: 'Uzun Yay', color: 0x15803d, range: 32.0, speed: 8.2, damage: 23, preferWall: true },
             { name: 'Kara_Şövalye', role: 'knight', weapon: 'Çelik Kılıç', color: 0x374151, range: 3.9, speed: 9.5, damage: 20, preferWall: false },
-            { name: 'Yeniçeri_Ali', role: 'musket', weapon: 'Tüfek', color: 0x991b1b, range: 30.0, speed: 7.8, damage: 24, preferWall: false }
+            { name: 'Yeniçeri_Ali', role: 'musket', weapon: 'Tüfek', color: 0x991b1b, range: 30.0, speed: 7.8, damage: 90, preferWall: false }
         ];
 
         const COURTYARD_SPAWNS = [
@@ -2595,6 +2607,13 @@
 
             group.add(leftLeg, rightLeg, torsoGroup, head, helmetGroup, leftArm, rightArm);
             group._parts = { leftLeg, rightLeg, leftArm, rightArm, head, torso: torsoGroup, helmetGroup, capeMesh };
+            // The existing illustrated meshes double as anatomical hit regions.
+            // Classify by parent rig rather than a global vertical guess where possible.
+            for (const [part,zone] of [[leftLeg,'leg'],[rightLeg,'leg'],
+                [leftArm,'arm'],[rightArm,'arm'],[torsoGroup,'body'],
+                [head,'head'],[helmetGroup,'head']]) {
+                part.traverse(child => { if (child.isMesh) child.userData.hitZone = zone; });
+            }
             return group;
         }
 
@@ -3060,7 +3079,6 @@
         // FREE-FOR-ALL ARENA AI: six independent fighters + the player.
         // This module deliberately keeps the original model, rendering and player combat.
         // ============================================================================
-        let arenaClock = 0;
         const arenaSightRay = new THREE.Raycaster();
         const arenaAimTmp = new THREE.Vector3();
         const arenaAimOrigin = new THREE.Vector3();
@@ -3291,7 +3309,9 @@
             const origin = bot.mesh.position.clone().add(new THREE.Vector3(0, 1.8, 0));
             const targetPoint = targetPos.clone().add(new THREE.Vector3(0, target.type === 'player' ? 1.0 : 1.65, 0));
             const shotDir = targetPoint.clone().sub(origin).normalize();
-            bot.attackTimer = ArenaBotOffense.nextCooldown(bot.role, Math.random());
+            bot.attackTimer = isRanged
+                ? ArenaWeaponBalance.SHOT_INTERVAL[bot.role === 'archer' ? 'bow' : 'musket']
+                : ArenaBotOffense.nextCooldown(bot.role, Math.random());
             bot.strikePoseTime = isRanged ? 0.17 : 0.25;
             if (isRanged) {
                 arenaShotTracer(origin, targetPoint, bot.role === 'archer');
@@ -3299,12 +3319,17 @@
             }
             // Shots aimed into the arena do not get free extra player damage.
             // Same hit/health logic for bot-vs-bot, without player-specific rewards.
+            const weapon = ArenaWeaponBalance.weaponForRole(bot.role);
+            // Bot aiming is imperfect: body most often, rare head or limb hits.
+            const zone = ArenaWeaponBalance.botAimZone(bot.role, Math.random());
+            const impactDamage = ArenaWeaponBalance.damage(weapon, zone,
+                bot.role === 'archer' ? 0.5 : 1);
             if (target.type === 'bot') {
                 const enemy = bots[target.id];
-                if (enemy && !enemy.dead) damageBotFromBot(bot, enemy, bot.damage);
+                if (enemy && !enemy.dead) damageBotFromBot(bot, enemy, impactDamage);
                 return;
             }
-            let incomingDmg = bot.damage;
+            let incomingDmg = impactDamage;
             const defense = ArenaCombatDefense.assessShield({
                 shielding: player.classIdx === 0 && player.isShielding,
                 defender: player.pos, attacker: bot.mesh.position,
@@ -3473,7 +3498,8 @@
             if (contact && contact.kind === 'barrel') {
                 triggerBarrelExplosion(contact.barrel);
             } else if (contact && contact.kind === 'bot') {
-                damageBot(contact.bot, 75, false, 'Süngü / Hançer', '🗡️ ', contact.point);
+                damageBot(contact.bot, ArenaWeaponBalance.damage('dagger','body'), false,
+                    'Süngü / Hançer', '🗡️ ', contact.point);
             }
         }
 
@@ -3488,13 +3514,15 @@
             }
 
             if (player.attackCooldown > 0 || player.isReloading) return;
+            if (cls.id === 3 && !ArenaWeaponBalance.ready(
+                player.lastMusketShotAt, arenaClock, 'musket')) return;
 
             if (cls.id === 3 && player.ammo <= 0) {
                 startReload();
                 return;
             }
 
-            player.attackCooldown = cls.cooldown;
+            player.attackCooldown = cls.id === 3 ? 0.30 : cls.cooldown;
             player.attackAnimTime = cls.type === 'melee' ? 0.82 : 1.0;
             registerWeaponSwing(cls.id === 3 ? 'musket' : cls.id === 1 ? 'spear' : 'melee');
             player.comboStep = (player.comboStep + 1) % 2;
@@ -3508,7 +3536,9 @@
                 // Damage is resolved throughout the visible animation, not on click.
                 const horizSpeed = Math.hypot(player.vel.x, player.vel.z);
                 const speedRatio = Math.max(1.0, horizSpeed / 13.5);
-                const momentumBonus = cls.id === 1 ? Math.round((speedRatio - 1.0) * 65) : 0;
+                // Skill reward remains, but cannot erase the intended 3-hit baseline.
+                const momentumBonus = cls.id === 1
+                    ? Math.min(12, Math.round((speedRatio - 1.0) * 7)) : 0;
                 activeWeaponSwing = ArenaWeaponSweep.begin(cls.id === 1 ? 'spear' : 'sword',
                     cls.range, player.comboStep);
                 activeWeaponSwing.classIdx = player.classIdx;
@@ -3522,6 +3552,7 @@
             else if (cls.type === 'hitscan') {
                 sfx.playMusketBoom();
                 player.ammo = 0;
+                player.lastMusketShotAt = arenaClock;
                 player.shakeIntensity = 0.35;
                 muzzleLight.position.copy(camera.position).addScaledVector(dir, 1.2);
                 muzzleLight.intensity = 3.5;
@@ -3542,9 +3573,11 @@
                     if (hits.length > 0 && !arenaWorldBlockBetween(camera.position, hits[0].point)) {
                         const hit = hits[0];
                         const bot = bots[hit.object.userData.botIndex];
-                        const isHead = !!hit.object.userData.isHead;
+                        const zone = ArenaWeaponBalance.zoneFromMesh(
+                            hit.object, hit.point.y, bot ? bot.mesh.position.y : 0);
                         if (bot) {
-                            damageBot(bot, isHead ? cls.headshotDamage : cls.damage, isHead, cls.weaponName, '', hit.point);
+                            damageBot(bot, ArenaWeaponBalance.damage('musket',zone),
+                                zone === 'head', cls.weaponName, '', hit.point);
                         }
                     }
                 }
@@ -3562,7 +3595,9 @@
             const charge = Math.max(0.25, player.bowCharge);
             player.isDrawingBow = false;
             player.bowCharge = 0;
-            player.attackCooldown = 0.25;
+            if (!ArenaWeaponBalance.ready(player.lastBowShotAt, arenaClock,'bow')) return;
+            player.lastBowShotAt = arenaClock;
+            player.attackCooldown = ArenaWeaponBalance.SHOT_INTERVAL.bow;
             player.attackAnimTime = 1.0;
             registerWeaponSwing('bow');
             document.getElementById('bow-charge-ui').classList.add('hidden');
@@ -3596,7 +3631,9 @@
             if (player.classIdx !== 3 || player.isReloading || player.ammo === 1) return;
             sfx.playReloadStep(1);
             player.isReloading = true;
-            player.reloadTimer = CLASSES[3].reloadTime;
+            player.reloadTimer = Math.max(0.01,
+                ArenaWeaponBalance.SHOT_INTERVAL.musket -
+                (arenaClock - player.lastMusketShotAt));
             player.lastReloadStep = 1;
             document.getElementById('reload-indicator').classList.remove('hidden');
             updateHUD();
@@ -3677,6 +3714,8 @@
             player.isSliding = false;
             player.currentHeight = player.standHeight;
             player.ammo = 1;
+            player.lastBowShotAt = -Infinity;
+            player.lastMusketShotAt = -Infinity;
             player.isReloading = false;
             player.reloadTimer = 0;
             player.attackCooldown = 0;
@@ -3870,7 +3909,8 @@
             if (e.button === 0) {
                 if (player.classIdx === 2) {
                     // Start drawing bow
-                    if (player.attackCooldown <= 0) {
+                    if (player.attackCooldown <= 0 &&
+                        ArenaWeaponBalance.ready(player.lastBowShotAt, arenaClock,'bow')) {
                         player.isDrawingBow = true;
                         player.bowCharge = 0.1;
                         document.getElementById('bow-charge-ui').classList.remove('hidden');
@@ -4264,7 +4304,8 @@
             }
 
             if (player.isDrawingBow) {
-                player.bowCharge = Math.min(1.0, player.bowCharge + dt * 1.15);
+                player.bowCharge = Math.min(1.0, player.bowCharge +
+                    dt / ArenaWeaponBalance.BOW_DRAW_SECONDS);
                 const pct = Math.round(player.bowCharge * 100);
                 document.getElementById('bow-charge-label').textContent = pct >= 100 ? '🔥 TAM GERİLDİ (%100)!' : `YAY GERİLİYOR: %${pct}`;
                 document.getElementById('bow-charge-fill').style.width = `${pct}%`;
@@ -4558,8 +4599,12 @@
                 }
                 if (impact && impact.kind === 'barrel') triggerBarrelExplosion(impact.barrel);
                 else if (impact && impact.kind === 'bot') {
-                    const damage = (impact.isHead ? swing.headshotDamage : swing.damage) + swing.bonus;
-                    damageBot(impact.bot, damage, impact.isHead, swing.weaponName, swing.tag, impact.point);
+                    const kind = swing.classIdx === 1 ? 'spear' : 'sword';
+                    const zone = impact.isHead ? 'head'
+                        : ArenaWeaponBalance.zoneFromAim(impact.point && impact.point.y,
+                            impact.bot.mesh.position.y);
+                    const damage = ArenaWeaponBalance.damage(kind,zone) + swing.bonus;
+                    damageBot(impact.bot, damage, zone === 'head', swing.weaponName, swing.tag, impact.point);
                 }
                 if (swing.finished || swing.resolved) {
                     lastWeaponSwingRaycasts = swing.raycastCount || 0;
@@ -4614,10 +4659,11 @@
                         scene.remove(arr.mesh);
                     } else if (impact.type === 'bot') {
                         const bot = impact.target;
-                        const isHead = impact.point.y - bot.mesh.position.y > 2.15;
+                        const zone = ArenaWeaponBalance.zoneFromAim(
+                            impact.point.y, bot.mesh.position.y);
                         const bowCls = CLASSES[2];
-                        const baseDmg = isHead ? bowCls.headshotDamage : Math.round(bowCls.damage * (0.55 + arr.charge * 0.75));
-                        damageBot(bot, baseDmg, isHead, bowCls.weaponName, '', arr.mesh.position);
+                        const baseDmg = ArenaWeaponBalance.damage('bow',zone,arr.charge);
+                        damageBot(bot, baseDmg, zone === 'head', bowCls.weaponName, '', arr.mesh.position);
                         scene.remove(arr.mesh);
                     } else {
                         if (isGameActive && arr.mesh.position.distanceTo(player.pos) < 35) sfx.playArrowThud();

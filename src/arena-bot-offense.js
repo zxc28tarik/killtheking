@@ -10,8 +10,8 @@
  const ATTACKS=Object.freeze({
   knight:Object.freeze({cooldown:1.25,variance:.55,windup:.34,aimArc:1.05}),
   pikeman:Object.freeze({cooldown:1.35,variance:.60,windup:.40,aimArc:.88}),
-  archer:Object.freeze({cooldown:1.70,variance:.65,windup:.28,aimArc:.36}),
-  musket:Object.freeze({cooldown:1.95,variance:.75,windup:.36,aimArc:.30})
+  archer:Object.freeze({cooldown:4,variance:0,windup:.28,aimArc:.36}),
+  musket:Object.freeze({cooldown:15,variance:0,windup:.36,aimArc:.30})
  });
  function profile(role){
   const p=ATTACKS[role];
