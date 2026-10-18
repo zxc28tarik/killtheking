@@ -4011,6 +4011,7 @@
             const report = {
                 schema: 'killtheking-match-qa-v2',
                 mode: arenaMode,
+                renderPerformance: window.krunkerPerformanceReport(),
                 matchResult: arenaMatch.result,
                 metrics: window.krunkerArenaBalanceReport()
             };
@@ -4352,6 +4353,7 @@
         let matchTimeSeconds = arenaMatch.remaining;
         syncMatchDurationControls();
         syncMatchModeControls();
+        const performanceSamples = ArenaPerformance.create();
         let fpsFrames = 0;
         let fpsTimer = 0;
         let radarRefreshElapsed = 1 / 30;
@@ -5307,6 +5309,8 @@
             const now = performance.now();
             const dt = Math.min(0.05, (now - lastTime) / 1000);
             lastTime = now;
+            // Capture real wall-clock cadence, not slowdown scaled by hit freeze.
+            ArenaPerformance.record(performanceSamples,dt);
 
             let gameDt = dt;
             if (impactHoldSeconds > 0) {
@@ -5317,6 +5321,9 @@
             renderer.render(scene, camera);
         }
 
+        // On-demand FPS / 1% low / draw-call diagnostics, without a background logger.
+        window.krunkerPerformanceReport = () =>
+            ArenaPerformance.snapshot(performanceSamples,renderer);
         // Read-only runtime snapshot for arena QA; no controls or game state changes.
         window.krunkerArenaStatus = () => ({
             mode: arenaMode,
