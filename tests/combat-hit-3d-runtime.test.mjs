@@ -64,6 +64,6 @@ test('live combat routes AI hit testing to actual geometry and animated ranged p
  assert.match(game,/ArenaCombatHit3D\.resolvePlayer\(THREE/);
  assert.match(game,/if \(!hit3d \|\| arenaWorldBlockBetween\(origin,hit3d\.point\)\) return/);
  assert.match(game,/const zone = isRanged \? hit3d\.zone : 'body'/);
- assert.match(game,/windup: Math\.max\(bot\.meleeWindup,bot\.rangedWindup\)/);
+ assert.match(game,/windup: bot\.meleeWindup, rangedWindup: bot\.rangedWindup/);
  assert.ok(html.indexOf('src/combat-hit-3d.js')<html.indexOf('src/oyun.js'));
 });
