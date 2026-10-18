@@ -22,7 +22,9 @@ function strike({guardTime=0,parry=0,attackerZ=-2,role='knight'}={}) {
     spawnHitSparks(){},markArenaAggro(){aggro++},addKillFeed(){killFeeds++},
     // Bot-knockback navigation is validated in bot-knockback-safety.test.mjs.
     // Keep this isolated VM test focused on defense/damage and score attribution.
-    applyBotWorldKnockback(){}
+    applyBotWorldKnockback(){},
+    ArenaTeams:require('../src/arena-teams.js'),arenaMode:'ffa',
+    botTeam:()=> 'blue'
  });
  fn(attacker,victim,20);
  return {attacker,victim,clang,aggro,killFeeds};
