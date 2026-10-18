@@ -67,6 +67,12 @@
    targetingOverTime:overTime,
    navigationStuckSamples:tracked?{...tracked.stuckSamples}:null,
    recentKills:tracked?tracked.recentKills.map(k=>({...k})):[],
+   rangedFireAccuracy:tracked&&tracked.rangedFire
+    ? Object.fromEntries(['archer','musket'].map(role=>{
+      const x=tracked.rangedFire[role];
+      return [role,{...x,accuracy:x.shots>0?x.hits/x.shots:null}];
+     }))
+    : null,
    scoreCrossCheck:tracked?{
     playerKillsAgree:tracked.kills.playerToBot===asCount(snapshot.playerKills),
     playerDeathsAgree:tracked.kills.botToPlayer===asCount(snapshot.playerDeaths),
