@@ -62,12 +62,12 @@
    if(signals.role==='archer'){
     // Bowstring release, not a sword slash.
     leftArm=-1.22+swing*.16;
-    rightArm=-1.46+swing*.62;
+    rightArm=-1.50+swing*.32;
     torsoX-=.035*swing;
    }else if(signals.role==='musket'){
     // A short stock recoil, rather than a full melee windmill.
     leftArm=-.98+swing*.21;
-    rightArm=-1.34+swing*.36;
+    rightArm=-1.42+swing*.24;
     torsoX-=.11*swing;
     headX+=.045*swing;
    }else{
