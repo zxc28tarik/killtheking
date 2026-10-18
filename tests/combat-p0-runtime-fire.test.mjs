@@ -32,6 +32,7 @@ function arena({rolls=[.5,.5],blocked=false,clock=100,playerHp=100}={}){
  const context={THREE,Math:Object.assign(Object.create(Math),{random:()=>rolls[(i++)%rolls.length]}),
   bot:{},bots:[attacker,enemy],player,
   isGameActive:true,arenaClock:clock,ArenaWeaponBalance:W,ArenaCombatHit3D:H,
+  ArenaTelemetry:{recordRangedShot(){}},arenaTelemetry:{},
   ArenaBotOffense:{facing:()=>true,nextCooldown:()=>1.5},
   arenaActorPosition:(type,id)=>type==='player'?player.pos:enemy.mesh.position,
   arenaLineOfSight:()=>true,arenaWorldBlockBetween:()=>blocked,
