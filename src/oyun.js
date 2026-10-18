@@ -1194,6 +1194,7 @@
             barrels.push(barrelObj);
         }
 
+        const castleBegin = scene.children.length;
         function buildCastleArena() {
             const floorMesh = new THREE.Mesh(
                 new THREE.PlaneGeometry(110, 110),
@@ -1383,7 +1384,59 @@
             }
         }
 
+        // Keep both arenas as independent, toggleable scene/object batches.
+        // Swapping a map changes *real* collision, raycast and AI navigation arrays;
+        // merely hiding castle meshes would leave invisible walls behind.
         buildCastleArena();
+        const castleVisuals = scene.children.slice(castleBegin);
+        const castleMapData = {
+            colliders:colliders.slice(),ramps:ramps.slice(),
+            worldMeshes:worldMeshes.slice(),torches:torches.slice(),
+            jumpPads:jumpPads.slice(),barrels:barrels.slice(),
+            visuals:castleVisuals,
+            navigation:{min:-43.75,max:43.75,step:1.25,upperEdge:39.5,upperLevel:7}
+        };
+        function clearArenaGeometry() {
+            colliders.length=0;ramps.length=0;worldMeshes.length=0;
+            torches.length=0;jumpPads.length=0;barrels.length=0;
+        }
+        function buildMeadowSquare() {
+            const spec=ArenaMeadowLayout.spec();
+            const grassGround=new THREE.Mesh(new THREE.PlaneGeometry(112,112),
+                new THREE.MeshStandardMaterial({
+                    color:0x6b9a3b,roughness:.96,metalness:0
+                }));
+            grassGround.rotation.x=-Math.PI/2;
+            grassGround.receiveShadow=true;
+            scene.add(grassGround);
+            worldMeshes.push(grassGround);
+            const leafMat=new THREE.MeshStandardMaterial({color:0x477a32,roughness:.95});
+            const pathwayMat=new THREE.MeshStandardMaterial({color:0x7c6848,roughness:.94});
+            const meadowMaterials={wood:woodMat,stone:darkStoneMat,leaves:leafMat,path:pathwayMat};
+            for(const box of spec.boxes){
+                addBox(box.x,box.y,box.z,box.w,box.h,box.d,
+                    meadowMaterials[box.material],box.solid,box.solid);
+            }
+            return spec;
+        }
+        // The meadow contains no castle ramps, explosive barrels or launch pads.
+        const meadowBegin=scene.children.length;
+        clearArenaGeometry();
+        const meadowSpec=buildMeadowSquare();
+        const meadowMapData={
+            colliders:colliders.slice(),ramps:ramps.slice(),
+            worldMeshes:worldMeshes.slice(),torches:torches.slice(),
+            jumpPads:jumpPads.slice(),barrels:barrels.slice(),
+            visuals:scene.children.slice(meadowBegin),
+            navigation:meadowSpec.navigation
+        };
+        meadowMapData.visuals.forEach(obj=>{obj.visible=false;});
+        clearArenaGeometry();
+        for(const [active,items] of [
+            [colliders,castleMapData.colliders],[ramps,castleMapData.ramps],
+            [worldMeshes,castleMapData.worldMeshes],[torches,castleMapData.torches],
+            [jumpPads,castleMapData.jumpPads],[barrels,castleMapData.barrels]
+        ])active.push(...items);
 
         // ============================================================================
         // 5. FIRST-PERSON 3D WEAPON VIEWMODELS v4.0 REALISTIC (Forged Steel, Walnut & Flintlock)
@@ -1901,6 +1954,7 @@
         let lastWeaponSwingRaycasts = 0;
         let isGameActive = false;
         let arenaMode = 'ffa'; // Default stays the approved everyone-vs-everyone mode.
+        let arenaMap = 'castle'; // Original castle remains the default.
         let mouseSensitivity = gameSettings.sensitivity;
         let playerCharGroup = null;
         const playerClassModels = [];
@@ -2039,8 +2093,34 @@
         ];
 
         // A* grid built once from the castle's existing collision geometry and ramps.
-        const navigator = ArenaNavigation.createNavigator(colliders, ramps,
-            { min: -43.75, max: 43.75, step: 1.25, upperEdge: 39.5, upperLevel: 7 });
+        let navigator = ArenaNavigation.createNavigator(
+            colliders, ramps, castleMapData.navigation);
+        function switchArenaMap(map) {
+            if(!['castle','meadow'].includes(map))throw Error('Invalid arena map');
+            if(map===arenaMap)return;
+            const selected=map==='castle'?castleMapData:meadowMapData;
+            for(const [active,items] of [
+                [colliders,selected.colliders],[ramps,selected.ramps],
+                [worldMeshes,selected.worldMeshes],[torches,selected.torches],
+                [jumpPads,selected.jumpPads],[barrels,selected.barrels]
+            ]){active.length=0;active.push(...items);}
+            castleMapData.visuals.forEach(obj=>{obj.visible=map==='castle';});
+            meadowMapData.visuals.forEach(obj=>{obj.visible=map==='meadow';});
+            castleMapData.barrels.forEach(barrel=>{
+                barrel.label.style.display=map==='castle'&&barrel.active?'block':'none';
+            });
+            // Build a fresh A* graph against the selected map's actual solids.
+            // Old navigator instances must not retain the shared mutable arrays.
+            navigator=ArenaNavigation.createNavigator(colliders,ramps,selected.navigation);
+            arenaMap=map;
+        }
+        function arenaSpawnPool(preferWall=false) {
+            if(arenaMap==='meadow'){
+                const source=preferWall?meadowSpec.rangedSpawns:meadowSpec.courtyardSpawns;
+                return source.map(p=>new THREE.Vector3(p[0],p[1],p[2]));
+            }
+            return preferWall?RAMPART_SPAWNS:COURTYARD_SPAWNS;
+        }
         const bots = [];
         function botTeam(bot) { return ArenaTeams.teamForBot(bot.id); }
         function arenaCanTarget(bot,type,id) {
@@ -3481,7 +3561,7 @@
                 player.hp = player.maxHp;
                 addKillFeed(bot.name, bot.weapon, 'Sen_1600', false);
                 addScorePopup('YENİDEN DOĞDUN!', 'text-rose-400');
-                const sp = chooseArenaRespawn(COURTYARD_SPAWNS, null, false);
+                const sp = chooseArenaRespawn(arenaSpawnPool(false), null, false);
                 player.pos.set(sp.x, sp.y + 1.5, sp.z);
                 player.tpsMotionState = ArenaCharacterMotion.createState();
                 // The killer returns to fighting the whole arena, not camping the respawn.
@@ -3782,6 +3862,8 @@
         const matchDurationButtons = [...document.querySelectorAll('[data-duration-seconds]')];
         const matchModeButtons = [...document.querySelectorAll('[data-arena-mode]')];
         const matchModeHint = document.getElementById('match-mode-hint');
+        const mapButtons = [...document.querySelectorAll('[data-arena-map]')];
+        const mapHint = document.getElementById('arena-map-hint');
         const teamHud = document.getElementById('hud-team-score');
         const teamResults = document.getElementById('match-team-results');
         let tabScoreboardHeld = false;
@@ -3816,6 +3898,24 @@
                     : botTeam(bot) === 'blue' ? '#7dd3fc' : '#fda4af';
             });
         }
+
+        function syncArenaMapControls() {
+            const editable = arenaMatch.phase === 'menu';
+            mapButtons.forEach(button => {
+                const selected=button.dataset.arenaMap===arenaMap;
+                button.disabled=!editable;
+                button.classList.toggle('selected',selected);
+                button.setAttribute('aria-pressed',String(selected));
+            });
+            mapHint.textContent=arenaMap==='meadow'
+                ? 'Geniş ve düz çimenlik; açık görüş, yalnız kenarlarda az siper'
+                : 'Orijinal kale, surlar ve rampalar';
+        }
+        mapButtons.forEach(button=>button.addEventListener('click',()=>{
+            if(arenaMatch.phase!=='menu')return;
+            switchArenaMap(button.dataset.arenaMap);
+            syncArenaMapControls();
+        }));
 
         function syncMatchModeControls() {
             matchModeButtons.forEach(button => {
@@ -3919,9 +4019,11 @@
             player.tpsMotionState = ArenaCharacterMotion.createState();
             activeWeaponSwing = null;
             impactHoldSeconds = 0;
-            const safeSpawn = chooseArenaRespawn(COURTYARD_SPAWNS, null, false);
+            const safeSpawn = chooseArenaRespawn(arenaSpawnPool(false), null, false);
             player.pos.set(safeSpawn.x, safeSpawn.y + player.currentHeight, safeSpawn.z);
             bots.forEach(bot => {
+                const patrolPool=arenaSpawnPool(bot.preferWall);
+                bot.targetPoint=patrolPool[(bot.id+2)%patrolPool.length].clone();
                 bot.arenaKills = 0;
                 bot.arenaDeaths = 0;
                 bot.lastRangedShotAt = -Infinity;
@@ -3934,7 +4036,7 @@
                 bot.mesh.rotation.z = 0;
                 bot.mesh.scale.set(1, 1, 1);
                 bot.mesh.position.copy(chooseArenaRespawn(
-                    bot.preferWall ? RAMPART_SPAWNS : COURTYARD_SPAWNS, bot, false));
+                    arenaSpawnPool(bot.preferWall), bot, false));
                 bot.navPath.length = 0;
                 bot.navGoal = null;
                 bot.navRefresh = 0;
@@ -3978,6 +4080,7 @@
             renderTeamHUD();
             updateTeamAppearance();
             syncMatchModeControls();
+            syncArenaMapControls();
             updateHUD();
         }
 
@@ -3988,7 +4091,8 @@
             if (teamResult) Object.assign(result,teamResult);
             matchDurationLabel.textContent = ArenaMatch.clock(result.seconds);
             document.getElementById('match-results-mode-label').textContent =
-                arenaMode === 'tdm' ? 'TAKIM SAVAŞI • 4v3' : 'SERBEST ARENA';
+                (arenaMode === 'tdm' ? 'TAKIM SAVAŞI • 4v3' : 'SERBEST ARENA')+
+                (arenaMap==='meadow' ? ' • ÇİMENLİK MEYDAN' : ' • KALE');
             teamResults.classList.toggle('hidden',arenaMode !== 'tdm');
             if (teamResult) {
                 teamResults.textContent = 'MAVİ '+teamResult.scores.blue+
@@ -4067,6 +4171,7 @@
             isGameActive = arenaMatch.phase === 'playing';
             syncMatchDurationControls();
             syncMatchModeControls();
+            syncArenaMapControls();
             menuOverlay.classList.add('hidden');
             if (canvas.requestPointerLock) canvas.requestPointerLock();
         });
@@ -4106,6 +4211,7 @@
             document.getElementById('hud-timer').textContent = ArenaMatch.clock(matchTimeSeconds);
             syncMatchDurationControls();
             syncMatchModeControls();
+            syncArenaMapControls();
             hideLiveScoreboard();
             isGameActive = false;
             matchResultsOverlay.classList.add('hidden');
@@ -4370,14 +4476,16 @@
             const h = radarCanvas.height;
             const cx = w / 2;
             const cy = h / 2;
-            const scale = (w / 2) / 46; // Arena is -42 to +42
+            const half = arenaMap === 'meadow' ? ArenaMeadowLayout.HALF : 42;
+            const scale = (w / 2) / (half+4);
 
             radarCtx.clearRect(0, 0, w, h);
 
             // Outer wall square
             radarCtx.strokeStyle = 'rgba(255,255,255,0.22)';
             radarCtx.lineWidth = 2;
-            radarCtx.strokeRect(cx - 42 * scale, cy - 42 * scale, 84 * scale, 84 * scale);
+            radarCtx.strokeRect(cx-half*scale,cy-half*scale,
+                half*2*scale,half*2*scale);
 
             // Jump Pads (Cyan)
             radarCtx.fillStyle = '#38bdf8';
@@ -4435,6 +4543,7 @@
         let matchTimeSeconds = arenaMatch.remaining;
         syncMatchDurationControls();
         syncMatchModeControls();
+        syncArenaMapControls();
         const performanceSamples = ArenaPerformance.create();
         let fpsFrames = 0;
         let fpsTimer = 0;
@@ -5036,7 +5145,7 @@
                         bot.hp = bot.maxHp;
                         bot.hasHelmet = true;
                         bot.mesh._parts.helmetGroup.visible = true;
-                        const spawns = bot.preferWall ? RAMPART_SPAWNS : COURTYARD_SPAWNS;
+                        const spawns = arenaSpawnPool(bot.preferWall);
                         bot.mesh.position.copy(chooseArenaRespawn(spawns, bot, true));
                         bot.navPath.length = 0;
                         bot.navGoal = null;
@@ -5124,7 +5233,7 @@
                 if (targetPosition) {
                     moveTarget = targetPosition;
                 } else if (bot.mesh.position.distanceTo(bot.targetPoint) < 3.5) {
-                    const pool = bot.preferWall ? RAMPART_SPAWNS : COURTYARD_SPAWNS;
+                    const pool = arenaSpawnPool(bot.preferWall);
                     bot.targetPoint = pool[Math.floor(Math.random() * pool.length)].clone();
                     moveTarget = bot.targetPoint;
                 }
@@ -5414,6 +5523,7 @@
         // Read-only runtime snapshot for arena QA; no controls or game state changes.
         window.krunkerArenaStatus = () => ({
             mode: arenaMode,
+            map: arenaMap,
             teamScores: ArenaTeams.scores(arenaMode,player,bots),
             matchPhase: arenaMatch.phase,
             matchRemaining: arenaMatch.remaining,
