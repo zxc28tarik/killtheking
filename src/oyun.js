@@ -4261,7 +4261,7 @@
         function applyBotMotion(bot, dt, distance = 0) {
             const pose = ArenaCharacterMotion.update(bot.motionState, dt, {
                 travel: distance, role: bot.role,
-                windup: Math.max(bot.meleeWindup,bot.rangedWindup),
+                windup: bot.meleeWindup, rangedWindup: bot.rangedWindup,
                 strike: bot.strikePoseTime, guard: bot.guardTime > 0,
                 stagger: bot.staggerTime, hit: bot.hitReactionTime
             });
