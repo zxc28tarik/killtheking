@@ -1402,9 +1402,27 @@
         }
         function buildMeadowSquare() {
             const spec=ArenaMeadowLayout.spec();
-            const grassGround=new THREE.Mesh(new THREE.PlaneGeometry(112,112),
+            // Ground mesh and texture repeat cover the entire 20x area.
+            // A small generated tiling texture breaks up flat green without
+            // adding geometry or modifying any accepted 3D character art.
+            const grassTile=document.createElement('canvas');
+            grassTile.width=64;grassTile.height=64;
+            const grassCtx=grassTile.getContext('2d');
+            grassCtx.fillStyle='#6b9a3b';
+            grassCtx.fillRect(0,0,64,64);
+            for(let i=0;i<180;i++){
+                const x=(i*37)%64,z=(i*23+i*i)%64;
+                grassCtx.fillStyle=i%3===0?'#709f42':i%3===1?'#659038':'#769f48';
+                grassCtx.fillRect(x,z,1+(i%3),1+(i%2));
+            }
+            const grassTexture=new THREE.CanvasTexture(grassTile);
+            grassTexture.wrapS=grassTexture.wrapT=THREE.RepeatWrapping;
+            grassTexture.repeat.set(64,64);
+            grassTexture.magFilter=THREE.NearestFilter;
+            const grassGround=new THREE.Mesh(
+                new THREE.PlaneGeometry(112*spec.linearScale,112*spec.linearScale),
                 new THREE.MeshStandardMaterial({
-                    color:0x6b9a3b,roughness:.96,metalness:0
+                    map:grassTexture,color:0xffffff,roughness:.96,metalness:0
                 }));
             grassGround.rotation.x=-Math.PI/2;
             grassGround.receiveShadow=true;
@@ -2113,6 +2131,10 @@
             // Old navigator instances must not retain the shared mutable arrays.
             navigator=ArenaNavigation.createNavigator(colliders,ramps,selected.navigation);
             arenaMap=map;
+            // Corners of the 438-unit meadow are farther than the old
+            // 350-unit camera view distance. Castle keeps original settings.
+            camera.far=map==='meadow'?800:350;
+            camera.updateProjectionMatrix();
         }
         function arenaSpawnPool(preferWall=false) {
             if(arenaMap==='meadow'){
@@ -3241,7 +3263,10 @@
 
         function chooseArenaTarget(bot) {
             if (bot.dead || !isGameActive) return null;
-            const maxDetection = bot.range > 8 ? 43 : 33;
+            // Larger meadow requires bots to discover opponents across its
+            // broad central battlefield; attack weapon range is unchanged.
+            const maxDetection = arenaMap === 'meadow'
+                ? 220 : bot.range > 8 ? 43 : 33;
             // A bot retaliates against a recent attacker if that attacker is reachable.
             if (bot.arenaAggroType && arenaClock < bot.arenaAggroUntil &&
                 arenaCanTarget(bot,bot.arenaAggroType,bot.arenaAggroId) &&
@@ -3277,7 +3302,8 @@
             }
             const playerDistance = arenaTargetDistance(bot, 'player', null);
             // At most one normal bot pursues the player at once; retaliation is separate.
-            if (playerDistance < Math.min(maxDetection, 26) &&
+            if (playerDistance < Math.min(maxDetection,
+                    arenaMap==='meadow'?120:26) &&
                 arenaCanTarget(bot,'player',null) &&
                 ArenaBotRecovery.allows(bot.navRecovery, 'player:player') &&
                 arenaTargetCount('player', null, bot.id) === 0) {
@@ -3908,7 +3934,7 @@
                 button.setAttribute('aria-pressed',String(selected));
             });
             mapHint.textContent=arenaMap==='meadow'
-                ? 'Geniş ve düz çimenlik; açık görüş, yalnız kenarlarda az siper'
+                ? '20× alan • yaklaşık 438×438 • dev açık çimenlik, kenarda az siper'
                 : 'Orijinal kale, surlar ve rampalar';
         }
         mapButtons.forEach(button=>button.addEventListener('click',()=>{
