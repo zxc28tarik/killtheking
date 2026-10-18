@@ -305,7 +305,7 @@
                 name: 'OKÇU (GERİLEBİLİR YAY)',
                 weaponName: 'Uzun Yay',
                 ammoText: 'SINIRSIZ (OK)',
-                tipText: 'Sol Tık Basılı Tut: Yayı Ger | Sağ Tık: Nişan | [F]: Hançer',
+                tipText: '🏹 Atıştan sonra 1sn toparlan • 2sn ger • 3sn tam güç | [F]: Hançer',
                 speed: 108,
                 maxHp: 100,
                 type: 'bow',
@@ -3386,7 +3386,11 @@
                     bots[target.id] && bots[target.id].mesh)
                 : ArenaCombatHit3D.resolvePlayer(THREE, origin, targetPoint, player);
             const shotDir = targetPoint.clone().sub(origin).normalize();
-            bot.attackTimer = isRanged ? cadence
+            // Archer reloads hands for 1s, then draws for 3s. The absolute
+            // 4s shot timestamp still enforces at most 15 arrows/min.
+            bot.attackTimer = bot.role === 'archer'
+                ? ArenaWeaponBalance.BOW_RECOVERY_SECONDS
+                : isRanged ? cadence
                 : ArenaBotOffense.nextCooldown(bot.role, Math.random());
             bot.strikePoseTime = isRanged ? 0.17 : 0.25;
             if (isRanged) {
@@ -3678,6 +3682,13 @@
 
         function releaseChargedBow() {
             if (!player.isDrawingBow) return;
+            if (!isGameActive || arenaMatch.phase !== 'playing') {
+                player.isDrawingBow = false;
+                player.bowCharge = 0;
+                player.bowDrawSeconds = 0;
+                document.getElementById('bow-charge-ui').classList.add('hidden');
+                return;
+            }
             const drawSeconds = player.bowDrawSeconds;
             const charge = ArenaWeaponBalance.bowStrength(drawSeconds);
             const canFire = ArenaWeaponBalance.bowCanRelease(
@@ -4062,6 +4073,10 @@
                 if (isGameActive) menuOverlay.classList.add('hidden');
             } else {
                 hideLiveScoreboard();
+                player.isDrawingBow = false;
+                player.bowCharge = 0;
+                player.bowDrawSeconds = 0;
+                document.getElementById('bow-charge-ui').classList.add('hidden');
                 if (arenaMatch.phase === 'playing') ArenaMatch.pause(arenaMatch);
                 isGameActive = false;
                 activeWeaponSwing = null;
@@ -4175,6 +4190,10 @@
         });
         window.addEventListener('blur', () => {
             hideLiveScoreboard();
+            player.isDrawingBow = false;
+            player.bowCharge = 0;
+            player.bowDrawSeconds = 0;
+            document.getElementById('bow-charge-ui').classList.add('hidden');
             Object.keys(keys).forEach(key => { keys[key] = false; });
             if (arenaMatch.phase === 'playing') {
                 ArenaMatch.pause(arenaMatch);
