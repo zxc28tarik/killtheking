@@ -21,7 +21,7 @@ test('QA export includes final standings and telemetry without network upload',(
  assert.match(game,/metrics: window\.krunkerArenaBalanceReport\(\)/);
  assert.match(game,/new Blob\(\[JSON\.stringify\(report, null, 2\)\]/);
  assert.match(game,/URL\.createObjectURL\(blob\)/);
- assert.match(game,/link\.download = 'KillTheKing_FFA_QA_'/);
+ assert.match(game,/link\.download = 'KillTheKing_' \+ arenaMode\.toUpperCase\(\) \+ '_QA_'/);
  assert.match(game,/URL\.revokeObjectURL\(url\)/);
  assert.doesNotMatch(game,/fetch\([^)]*match-qa-export/);
 });
