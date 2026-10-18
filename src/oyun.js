@@ -887,6 +887,7 @@
         let sunHaloMesh = null;
         const skyClouds = [];
         let currentAtmosphereIdx = 0;
+        let activeArenaFogMultiplier = 1;
 
         const ATMOSPHERES = [
             {
@@ -977,7 +978,7 @@
                 skyDomeMesh.material.needsUpdate = true;
             }
             scene.fog.color.setHex(atmo.fogCol);
-            scene.fog.density = atmo.fogDensity;
+            scene.fog.density = atmo.fogDensity * activeArenaFogMultiplier;
 
             sunLight.color.setHex(atmo.sunCol);
             sunLight.intensity = atmo.sunIntensity;
@@ -2133,8 +2134,15 @@
             arenaMap=map;
             // Corners of the 438-unit meadow are farther than the old
             // 350-unit camera view distance. Castle keeps original settings.
-            camera.far=map==='meadow'?800:350;
+            camera.far=map==='meadow'?1000:350;
             camera.updateProjectionMatrix();
+            // The original 240-unit sky dome stops enclosing a >438-unit
+            // meadow near its corners. Scale sky only, not sun/light gameplay.
+            if(skyDomeMesh) skyDomeMesh.scale.setScalar(
+                map==='meadow'?2.5:1);
+            activeArenaFogMultiplier=map==='meadow'?.45:1;
+            scene.fog.density=ATMOSPHERES[currentAtmosphereIdx].fogDensity*
+                activeArenaFogMultiplier;
         }
         function arenaSpawnPool(preferWall=false) {
             if(arenaMap==='meadow'){
