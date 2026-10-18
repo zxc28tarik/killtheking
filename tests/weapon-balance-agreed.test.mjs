@@ -55,7 +55,7 @@ test('project uses shared module on both player and AI damage pipelines',()=>{
  assert.match(game,/ArenaWeaponBalance\.damage\('dagger','body'\)/);
  assert.match(game,/ArenaWeaponBalance\.weaponForRole\(bot\.role\)/);
  assert.match(game,/ArenaWeaponBalance\.damage\(weapon, zone/);
- assert.match(game,/ArenaWeaponBalance\.SHOT_INTERVAL\[bot\.role === 'archer' \? 'bow' : 'musket'\]/);
+ assert.match(game,/const cadence = isRanged[\s\S]*?ArenaWeaponBalance\.SHOT_INTERVAL\[weapon\]/);
  assert.match(game,/player\.lastBowShotAt = arenaClock/);
  assert.match(game,/player\.lastMusketShotAt = arenaClock/);
 });
