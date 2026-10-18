@@ -102,7 +102,9 @@ test('map switching swaps 3D visibility, colliders and AI navigation, never just
  assert.match(game,/castleMapData\.visuals\.forEach\(obj=>\{obj\.visible=map==='castle'/);
  assert.match(game,/meadowMapData\.visuals\.forEach\(obj=>\{obj\.visible=map==='meadow'/);
  assert.match(game,/navigator=ArenaNavigation\.createNavigator\(colliders,ramps,selected\.navigation\)/);
- assert.match(game,/camera\.far=map==='meadow'\?800:350/);
+ assert.match(game,/camera\.far=map==='meadow'\?1000:350/);
+ assert.match(game,/skyDomeMesh\.scale\.setScalar\(/);
+ assert.match(game,/activeArenaFogMultiplier=map==='meadow'\?\.45:1/);
  assert.match(game,/new THREE\.PlaneGeometry\(112\*spec\.linearScale,112\*spec\.linearScale\)/);
  assert.match(game,/arenaSpawnPool\(bot\.preferWall\)/);
  assert.match(game,/arenaSpawnPool\(false\)/);
