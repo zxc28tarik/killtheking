@@ -28,7 +28,7 @@ test('user-selected meadow is exactly 20x more area than original grassy square'
  assert.match(game,/function buildMeadowSquare\(\)/);
  assert.match(html,/data-arena-map="castle"/);
  assert.match(html,/data-arena-map="meadow"/);
- assert.match(html,/BÜYÜK ÇİMENLİK MEYDAN/);
+ assert.match(html,/20× ÇİMENLİK MEYDAN/);
 });
 
 test('open central ~259x259 contains no solid tree, building, wall or cover',()=>{
