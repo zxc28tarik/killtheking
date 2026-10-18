@@ -66,7 +66,7 @@
     torsoX-=.035*swing;
    }else if(signals.role==='musket'){
     // A short stock recoil, rather than a full melee windmill.
-    leftArm=-.98+swing*.21;
+    leftArm=-.98+swing*.14;
     rightArm=-1.42+swing*.24;
     torsoX-=.11*swing;
     headX+=.045*swing;
