@@ -4011,6 +4011,7 @@
             const report = {
                 schema: 'killtheking-match-qa-v2',
                 mode: arenaMode,
+                renderPerformance: window.krunkerPerformanceReport(),
                 matchResult: arenaMatch.result,
                 metrics: window.krunkerArenaBalanceReport()
             };
@@ -4352,8 +4353,14 @@
         let matchTimeSeconds = arenaMatch.remaining;
         syncMatchDurationControls();
         syncMatchModeControls();
+        const performanceSamples = ArenaPerformance.create();
         let fpsFrames = 0;
         let fpsTimer = 0;
+        let radarRefreshElapsed = 1 / 30;
+        let lastProjectedFov = camera.fov;
+        // Reuse render-only vectors across frames; never retained by physics/AI.
+        const botDefaultScale = new THREE.Vector3(1, 1, 1);
+        const botHeadProjection = new THREE.Vector3();
 
         // Procedural animation of existing joint groups only; no mesh replacement.
         function blendArticulatedRig(parts, pose, dt) {
@@ -4388,9 +4395,9 @@
             blendArticulatedRig(model._parts, pose, dt);
         }
 
-        function applyBotMotion(bot, dt, distance = 0) {
+        function applyBotMotion(bot, dt, distance = 0, slope = 0) {
             const pose = ArenaCharacterMotion.update(bot.motionState, dt, {
-                travel: distance, role: bot.role,
+                travel: distance, slope, role: bot.role,
                 windup: bot.meleeWindup, rangedWindup: bot.rangedWindup,
                 strike: bot.strikePoseTime, guard: bot.guardTime > 0,
                 stagger: bot.staggerTime, hit: bot.hitReactionTime
@@ -4577,7 +4584,12 @@
                 const isZoomed = (player.classIdx === 3 || player.classIdx === 2) && player.isRMBDown;
                 const targetFov = isZoomed ? 48 : (80 + Math.max(0, displaySpeed - 100) * 0.18);
                 camera.fov = THREE.MathUtils.lerp(camera.fov, targetFov, dt * 12);
-                camera.updateProjectionMatrix();
+                // Projection-matrix multiplication is avoidable for subpixel FOV
+                // changes; accumulate the error against the last applied value.
+                if (Math.abs(camera.fov - lastProjectedFov) >= 0.025) {
+                    camera.updateProjectionMatrix();
+                    lastProjectedFov = camera.fov;
+                }
 
                 // Camera Shake decay
                 let shakeX = 0, shakeY = 0;
@@ -4976,9 +4988,9 @@
                     applyBotMotion(bot, dt);
                     return;
                 }
-                const toPlayer = new THREE.Vector3().subVectors(player.pos, bot.mesh.position);
-                const flatToPlayer = new THREE.Vector3(toPlayer.x, 0, toPlayer.z);
-                const distToPlayer = flatToPlayer.length();
+                const distToPlayer = Math.hypot(
+                    player.pos.x - bot.mesh.position.x,
+                    player.pos.z - bot.mesh.position.z);
                 // Bot guard starts in response to visible melee preparation,
                 // not after getting hit. Some knights attempt a late precise read.
                 bot.guardCooldown = Math.max(0, bot.guardCooldown - dt);
@@ -5118,10 +5130,11 @@
                 } else {
                     // Hold tactical facing but ease the walk animation to idle.
                     if (targetPosition) {
-                        const facing = targetPosition.clone().sub(bot.mesh.position);
-                        if (facing.lengthSq() > 0.04) {
+                        const dx = targetPosition.x - bot.mesh.position.x;
+                        const dz = targetPosition.z - bot.mesh.position.z;
+                        if (dx * dx + dz * dz > 0.04) {
                             bot.mesh.rotation.y = ArenaCharacterMotion.turnToward(
-                                bot.mesh.rotation.y, Math.atan2(facing.x, facing.z), dt);
+                                bot.mesh.rotation.y, Math.atan2(dx, dz), dt);
                         }
                     }
                 }
@@ -5166,9 +5179,14 @@
                     bot.mesh.rotation.z = THREE.MathUtils.lerp(bot.mesh.rotation.z, 0, dt * 12);
                     bot.mesh.rotation.x = THREE.MathUtils.lerp(bot.mesh.rotation.x, 0, dt * 12);
                 }
-                bot.mesh.scale.lerp(new THREE.Vector3(1, 1, 1), Math.min(1, dt * 14));
+                bot.mesh.scale.lerp(botDefaultScale, Math.min(1, dt * 14));
                 // Ramp and upper-walkway elevation remain consistent with the route.
                 const navHeight = navigator.heightAt(bot.mesh.position.x, bot.mesh.position.z);
+                // Visual ramp pose from actual navigated elevation, never from
+                // desired velocity or a route through solid battlements.
+                const travelSlope = animationTravel > 0.025
+                    ? THREE.MathUtils.clamp((navHeight - botGround.y) / animationTravel, -1, 1)
+                    : 0;
                 bot.mesh.position.y = THREE.MathUtils.lerp(bot.mesh.position.y,
                     navHeight, Math.min(1, dt * 10));
 
@@ -5229,11 +5247,12 @@
                     bot.attackTimer -= dt * 0.45;
                 }
 
-                applyBotMotion(bot, dt, animationTravel);
+                applyBotMotion(bot, dt, animationTravel, travelSlope);
 
                 // Project 3D position above bot head to 2D screen
-                const headWorld = bot.mesh.position.clone().add(new THREE.Vector3(0, 3.4, 0));
-                const projected = headWorld.project(camera);
+                const projected = botHeadProjection.set(
+                    bot.mesh.position.x, bot.mesh.position.y + 3.4,
+                    bot.mesh.position.z).project(camera);
                 if (projected.z < 1.0 && distToPlayer < 75) {
                     const sx = (projected.x * 0.5 + 0.5) * window.innerWidth;
                     const sy = (-projected.y * 0.5 + 0.5) * window.innerHeight;
@@ -5268,7 +5287,13 @@
                 }
             }
 
-            renderRadar();
+            // 30Hz minimap is responsive but avoids redrawing its many canvas
+            // paths on every 60–144Hz WebGL frame.
+            radarRefreshElapsed += dt;
+            if (radarRefreshElapsed >= 1 / 30) {
+                radarRefreshElapsed %= 1 / 30;
+                renderRadar();
+            }
 
             fpsFrames++;
             fpsTimer += dt;
@@ -5282,8 +5307,12 @@
         function animate() {
             requestAnimationFrame(animate);
             const now = performance.now();
-            const dt = Math.min(0.05, (now - lastTime) / 1000);
+            const rawDt = (now - lastTime) / 1000;
+            const dt = Math.min(0.05, rawDt);
             lastTime = now;
+            // Capture real wall-clock cadence, including >50ms stutters;
+            // game physics keeps its existing capped 50ms timestep.
+            ArenaPerformance.record(performanceSamples,rawDt);
 
             let gameDt = dt;
             if (impactHoldSeconds > 0) {
@@ -5294,6 +5323,9 @@
             renderer.render(scene, camera);
         }
 
+        // On-demand FPS / 1% low / draw-call diagnostics, without a background logger.
+        window.krunkerPerformanceReport = () =>
+            ArenaPerformance.snapshot(performanceSamples,renderer);
         // Read-only runtime snapshot for arena QA; no controls or game state changes.
         window.krunkerArenaStatus = () => ({
             mode: arenaMode,
