@@ -1851,6 +1851,7 @@
             // Bow drawing
             isDrawingBow: false,
             bowCharge: 0,
+            bowDrawSeconds: 0,
             // Persistent across mid-round class switches: switching cannot reload early.
             lastBowShotAt: -Infinity,
             lastMusketShotAt: -Infinity,
@@ -1915,6 +1916,7 @@
             player.attackCooldown = 0;
             player.isDrawingBow = false;
             player.bowCharge = 0;
+            player.bowDrawSeconds = 0;
             player.isShielding = false;
             player.shieldParryTime = 0;
             player.shieldParryCooldown = 0;
@@ -3676,15 +3678,27 @@
 
         function releaseChargedBow() {
             if (!player.isDrawingBow) return;
-            const charge = Math.max(0.25, player.bowCharge);
+            const drawSeconds = player.bowDrawSeconds;
+            const charge = ArenaWeaponBalance.bowStrength(drawSeconds);
+            const canFire = ArenaWeaponBalance.bowCanRelease(
+                player.lastBowShotAt,arenaClock,drawSeconds);
             player.isDrawingBow = false;
             player.bowCharge = 0;
-            if (!ArenaWeaponBalance.ready(player.lastBowShotAt, arenaClock,'bow')) return;
+            player.bowDrawSeconds = 0;
+            document.getElementById('bow-charge-ui').classList.add('hidden');
+            if (!canFire) {
+                // Releasing prematurely cancels the draw. No invisible shot or
+                // four-second post-release lockout; the user must draw again.
+                const remaining = ArenaWeaponBalance.bowReleaseWait(
+                    player.lastBowShotAt,arenaClock,drawSeconds);
+                document.getElementById('hud-status-badge').textContent =
+                    '🏹 ATIŞ HAZIR DEĞİL ('+remaining.toFixed(1)+'s)';
+                return;
+            }
             player.lastBowShotAt = arenaClock;
-            player.attackCooldown = ArenaWeaponBalance.SHOT_INTERVAL.bow;
+            player.attackCooldown = ArenaWeaponBalance.BOW_RECOVERY_SECONDS;
             player.attackAnimTime = 1.0;
             registerWeaponSwing('bow');
-            document.getElementById('bow-charge-ui').classList.add('hidden');
 
             sfx.playBowRelease(charge);
             const dir = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion).normalize();
@@ -3870,6 +3884,7 @@
             player.shieldParryCooldown = 0;
             player.isShielding = false;
             player.bowCharge = 0;
+            player.bowDrawSeconds = 0;
             player.isDrawingBow = false;
             player.bhopChain = 0;
             player.tpsMotionState = ArenaCharacterMotion.createState();
@@ -4076,11 +4091,13 @@
             if (!isGameActive) return;
             if (e.button === 0) {
                 if (player.classIdx === 2) {
-                    // Start drawing bow
-                    if (player.attackCooldown <= 0 &&
-                        ArenaWeaponBalance.ready(player.lastBowShotAt, arenaClock,'bow')) {
+                    // The old four-second cooldown is now incorporated into
+                    // recovery + drawing; no drawing for the first 1s after a shot.
+                    if (!player.isDrawingBow && player.attackCooldown <= 0 &&
+                        ArenaWeaponBalance.bowCanDraw(player.lastBowShotAt,arenaClock)) {
                         player.isDrawingBow = true;
-                        player.bowCharge = 0.1;
+                        player.bowCharge = 0;
+                        player.bowDrawSeconds = 0;
                         document.getElementById('bow-charge-ui').classList.remove('hidden');
                     }
                 } else {
@@ -4477,10 +4494,16 @@
             }
 
             if (player.isDrawingBow) {
-                player.bowCharge = Math.min(1.0, player.bowCharge +
-                    dt / ArenaWeaponBalance.BOW_DRAW_SECONDS);
+                player.bowDrawSeconds = Math.min(ArenaWeaponBalance.BOW_DRAW_SECONDS,
+                    player.bowDrawSeconds + dt);
+                player.bowCharge = ArenaWeaponBalance.bowStrength(player.bowDrawSeconds);
                 const pct = Math.round(player.bowCharge * 100);
-                document.getElementById('bow-charge-label').textContent = pct >= 100 ? '🔥 TAM GERİLDİ (%100)!' : `YAY GERİLİYOR: %${pct}`;
+                const wait = ArenaWeaponBalance.bowReleaseWait(
+                    player.lastBowShotAt,arenaClock,player.bowDrawSeconds);
+                document.getElementById('bow-charge-label').textContent = wait > .001
+                    ? '🏹 GERİLİYOR: '+pct+'% • ATIŞA '+wait.toFixed(1)+'s'
+                    : pct >= 100 ? '🔥 TAM GERİLDİ • BIRAK VE AT!'
+                    : '🏹 ATIŞ HAZIR • GÜÇ: '+pct+'%';
                 document.getElementById('bow-charge-fill').style.width = `${pct}%`;
             }
 
