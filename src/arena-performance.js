@@ -31,11 +31,15 @@
   vals.sort((a,b)=>a-b);
   const percentile=q=>vals[Math.min(vals.length-1,Math.max(0,Math.ceil(vals.length*q)-1))];
   const p95=percentile(.95),p99=percentile(.99);
+  // 1% low FPS uses the mean frame time of the slowest 1%, not just the
+  // 99th percentile; otherwise a single 100ms hitch could disappear.
+  const tail=vals.slice(-Math.max(1,Math.ceil(vals.length*.01)));
+  const onePercentLowMs=tail.reduce((sum,ms)=>sum+ms,0)/tail.length;
   const info=renderer&&renderer.info;
   return {
    sampleCount:state.count,
    averageFPS:Math.round((1000/(sum/vals.length))*10)/10,
-   onePercentLowFPS:Math.round(1000/p99*10)/10,
+   onePercentLowFPS:Math.round(1000/onePercentLowMs*10)/10,
    p95FrameMs:Math.round(p95*100)/100,
    p99FrameMs:Math.round(p99*100)/100,
    drawCalls:Number.isFinite(info?.render?.calls)?info.render.calls:null,
