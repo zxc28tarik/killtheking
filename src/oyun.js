@@ -3561,7 +3561,7 @@
                 player.hp = player.maxHp;
                 addKillFeed(bot.name, bot.weapon, 'Sen_1600', false);
                 addScorePopup('YENİDEN DOĞDUN!', 'text-rose-400');
-                const sp = chooseArenaRespawn(COURTYARD_SPAWNS, null, false);
+                const sp = chooseArenaRespawn(arenaSpawnPool(false), null, false);
                 player.pos.set(sp.x, sp.y + 1.5, sp.z);
                 player.tpsMotionState = ArenaCharacterMotion.createState();
                 // The killer returns to fighting the whole arena, not camping the respawn.
@@ -3999,9 +3999,11 @@
             player.tpsMotionState = ArenaCharacterMotion.createState();
             activeWeaponSwing = null;
             impactHoldSeconds = 0;
-            const safeSpawn = chooseArenaRespawn(COURTYARD_SPAWNS, null, false);
+            const safeSpawn = chooseArenaRespawn(arenaSpawnPool(false), null, false);
             player.pos.set(safeSpawn.x, safeSpawn.y + player.currentHeight, safeSpawn.z);
             bots.forEach(bot => {
+                const patrolPool=arenaSpawnPool(bot.preferWall);
+                bot.targetPoint=patrolPool[(bot.id+2)%patrolPool.length].clone();
                 bot.arenaKills = 0;
                 bot.arenaDeaths = 0;
                 bot.lastRangedShotAt = -Infinity;
@@ -4014,7 +4016,7 @@
                 bot.mesh.rotation.z = 0;
                 bot.mesh.scale.set(1, 1, 1);
                 bot.mesh.position.copy(chooseArenaRespawn(
-                    bot.preferWall ? RAMPART_SPAWNS : COURTYARD_SPAWNS, bot, false));
+                    arenaSpawnPool(bot.preferWall), bot, false));
                 bot.navPath.length = 0;
                 bot.navGoal = null;
                 bot.navRefresh = 0;
@@ -4450,14 +4452,16 @@
             const h = radarCanvas.height;
             const cx = w / 2;
             const cy = h / 2;
-            const scale = (w / 2) / 46; // Arena is -42 to +42
+            const half = arenaMap === 'meadow' ? ArenaMeadowLayout.HALF : 42;
+            const scale = (w / 2) / (half+4);
 
             radarCtx.clearRect(0, 0, w, h);
 
             // Outer wall square
             radarCtx.strokeStyle = 'rgba(255,255,255,0.22)';
             radarCtx.lineWidth = 2;
-            radarCtx.strokeRect(cx - 42 * scale, cy - 42 * scale, 84 * scale, 84 * scale);
+            radarCtx.strokeRect(cx-half*scale,cy-half*scale,
+                half*2*scale,half*2*scale);
 
             // Jump Pads (Cyan)
             radarCtx.fillStyle = '#38bdf8';
@@ -5116,7 +5120,7 @@
                         bot.hp = bot.maxHp;
                         bot.hasHelmet = true;
                         bot.mesh._parts.helmetGroup.visible = true;
-                        const spawns = bot.preferWall ? RAMPART_SPAWNS : COURTYARD_SPAWNS;
+                        const spawns = arenaSpawnPool(bot.preferWall);
                         bot.mesh.position.copy(chooseArenaRespawn(spawns, bot, true));
                         bot.navPath.length = 0;
                         bot.navGoal = null;
@@ -5204,7 +5208,7 @@
                 if (targetPosition) {
                     moveTarget = targetPosition;
                 } else if (bot.mesh.position.distanceTo(bot.targetPoint) < 3.5) {
-                    const pool = bot.preferWall ? RAMPART_SPAWNS : COURTYARD_SPAWNS;
+                    const pool = arenaSpawnPool(bot.preferWall);
                     bot.targetPoint = pool[Math.floor(Math.random() * pool.length)].clone();
                     moveTarget = bot.targetPoint;
                 }
@@ -5494,6 +5498,7 @@
         // Read-only runtime snapshot for arena QA; no controls or game state changes.
         window.krunkerArenaStatus = () => ({
             mode: arenaMode,
+            map: arenaMap,
             teamScores: ArenaTeams.scores(arenaMode,player,bots),
             matchPhase: arenaMatch.phase,
             matchRemaining: arenaMatch.remaining,
