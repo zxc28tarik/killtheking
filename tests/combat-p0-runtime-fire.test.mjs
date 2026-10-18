@@ -6,6 +6,7 @@ import {readFileSync} from 'node:fs';
 const require=createRequire(import.meta.url);
 const THREE=require('../vendor/three-r128.js');
 const W=require('../src/weapon-balance.js');
+const H=require('../src/combat-hit-3d.js');
 const source=readFileSync(new URL('../src/oyun.js',import.meta.url),'utf8');
 const start=source.indexOf('        function arenaBotAttack(bot, target, targetDistance) {');
 const end=source.indexOf('        // Check if player hit an explosive barrel',start);
@@ -13,7 +14,13 @@ assert.ok(start>=0&&end>start);
 const body=source.slice(start,end);
 
 function arena({rolls=[.5,.5],blocked=false,clock=100,playerHp=100}={}){
- const enemy={id:1,dead:false,mesh:{position:new THREE.Vector3(0,0,0)}};
+ const rig=new THREE.Group();
+ const torso=new THREE.Mesh(new THREE.BoxGeometry(1,1.4,.8),
+  new THREE.MeshBasicMaterial());
+ torso.position.set(0,1.55,0);
+ torso.userData.hitZone='body';
+ rig.add(torso);
+ const enemy={id:1,dead:false,mesh:rig};
  const attacker={id:0,role:'musket',weapon:'Tüfek',dead:false,staggerTime:0,
   lastRangedShotAt:-Infinity,mesh:{position:new THREE.Vector3(0,0,-20),rotation:{y:0}},
   strikePoseTime:0,attackTimer:0};
@@ -24,7 +31,8 @@ function arena({rolls=[.5,.5],blocked=false,clock=100,playerHp=100}={}){
  let i=0;
  const context={THREE,Math:Object.assign(Object.create(Math),{random:()=>rolls[(i++)%rolls.length]}),
   bot:{},bots:[attacker,enemy],player,
-  isGameActive:true,arenaClock:clock,ArenaWeaponBalance:W,
+  isGameActive:true,arenaClock:clock,ArenaWeaponBalance:W,ArenaCombatHit3D:H,
+  ArenaTelemetry:{recordRangedShot(){}},arenaTelemetry:{},
   ArenaBotOffense:{facing:()=>true,nextCooldown:()=>1.5},
   arenaActorPosition:(type,id)=>type==='player'?player.pos:enemy.mesh.position,
   arenaLineOfSight:()=>true,arenaWorldBlockBetween:()=>blocked,

@@ -12,16 +12,22 @@
  const isActor=id=>id==='player'||(typeof id==='string'&&/^bot:(0|[1-9][0-9]*)$/.test(id));
  const emptyCounts=()=>({playerToBot:0,botToPlayer:0,botToBot:0});
  const emptyTargets=()=>({bot:0,player:0,none:0,invalidSelf:0});
+ const emptyFire=()=>({
+  archer:{shots:0,hits:0,head:0,body:0,arm:0,leg:0},
+  musket:{shots:0,hits:0,head:0,body:0,arm:0,leg:0}
+ });
 
  function create(){
   return {kills:emptyCounts(),classKills:Array(CLASS_COUNT).fill(0),
-   samples:0,targetSlots:emptyTargets(),stuckSamples:{},recentKills:[]};
+   samples:0,targetSlots:emptyTargets(),stuckSamples:{},recentKills:[],
+   rangedFire:emptyFire()};
  }
  function reset(state){
   state.kills=emptyCounts();
   state.classKills=Array(CLASS_COUNT).fill(0);
   state.samples=0;state.targetSlots=emptyTargets();
   state.stuckSamples={};state.recentKills=[];
+  state.rangedFire=emptyFire();
   return state;
  }
  function recordKill(state,attacker,victim,meta={}){
@@ -42,6 +48,16 @@
    second:Number.isFinite(meta.second)?Math.max(0,Math.round(meta.second*10)/10):null
   });
   if(state.recentKills.length>LOG_LIMIT)state.recentKills.shift();
+  return true;
+ }
+ function recordRangedShot(state,role,zone=null){
+  if(!state||!state.rangedFire||!['archer','musket'].includes(role))
+   return false;
+  const stat=state.rangedFire[role];
+  stat.shots++;
+  if(['head','body','arm','leg'].includes(zone)){
+   stat.hits++;stat[zone]++;
+  }
   return true;
  }
  function sampleTargets(state,bots){
@@ -71,8 +87,12 @@
    kills:{...state.kills},classKills:state.classKills.slice(),
    samples:state.samples,targetSlots:{...state.targetSlots},
    stuckSamples:{...state.stuckSamples},
-   recentKills:state.recentKills.map(e=>({...e}))
+   recentKills:state.recentKills.map(e=>({...e})),
+   rangedFire:{
+    archer:{...state.rangedFire.archer},
+    musket:{...state.rangedFire.musket}
+   }
   };
  }
- return {create,reset,recordKill,sampleTargets,snapshot,LOG_LIMIT};
+ return {create,reset,recordKill,recordRangedShot,sampleTargets,snapshot,LOG_LIMIT};
 });

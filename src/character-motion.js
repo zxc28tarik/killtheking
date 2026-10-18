@@ -21,7 +21,8 @@
   state.weight+= (desired-state.weight)*(1-Math.exp(-delta*12));
   state.weight=clamp(state.weight,0,1);
   const step=Math.sin(state.phase),w=state.weight;
-  const windup=clamp(signals.windup||0,0,.36)/.36;
+  const windup=clamp(signals.windup||0,0,.40)/.40;
+  const rangedWindup=clamp(signals.rangedWindup||0,0,.36)/.36;
   const strike=clamp(signals.strike||0,0,.25);
   const attackProgress=strike>0?1-strike/.25:0;
   const guarding=!!signals.guard;
@@ -33,7 +34,20 @@
   let headX=-w*.04,capeX=.15+w*(.22+Math.abs(step)*.1);
   if(guarding)leftArm=-1.25;
   else if(signals.role==='knight')leftArm=-.40-step*w*.08;
-  if(windup>0){
+  if(rangedWindup>0){
+   // Aim is a readable two-arm pose, not an instant sword-like swing.
+   // No weapon meshes or collision positions are modified.
+   const ready=smooth(1-rangedWindup);
+   if(signals.role==='archer'){
+    leftArm=-1.18-ready*.30;
+    rightArm=-1.45-ready*.18;
+    torsoX-=.05*ready;
+   }else if(signals.role==='musket'){
+    leftArm=-.85-ready*.33;
+    rightArm=-1.32-ready*.20;
+    torsoX-=.06*ready;
+   }
+  }else if(windup>0){
    const p=smooth(1-windup);
    rightArm=-1.10-p*1.05;torsoX-=.06*p;
   }else if(strike>0){

@@ -46,8 +46,9 @@ test('invalid aim and malformed distance cannot accidentally become hits',()=>{
 test('bot shots are validated before damage against actual aim and world obstruction',()=>{
  assert.match(game,/shot = ArenaWeaponBalance\.aimedShot\(/);
  assert.match(game,/target\.type === 'player' && player\.isSliding \? 1\.9 : 3/);
- assert.match(game,/if \(!shot\.hit \|\| arenaWorldBlockBetween\(origin,targetPoint\)\) return/);
- assert.match(game,/const zone = isRanged \? shot\.zone : 'body'/);
+ assert.match(game,/const hitConfirmed = !!\(hit3d &&/);
+ assert.match(game,/if \(!hitConfirmed\) return/);
+ assert.match(game,/const zone = isRanged \? hit3d\.zone : 'body'/);
  assert.match(game,/ArenaWeaponBalance\.damage\(weapon, zone/);
  assert.doesNotMatch(game,/const zone = ArenaWeaponBalance\.botAimZone\(/);
 });
