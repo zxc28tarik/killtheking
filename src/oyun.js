@@ -3356,7 +3356,11 @@
                 if (bot.role === 'musket') spawnSmokeCloud(origin, shotDir, 8, 1.0);
                 // An actual triangle or 3D body-volume intersection is required.
                 // Existing static-world collision remains authoritative.
-                if (!hit3d || arenaWorldBlockBetween(origin,hit3d.point)) return;
+                const hitConfirmed = !!(hit3d &&
+                    !arenaWorldBlockBetween(origin,hit3d.point));
+                ArenaTelemetry.recordRangedShot(arenaTelemetry,bot.role,
+                    hitConfirmed ? hit3d.zone : null);
+                if (!hitConfirmed) return;
             }
             // Both AI and human participants use the same weapon+zone damage table.
             // Close-range strikes hit the body; ranged impacts derive from the actual aim.
