@@ -65,6 +65,6 @@ test('game updates existing articulated rig and maintains script order',()=>{
  assert.match(game,/ArenaCharacterMotion\.update\(bot\.motionState/);
  assert.match(game,/ArenaCharacterMotion\.deathPose/);
  assert.match(game,/animationTravel = madeProgress/);
- assert.match(game,/applyBotMotion\(bot, dt, animationTravel\)/);
+ assert.match(game,/applyBotMotion\(bot, dt, animationTravel, travelSlope\)/);
  assert.ok(html.indexOf('src/character-motion.js')<html.indexOf('src/oyun.js'));
 });

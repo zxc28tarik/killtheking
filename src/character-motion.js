@@ -29,10 +29,16 @@
   const guarding=!!signals.guard;
   const stagger=clamp(signals.stagger||0,0,.72)/.72;
   const impact=clamp(signals.hit||0,0,.38)/.38;
+  const slope=Number.isFinite(signals.slope)?clamp(signals.slope,-1,1):0;
   let leftLeg=step*w*.62,rightLeg=-step*w*.62;
   let leftArm=-step*w*.34,rightArm=-Math.PI/3+step*w*.10;
   let torsoX=w*.06,torsoZ=Math.cos(state.phase)*w*.035;
   let headX=-w*.04,capeX=.15+w*(.22+Math.abs(step)*.1);
+  // Lean the existing mesh against actual traversed ramp slope; no physics change.
+  torsoX+=slope*w*.10;
+  leftLeg+=slope*w*.10;
+  rightLeg+=slope*w*.10;
+  headX-=slope*w*.035;
   if(guarding)leftArm=-1.25;
   else if(signals.role==='knight')leftArm=-.40-step*w*.08;
   if(rangedWindup>0){
@@ -53,8 +59,19 @@
    rightArm=-1.10-p*1.05;torsoX-=.06*p;
   }else if(strike>0){
    const swing=Math.sin(Math.PI*clamp(attackProgress*.88,0,1));
-   rightArm=-2.15+swing*2.15;
-   torsoZ+=(signals.role==='pikeman'?.05:.09)*swing;
+   if(signals.role==='archer'){
+    leftArm=-1.22+swing*.16;
+    rightArm=-1.50+swing*.32;
+    torsoX-=.035*swing;
+   }else if(signals.role==='musket'){
+    leftArm=-.98+swing*.14;
+    rightArm=-1.42+swing*.24;
+    torsoX-=.11*swing;
+    headX+=.045*swing;
+   }else{
+    rightArm=-2.15+swing*2.15;
+    torsoZ+=(signals.role==='pikeman'?.05:.09)*swing;
+   }
   }
   if(impact>0){
    const recoil=Math.sin(Math.PI*impact);
