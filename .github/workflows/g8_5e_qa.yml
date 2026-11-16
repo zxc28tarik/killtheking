@@ -23,5 +23,6 @@ jobs:
           node --check tools/g8-5c/g8_5e_decision_trace.mjs
           node --check tools/g8-5c/g8_5e_passive_battle_adapter.mjs
       - name: Isolated QA (not production game validation)
-        run: node tools/g8-5c/test_g8_5e_decision_trace.mjs
+        run: |
+          node tools/g8-5c/test_g8_5e_decision_trace.mjs
           node tools/g8-5c/test_g8_5e_panel_smoke.mjs
