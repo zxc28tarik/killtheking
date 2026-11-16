@@ -1,4 +1,4 @@
-name: G8.5E isolated QA
+name: G8.5C-F isolated QA
 on:
   pull_request:
     paths:
@@ -11,18 +11,24 @@ on:
       - 'tools/g8-5c/**'
       - '.github/workflows/g8_5e_qa.yml'
 jobs:
-  decision-trace:
+  isolated-qa:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Source syntax
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Syntax check all isolated Node modules
         run: |
-          node --check tools/g8-5c/g8_5e_decision_trace.mjs
-          node --check tools/g8-5c/g8_5e_passive_battle_adapter.mjs
-      - name: Isolated QA (not production game validation)
+          for file in tools/g8-5c/*.mjs; do node --check "$file"; done
+      - name: Run all independent Node QA tests
         run: |
-          node tools/g8-5c/test_g8_5e_decision_trace.mjs
-          node tools/g8-5c/test_g8_5e_panel_smoke.mjs
+          for file in tools/g8-5c/test_*.mjs; do
+            echo "Running $file"
+            node "$file"
+          done
+      - name: Run read-only source recovery gate tests
+        run: python3 tools/g8-5c/test_g8_5f_source_gate.py
