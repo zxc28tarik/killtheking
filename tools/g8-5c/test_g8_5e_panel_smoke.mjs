@@ -1,0 +1,24 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import vm from 'node:vm';
+import {createDecisionTrace} from './g8_5e_decision_trace.mjs';
+const html=fs.readFileSync(new URL('./G8_5E_Karar_Izi_Karsilastirici.html',import.meta.url),'utf8');
+const code=html.match(/<script>([\s\S]*?)<\/script>/)?.[1];
+assert(code,'Inline panel JavaScript exists');
+const make=changes=>{const r=createDecisionTrace({scenario:'classic',armySize:140,seed:44,mirrorSeed:'test-44',sideSwap:'original',engineBuild:'fixture-test'});r.record({tick:0,kind:'target',actorId:'A-1',payload:{target:'B-1'}});r.record({tick:1,kind:'order',actorId:'A-1',payload:{order:changes?'retreat':'hold'}});return r.finish()};
+const a=make(false),b=make(true);
+const node=()=>({textContent:'',className:'',disabled:false,style:{},children:[],handler:{},files:[],classList:{add(){},remove(){}},addEventListener(k,fn){this.handler[k]=fn},replaceChildren(...x){this.children=[...x]},append(...x){this.children.push(...x)}});
+const ids=['#traceA','#traceB','#summary','#detail','#context','#status','#compare','#kpis','#message','#left','#right','#rows'];
+const els=Object.fromEntries(ids.map(x=>[x,node()]));
+els['#compare'].disabled=true;
+const document={querySelector(sel){if(!els[sel])throw Error('Missing selector '+sel);return els[sel]},createElement:node};
+const ctx=vm.createContext({document,TextEncoder,console});
+new vm.Script(code,{filename:'g8e-panel.js'}).runInContext(ctx);
+const tests=[];const t=(name,fn)=>tests.push([name,fn]);
+t('panel title visible in markup',()=>assert(html.includes('AI Karar İzi Karşılaştırıcısı')));
+t('offline, no external dependencies',()=>assert(!/src=["']https?:|href=["']https?:/i.test(html)));
+t('file input handlers registered',()=>{assert(els['#traceA'].handler.change);assert(els['#traceB'].handler.change)});
+t('compare button handler registered',()=>assert(els['#compare'].handler.click));
+t('compare disabled until both files selected',()=>assert(els['#compare'].disabled===true));
+async function run(){for(const [name,fn] of tests){fn();console.log('PASS',name)}await els['#traceA'].handler.change({target:{files:[{text:async()=>JSON.stringify(a)}]}});await els['#traceB'].handler.change({target:{files:[{text:async()=>JSON.stringify(b)}]}});assert(!els['#compare'].disabled);console.log('PASS file selection enables compare');els['#compare'].handler.click();assert(els['#message'].textContent.includes('İlk sapma'));console.log('PASS first divergence displayed');assert(els['#left'].textContent.includes('hold'));console.log('PASS original event displayed');assert(els['#right'].textContent.includes('retreat'));console.log('PASS diverged event displayed');assert(els['#rows'].children.length>=2);console.log('PASS surrounding events table built');console.log('10/10 G8.5E standalone HTML DOM-stub smoke tests PASS (not real browser GPU)')}
+await run();
