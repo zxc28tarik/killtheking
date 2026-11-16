@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict';
+import {normalizeGameReport} from './g8_5_report_adapter.mjs';
+import {auditMirrorPairs} from './g8_5_mirror_gate.mjs';
+const raw={battle:{mode:'supply_line',rosterSize:140,rngSeed:17, victor:'blue',maxTime:240,stopTime:240,points:{blue:62,red:48},targetChanges:4,bonus:{blue:12,red:0}}};
+const map={scenario:'battle.mode',armySize:'battle.rosterSize',seed:'battle.rngSeed',winner:'battle.victor',durationSeconds:'battle.maxTime',elapsedSeconds:'battle.stopTime',blueScore:'battle.points.blue',redScore:'battle.points.red',objectiveSwitches:'battle.targetChanges',supplyBonusBlue:'battle.bonus.blue',supplyBonusRed:'battle.bonus.red'};
+let n=0;const t=(name,fn)=>{fn();n++;console.log('PASS',name)};
+t('explicit field paths map all mandatory fields',()=>{const x=normalizeGameReport(raw,{fieldMap:map});assert.equal(x.blueScore,62);assert.equal(x.source,'external_unverified')});
+t('custom function mapper is supported',()=>{const x=normalizeGameReport(raw,{fieldMap:{...map,winner:r=>r.battle.victor}});assert.equal(x.winner,'blue')});
+t('missing mapper never silently invents a number',()=>{const m={...map};delete m.blueScore;assert.throws(()=>normalizeGameReport(raw,{fieldMap:m}),/blueScore/)});
+t('missing source field never defaults to zero',()=>{const m={...map,blueScore:'battle.notThere'};assert.throws(()=>normalizeGameReport(raw,{fieldMap:m}),/blueScore/)});
+t('mirror labels must be complete',()=>assert.throws(()=>normalizeGameReport(raw,{fieldMap:map,mirrorSeed:1}),/together/));
+t('mirror labels passed explicitly from replay harness',()=>{const x=normalizeGameReport(raw,{fieldMap:map,mirrorSeed:17,sideSwap:'original'});assert.equal(x.sideSwap,'original')});
+t('production provenance is not assumed',()=>{const x=normalizeGameReport(raw,{fieldMap:map,mirrorSeed:17,sideSwap:'original'});assert.equal(auditMirrorPairs([x]).overallStatus,'missing_evidence')});
+t('report passes strict numeric check after valid mapping',()=>{const x=normalizeGameReport(raw,{fieldMap:map});assert.equal(auditMirrorPairs([x]).runCount,1)});
+t('arrays and null are not valid root reports',()=>{assert.throws(()=>normalizeGameReport(null,{fieldMap:map}));assert.throws(()=>normalizeGameReport([],{fieldMap:map}))});
+console.log(`\n${n}/${n} explicit-adapter tests PASS (fixture data; not linked to production HTML).`);
