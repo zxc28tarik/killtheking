@@ -25,10 +25,12 @@ jobs:
         run: |
           for file in tools/g8-5c/*.mjs; do node --check "$file"; done
       - name: Run all independent Node QA tests
+        working-directory: tools/g8-5c
         run: |
-          for file in tools/g8-5c/test_*.mjs; do
+          for file in test_*.mjs; do
             echo "Running $file"
             node "$file"
           done
       - name: Run read-only source recovery gate tests
-        run: python3 tools/g8-5c/test_g8_5f_source_gate.py
+        working-directory: tools/g8-5c
+        run: python3 test_g8_5f_source_gate.py
