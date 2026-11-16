@@ -1,0 +1,26 @@
+name: G8.5E isolated QA
+on:
+  pull_request:
+    paths:
+      - 'tools/g8-5c/**'
+      - '.github/workflows/g8_5e_qa.yml'
+  push:
+    branches:
+      - 'codex/g8-5c-telemetry-mirror-qa'
+    paths:
+      - 'tools/g8-5c/**'
+      - '.github/workflows/g8_5e_qa.yml'
+jobs:
+  decision-trace:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Source syntax
+        run: |
+          node --check tools/g8-5c/g8_5e_decision_trace.mjs
+          node --check tools/g8-5c/g8_5e_passive_battle_adapter.mjs
+      - name: Isolated QA (not production game validation)
+        run: node tools/g8-5c/test_g8_5e_decision_trace.mjs
