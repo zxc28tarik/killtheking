@@ -1,0 +1,16 @@
+{
+  "phase": "G8.5F",
+  "date": "2026-11-17",
+  "source_recovered": false,
+  "production_game_patched": false,
+  "real_battles_executed": 0,
+  "previous_production_regressions_rerun": false,
+  "isolated_qa_tests": {
+    "previous": 255,
+    "new_event_bridge": 30,
+    "new_source_gate": 22,
+    "total_passed": 307,
+    "total": 307
+  },
+  "limitations": "All tests are on independent QA modules, fixtures, and synthetic test data; no G8.4/G8.5 game engine or GPU exercised."
+}
