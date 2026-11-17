@@ -16,7 +16,7 @@ jobs:
         env:
           RECOVERY_MANIFEST_OUT: recovered/army/G5_4_Recovery_Manifest.json
         run: node recovered/army/check_g5_4_archive.mjs
-      - name: Run 76 actual G5.4 army, passive telemetry and AI quality tests
+      - name: Run 78 actual G5.4 army, passive telemetry and AI quality tests
         run: node --test recovered/army/test_g5_4_army_contract.mjs recovered/army/test_g5_4_passive_trace.mjs recovered/army/test_g5_4_commander_quality_audit.mjs
       - name: Publish G5.4 recovered HTML and checksum
         uses: actions/upload-artifact@v4
