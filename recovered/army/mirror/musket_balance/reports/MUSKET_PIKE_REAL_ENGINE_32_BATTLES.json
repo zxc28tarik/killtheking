@@ -1,0 +1,1764 @@
+{
+  "format": "ktk-g54-musket-pike-explanation-v1",
+  "engineSha256": "307987855abc0973ea9177fdd659c39d1d02673c8381c0501be8b63c04ddf841",
+  "provenance": {
+    "referenceWorkflow": "https://github.com/zxc28tarik/killtheking/actions/runs/44085979061",
+    "referenceArtifactId": 14329142853
+  },
+  "summary": {
+    "battles": 32,
+    "seeds": [
+      1600,
+      1776,
+      2026,
+      31415
+    ],
+    "roles": [
+      "musket",
+      "pike"
+    ],
+    "sideSwapObserved": true,
+    "realCPU": true,
+    "strictGeometricMirror": false,
+    "manualAvatarCombat": false,
+    "acceptedForRelease": false
+  },
+  "byRole": {
+    "musket": {
+      "games": 16,
+      "playerWins": 1,
+      "byOrder": {
+        "advance": 1,
+        "hold": 0
+      },
+      "attacksByHumanCompany": 633,
+      "hitsByHumanCompany": 347,
+      "killsByHumanCompany": 201,
+      "attemptsPerInitialSoldierPer100GameSeconds": 1.413,
+      "meanAliveTroops": 6.18,
+      "meanSoldiersInWeaponRangePerSample": 1.63,
+      "meanReadySoldiersInWeaponRangePerSample": 0.1,
+      "meanWithClearFiringLanePerSample": 0.08,
+      "meanWithBlockedFiringLanePerSample": 0.02,
+      "hitEventsPerAttackPercent": 54.82,
+      "meanGameSeconds": 280.07
+    },
+    "pike": {
+      "games": 16,
+      "playerWins": 14,
+      "byOrder": {
+        "advance": 6,
+        "hold": 8
+      },
+      "attacksByHumanCompany": 679,
+      "hitsByHumanCompany": 436,
+      "killsByHumanCompany": 31,
+      "attemptsPerInitialSoldierPer100GameSeconds": 0.635,
+      "meanAliveTroops": 5.71,
+      "meanSoldiersInWeaponRangePerSample": 0.18,
+      "meanReadySoldiersInWeaponRangePerSample": 0.01,
+      "meanWithClearFiringLanePerSample": null,
+      "meanWithBlockedFiringLanePerSample": null,
+      "hitEventsPerAttackPercent": 64.21,
+      "meanGameSeconds": 267.42
+    }
+  },
+  "rows": [
+    {
+      "seed": 1600,
+      "role": "musket",
+      "order": "advance",
+      "side": "blue",
+      "winner": "red",
+      "playerWon": false,
+      "seconds": 223.36,
+      "survivors": 0,
+      "playerSquadSurvivors": 0,
+      "samples": 93,
+      "aliveSnapshots": 277,
+      "inRangeSoldierSamples": 187,
+      "readyToFireSoldierSamples": 10,
+      "clearLineSoldierSamples": 8,
+      "blockedLineSoldierSamples": 2,
+      "squadDecisionSnapshots": 0,
+      "volleySamples": {
+        "free": 93
+      },
+      "attacksAttempted": {
+        "musket": 87,
+        "pike": 235,
+        "bow": 841,
+        "sword": 107
+      },
+      "damageEvents": {
+        "musket": 52,
+        "pike": 166,
+        "bow": 313,
+        "sword": 60
+      },
+      "damageTotal": {
+        "musket": 3381.6000000000004,
+        "pike": 2728.5,
+        "bow": 6716.899999999991,
+        "sword": 945.5999999999999
+      },
+      "kills": {
+        "musket": 36,
+        "pike": 20,
+        "bow": 64,
+        "sword": 5
+      },
+      "shotsAttemptedByPlayerCompany": 33,
+      "hitsByPlayerCompany": 19,
+      "killsByPlayerCompany": 11,
+      "attackEventsByTeam": {
+        "blue": 289,
+        "red": 302
+      },
+      "firstContactSeconds": 22.64,
+      "firstPlayerCompanyShotSeconds": 22.96
+    },
+    {
+      "seed": 1600,
+      "role": "musket",
+      "order": "advance",
+      "side": "red",
+      "winner": "blue",
+      "playerWon": false,
+      "seconds": 210.56,
+      "survivors": 0,
+      "playerSquadSurvivors": 0,
+      "samples": 87,
+      "aliveSnapshots": 225,
+      "inRangeSoldierSamples": 135,
+      "readyToFireSoldierSamples": 9,
+      "clearLineSoldierSamples": 6,
+      "blockedLineSoldierSamples": 3,
+      "squadDecisionSnapshots": 0,
+      "volleySamples": {
+        "free": 87
+      },
+      "attacksAttempted": {
+        "musket": 69,
+        "pike": 131,
+        "bow": 802,
+        "sword": 120
+      },
+      "damageEvents": {
+        "musket": 50,
+        "pike": 96,
+        "bow": 332,
+        "sword": 87
+      },
+      "damageTotal": {
+        "musket": 3348.5000000000005,
+        "pike": 1648.3999999999994,
+        "bow": 7008.099999999993,
+        "sword": 1363.9999999999993
+      },
+      "kills": {
+        "musket": 29,
+        "pike": 14,
+        "bow": 73,
+        "sword": 4
+      },
+      "shotsAttemptedByPlayerCompany": 25,
+      "hitsByPlayerCompany": 19,
+      "killsByPlayerCompany": 7,
+      "attackEventsByTeam": {
+        "blue": 302,
+        "red": 263
+      },
+      "firstContactSeconds": 22.64,
+      "firstPlayerCompanyShotSeconds": 22.88
+    },
+    {
+      "seed": 1600,
+      "role": "musket",
+      "order": "hold",
+      "side": "blue",
+      "winner": "red",
+      "playerWon": false,
+      "seconds": 333.68,
+      "survivors": 0,
+      "playerSquadSurvivors": 0,
+      "samples": 139,
+      "aliveSnapshots": 1310,
+      "inRangeSoldierSamples": 447,
+      "readyToFireSoldierSamples": 44,
+      "clearLineSoldierSamples": 17,
+      "blockedLineSoldierSamples": 27,
+      "squadDecisionSnapshots": 0,
+      "volleySamples": {
+        "free": 139
+      },
+      "attacksAttempted": {
+        "musket": 201,
+        "pike": 95,
+        "bow": 545,
+        "sword": 94
+      },
+      "damageEvents": {
+        "musket": 110,
+        "pike": 57,
+        "bow": 252,
+        "sword": 58
+      },
+      "damageTotal": {
+        "musket": 6741.600000000002,
+        "pike": 921.3999999999997,
+        "bow": 5514.599999999993,
+        "sword": 895.5999999999996
+      },
+      "kills": {
+        "musket": 63,
+        "pike": 9,
+        "bow": 54,
+        "sword": 2
+      },
+      "shotsAttemptedByPlayerCompany": 90,
+      "hitsByPlayerCompany": 44,
+      "killsByPlayerCompany": 29,
+      "attackEventsByTeam": {
+        "blue": 231,
+        "red": 246
+      },
+      "firstContactSeconds": 22.64,
+      "firstPlayerCompanyShotSeconds": 34.8
+    },
+    {
+      "seed": 1600,
+      "role": "musket",
+      "order": "hold",
+      "side": "red",
+      "winner": "blue",
+      "playerWon": false,
+      "seconds": 296.88,
+      "survivors": 0,
+      "playerSquadSurvivors": 0,
+      "samples": 123,
+      "aliveSnapshots": 1185,
+      "inRangeSoldierSamples": 186,
+      "readyToFireSoldierSamples": 0,
+      "clearLineSoldierSamples": 0,
+      "blockedLineSoldierSamples": 0,
+      "squadDecisionSnapshots": 0,
+      "volleySamples": {
+        "free": 123
+      },
+      "attacksAttempted": {
+        "musket": 129,
+        "pike": 31,
+        "bow": 883,
+        "sword": 63
+      },
+      "damageEvents": {
+        "musket": 75,
+        "pike": 19,
+        "bow": 390,
+        "sword": 40
+      },
+      "damageTotal": {
+        "musket": 4426.300000000001,
+        "pike": 294.00000000000006,
+        "bow": 8440.199999999988,
+        "sword": 629.8000000000001
+      },
+      "kills": {
+        "musket": 47,
+        "pike": 3,
+        "bow": 70,
+        "sword": 3
+      },
+      "shotsAttemptedByPlayerCompany": 39,
+      "hitsByPlayerCompany": 19,
+      "killsByPlayerCompany": 13,
+      "attackEventsByTeam": {
+        "blue": 252,
+        "red": 272
+      },
+      "firstContactSeconds": 22.4,
+      "firstPlayerCompanyShotSeconds": 34.56
+    },
+    {
+      "seed": 1600,
+      "role": "pike",
+      "order": "advance",
+      "side": "blue",
+      "winner": "red",
+      "playerWon": false,
+      "seconds": 278.48,
+      "survivors": 0,
+      "playerSquadSurvivors": 0,
+      "samples": 116,
+      "aliveSnapshots": 412,
+      "inRangeSoldierSamples": 20,
+      "readyToFireSoldierSamples": 0,
+      "clearLineSoldierSamples": 0,
+      "blockedLineSoldierSamples": 0,
+      "squadDecisionSnapshots": 0,
+      "volleySamples": {},
+      "attacksAttempted": {
+        "musket": 138,
+        "pike": 119,
+        "bow": 858,
+        "sword": 0
+      },
+      "damageEvents": {
+        "musket": 87,
+        "pike": 88,
+        "bow": 350,
+        "sword": 0
+      },
+      "damageTotal": {
+        "musket": 5733.300000000001,
+        "pike": 1522.2999999999997,
+        "bow": 7427.699999999987,
+        "sword": 0
+      },
+      "kills": {
+        "musket": 47,
+        "pike": 16,
+        "bow": 74,
+        "sword": 0
+      },
+      "shotsAttemptedByPlayerCompany": 49,
+      "hitsByPlayerCompany": 26,
+      "killsByPlayerCompany": 0,
+      "attackEventsByTeam": {
+        "blue": 250,
+        "red": 275
+      },
+      "firstContactSeconds": 23.2,
+      "firstPlayerCompanyShotSeconds": 35.92
+    },
+    {
+      "seed": 1600,
+      "role": "pike",
+      "order": "advance",
+      "side": "red",
+      "winner": "red",
+      "playerWon": true,
+      "seconds": 237.2,
+      "survivors": 10,
+      "playerSquadSurvivors": 0,
+      "samples": 98,
+      "aliveSnapshots": 414,
+      "inRangeSoldierSamples": 28,
+      "readyToFireSoldierSamples": 2,
+      "clearLineSoldierSamples": 2,
+      "blockedLineSoldierSamples": 0,
+      "squadDecisionSnapshots": 0,
+      "volleySamples": {},
+      "attacksAttempted": {
+        "musket": 146,
+        "pike": 138,
+        "bow": 754,
+        "sword": 0
+      },
+      "damageEvents": {
+        "musket": 89,
+        "pike": 106,
+        "bow": 317,
+        "sword": 0
+      },
+      "damageTotal": {
+        "musket": 5817.9000000000015,
+        "pike": 1822.4999999999995,
+        "bow": 6669.3999999999905,
+        "sword": 0
+      },
+      "kills": {
+        "musket": 52,
+        "pike": 20,
+        "bow": 58,
+        "sword": 0
+      },
+      "shotsAttemptedByPlayerCompany": 56,
+      "hitsByPlayerCompany": 37,
+      "killsByPlayerCompany": 2,
+      "attackEventsByTeam": {
+        "blue": 254,
+        "red": 258
+      },
+      "firstContactSeconds": 22.8,
+      "firstPlayerCompanyShotSeconds": 35.28
+    },
+    {
+      "seed": 1600,
+      "role": "pike",
+      "order": "hold",
+      "side": "blue",
+      "winner": "blue",
+      "playerWon": true,
+      "seconds": 256.24,
+      "survivors": 11,
+      "playerSquadSurvivors": 0,
+      "samples": 106,
+      "aliveSnapshots": 924,
+      "inRangeSoldierSamples": 27,
+      "readyToFireSoldierSamples": 2,
+      "clearLineSoldierSamples": 2,
+      "blockedLineSoldierSamples": 0,
+      "squadDecisionSnapshots": 0,
+      "volleySamples": {},
+      "attacksAttempted": {
+        "musket": 157,
+        "pike": 58,
+        "bow": 787,
+        "sword": 40
+      },
+      "damageEvents": {
+        "musket": 85,
+        "pike": 42,
+        "bow": 360,
+        "sword": 26
+      },
+      "damageTotal": {
+        "musket": 5594.400000000002,
+        "pike": 710.3,
+        "bow": 7512.199999999988,
+        "sword": 363.20000000000005
+      },
+      "kills": {
+        "musket": 55,
+        "pike": 7,
+        "bow": 64,
+        "sword": 3
+      },
+      "shotsAttemptedByPlayerCompany": 58,
+      "hitsByPlayerCompany": 42,
+      "killsByPlayerCompany": 7,
+      "attackEventsByTeam": {
+        "blue": 258,
+        "red": 255
+      },
+      "firstContactSeconds": 30.08,
+      "firstPlayerCompanyShotSeconds": 64.96
+    },
+    {
+      "seed": 1600,
+      "role": "pike",
+      "order": "hold",
+      "side": "red",
+      "winner": "red",
+      "playerWon": true,
+      "seconds": 313.04,
+      "survivors": 16,
+      "playerSquadSurvivors": 0,
+      "samples": 130,
+      "aliveSnapshots": 875,
+      "inRangeSoldierSamples": 11,
+      "readyToFireSoldierSamples": 0,
+      "clearLineSoldierSamples": 0,
+      "blockedLineSoldierSamples": 0,
+      "squadDecisionSnapshots": 0,
+      "volleySamples": {},
+      "attacksAttempted": {
+        "musket": 141,
+        "pike": 29,
+        "bow": 925,
+        "sword": 79
+      },
+      "damageEvents": {
+        "musket": 77,
+        "pike": 20,
+        "bow": 391,
+        "sword": 46
+      },
+      "damageTotal": {
+        "musket": 4523.400000000001,
+        "pike": 320.2000000000001,
+        "bow": 8246.999999999987,
+        "sword": 759.6999999999999
+      },
+      "kills": {
+        "musket": 52,
+        "pike": 2,
+        "bow": 70,
+        "sword": 0
+      },
+      "shotsAttemptedByPlayerCompany": 26,
+      "hitsByPlayerCompany": 20,
+      "killsByPlayerCompany": 2,
+      "attackEventsByTeam": {
+        "blue": 256,
+        "red": 278
+      },
+      "firstContactSeconds": 30.08,
+      "firstPlayerCompanyShotSeconds": 59.52
+    },
+    {
+      "seed": 1776,
+      "role": "musket",
+      "order": "advance",
+      "side": "blue",
+      "winner": "red",
+      "playerWon": false,
+      "seconds": 240.64,
+      "survivors": 0,
+      "playerSquadSurvivors": 0,
+      "samples": 100,
+      "aliveSnapshots": 277,
+      "inRangeSoldierSamples": 187,
+      "readyToFireSoldierSamples": 29,
+      "clearLineSoldierSamples": 27,
+      "blockedLineSoldierSamples": 2,
+      "squadDecisionSnapshots": 0,
+      "volleySamples": {
+        "free": 100
+      },
+      "attacksAttempted": {
+        "musket": 92,
+        "pike": 151,
+        "bow": 824,
+        "sword": 104
+      },
+      "damageEvents": {
+        "musket": 57,
+        "pike": 110,
+        "bow": 354,
+        "sword": 60
+      },
+      "damageTotal": {
+        "musket": 3727.600000000001,
+        "pike": 1800.799999999999,
+        "bow": 7627.999999999987,
+        "sword": 929.5999999999998
+      },
+      "kills": {
+        "musket": 34,
+        "pike": 18,
+        "bow": 74,
+        "sword": 4
+      },
+      "shotsAttemptedByPlayerCompany": 30,
+      "hitsByPlayerCompany": 19,
+      "killsByPlayerCompany": 10,
+      "attackEventsByTeam": {
+        "blue": 294,
+        "red": 287
+      },
+      "firstContactSeconds": 22.72,
+      "firstPlayerCompanyShotSeconds": 23.04
+    },
+    {
+      "seed": 1776,
+      "role": "musket",
+      "order": "advance",
+      "side": "red",
+      "winner": "blue",
+      "playerWon": false,
+      "seconds": 293.36,
+      "survivors": 0,
+      "playerSquadSurvivors": 0,
+      "samples": 122,
+      "aliveSnapshots": 264,
+      "inRangeSoldierSamples": 174,
+      "readyToFireSoldierSamples": 13,
+      "clearLineSoldierSamples": 11,
+      "blockedLineSoldierSamples": 2,
+      "squadDecisionSnapshots": 0,
+      "volleySamples": {
+        "free": 122
+      },
+      "attacksAttempted": {
+        "musket": 83,
+        "pike": 27,
+        "bow": 792,
+        "sword": 120
+      },
+      "damageEvents": {
+        "musket": 69,
+        "pike": 20,
+        "bow": 328,
+        "sword": 94
+      },
+      "damageTotal": {
+        "musket": 4678.100000000001,
+        "pike": 283.70000000000005,
+        "bow": 7050.899999999991,
+        "sword": 1482.3999999999992
+      },
+      "kills": {
+        "musket": 39,
+        "pike": 4,
+        "bow": 69,
+        "sword": 9
+      },
+      "shotsAttemptedByPlayerCompany": 33,
+      "hitsByPlayerCompany": 28,
+      "killsByPlayerCompany": 14,
+      "attackEventsByTeam": {
+        "blue": 282,
+        "red": 229
+      },
+      "firstContactSeconds": 22.64,
+      "firstPlayerCompanyShotSeconds": 23.04
+    },
+    {
+      "seed": 1776,
+      "role": "musket",
+      "order": "hold",
+      "side": "blue",
+      "winner": "red",
+      "playerWon": false,
+      "seconds": 289.12,
+      "survivors": 0,
+      "playerSquadSurvivors": 0,
+      "samples": 120,
+      "aliveSnapshots": 1135,
+      "inRangeSoldierSamples": 133,
+      "readyToFireSoldierSamples": 0,
+      "clearLineSoldierSamples": 0,
+      "blockedLineSoldierSamples": 0,
+      "squadDecisionSnapshots": 0,
+      "volleySamples": {
+        "free": 120
+      },
+      "attacksAttempted": {
+        "musket": 116,
+        "pike": 65,
+        "bow": 864,
+        "sword": 137
+      },
+      "damageEvents": {
+        "musket": 63,
+        "pike": 45,
+        "bow": 366,
+        "sword": 93
+      },
+      "damageTotal": {
+        "musket": 3659.299999999999,
+        "pike": 697.7999999999997,
+        "bow": 7707.399999999985,
+        "sword": 1473.9999999999986
+      },
+      "kills": {
+        "musket": 39,
+        "pike": 11,
+        "bow": 67,
+        "sword": 6
+      },
+      "shotsAttemptedByPlayerCompany": 35,
+      "hitsByPlayerCompany": 16,
+      "killsByPlayerCompany": 11,
+      "attackEventsByTeam": {
+        "blue": 278,
+        "red": 289
+      },
+      "firstContactSeconds": 22.4,
+      "firstPlayerCompanyShotSeconds": 129.36
+    },
+    {
+      "seed": 1776,
+      "role": "musket",
+      "order": "hold",
+      "side": "red",
+      "winner": "blue",
+      "playerWon": false,
+      "seconds": 331.04,
+      "survivors": 0,
+      "playerSquadSurvivors": 0,
+      "samples": 137,
+      "aliveSnapshots": 1320,
+      "inRangeSoldierSamples": 168,
+      "readyToFireSoldierSamples": 3,
+      "clearLineSoldierSamples": 3,
+      "blockedLineSoldierSamples": 0,
+      "squadDecisionSnapshots": 0,
+      "volleySamples": {
+        "free": 137
+      },
+      "attacksAttempted": {
+        "musket": 131,
+        "pike": 44,
+        "bow": 909,
+        "sword": 53
+      },
+      "damageEvents": {
+        "musket": 78,
+        "pike": 29,
+        "bow": 381,
+        "sword": 33
+      },
+      "damageTotal": {
+        "musket": 4692.300000000001,
+        "pike": 450.00000000000006,
+        "bow": 8193.799999999988,
+        "sword": 484.9000000000002
+      },
+      "kills": {
+        "musket": 47,
+        "pike": 8,
+        "bow": 68,
+        "sword": 4
+      },
+      "shotsAttemptedByPlayerCompany": 42,
+      "hitsByPlayerCompany": 21,
+      "killsByPlayerCompany": 13,
+      "attackEventsByTeam": {
+        "blue": 253,
+        "red": 268
+      },
+      "firstContactSeconds": 22.48,
+      "firstPlayerCompanyShotSeconds": 34.72
+    },
+    {
+      "seed": 1776,
+      "role": "pike",
+      "order": "advance",
+      "side": "blue",
+      "winner": "blue",
+      "playerWon": true,
+      "seconds": 243.44,
+      "survivors": 16,
+      "playerSquadSurvivors": 0,
+      "samples": 101,
+      "aliveSnapshots": 419,
+      "inRangeSoldierSamples": 23,
+      "readyToFireSoldierSamples": 1,
+      "clearLineSoldierSamples": 1,
+      "blockedLineSoldierSamples": 0,
+      "squadDecisionSnapshots": 0,
+      "volleySamples": {},
+      "attacksAttempted": {
+        "musket": 143,
+        "pike": 140,
+        "bow": 837,
+        "sword": 0
+      },
+      "damageEvents": {
+        "musket": 77,
+        "pike": 105,
+        "bow": 354,
+        "sword": 0
+      },
+      "damageTotal": {
+        "musket": 4676.800000000001,
+        "pike": 1813.1,
+        "bow": 7409.89999999999,
+        "sword": 0
+      },
+      "kills": {
+        "musket": 44,
+        "pike": 17,
+        "bow": 63,
+        "sword": 0
+      },
+      "shotsAttemptedByPlayerCompany": 56,
+      "hitsByPlayerCompany": 36,
+      "killsByPlayerCompany": 1,
+      "attackEventsByTeam": {
+        "blue": 287,
+        "red": 249
+      },
+      "firstContactSeconds": 23.2,
+      "firstPlayerCompanyShotSeconds": 35.84
+    },
+    {
+      "seed": 1776,
+      "role": "pike",
+      "order": "advance",
+      "side": "red",
+      "winner": "red",
+      "playerWon": true,
+      "seconds": 308.88,
+      "survivors": 6,
+      "playerSquadSurvivors": 0,
+      "samples": 128,
+      "aliveSnapshots": 421,
+      "inRangeSoldierSamples": 25,
+      "readyToFireSoldierSamples": 0,
+      "clearLineSoldierSamples": 0,
+      "blockedLineSoldierSamples": 0,
+      "squadDecisionSnapshots": 0,
+      "volleySamples": {},
+      "attacksAttempted": {
+        "musket": 145,
+        "pike": 136,
+        "bow": 803,
+        "sword": 2
+      },
+      "damageEvents": {
+        "musket": 89,
+        "pike": 102,
+        "bow": 343,
+        "sword": 2
+      },
+      "damageTotal": {
+        "musket": 5589.600000000001,
+        "pike": 1791.7999999999997,
+        "bow": 7081.399999999989,
+        "sword": 30.3
+      },
+      "kills": {
+        "musket": 52,
+        "pike": 13,
+        "bow": 69,
+        "sword": 0
+      },
+      "shotsAttemptedByPlayerCompany": 52,
+      "hitsByPlayerCompany": 29,
+      "killsByPlayerCompany": 0,
+      "attackEventsByTeam": {
+        "blue": 276,
+        "red": 260
+      },
+      "firstContactSeconds": 23.12,
+      "firstPlayerCompanyShotSeconds": 35.2
+    },
+    {
+      "seed": 1776,
+      "role": "pike",
+      "order": "hold",
+      "side": "blue",
+      "winner": "blue",
+      "playerWon": true,
+      "seconds": 290.88,
+      "survivors": 5,
+      "playerSquadSurvivors": 0,
+      "samples": 121,
+      "aliveSnapshots": 803,
+      "inRangeSoldierSamples": 5,
+      "readyToFireSoldierSamples": 0,
+      "clearLineSoldierSamples": 0,
+      "blockedLineSoldierSamples": 0,
+      "squadDecisionSnapshots": 0,
+      "volleySamples": {},
+      "attacksAttempted": {
+        "musket": 145,
+        "pike": 8,
+        "bow": 912,
+        "sword": 1
+      },
+      "damageEvents": {
+        "musket": 86,
+        "pike": 6,
+        "bow": 426,
+        "sword": 0
+      },
+      "damageTotal": {
+        "musket": 5477.300000000001,
+        "pike": 103.69999999999999,
+        "bow": 8876.49999999999,
+        "sword": 0
+      },
+      "kills": {
+        "musket": 60,
+        "pike": 0,
+        "bow": 75,
+        "sword": 0
+      },
+      "shotsAttemptedByPlayerCompany": 8,
+      "hitsByPlayerCompany": 6,
+      "killsByPlayerCompany": 0,
+      "attackEventsByTeam": {
+        "blue": 247,
+        "red": 271
+      },
+      "firstContactSeconds": 30.4,
+      "firstPlayerCompanyShotSeconds": 65.6
+    },
+    {
+      "seed": 1776,
+      "role": "pike",
+      "order": "hold",
+      "side": "red",
+      "winner": "red",
+      "playerWon": true,
+      "seconds": 255.2,
+      "survivors": 18,
+      "playerSquadSurvivors": 0,
+      "samples": 106,
+      "aliveSnapshots": 860,
+      "inRangeSoldierSamples": 17,
+      "readyToFireSoldierSamples": 3,
+      "clearLineSoldierSamples": 3,
+      "blockedLineSoldierSamples": 0,
+      "squadDecisionSnapshots": 0,
+      "volleySamples": {},
+      "attacksAttempted": {
+        "musket": 149,
+        "pike": 32,
+        "bow": 881,
+        "sword": 88
+      },
+      "damageEvents": {
+        "musket": 73,
+        "pike": 24,
+        "bow": 387,
+        "sword": 56
+      },
+      "damageTotal": {
+        "musket": 4241.5,
+        "pike": 377.70000000000005,
+        "bow": 8029.599999999981,
+        "sword": 904.7999999999997
+      },
+      "kills": {
+        "musket": 49,
+        "pike": 3,
+        "bow": 68,
+        "sword": 2
+      },
+      "shotsAttemptedByPlayerCompany": 32,
+      "hitsByPlayerCompany": 24,
+      "killsByPlayerCompany": 3,
+      "attackEventsByTeam": {
+        "blue": 246,
+        "red": 294
+      },
+      "firstContactSeconds": 30.16,
+      "firstPlayerCompanyShotSeconds": 60.64
+    },
+    {
+      "seed": 2026,
+      "role": "musket",
+      "order": "advance",
+      "side": "blue",
+      "winner": "red",
+      "playerWon": false,
+      "seconds": 241.28,
+      "survivors": 0,
+      "playerSquadSurvivors": 0,
+      "samples": 100,
+      "aliveSnapshots": 322,
+      "inRangeSoldierSamples": 232,
+      "readyToFireSoldierSamples": 15,
+      "clearLineSoldierSamples": 12,
+      "blockedLineSoldierSamples": 3,
+      "squadDecisionSnapshots": 0,
+      "volleySamples": {
+        "free": 100
+      },
+      "attacksAttempted": {
+        "musket": 85,
+        "pike": 81,
+        "bow": 897,
+        "sword": 103
+      },
+      "damageEvents": {
+        "musket": 55,
+        "pike": 53,
+        "bow": 369,
+        "sword": 76
+      },
+      "damageTotal": {
+        "musket": 3704.4,
+        "pike": 853.0999999999995,
+        "bow": 7943.299999999988,
+        "sword": 1194.7999999999997
+      },
+      "kills": {
+        "musket": 30,
+        "pike": 5,
+        "bow": 80,
+        "sword": 5
+      },
+      "shotsAttemptedByPlayerCompany": 38,
+      "hitsByPlayerCompany": 25,
+      "killsByPlayerCompany": 13,
+      "attackEventsByTeam": {
+        "blue": 265,
+        "red": 288
+      },
+      "firstContactSeconds": 22.88,
+      "firstPlayerCompanyShotSeconds": 22.96
+    },
+    {
+      "seed": 2026,
+      "role": "musket",
+      "order": "advance",
+      "side": "red",
+      "winner": "blue",
+      "playerWon": false,
+      "seconds": 279.76,
+      "survivors": 0,
+      "playerSquadSurvivors": 0,
+      "samples": 116,
+      "aliveSnapshots": 229,
+      "inRangeSoldierSamples": 139,
+      "readyToFireSoldierSamples": 3,
+      "clearLineSoldierSamples": 3,
+      "blockedLineSoldierSamples": 0,
+      "squadDecisionSnapshots": 0,
+      "volleySamples": {
+        "free": 116
+      },
+      "attacksAttempted": {
+        "musket": 85,
+        "pike": 40,
+        "bow": 837,
+        "sword": 146
+      },
+      "damageEvents": {
+        "musket": 52,
+        "pike": 35,
+        "bow": 359,
+        "sword": 112
+      },
+      "damageTotal": {
+        "musket": 3593.000000000001,
+        "pike": 546.7,
+        "bow": 7745.799999999986,
+        "sword": 1787.1999999999996
+      },
+      "kills": {
+        "musket": 37,
+        "pike": 8,
+        "bow": 69,
+        "sword": 10
+      },
+      "shotsAttemptedByPlayerCompany": 25,
+      "hitsByPlayerCompany": 17,
+      "killsByPlayerCompany": 10,
+      "attackEventsByTeam": {
+        "blue": 285,
+        "red": 273
+      },
+      "firstContactSeconds": 22.8,
+      "firstPlayerCompanyShotSeconds": 23.04
+    },
+    {
+      "seed": 2026,
+      "role": "musket",
+      "order": "hold",
+      "side": "blue",
+      "winner": "red",
+      "playerWon": false,
+      "seconds": 323.12,
+      "survivors": 0,
+      "playerSquadSurvivors": 0,
+      "samples": 134,
+      "aliveSnapshots": 1299,
+      "inRangeSoldierSamples": 166,
+      "readyToFireSoldierSamples": 4,
+      "clearLineSoldierSamples": 4,
+      "blockedLineSoldierSamples": 0,
+      "squadDecisionSnapshots": 0,
+      "volleySamples": {
+        "free": 134
+      },
+      "attacksAttempted": {
+        "musket": 130,
+        "pike": 35,
+        "bow": 884,
+        "sword": 114
+      },
+      "damageEvents": {
+        "musket": 62,
+        "pike": 23,
+        "bow": 371,
+        "sword": 73
+      },
+      "damageTotal": {
+        "musket": 3902.0000000000005,
+        "pike": 333.8,
+        "bow": 7862.799999999985,
+        "sword": 1163.5999999999997
+      },
+      "kills": {
+        "musket": 36,
+        "pike": 6,
+        "bow": 67,
+        "sword": 7
+      },
+      "shotsAttemptedByPlayerCompany": 49,
+      "hitsByPlayerCompany": 19,
+      "killsByPlayerCompany": 9,
+      "attackEventsByTeam": {
+        "blue": 254,
+        "red": 275
+      },
+      "firstContactSeconds": 22.64,
+      "firstPlayerCompanyShotSeconds": 34.72
+    },
+    {
+      "seed": 2026,
+      "role": "musket",
+      "order": "hold",
+      "side": "red",
+      "winner": "blue",
+      "playerWon": false,
+      "seconds": 274.64,
+      "survivors": 0,
+      "playerSquadSurvivors": 0,
+      "samples": 114,
+      "aliveSnapshots": 1111,
+      "inRangeSoldierSamples": 139,
+      "readyToFireSoldierSamples": 1,
+      "clearLineSoldierSamples": 1,
+      "blockedLineSoldierSamples": 0,
+      "squadDecisionSnapshots": 0,
+      "volleySamples": {
+        "free": 114
+      },
+      "attacksAttempted": {
+        "musket": 112,
+        "pike": 81,
+        "bow": 935,
+        "sword": 93
+      },
+      "damageEvents": {
+        "musket": 61,
+        "pike": 62,
+        "bow": 376,
+        "sword": 56
+      },
+      "damageTotal": {
+        "musket": 3690.100000000001,
+        "pike": 970.3999999999994,
+        "bow": 7938.5999999999885,
+        "sword": 832.0999999999993
+      },
+      "kills": {
+        "musket": 36,
+        "pike": 13,
+        "bow": 67,
+        "sword": 3
+      },
+      "shotsAttemptedByPlayerCompany": 27,
+      "hitsByPlayerCompany": 10,
+      "killsByPlayerCompany": 4,
+      "attackEventsByTeam": {
+        "blue": 286,
+        "red": 269
+      },
+      "firstContactSeconds": 22.56,
+      "firstPlayerCompanyShotSeconds": 34.96
+    },
+    {
+      "seed": 2026,
+      "role": "pike",
+      "order": "advance",
+      "side": "blue",
+      "winner": "red",
+      "playerWon": false,
+      "seconds": 238.72,
+      "survivors": 0,
+      "playerSquadSurvivors": 0,
+      "samples": 99,
+      "aliveSnapshots": 398,
+      "inRangeSoldierSamples": 19,
+      "readyToFireSoldierSamples": 0,
+      "clearLineSoldierSamples": 0,
+      "blockedLineSoldierSamples": 0,
+      "squadDecisionSnapshots": 0,
+      "volleySamples": {},
+      "attacksAttempted": {
+        "musket": 138,
+        "pike": 144,
+        "bow": 816,
+        "sword": 0
+      },
+      "damageEvents": {
+        "musket": 67,
+        "pike": 108,
+        "bow": 349,
+        "sword": 0
+      },
+      "damageTotal": {
+        "musket": 4763.300000000001,
+        "pike": 1841.4999999999998,
+        "bow": 7378.699999999992,
+        "sword": 0
+      },
+      "kills": {
+        "musket": 43,
+        "pike": 17,
+        "bow": 65,
+        "sword": 0
+      },
+      "shotsAttemptedByPlayerCompany": 53,
+      "hitsByPlayerCompany": 34,
+      "killsByPlayerCompany": 1,
+      "attackEventsByTeam": {
+        "blue": 223,
+        "red": 301
+      },
+      "firstContactSeconds": 23.04,
+      "firstPlayerCompanyShotSeconds": 35.04
+    },
+    {
+      "seed": 2026,
+      "role": "pike",
+      "order": "advance",
+      "side": "red",
+      "winner": "red",
+      "playerWon": true,
+      "seconds": 288.48,
+      "survivors": 9,
+      "playerSquadSurvivors": 0,
+      "samples": 120,
+      "aliveSnapshots": 418,
+      "inRangeSoldierSamples": 23,
+      "readyToFireSoldierSamples": 3,
+      "clearLineSoldierSamples": 3,
+      "blockedLineSoldierSamples": 0,
+      "squadDecisionSnapshots": 0,
+      "volleySamples": {},
+      "attacksAttempted": {
+        "musket": 172,
+        "pike": 112,
+        "bow": 760,
+        "sword": 1
+      },
+      "damageEvents": {
+        "musket": 105,
+        "pike": 90,
+        "bow": 280,
+        "sword": 1
+      },
+      "damageTotal": {
+        "musket": 6866.4000000000015,
+        "pike": 1530.0999999999997,
+        "bow": 5841.699999999994,
+        "sword": 7.5
+      },
+      "kills": {
+        "musket": 62,
+        "pike": 15,
+        "bow": 53,
+        "sword": 1
+      },
+      "shotsAttemptedByPlayerCompany": 48,
+      "hitsByPlayerCompany": 29,
+      "killsByPlayerCompany": 0,
+      "attackEventsByTeam": {
+        "blue": 236,
+        "red": 240
+      },
+      "firstContactSeconds": 23.2,
+      "firstPlayerCompanyShotSeconds": 37.76
+    },
+    {
+      "seed": 2026,
+      "role": "pike",
+      "order": "hold",
+      "side": "blue",
+      "winner": "blue",
+      "playerWon": true,
+      "seconds": 239.28,
+      "survivors": 15,
+      "playerSquadSurvivors": 0,
+      "samples": 99,
+      "aliveSnapshots": 830,
+      "inRangeSoldierSamples": 10,
+      "readyToFireSoldierSamples": 2,
+      "clearLineSoldierSamples": 2,
+      "blockedLineSoldierSamples": 0,
+      "squadDecisionSnapshots": 0,
+      "volleySamples": {},
+      "attacksAttempted": {
+        "musket": 137,
+        "pike": 27,
+        "bow": 828,
+        "sword": 155
+      },
+      "damageEvents": {
+        "musket": 70,
+        "pike": 19,
+        "bow": 390,
+        "sword": 100
+      },
+      "damageTotal": {
+        "musket": 3981.6,
+        "pike": 300.5,
+        "bow": 8006.399999999987,
+        "sword": 1660.5999999999992
+      },
+      "kills": {
+        "musket": 47,
+        "pike": 3,
+        "bow": 70,
+        "sword": 5
+      },
+      "shotsAttemptedByPlayerCompany": 27,
+      "hitsByPlayerCompany": 19,
+      "killsByPlayerCompany": 3,
+      "attackEventsByTeam": {
+        "blue": 304,
+        "red": 275
+      },
+      "firstContactSeconds": 30.32,
+      "firstPlayerCompanyShotSeconds": 65.6
+    },
+    {
+      "seed": 2026,
+      "role": "pike",
+      "order": "hold",
+      "side": "red",
+      "winner": "red",
+      "playerWon": true,
+      "seconds": 269.68,
+      "survivors": 9,
+      "playerSquadSurvivors": 0,
+      "samples": 112,
+      "aliveSnapshots": 866,
+      "inRangeSoldierSamples": 19,
+      "readyToFireSoldierSamples": 0,
+      "clearLineSoldierSamples": 0,
+      "blockedLineSoldierSamples": 0,
+      "squadDecisionSnapshots": 0,
+      "volleySamples": {},
+      "attacksAttempted": {
+        "musket": 131,
+        "pike": 44,
+        "bow": 889,
+        "sword": 103
+      },
+      "damageEvents": {
+        "musket": 73,
+        "pike": 31,
+        "bow": 411,
+        "sword": 69
+      },
+      "damageTotal": {
+        "musket": 4366.700000000001,
+        "pike": 498.3000000000001,
+        "bow": 8384.499999999984,
+        "sword": 1110.7999999999997
+      },
+      "kills": {
+        "musket": 51,
+        "pike": 7,
+        "bow": 71,
+        "sword": 2
+      },
+      "shotsAttemptedByPlayerCompany": 44,
+      "hitsByPlayerCompany": 31,
+      "killsByPlayerCompany": 7,
+      "attackEventsByTeam": {
+        "blue": 287,
+        "red": 297
+      },
+      "firstContactSeconds": 30.32,
+      "firstPlayerCompanyShotSeconds": 62.08
+    },
+    {
+      "seed": 31415,
+      "role": "musket",
+      "order": "advance",
+      "side": "blue",
+      "winner": "blue",
+      "playerWon": true,
+      "seconds": 323.76,
+      "survivors": 4,
+      "playerSquadSurvivors": 0,
+      "samples": 134,
+      "aliveSnapshots": 266,
+      "inRangeSoldierSamples": 176,
+      "readyToFireSoldierSamples": 32,
+      "clearLineSoldierSamples": 32,
+      "blockedLineSoldierSamples": 0,
+      "squadDecisionSnapshots": 0,
+      "volleySamples": {
+        "free": 134
+      },
+      "attacksAttempted": {
+        "musket": 114,
+        "pike": 174,
+        "bow": 892,
+        "sword": 92
+      },
+      "damageEvents": {
+        "musket": 68,
+        "pike": 119,
+        "bow": 361,
+        "sword": 53
+      },
+      "damageTotal": {
+        "musket": 4375.500000000001,
+        "pike": 1854.1999999999985,
+        "bow": 7572.599999999991,
+        "sword": 839.4999999999998
+      },
+      "kills": {
+        "musket": 40,
+        "pike": 20,
+        "bow": 70,
+        "sword": 6
+      },
+      "shotsAttemptedByPlayerCompany": 29,
+      "hitsByPlayerCompany": 23,
+      "killsByPlayerCompany": 11,
+      "attackEventsByTeam": {
+        "blue": 319,
+        "red": 282
+      },
+      "firstContactSeconds": 22.64,
+      "firstPlayerCompanyShotSeconds": 23.12
+    },
+    {
+      "seed": 31415,
+      "role": "musket",
+      "order": "advance",
+      "side": "red",
+      "winner": "blue",
+      "playerWon": false,
+      "seconds": 300.8,
+      "survivors": 0,
+      "playerSquadSurvivors": 0,
+      "samples": 125,
+      "aliveSnapshots": 212,
+      "inRangeSoldierSamples": 122,
+      "readyToFireSoldierSamples": 5,
+      "clearLineSoldierSamples": 3,
+      "blockedLineSoldierSamples": 2,
+      "squadDecisionSnapshots": 0,
+      "volleySamples": {
+        "free": 125
+      },
+      "attacksAttempted": {
+        "musket": 88,
+        "pike": 190,
+        "bow": 917,
+        "sword": 74
+      },
+      "damageEvents": {
+        "musket": 50,
+        "pike": 132,
+        "bow": 320,
+        "sword": 52
+      },
+      "damageTotal": {
+        "musket": 3234.100000000001,
+        "pike": 2284.699999999999,
+        "bow": 7068.399999999989,
+        "sword": 869
+      },
+      "kills": {
+        "musket": 36,
+        "pike": 9,
+        "bow": 74,
+        "sword": 4
+      },
+      "shotsAttemptedByPlayerCompany": 23,
+      "hitsByPlayerCompany": 16,
+      "killsByPlayerCompany": 11,
+      "attackEventsByTeam": {
+        "blue": 292,
+        "red": 262
+      },
+      "firstContactSeconds": 22.8,
+      "firstPlayerCompanyShotSeconds": 22.96
+    },
+    {
+      "seed": 31415,
+      "role": "musket",
+      "order": "hold",
+      "side": "blue",
+      "winner": "red",
+      "playerWon": false,
+      "seconds": 248.48,
+      "survivors": 0,
+      "playerSquadSurvivors": 0,
+      "samples": 103,
+      "aliveSnapshots": 981,
+      "inRangeSoldierSamples": 269,
+      "readyToFireSoldierSamples": 13,
+      "clearLineSoldierSamples": 12,
+      "blockedLineSoldierSamples": 1,
+      "squadDecisionSnapshots": 0,
+      "volleySamples": {
+        "free": 103
+      },
+      "attacksAttempted": {
+        "musket": 168,
+        "pike": 61,
+        "bow": 859,
+        "sword": 87
+      },
+      "damageEvents": {
+        "musket": 84,
+        "pike": 37,
+        "bow": 316,
+        "sword": 51
+      },
+      "damageTotal": {
+        "musket": 5421.9000000000015,
+        "pike": 598.9999999999999,
+        "bow": 6636.299999999987,
+        "sword": 833.3000000000001
+      },
+      "kills": {
+        "musket": 49,
+        "pike": 4,
+        "bow": 62,
+        "sword": 4
+      },
+      "shotsAttemptedByPlayerCompany": 68,
+      "hitsByPlayerCompany": 32,
+      "killsByPlayerCompany": 22,
+      "attackEventsByTeam": {
+        "blue": 237,
+        "red": 251
+      },
+      "firstContactSeconds": 22.48,
+      "firstPlayerCompanyShotSeconds": 35.12
+    },
+    {
+      "seed": 31415,
+      "role": "musket",
+      "order": "hold",
+      "side": "red",
+      "winner": "blue",
+      "playerWon": false,
+      "seconds": 270.56,
+      "survivors": 0,
+      "playerSquadSurvivors": 0,
+      "samples": 112,
+      "aliveSnapshots": 1072,
+      "inRangeSoldierSamples": 169,
+      "readyToFireSoldierSamples": 6,
+      "clearLineSoldierSamples": 2,
+      "blockedLineSoldierSamples": 4,
+      "squadDecisionSnapshots": 0,
+      "volleySamples": {
+        "free": 112
+      },
+      "attacksAttempted": {
+        "musket": 136,
+        "pike": 26,
+        "bow": 814,
+        "sword": 155
+      },
+      "damageEvents": {
+        "musket": 61,
+        "pike": 23,
+        "bow": 360,
+        "sword": 97
+      },
+      "damageTotal": {
+        "musket": 3812.899999999999,
+        "pike": 369.6,
+        "bow": 7761.299999999989,
+        "sword": 1508.7999999999986
+      },
+      "kills": {
+        "musket": 40,
+        "pike": 2,
+        "bow": 68,
+        "sword": 9
+      },
+      "shotsAttemptedByPlayerCompany": 47,
+      "hitsByPlayerCompany": 20,
+      "killsByPlayerCompany": 13,
+      "attackEventsByTeam": {
+        "blue": 291,
+        "red": 250
+      },
+      "firstContactSeconds": 22.48,
+      "firstPlayerCompanyShotSeconds": 134.08
+    },
+    {
+      "seed": 31415,
+      "role": "pike",
+      "order": "advance",
+      "side": "blue",
+      "winner": "blue",
+      "playerWon": true,
+      "seconds": 226.56,
+      "survivors": 15,
+      "playerSquadSurvivors": 0,
+      "samples": 94,
+      "aliveSnapshots": 441,
+      "inRangeSoldierSamples": 35,
+      "readyToFireSoldierSamples": 4,
+      "clearLineSoldierSamples": 4,
+      "blockedLineSoldierSamples": 0,
+      "squadDecisionSnapshots": 0,
+      "volleySamples": {},
+      "attacksAttempted": {
+        "musket": 147,
+        "pike": 141,
+        "bow": 787,
+        "sword": 28
+      },
+      "damageEvents": {
+        "musket": 87,
+        "pike": 102,
+        "bow": 304,
+        "sword": 24
+      },
+      "damageTotal": {
+        "musket": 5644.500000000003,
+        "pike": 1754,
+        "bow": 6280.699999999991,
+        "sword": 328.4000000000001
+      },
+      "kills": {
+        "musket": 50,
+        "pike": 16,
+        "bow": 58,
+        "sword": 1
+      },
+      "shotsAttemptedByPlayerCompany": 61,
+      "hitsByPlayerCompany": 34,
+      "killsByPlayerCompany": 0,
+      "attackEventsByTeam": {
+        "blue": 249,
+        "red": 268
+      },
+      "firstContactSeconds": 23.52,
+      "firstPlayerCompanyShotSeconds": 39.44
+    },
+    {
+      "seed": 31415,
+      "role": "pike",
+      "order": "advance",
+      "side": "red",
+      "winner": "red",
+      "playerWon": true,
+      "seconds": 290.64,
+      "survivors": 5,
+      "playerSquadSurvivors": 0,
+      "samples": 121,
+      "aliveSnapshots": 421,
+      "inRangeSoldierSamples": 33,
+      "readyToFireSoldierSamples": 4,
+      "clearLineSoldierSamples": 4,
+      "blockedLineSoldierSamples": 0,
+      "squadDecisionSnapshots": 0,
+      "volleySamples": {},
+      "attacksAttempted": {
+        "musket": 144,
+        "pike": 171,
+        "bow": 790,
+        "sword": 2
+      },
+      "damageEvents": {
+        "musket": 85,
+        "pike": 127,
+        "bow": 350,
+        "sword": 1
+      },
+      "damageTotal": {
+        "musket": 4941.200000000002,
+        "pike": 2193.3,
+        "bow": 7512.39999999999,
+        "sword": 17
+      },
+      "kills": {
+        "musket": 51,
+        "pike": 17,
+        "bow": 67,
+        "sword": 0
+      },
+      "shotsAttemptedByPlayerCompany": 74,
+      "hitsByPlayerCompany": 44,
+      "killsByPlayerCompany": 0,
+      "attackEventsByTeam": {
+        "blue": 280,
+        "red": 283
+      },
+      "firstContactSeconds": 23.44,
+      "firstPlayerCompanyShotSeconds": 34.8
+    },
+    {
+      "seed": 31415,
+      "role": "pike",
+      "order": "hold",
+      "side": "blue",
+      "winner": "blue",
+      "playerWon": true,
+      "seconds": 284.32,
+      "survivors": 13,
+      "playerSquadSurvivors": 0,
+      "samples": 118,
+      "aliveSnapshots": 815,
+      "inRangeSoldierSamples": 19,
+      "readyToFireSoldierSamples": 2,
+      "clearLineSoldierSamples": 2,
+      "blockedLineSoldierSamples": 0,
+      "squadDecisionSnapshots": 0,
+      "volleySamples": {},
+      "attacksAttempted": {
+        "musket": 150,
+        "pike": 27,
+        "bow": 702,
+        "sword": 118
+      },
+      "damageEvents": {
+        "musket": 94,
+        "pike": 18,
+        "bow": 330,
+        "sword": 70
+      },
+      "damageTotal": {
+        "musket": 5650.800000000002,
+        "pike": 291.6000000000001,
+        "bow": 6954.699999999987,
+        "sword": 1117.7
+      },
+      "kills": {
+        "musket": 64,
+        "pike": 1,
+        "bow": 59,
+        "sword": 3
+      },
+      "shotsAttemptedByPlayerCompany": 27,
+      "hitsByPlayerCompany": 18,
+      "killsByPlayerCompany": 1,
+      "attackEventsByTeam": {
+        "blue": 271,
+        "red": 241
+      },
+      "firstContactSeconds": 30.08,
+      "firstPlayerCompanyShotSeconds": 63.6
+    },
+    {
+      "seed": 31415,
+      "role": "pike",
+      "order": "hold",
+      "side": "red",
+      "winner": "red",
+      "playerWon": true,
+      "seconds": 257.6,
+      "survivors": 7,
+      "playerSquadSurvivors": 0,
+      "samples": 107,
+      "aliveSnapshots": 831,
+      "inRangeSoldierSamples": 0,
+      "readyToFireSoldierSamples": 0,
+      "clearLineSoldierSamples": 0,
+      "blockedLineSoldierSamples": 0,
+      "squadDecisionSnapshots": 0,
+      "volleySamples": {},
+      "attacksAttempted": {
+        "musket": 145,
+        "pike": 8,
+        "bow": 820,
+        "sword": 127
+      },
+      "damageEvents": {
+        "musket": 81,
+        "pike": 7,
+        "bow": 403,
+        "sword": 84
+      },
+      "damageTotal": {
+        "musket": 4870.9000000000015,
+        "pike": 80.2,
+        "bow": 8244.299999999994,
+        "sword": 1388.2999999999993
+      },
+      "kills": {
+        "musket": 42,
+        "pike": 4,
+        "bow": 81,
+        "sword": 6
+      },
+      "shotsAttemptedByPlayerCompany": 8,
+      "hitsByPlayerCompany": 7,
+      "killsByPlayerCompany": 4,
+      "attackEventsByTeam": {
+        "blue": 279,
+        "red": 296
+      },
+      "firstContactSeconds": 30.08,
+      "firstPlayerCompanyShotSeconds": 66.8
+    }
+  ]
+}
