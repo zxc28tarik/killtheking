@@ -1,0 +1,49 @@
+name: G5.4 native multiseed audit — release still blocked
+on:
+  push:
+    branches:
+      - codex/recover-g5-4-army-source
+  workflow_dispatch:
+jobs:
+  native-multiseed-audit:
+    name: Audit 24 real matches (NOT release acceptance)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check actual battle / mirror-limit regression tests
+        run: node --test recovered/army/candidates/test_g5_4_multiseed_gate.mjs
+      - name: Run 24 native CPU battles (3 seeds x 4 classes x 2 orders)
+        run: |
+          mkdir -p recovered/army/candidates/dist/multiseed
+          for seed in 1776 2026 31415; do
+            node recovered/army/candidates/g5_4_multiseed_gate.mjs run \
+              "recovered/army/candidates/dist/multiseed/seed_${seed}.json" "$seed"
+          done
+      - name: Validate no fake winner, no mirrored matches and failed release gate
+        run: |
+          node recovered/army/candidates/g5_4_multiseed_gate.mjs merge \
+            recovered/army/candidates/dist/multiseed/G54_3_SEEDS_24_REAL_BATTLES.json \
+            recovered/army/candidates/dist/multiseed/seed_1776.json \
+            recovered/army/candidates/dist/multiseed/seed_2026.json \
+            recovered/army/candidates/dist/multiseed/seed_31415.json
+          node --input-type=module -e '
+            import fs from "node:fs";
+            const p="recovered/army/candidates/dist/multiseed/G54_3_SEEDS_24_REAL_BATTLES.json";
+            const d=JSON.parse(fs.readFileSync(p));
+            if(d.cases!==24||d.naturalEliminations!==17||d.unresolved!==7||
+               d.noRecentCasualties!==2||d.releaseGatePassed!==false||d.trueMirrorsExecuted!==0)
+              process.exit(1);
+            console.log("PASS: accurate audit. PRODUCT RELEASE GATE REMAINS FAILED; G8.5 mirrors 0/144.");
+          '
+      - name: Archive honest test evidence, not a playable release
+        uses: actions/upload-artifact@v4
+        with:
+          name: KillTheKing-G5-4-Multiseed-24-Battles-RELEASE-BLOCKED
+          path: |
+            recovered/army/candidates/G5_4_MULTISEED_CONTACT_REPORT.md
+            recovered/army/candidates/dist/multiseed/*.json
+          if-no-files-found: error
