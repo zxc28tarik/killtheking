@@ -34,7 +34,7 @@ jobs:
             import fs from "node:fs";
             const p="recovered/army/candidates/dist/multiseed/G54_3_SEEDS_24_REAL_BATTLES.json";
             const d=JSON.parse(fs.readFileSync(p));
-            if(d.cases!==24||d.naturalEliminations!==17||d.unresolved!==7||
+            if(!Array.isArray(d.cases)||d.cases.length!==24||d.naturalEliminations!==17||d.unresolved!==7||
                d.noRecentCasualties!==2||d.releaseGatePassed!==false||d.trueMirrorsExecuted!==0)
               process.exit(1);
             console.log("PASS: accurate audit. PRODUCT RELEASE GATE REMAINS FAILED; G8.5 mirrors 0/144.");
