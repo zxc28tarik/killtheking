@@ -1,0 +1,61 @@
+name: G5.4 musket/pike commander audit — 32 real CPU games
+on:
+  push:
+    branches:
+      - codex/recover-g5-4-army-source
+    paths:
+      - 'recovered/army/mirror/musket_balance/**'
+      - '.github/workflows/g5_4_musket_pike_diagnostics.yml'
+  workflow_dispatch:
+jobs:
+  actual-games:
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    strategy:
+      fail-fast: false
+      matrix:
+        start: [0, 4, 8, 12, 16, 20, 24, 28]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate observation tool syntax
+        run: node --check recovered/army/mirror/musket_balance/diagnose_musket_vs_pike.mjs
+      - name: Run four REAL G5.4 battle diagnostics, no weapon tuning
+        run: node recovered/army/mirror/musket_balance/diagnose_musket_vs_pike.mjs ${{ matrix.start }} 4
+      - uses: actions/upload-artifact@v4
+        with:
+          name: g54-musket-pike-part-${{ matrix.start }}
+          path: recovered/army/mirror/musket_balance/reports/musket_diagnostic_${{ matrix.start }}_4.json
+          if-no-files-found: error
+  audit:
+    needs: actual-games
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: g54-musket-pike-part-*
+          path: recovered/army/mirror/musket_balance/reports
+          merge-multiple: true
+      - name: Reject fake wins, mismatched times, tampered source and bogus shots
+        run: node --test recovered/army/mirror/musket_balance/test_musket_pike_diagnostics.mjs
+      - name: Generate source-bound evidence and commander comparison
+        run: node recovered/army/mirror/musket_balance/summarize_musket_pike.mjs
+      - name: Preserve reproducible CPU battle evidence (NOT release game)
+        uses: actions/upload-artifact@v4
+        with:
+          name: KillTheKing-G5-4-Musket-Pike-32RealCPU-Diagnostic-NOT-RELEASE
+          path: |
+            recovered/army/mirror/musket_balance/reports/MUSKET_PIKE_REAL_ENGINE_32_BATTLES.json
+            recovered/army/mirror/musket_balance/reports/G5_4_MUSKET_PIKE_CAUSE_REPORT.md
+            recovered/army/mirror/musket_balance/reports/musket_diagnostic_*.json
+            recovered/army/mirror/musket_balance/reference_musket_pike_32.json
+            recovered/army/mirror/musket_balance/test_musket_pike_diagnostics.mjs
+            recovered/army/mirror/musket_balance/diagnose_musket_vs_pike.mjs
+            recovered/army/mirror/musket_balance/summarize_musket_pike.mjs
+          if-no-files-found: error
