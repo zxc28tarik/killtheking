@@ -39,7 +39,7 @@ jobs:
         shell: bash
         working-directory: recovered/army/mirror/defense
         env:
-          START: \${{ matrix.start }}
+          START: ${{ matrix.start }}
           KTK_PROTECT_OUT_DIR: replay
         run: |
           for i in $(seq "$START" "$((START + 3))"); do
@@ -48,7 +48,7 @@ jobs:
       - name: Preserve native CPU results for audit
         uses: actions/upload-artifact@v4
         with:
-          name: g54-protection-pilot-\${{ matrix.start }}
+          name: g54-protection-pilot-${{ matrix.start }}
           path: recovered/army/mirror/defense/replay/part_*.json
           if-no-files-found: error
   audit-not-release:
