@@ -148,13 +148,19 @@ export function createQualityAudit({minStallTicks=10, stationaritySeconds=3.2,
             const tacticalStandRange=q.type==='musket'?64:q.type==='bow'?60:12;
             const mayBeTacticalStand=q.order==='advance'&&nearestEnemyDistance!==null&&
               nearestEnemyDistance<=tacticalStandRange+12;
+            const isDefensiveScreen=!q.playerControlled&&
+              (q.aiRole==='screen'||q.aiRole==='rear-guard'||q.defenseRole==='screen');
             const routeTargetDistance=q.order==='position'&&q.routeGoal&&
               finite(q.routeGoal.x)&&finite(q.routeGoal.z)?round(dist(q,q.routeGoal)):null;
             finding('stationary-movement-order',{at:round(state.elapsed),squadId:q.id,
+              team:q.team,type:q.type,aiRole:q.aiRole??null,
+              defenseRole:q.defenseRole??null,operationRole:q.operationRole??null,
+              tacticalReason:q.tacticalReason??null,
               order:q.order,seconds:round(last.stationaryFor),
               nearestEnemyDistance:nearestEnemyDistance===null?null:round(nearestEnemyDistance),
               routeTargetDistance,
-              classification:mayBeTacticalStand?'possible-tactical-engagement':'needs-review'});
+              classification:mayBeTacticalStand?'possible-tactical-engagement':
+                isDefensiveScreen?'possible-protective-screen':'needs-review'});
           }
         } else {last.stationaryFor=0;last.stationaryIssued=false;}
         last.x=q.x;last.z=q.z;last.order=q.order;last.target=q.targetSquadId;
