@@ -129,3 +129,15 @@ test('missing readable snapshot and clock rollback fail without game write',()=>
  E.step(s,.08);q.afterStep(s);
  s.tick=0;assert.throws(()=>q.afterStep(s),/rolled back/);
 });
+test('actual G5.4 defensive screen pause is labeled as a candidate protective task, not proved stuck',()=>{
+ const x=runTrial(E,{role:'sword',seed:1600,command:'hold',steps:350});
+ const findings=x.findings.filter(f=>f.kind==='stationary-movement-order');
+ assert.ok(findings.length>0);
+ assert.ok(findings.some(f=>f.type==='pike'&&f.aiRole==='screen'&&
+   f.classification==='possible-protective-screen'));
+});
+test('actual G5.4 archer can stand within firing range while advance is selected',()=>{
+ const x=runTrial(E,{role:'bow',seed:1600,command:'advance',steps:455});
+ const cases=x.findings.filter(f=>f.kind==='stationary-movement-order');
+ assert.ok(cases.some(f=>f.type==='bow'&&f.classification==='possible-tactical-engagement'));
+});
