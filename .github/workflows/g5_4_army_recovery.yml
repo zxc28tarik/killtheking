@@ -31,3 +31,21 @@ jobs:
             recovered/army/modules/weapon-balance.js
             recovered/army/modules/arena-army-battle.js
           if-no-files-found: error
+
+      - name: Run 56 REAL G5.4 army engine and noninterference tests
+        run: node --test recovered/army/test_g5_4_army_contract.mjs recovered/army/test_g5_4_passive_trace.mjs
+      - name: Build passive telemetry edition without changing original gameplay
+        run: |
+          node recovered/army/inject_g5_4_passive_trace.mjs \
+            recovered/army/KillTheKing_G5_4_Kanat_Savunmasi_Oyna.html \
+            recovered/army/g5_4_passive_battle_trace.js \
+            recovered/army/dist/KillTheKing_G5_4_Pasif_Telemetri_Oyna.html
+      - name: Upload separately named OBSERVED G5.4 offline HTML (NOT G8.4)
+        uses: actions/upload-artifact@v4
+        with:
+          name: KillTheKing-G5-4-Observed-Real-Engine-Not-G8-4
+          path: |
+            recovered/army/dist/KillTheKing_G5_4_Pasif_Telemetri_Oyna.html
+            recovered/army/dist/KillTheKing_G5_4_Pasif_Telemetri_Oyna_BUILD.json
+            recovered/army/README_G5_4_TELEMETRY.md
+          if-no-files-found: error
