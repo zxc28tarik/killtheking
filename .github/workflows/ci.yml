@@ -21,9 +21,15 @@ jobs:
         run: python3 tools/build_offline.py --out dist/KillTheKing_Oyna.html
       - name: Validate all inlined HTML scripts
         run: node tools/check_offline.cjs dist/KillTheKing_Oyna.html
-      - name: Upload tested playable HTML
+      - name: Test source provenance metadata
+        run: python3 -m unittest discover -s tools/g8-5c -p 'test_g8_5i_ci_build_manifest.py'
+      - name: Write immutable game artifact provenance
+        run: python3 tools/g8-5c/g8_5i_ci_build_manifest.py --html dist/KillTheKing_Oyna.html --output dist/KillTheKing_Build_Provenance.json
+      - name: Upload tested repository baseline (NOT verified G8.4)
         uses: actions/upload-artifact@v4
         with:
-          name: killtheking-playable-html
-          path: dist/KillTheKing_Oyna.html
+          name: killtheking-repo-build-unverified-G8_4-${{ github.sha }}
+          path: |
+            dist/KillTheKing_Oyna.html
+            dist/KillTheKing_Build_Provenance.json
           if-no-files-found: error
