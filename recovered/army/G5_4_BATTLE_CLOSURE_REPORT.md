@@ -42,3 +42,11 @@ The G5.4 engine has **no native time-limit outcome**. The real winner handling i
 - G8.4 source recovery issue #44 remains open; **0/144 real G8.5 mirrored battles** were run.
 
 This is a source-code/test evidence report, not a claim of a fully playable and approved release.
+
+
+## Reproduced independently in GitHub Actions
+- [Successful G5.4 endurance QA execution](https://github.com/zxc28tarik/killtheking/actions/runs/44071051952).
+- GitHub-generated artifact: `KillTheKing-G5-4-600s-8Match-Endurance-RELEASE-BLOCKED` (ID `14321763478`).
+- Downloaded CI JSON and compared each of the **8 matches** against locally recorded genuine engine output. **8/8 exact matches** for surviving soldiers, casualties over the final 300 seconds, and native winner status; engine SHA-256 matched.
+- The CI job is successful as a tool/evidence validation, but the **game's release acceptance remains FAILED**.
+- [Tracked P0 gameplay blocker](https://github.com/zxc28tarik/killtheking/issues/46).
