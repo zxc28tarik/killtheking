@@ -8,7 +8,7 @@
 - Komutlar senaryo gereği koddan verildi; bir insan oyuncu oyunu oynamadı. Tarayıcı WebGL/render performansı ölçülmedi.
 - Her adımda gerçek motor çalıştı, kalite denetçisi **motor durumunu değiştirmeden** onun gerçek `squads`, `soldiers`, `teamPlans` ve `snapshot` verilerini okudu.
 - Savaşın gerçek `drainCombatEvents` fonksiyonu her adımda çağrıldı; gerçek tarayıcının olay tüketimine uygun.
-- Bağımsız 20 kalite denetimi testi ve önceki 56 gerçek motor testi: **76/76 PASS**.
+- Bağımsız 22 kalite denetimi testi ve önceki 56 gerçek motor testi: **78/78 PASS**.
 
 ## Sayısal bulgular
 
@@ -24,7 +24,7 @@
 | Bölük rota yeniden planlamaları | 0 |
 
 - **Kısa dönüş:** 29 kez A→B→A emir akışı 10 saniyelik pencerede gözlendi. Bu gözlem **AI hatası olduğunun kanıtı değildir**; taktiksel tehlikeye tepki olabilir.
-- **Yerinde kalma:** 9 uyarının 4’ü okçu bölüğünün rakibe yaklaşık 24–57 birim mesafedeyken atış pozisyonunda durmasıyla uyumlu (`possible-tactical-engagement`). Diğer 5’i inceleme gerektiriyor; tamamı mızrakçı bölüklerinde gözlendi (düşmana yaklaşık 51–121 birim mesafe).
+- **Yerinde kalma:** 9 uyarının 4’ü okçu bölüğünün rakibe yaklaşık 24–57 birim mesafedeyken atış pozisyonunda durmasıyla uyumlu (`possible-tactical-engagement`). **Diğer 5 olayın gerçek sınıfı 3 mızrakçı + 2 kılıçlı.** Beş olayda da komutan rolü `screen`, taktik gerekçesi menzilli birliklere koruma perdesi oluşturmak. Dolayısıyla bu hareket duruşları savunma görevinden kaynaklanıyor *olabilir* (`possible-protective-screen`); fiziksel sıkışma kanıtı değildir.
 - **Sıkışma:** Gerçek motorun asker başına tuttuğu `stalledTicks` sayacı bu örnekte belirlenen 10 eşik değerini geçmedi (0 uyarı). Bu, tüm savaşların sıkışmasız olduğunu **kanıtlamaz**.
 - **Maç galibi:** 40 saniyelik hiçbir koşuda savaş tamamlanmadı (16/16 `winner=null`). Bu 144 adet G8.5 eşleştirilmiş savaşın hiçbiri değildir.
 
@@ -39,14 +39,14 @@
 
 ## Sonraki teknik kararlar (bulguya dayalı)
 
-1. **P1: uzun süreli hareket emri duruşlarını ayrıştır:** 5 `needs-review` vakasında birliğin koruma görevi, menzilli savunma hattı ve fiziki engel bilgisiyle yeniden değerlendirme yap. Salt durduğu için AI’yı zorla ileri sürme; okçuların/misketçilerin savunma davranışı korunmalı.
+1. **P1: uzun süreli hareket emri duruşlarını ayrıştır:** 5 `possible-protective-screen` vakasında mızrakçı ve kılıçlı koruma görevi, menzilli hattın konumu ve fiziki engel bilgisiyle yeniden değerlendirme yap. Salt durduğu için AI’yı zorla ileri sürme; okçuların/misketçilerin savunma davranışı korunmalı.
 2. **P2: yakın aralıklı A→B→A emir geçişlerini incele:** Özellikle mızrak ve kılıç sınıflarında (sırasıyla 11 ve 10) emri sıklıkla geri alan komutan davranışlarını tekrarlı muharebede izle. Eşsiz olay/kök neden kanıtlanmadan AI karar süresini değiştirme.
 3. **P2: daha uzun simülasyon ve gerçek GPU kabulü:** Bu koşu yalnızca ilk 40 saniyeyi kapsar. En az 1 tam maç, farklı seed’ler, senaryoda müttefik koruma, doğrulanmış gerçek oyuncu hareketi ve tarayıcı FPS testi hâlâ gerekli.
 4. **G8.4 kurtarma:** Bu eski G5.4 modülü ikmal, stratejik bölge ve 200/280 asker geliştirmelerini barındırdığı iddiasıyla kullanılmamalı.
 
 ## Dosyalar ve yeniden üretilebilirlik
 
-`recovered/army/g5_4_commander_quality_audit.mjs` gerçek motoru değiştirmeyen gözlemci; `run_g5_4_commander_quality_trials.mjs` 16 koşu testçisi; `test_g5_4_commander_quality_audit.mjs` 20 regresyon testi; `G5_4_REAL_ENGINE_QUALITY_MATRIX.json` tüm koşu detayları; `G5_4_REAL_ENGINE_QUALITY_SUMMARY.json` GitHub inceleme özeti.
+`recovered/army/g5_4_commander_quality_audit.mjs` gerçek motoru değiştirmeyen gözlemci; `run_g5_4_commander_quality_trials.mjs` 16 koşu testçisi; `test_g5_4_commander_quality_audit.mjs` 22 regresyon testi; `G5_4_REAL_ENGINE_QUALITY_MATRIX.json` tüm koşu detayları; `G5_4_REAL_ENGINE_QUALITY_SUMMARY.json` GitHub inceleme özeti.
 
 Yeniden üretmek için: `node recovered/army/run_g5_4_commander_quality_trials.mjs recovered/army/G5_4_REAL_ENGINE_QUALITY_MATRIX.json`; `node --test recovered/army/test_g5_4_*.mjs`.
 
