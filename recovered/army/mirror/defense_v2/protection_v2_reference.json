@@ -1,0 +1,395 @@
+{
+  "format": "ktk-g54-bounded-guard-v2-12pairs-v1",
+  "sourceSha256": {
+    "baseline": "307987855abc0973ea9177fdd659c39d1d02673c8381c0501be8b63c04ddf841",
+    "priorPilot": "a88db6741e82e34af6ac8903f7c1ab87550a92a0c07dd889d3ba0a192b8b908a",
+    "bounded": "f911e9175f6ab9c23fc06b5e123fe94c018853f2fd813cb8dfd937f60e5907d4"
+  },
+  "fields": [
+    "winner",
+    "seconds",
+    "protectedPct",
+    "shooterDamage",
+    "secondGuard"
+  ],
+  "scenarios": [
+    {
+      "scenario": [
+        1600,
+        "musket",
+        "hold",
+        "blue"
+      ],
+      "baseline": [
+        "red",
+        333.68,
+        32.6,
+        86,
+        0
+      ],
+      "priorPilot": [
+        "red",
+        421.12,
+        34.6,
+        84,
+        9
+      ],
+      "bounded": [
+        "blue",
+        367.76,
+        44.1,
+        54,
+        8
+      ]
+    },
+    {
+      "scenario": [
+        1600,
+        "musket",
+        "hold",
+        "red"
+      ],
+      "baseline": [
+        "blue",
+        296.88,
+        26.2,
+        92,
+        0
+      ],
+      "priorPilot": [
+        "blue",
+        374.32,
+        38.4,
+        78,
+        11
+      ],
+      "bounded": [
+        "blue",
+        377.04,
+        47.1,
+        91,
+        0
+      ]
+    },
+    {
+      "scenario": [
+        1600,
+        "musket",
+        "advance",
+        "blue"
+      ],
+      "baseline": [
+        "red",
+        223.36,
+        51.5,
+        103,
+        0
+      ],
+      "priorPilot": [
+        "red",
+        370.64,
+        65.5,
+        90,
+        35
+      ],
+      "bounded": [
+        "red",
+        300.8,
+        57.9,
+        101,
+        7
+      ]
+    },
+    {
+      "scenario": [
+        1600,
+        "musket",
+        "advance",
+        "red"
+      ],
+      "baseline": [
+        "blue",
+        210.56,
+        68.3,
+        86,
+        0
+      ],
+      "priorPilot": [
+        "blue",
+        345.12,
+        80,
+        89,
+        35
+      ],
+      "bounded": [
+        "blue",
+        298.24,
+        64.9,
+        90,
+        6
+      ]
+    },
+    {
+      "scenario": [
+        1776,
+        "musket",
+        "hold",
+        "blue"
+      ],
+      "baseline": [
+        "red",
+        289.12,
+        38.7,
+        84,
+        0
+      ],
+      "priorPilot": [
+        "red",
+        421.12,
+        35.1,
+        89,
+        8
+      ],
+      "bounded": [
+        "red",
+        331.76,
+        38,
+        82,
+        0
+      ]
+    },
+    {
+      "scenario": [
+        1776,
+        "musket",
+        "hold",
+        "red"
+      ],
+      "baseline": [
+        "blue",
+        331.04,
+        27.3,
+        82,
+        0
+      ],
+      "priorPilot": [
+        "blue",
+        436.24,
+        36.7,
+        93,
+        4
+      ],
+      "bounded": [
+        "blue",
+        346.16,
+        31.9,
+        88,
+        0
+      ]
+    },
+    {
+      "scenario": [
+        1600,
+        "pike",
+        "hold",
+        "blue"
+      ],
+      "baseline": [
+        "blue",
+        256.24,
+        62.3,
+        43,
+        0
+      ],
+      "priorPilot": [
+        "blue",
+        286.08,
+        68.5,
+        47,
+        0
+      ],
+      "bounded": [
+        "blue",
+        260.4,
+        59.3,
+        36,
+        0
+      ]
+    },
+    {
+      "scenario": [
+        1600,
+        "pike",
+        "hold",
+        "red"
+      ],
+      "baseline": [
+        "red",
+        313.04,
+        55.6,
+        41,
+        0
+      ],
+      "priorPilot": [
+        "red",
+        436.16,
+        89.8,
+        60,
+        0
+      ],
+      "bounded": [
+        "red",
+        254.32,
+        58.7,
+        58,
+        0
+      ]
+    },
+    {
+      "scenario": [
+        2026,
+        "musket",
+        "hold",
+        "blue"
+      ],
+      "baseline": [
+        "red",
+        323.12,
+        35,
+        80,
+        0
+      ],
+      "priorPilot": [
+        "red",
+        363.92,
+        33.6,
+        92,
+        17
+      ],
+      "bounded": [
+        "red",
+        315.12,
+        38.3,
+        95,
+        0
+      ]
+    },
+    {
+      "scenario": [
+        2026,
+        "musket",
+        "hold",
+        "red"
+      ],
+      "baseline": [
+        "blue",
+        274.64,
+        37.3,
+        81,
+        0
+      ],
+      "priorPilot": [
+        "blue",
+        383.76,
+        37.7,
+        81,
+        6
+      ],
+      "bounded": [
+        "blue",
+        265.68,
+        43.1,
+        76,
+        0
+      ]
+    },
+    {
+      "scenario": [
+        31415,
+        "musket",
+        "hold",
+        "blue"
+      ],
+      "baseline": [
+        "red",
+        248.48,
+        35.7,
+        84,
+        0
+      ],
+      "priorPilot": [
+        "red",
+        352.08,
+        39.9,
+        77,
+        0
+      ],
+      "bounded": [
+        "red",
+        255.36,
+        36.3,
+        77,
+        0
+      ]
+    },
+    {
+      "scenario": [
+        31415,
+        "musket",
+        "hold",
+        "red"
+      ],
+      "baseline": [
+        "blue",
+        270.56,
+        44.7,
+        70,
+        0
+      ],
+      "priorPilot": [
+        "blue",
+        384.08,
+        36.4,
+        85,
+        11
+      ],
+      "bounded": [
+        "blue",
+        323.52,
+        35.4,
+        73,
+        0
+      ]
+    }
+  ],
+  "summary": {
+    "baseline": {
+      "coverageMeanPct": 42.93,
+      "durationMeanSec": 280.89,
+      "playerWins": 2,
+      "naturalEndings": 12,
+      "guardSamples": 0
+    },
+    "priorPilot": {
+      "coverageMeanPct": 49.68,
+      "durationMeanSec": 381.22,
+      "playerWins": 2,
+      "naturalEndings": 12,
+      "guardSamples": 136
+    },
+    "bounded": {
+      "coverageMeanPct": 46.25,
+      "durationMeanSec": 308.01,
+      "playerWins": 3,
+      "naturalEndings": 12,
+      "guardSamples": 21
+    }
+  },
+  "acceptance": "NOT_APPROVED",
+  "limits": [
+    "CPU-only",
+    "Not all four player command roles tested",
+    "No WebGL player approval",
+    "G8.4 source still missing"
+  ]
+}
