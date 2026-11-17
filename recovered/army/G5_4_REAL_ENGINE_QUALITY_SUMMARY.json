@@ -1,0 +1,541 @@
+{
+  "format": "killtheking-g5.4-real-engine-quality-summary-v1",
+  "scope": "recovered G5.4, NOT G8.4",
+  "matrixSummary": {
+    "source": "recovered G5.4 actual ArenaArmyBattle",
+    "g8_4GameRecovered": false,
+    "g8_5PairedMirrorMatches": 0,
+    "limitations": "CPU-only, no WebGL, scripted player commands; each trial is standalone G5.4 rather than paired G8.5 mirrored battle.",
+    "trials": 16,
+    "simulatedSeconds": 640,
+    "totalDecisions": 1186,
+    "totalOrderChanges": 168,
+    "totalShortReversals": 29,
+    "totalTargetChanges": 178,
+    "totalNativeSoldierStallWarnings": 0,
+    "totalStationaryOrderWarnings": 9,
+    "totalRouteReplans": 0,
+    "finalWins": {
+      "blue": 0,
+      "red": 0,
+      "draw": 0,
+      "none": 16
+    },
+    "byRole": [
+      {
+        "role": "musket",
+        "n": 4,
+        "averageBlueAlive": 64.5,
+        "averageRedAlive": 65.25,
+        "decisions": 296,
+        "shortReversals": 7,
+        "engineStallWarnings": 0
+      },
+      {
+        "role": "pike",
+        "n": 4,
+        "averageBlueAlive": 63.25,
+        "averageRedAlive": 66.5,
+        "decisions": 295,
+        "shortReversals": 11,
+        "engineStallWarnings": 0
+      },
+      {
+        "role": "bow",
+        "n": 4,
+        "averageBlueAlive": 64.25,
+        "averageRedAlive": 65.25,
+        "decisions": 298,
+        "shortReversals": 1,
+        "engineStallWarnings": 0
+      },
+      {
+        "role": "sword",
+        "n": 4,
+        "averageBlueAlive": 66.25,
+        "averageRedAlive": 66.25,
+        "decisions": 297,
+        "shortReversals": 10,
+        "engineStallWarnings": 0
+      }
+    ]
+  },
+  "stationaryWarnings": [
+    {
+      "role": "bow",
+      "seed": 1600,
+      "command": "advance",
+      "at": 34.24,
+      "squadId": 2,
+      "order": "advance",
+      "nearestEnemyDistance": 52.492,
+      "classification": "possible-tactical-engagement"
+    },
+    {
+      "role": "bow",
+      "seed": 1701,
+      "command": "advance",
+      "at": 34.24,
+      "squadId": 2,
+      "order": "advance",
+      "nearestEnemyDistance": 56.962,
+      "classification": "possible-tactical-engagement"
+    },
+    {
+      "role": "bow",
+      "seed": 1701,
+      "command": "advance",
+      "at": 38.48,
+      "squadId": 2,
+      "order": "advance",
+      "nearestEnemyDistance": 24.021,
+      "classification": "possible-tactical-engagement"
+    },
+    {
+      "role": "bow",
+      "seed": 1802,
+      "command": "advance",
+      "at": 34.24,
+      "squadId": 2,
+      "order": "advance",
+      "nearestEnemyDistance": 52.66,
+      "classification": "possible-tactical-engagement"
+    },
+    {
+      "role": "pike",
+      "seed": 1600,
+      "command": "hold",
+      "at": 21.2,
+      "squadId": 3,
+      "order": "advance",
+      "nearestEnemyDistance": 120.807,
+      "classification": "needs-review"
+    },
+    {
+      "role": "pike",
+      "seed": 1600,
+      "command": "hold",
+      "at": 25.2,
+      "squadId": 3,
+      "order": "advance",
+      "nearestEnemyDistance": 94.347,
+      "classification": "needs-review"
+    },
+    {
+      "role": "bow",
+      "seed": 1600,
+      "command": "hold",
+      "at": 25.68,
+      "squadId": 1,
+      "order": "advance",
+      "nearestEnemyDistance": 51.352,
+      "classification": "needs-review"
+    },
+    {
+      "role": "sword",
+      "seed": 1600,
+      "command": "hold",
+      "at": 21.04,
+      "squadId": 1,
+      "order": "advance",
+      "nearestEnemyDistance": 120.487,
+      "classification": "needs-review"
+    },
+    {
+      "role": "sword",
+      "seed": 1600,
+      "command": "hold",
+      "at": 25.12,
+      "squadId": 1,
+      "order": "advance",
+      "nearestEnemyDistance": 94.497,
+      "classification": "needs-review"
+    }
+  ],
+  "perTrial": [
+    {
+      "role": "musket",
+      "seed": 1600,
+      "command": "advance",
+      "ticks": 500,
+      "simulatedSeconds": 40,
+      "finalAlive": {
+        "blue": 64,
+        "red": 64
+      },
+      "winner": null,
+      "totals": {
+        "decisions": 72,
+        "orderChanges": 9,
+        "shortReversals": 0,
+        "targetChanges": 12,
+        "movementDistance": 1627.898,
+        "routeReplans": 0,
+        "nativeSoldierStallWarnings": 0,
+        "stationaryMovementOrderWarnings": 0,
+        "engineWinner": null
+      },
+      "combatEventsDrainedByNativeEngine": 119
+    },
+    {
+      "role": "musket",
+      "seed": 1701,
+      "command": "advance",
+      "ticks": 500,
+      "simulatedSeconds": 40,
+      "finalAlive": {
+        "blue": 65,
+        "red": 64
+      },
+      "winner": null,
+      "totals": {
+        "decisions": 79,
+        "orderChanges": 11,
+        "shortReversals": 2,
+        "targetChanges": 12,
+        "movementDistance": 1610.939,
+        "routeReplans": 0,
+        "nativeSoldierStallWarnings": 0,
+        "stationaryMovementOrderWarnings": 0,
+        "engineWinner": null
+      },
+      "combatEventsDrainedByNativeEngine": 113
+    },
+    {
+      "role": "musket",
+      "seed": 1802,
+      "command": "advance",
+      "ticks": 500,
+      "simulatedSeconds": 40,
+      "finalAlive": {
+        "blue": 65,
+        "red": 65
+      },
+      "winner": null,
+      "totals": {
+        "decisions": 73,
+        "orderChanges": 13,
+        "shortReversals": 3,
+        "targetChanges": 13,
+        "movementDistance": 1597.237,
+        "routeReplans": 0,
+        "nativeSoldierStallWarnings": 0,
+        "stationaryMovementOrderWarnings": 0,
+        "engineWinner": null
+      },
+      "combatEventsDrainedByNativeEngine": 98
+    },
+    {
+      "role": "pike",
+      "seed": 1600,
+      "command": "advance",
+      "ticks": 500,
+      "simulatedSeconds": 40,
+      "finalAlive": {
+        "blue": 59,
+        "red": 67
+      },
+      "winner": null,
+      "totals": {
+        "decisions": 71,
+        "orderChanges": 8,
+        "shortReversals": 0,
+        "targetChanges": 11,
+        "movementDistance": 1597.032,
+        "routeReplans": 0,
+        "nativeSoldierStallWarnings": 0,
+        "stationaryMovementOrderWarnings": 0,
+        "engineWinner": null
+      },
+      "combatEventsDrainedByNativeEngine": 94
+    },
+    {
+      "role": "pike",
+      "seed": 1701,
+      "command": "advance",
+      "ticks": 500,
+      "simulatedSeconds": 40,
+      "finalAlive": {
+        "blue": 63,
+        "red": 66
+      },
+      "winner": null,
+      "totals": {
+        "decisions": 79,
+        "orderChanges": 16,
+        "shortReversals": 5,
+        "targetChanges": 11,
+        "movementDistance": 1621.461,
+        "routeReplans": 0,
+        "nativeSoldierStallWarnings": 0,
+        "stationaryMovementOrderWarnings": 0,
+        "engineWinner": null
+      },
+      "combatEventsDrainedByNativeEngine": 55
+    },
+    {
+      "role": "pike",
+      "seed": 1802,
+      "command": "advance",
+      "ticks": 500,
+      "simulatedSeconds": 40,
+      "finalAlive": {
+        "blue": 61,
+        "red": 65
+      },
+      "winner": null,
+      "totals": {
+        "decisions": 74,
+        "orderChanges": 16,
+        "shortReversals": 6,
+        "targetChanges": 10,
+        "movementDistance": 1575.342,
+        "routeReplans": 0,
+        "nativeSoldierStallWarnings": 0,
+        "stationaryMovementOrderWarnings": 0,
+        "engineWinner": null
+      },
+      "combatEventsDrainedByNativeEngine": 90
+    },
+    {
+      "role": "bow",
+      "seed": 1600,
+      "command": "advance",
+      "ticks": 500,
+      "simulatedSeconds": 40,
+      "finalAlive": {
+        "blue": 64,
+        "red": 64
+      },
+      "winner": null,
+      "totals": {
+        "decisions": 72,
+        "orderChanges": 11,
+        "shortReversals": 0,
+        "targetChanges": 12,
+        "movementDistance": 1567.611,
+        "routeReplans": 0,
+        "nativeSoldierStallWarnings": 0,
+        "stationaryMovementOrderWarnings": 1,
+        "engineWinner": null
+      },
+      "combatEventsDrainedByNativeEngine": 141
+    },
+    {
+      "role": "bow",
+      "seed": 1701,
+      "command": "advance",
+      "ticks": 500,
+      "simulatedSeconds": 40,
+      "finalAlive": {
+        "blue": 67,
+        "red": 65
+      },
+      "winner": null,
+      "totals": {
+        "decisions": 80,
+        "orderChanges": 9,
+        "shortReversals": 0,
+        "targetChanges": 12,
+        "movementDistance": 1563.143,
+        "routeReplans": 0,
+        "nativeSoldierStallWarnings": 0,
+        "stationaryMovementOrderWarnings": 2,
+        "engineWinner": null
+      },
+      "combatEventsDrainedByNativeEngine": 137
+    },
+    {
+      "role": "bow",
+      "seed": 1802,
+      "command": "advance",
+      "ticks": 500,
+      "simulatedSeconds": 40,
+      "finalAlive": {
+        "blue": 64,
+        "red": 64
+      },
+      "winner": null,
+      "totals": {
+        "decisions": 74,
+        "orderChanges": 11,
+        "shortReversals": 1,
+        "targetChanges": 11,
+        "movementDistance": 1619.832,
+        "routeReplans": 0,
+        "nativeSoldierStallWarnings": 0,
+        "stationaryMovementOrderWarnings": 1,
+        "engineWinner": null
+      },
+      "combatEventsDrainedByNativeEngine": 123
+    },
+    {
+      "role": "sword",
+      "seed": 1600,
+      "command": "advance",
+      "ticks": 500,
+      "simulatedSeconds": 40,
+      "finalAlive": {
+        "blue": 67,
+        "red": 66
+      },
+      "winner": null,
+      "totals": {
+        "decisions": 72,
+        "orderChanges": 9,
+        "shortReversals": 1,
+        "targetChanges": 11,
+        "movementDistance": 1509.563,
+        "routeReplans": 0,
+        "nativeSoldierStallWarnings": 0,
+        "stationaryMovementOrderWarnings": 0,
+        "engineWinner": null
+      },
+      "combatEventsDrainedByNativeEngine": 93
+    },
+    {
+      "role": "sword",
+      "seed": 1701,
+      "command": "advance",
+      "ticks": 500,
+      "simulatedSeconds": 40,
+      "finalAlive": {
+        "blue": 66,
+        "red": 67
+      },
+      "winner": null,
+      "totals": {
+        "decisions": 80,
+        "orderChanges": 14,
+        "shortReversals": 6,
+        "targetChanges": 12,
+        "movementDistance": 1542.787,
+        "routeReplans": 0,
+        "nativeSoldierStallWarnings": 0,
+        "stationaryMovementOrderWarnings": 0,
+        "engineWinner": null
+      },
+      "combatEventsDrainedByNativeEngine": 98
+    },
+    {
+      "role": "sword",
+      "seed": 1802,
+      "command": "advance",
+      "ticks": 500,
+      "simulatedSeconds": 40,
+      "finalAlive": {
+        "blue": 62,
+        "red": 65
+      },
+      "winner": null,
+      "totals": {
+        "decisions": 73,
+        "orderChanges": 10,
+        "shortReversals": 3,
+        "targetChanges": 11,
+        "movementDistance": 1552.723,
+        "routeReplans": 0,
+        "nativeSoldierStallWarnings": 0,
+        "stationaryMovementOrderWarnings": 0,
+        "engineWinner": null
+      },
+      "combatEventsDrainedByNativeEngine": 99
+    },
+    {
+      "role": "musket",
+      "seed": 1600,
+      "command": "hold",
+      "ticks": 500,
+      "simulatedSeconds": 40,
+      "finalAlive": {
+        "blue": 64,
+        "red": 68
+      },
+      "winner": null,
+      "totals": {
+        "decisions": 72,
+        "orderChanges": 9,
+        "shortReversals": 2,
+        "targetChanges": 12,
+        "movementDistance": 1472.595,
+        "routeReplans": 0,
+        "nativeSoldierStallWarnings": 0,
+        "stationaryMovementOrderWarnings": 0,
+        "engineWinner": null
+      },
+      "combatEventsDrainedByNativeEngine": 79
+    },
+    {
+      "role": "pike",
+      "seed": 1600,
+      "command": "hold",
+      "ticks": 500,
+      "simulatedSeconds": 40,
+      "finalAlive": {
+        "blue": 70,
+        "red": 68
+      },
+      "winner": null,
+      "totals": {
+        "decisions": 71,
+        "orderChanges": 6,
+        "shortReversals": 0,
+        "targetChanges": 8,
+        "movementDistance": 1269.664,
+        "routeReplans": 0,
+        "nativeSoldierStallWarnings": 0,
+        "stationaryMovementOrderWarnings": 2,
+        "engineWinner": null
+      },
+      "combatEventsDrainedByNativeEngine": 12
+    },
+    {
+      "role": "bow",
+      "seed": 1600,
+      "command": "hold",
+      "ticks": 500,
+      "simulatedSeconds": 40,
+      "finalAlive": {
+        "blue": 62,
+        "red": 68
+      },
+      "winner": null,
+      "totals": {
+        "decisions": 72,
+        "orderChanges": 10,
+        "shortReversals": 0,
+        "targetChanges": 12,
+        "movementDistance": 1451.968,
+        "routeReplans": 0,
+        "nativeSoldierStallWarnings": 0,
+        "stationaryMovementOrderWarnings": 1,
+        "engineWinner": null
+      },
+      "combatEventsDrainedByNativeEngine": 101
+    },
+    {
+      "role": "sword",
+      "seed": 1600,
+      "command": "hold",
+      "ticks": 500,
+      "simulatedSeconds": 40,
+      "finalAlive": {
+        "blue": 70,
+        "red": 67
+      },
+      "winner": null,
+      "totals": {
+        "decisions": 72,
+        "orderChanges": 6,
+        "shortReversals": 0,
+        "targetChanges": 8,
+        "movementDistance": 1214.506,
+        "routeReplans": 0,
+        "nativeSoldierStallWarnings": 0,
+        "stationaryMovementOrderWarnings": 2,
+        "engineWinner": null
+      },
+      "combatEventsDrainedByNativeEngine": 11
+    }
+  ]
+}
