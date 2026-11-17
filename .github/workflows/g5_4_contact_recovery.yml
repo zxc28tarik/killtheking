@@ -1,0 +1,49 @@
+name: G5.4 actual-engine contact recovery (candidate, not G8.4)
+on:
+  push:
+    branches:
+      - codex/recover-g5-4-army-source
+  workflow_dispatch:
+jobs:
+  contact-recovery:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate candidate source syntax
+        run: |
+          node --check recovered/army/candidates/arena-army-battle-contact-recovery.js
+          node --check recovered/army/candidates/build_g5_4_contact_recovery.mjs
+          node --check recovered/army/candidates/run_g5_4_contact_recovery_case.mjs
+          node --check recovered/army/candidates/merge_g5_4_contact_recovery_cases.mjs
+      - name: Test real motor, unchanged rules, and pre-loss parity
+        run: node --test recovered/army/candidates/test_g5_4_contact_recovery.mjs
+      - name: Run eight separate real CPU battles with original elimination rule
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p recovered/army/candidates/dist
+          for role in musket pike bow sword; do
+            for command in advance hold; do
+              node recovered/army/candidates/run_g5_4_contact_recovery_case.mjs \
+                "recovered/army/candidates/dist/G54_${role}_${command}.json" "$role" "$command"
+            done
+          done
+          node recovered/army/candidates/merge_g5_4_contact_recovery_cases.mjs \
+            recovered/army/candidates/dist/G5_4_CONTACT_FIX_ALL_8_MATRIX.json \
+            recovered/army/candidates/dist/G54_*.json
+      - name: Build standalone playable candidate and verify all JS blocks
+        run: node recovered/army/candidates/build_g5_4_contact_recovery.mjs
+      - name: Upload actual-engine evidence and self-contained HTML
+        uses: actions/upload-artifact@v4
+        with:
+          name: KillTheKing-G5-4-Contact-Recovery-CANDIDATE-NOT-G8-4
+          if-no-files-found: error
+          path: |
+            recovered/army/candidates/dist/KillTheKing_G5_4_Temas_Kurtarma_Oyna.html
+            recovered/army/candidates/dist/KillTheKing_G5_4_Temas_Kurtarma_Oyna_BUILD.json
+            recovered/army/candidates/dist/G5_4_CONTACT_FIX_ALL_8_MATRIX.json
+            recovered/army/candidates/G5_4_CONTACT_RECOVERY_REPORT.md
