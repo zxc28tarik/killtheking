@@ -28,7 +28,7 @@ export function classifyClosure({checkpoints,ticks,simulatedSeconds,analysis}) {
     (winner==='red'&&!(last.redAlive>0&&last.blueAlive===0))||
     (winner==='draw'&&!(last.blueAlive===0&&last.redAlive===0))||
     (winner===null&&(!last.blueAlive||!last.redAlive)))throw Error('Winner/elimination mismatch');
- const base=[...checkpoints].reverse().find(c=>c.at<=last.at-300+0.001);
+ const base=[...checkpoints].reverse().find(c=>c.at<=Math.max(0,last.at-300)+0.001);
  if(!base)throw Error('No final-300-second evidence');
  const lateLoss=(base.blueAlive-last.blueAlive)+(base.redAlive-last.redAlive);
  const complete=winner!==null;
