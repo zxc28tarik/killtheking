@@ -26,4 +26,8 @@ jobs:
             recovered/army/KillTheKing_G5_4_Kanat_Savunmasi_Oyna.html
             recovered/army/G5_4_Recovery_Manifest.json
             recovered/army/README_G5_4.md
+            recovered/army/G5_4_ENGINE_SOURCE_MAP.md
+            recovered/army/test_g5_4_army_contract.mjs
+            recovered/army/modules/weapon-balance.js
+            recovered/army/modules/arena-army-battle.js
           if-no-files-found: error
