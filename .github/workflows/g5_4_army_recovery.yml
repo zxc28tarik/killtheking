@@ -1,0 +1,27 @@
+name: G5.4 army source recovery artifact
+on:
+  push:
+    branches:
+      - codex/recover-g5-4-army-source
+  workflow_dispatch:
+jobs:
+  archive:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate recovered HTML syntax and write provenance
+        env:
+          RECOVERY_MANIFEST_OUT: recovered/army/G5_4_Recovery_Manifest.json
+        run: node recovered/army/check_g5_4_archive.mjs
+      - name: Publish G5.4 recovered HTML and checksum
+        uses: actions/upload-artifact@v4
+        with:
+          name: KillTheKing-G5-4-Recovered-Army-HTML
+          path: |
+            recovered/army/KillTheKing_G5_4_Kanat_Savunmasi_Oyna.html
+            recovered/army/G5_4_Recovery_Manifest.json
+            recovered/army/README_G5_4.md
+          if-no-files-found: error
