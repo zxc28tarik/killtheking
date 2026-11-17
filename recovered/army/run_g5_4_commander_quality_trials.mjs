@@ -9,8 +9,8 @@ const roles=['musket','pike','bow','sword'];
 const seeds=[1600,1701,1802];
 export function loadActualEngine(){
   const ctx=vm.createContext({console});
-  vm.runInContext(readFileSync(resolve(root,'weapon-balance.js'),'utf8'),ctx,{timeout:3000});
-  vm.runInContext(readFileSync(resolve(root,'arena-army-battle.js'),'utf8'),ctx,{timeout:3000});
+  vm.runInContext(readFileSync(resolve(root,'modules','weapon-balance.js'),'utf8'),ctx,{timeout:3000});
+  vm.runInContext(readFileSync(resolve(root,'modules','arena-army-battle.js'),'utf8'),ctx,{timeout:3000});
   assert.equal(typeof ctx.ArenaArmyBattle?.step,'function');
   return ctx.ArenaArmyBattle;
 }
