@@ -1,5 +1,5 @@
 {
-  "format": "killtheking-g5.4-real-engine-quality-summary-v1",
+  "format": "killtheking-g5.4-real-engine-quality-summary-v2",
   "scope": "recovered G5.4, NOT G8.4",
   "matrixSummary": {
     "source": "recovered G5.4 actual ArenaArmyBattle",
@@ -60,6 +60,10 @@
       }
     ]
   },
+  "stationaryWarningBreakdown": {
+    "possible-tactical-engagement": 4,
+    "possible-protective-screen": 5
+  },
   "stationaryWarnings": [
     {
       "role": "bow",
@@ -67,7 +71,10 @@
       "command": "advance",
       "at": 34.24,
       "squadId": 2,
-      "order": "advance",
+      "squadType": "bow",
+      "team": "blue",
+      "aiRole": "fire-support",
+      "tacticalReason": "Hedef arıyor",
       "nearestEnemyDistance": 52.492,
       "classification": "possible-tactical-engagement"
     },
@@ -77,7 +84,10 @@
       "command": "advance",
       "at": 34.24,
       "squadId": 2,
-      "order": "advance",
+      "squadType": "bow",
+      "team": "blue",
+      "aiRole": "fire-support",
+      "tacticalReason": "Hedef arıyor",
       "nearestEnemyDistance": 56.962,
       "classification": "possible-tactical-engagement"
     },
@@ -87,7 +97,10 @@
       "command": "advance",
       "at": 38.48,
       "squadId": 2,
-      "order": "advance",
+      "squadType": "bow",
+      "team": "blue",
+      "aiRole": "fire-support",
+      "tacticalReason": "Hedef arıyor",
       "nearestEnemyDistance": 24.021,
       "classification": "possible-tactical-engagement"
     },
@@ -97,7 +110,10 @@
       "command": "advance",
       "at": 34.24,
       "squadId": 2,
-      "order": "advance",
+      "squadType": "bow",
+      "team": "blue",
+      "aiRole": "fire-support",
+      "tacticalReason": "Hedef arıyor",
       "nearestEnemyDistance": 52.66,
       "classification": "possible-tactical-engagement"
     },
@@ -107,9 +123,12 @@
       "command": "hold",
       "at": 21.2,
       "squadId": 3,
-      "order": "advance",
+      "squadType": "sword",
+      "team": "blue",
+      "aiRole": "screen",
+      "tacticalReason": "Menzilli birliklere kılıçlı yakın koruma sağla",
       "nearestEnemyDistance": 120.807,
-      "classification": "needs-review"
+      "classification": "possible-protective-screen"
     },
     {
       "role": "pike",
@@ -117,9 +136,12 @@
       "command": "hold",
       "at": 25.2,
       "squadId": 3,
-      "order": "advance",
+      "squadType": "sword",
+      "team": "blue",
+      "aiRole": "screen",
+      "tacticalReason": "Menzilli birliklere kılıçlı yakın koruma sağla",
       "nearestEnemyDistance": 94.347,
-      "classification": "needs-review"
+      "classification": "possible-protective-screen"
     },
     {
       "role": "bow",
@@ -127,9 +149,12 @@
       "command": "hold",
       "at": 25.68,
       "squadId": 1,
-      "order": "advance",
+      "squadType": "pike",
+      "team": "blue",
+      "aiRole": "screen",
+      "tacticalReason": "Menzilli birliklerin önünde savunma perdesi kur",
       "nearestEnemyDistance": 51.352,
-      "classification": "needs-review"
+      "classification": "possible-protective-screen"
     },
     {
       "role": "sword",
@@ -137,9 +162,12 @@
       "command": "hold",
       "at": 21.04,
       "squadId": 1,
-      "order": "advance",
+      "squadType": "pike",
+      "team": "blue",
+      "aiRole": "screen",
+      "tacticalReason": "Menzilli birliklerin önünde savunma perdesi kur",
       "nearestEnemyDistance": 120.487,
-      "classification": "needs-review"
+      "classification": "possible-protective-screen"
     },
     {
       "role": "sword",
@@ -147,9 +175,12 @@
       "command": "hold",
       "at": 25.12,
       "squadId": 1,
-      "order": "advance",
+      "squadType": "pike",
+      "team": "blue",
+      "aiRole": "screen",
+      "tacticalReason": "Menzilli birliklerin önünde savunma perdesi kur",
       "nearestEnemyDistance": 94.497,
-      "classification": "needs-review"
+      "classification": "possible-protective-screen"
     }
   ],
   "perTrial": [
