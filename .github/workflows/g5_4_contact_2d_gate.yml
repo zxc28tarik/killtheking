@@ -7,6 +7,8 @@ on:
       - 'recovered/army/candidates/*contact_2d*'
       - 'recovered/army/candidates/arena-army-battle-contact-2d-candidate.js'
       - '.github/workflows/g5_4_contact_2d_gate.yml'
+      - 'recovered/army/candidates/run_g5_4_contact_recovery_matrix.mjs'
+      - 'recovered/army/g5_4_battle_closure_audit.mjs'
   workflow_dispatch:
 jobs:
   match-part:
