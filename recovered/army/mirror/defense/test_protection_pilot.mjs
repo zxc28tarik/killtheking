@@ -51,6 +51,6 @@ test('reference honestly records 3 worse-protection scenarios and zero extra vic
  assert.equal(records.filter(x=>x[1][2]<x[0][2]).length,3);
  assert.equal(records.filter(x=>x[1][2]>x[0][2]).length,9);
  assert.equal(records.filter(x=>x[0][0]!==x[1][0]).length,0);
- assert.equal(records.filter(x=>x[0][0]==='blue').length,2);
- assert.equal(records.filter(x=>x[1][0]==='blue').length,2);
+ assert.equal(records.filter((x,i)=>x[0][0]===scenarioIndex[i][3]).length,2);
+ assert.equal(records.filter((x,i)=>x[1][0]===scenarioIndex[i][3]).length,2);
 });
