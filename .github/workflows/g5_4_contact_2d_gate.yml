@@ -1,0 +1,62 @@
+name: G5.4 2D firing line — 32 real CPU matches
+on:
+  push:
+    branches:
+      - codex/recover-g5-4-army-source
+    paths:
+      - 'recovered/army/candidates/*contact_2d*'
+      - 'recovered/army/candidates/arena-army-battle-contact-2d-candidate.js'
+      - '.github/workflows/g5_4_contact_2d_gate.yml'
+  workflow_dispatch:
+jobs:
+  match-part:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    strategy:
+      fail-fast: false
+      matrix:
+        start: [0, 4, 8, 12, 16, 20, 24, 28]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run four authentic G5.4 battles (60-second telemetry checkpoints)
+        run: node recovered/army/candidates/run_g5_4_contact_2d_matrix.mjs ${{ matrix.start }} 4
+      - name: Save real engine checkpoints
+        uses: actions/upload-artifact@v4
+        with:
+          name: ktk-g54-contact2d-part-${{ matrix.start }}
+          path: recovered/army/candidates/dist/contact-2d/full_part_${{ matrix.start }}.json
+          if-no-files-found: error
+  verify-and-build:
+    needs: match-part
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Retrieve actual checkpoint traces from all eight jobs
+        uses: actions/download-artifact@v4
+        with:
+          pattern: ktk-g54-contact2d-part-*
+          path: recovered/army/candidates/dist/contact-2d
+          merge-multiple: true
+      - name: Verify 32 distinct real elimination results
+        run: node recovered/army/candidates/merge_g5_4_contact_2d_matrix.mjs
+      - name: Test player-order noninterference, 2D contact and checkpoint integrity
+        run: node --test recovered/army/candidates/test_g5_4_contact_2d.mjs
+      - name: Build separately named standalone G5.4 candidate HTML
+        run: node recovered/army/candidates/build_g5_4_contact_2d.mjs
+      - name: Publish validated CPU candidate (not approved public release or G8.4)
+        uses: actions/upload-artifact@v4
+        with:
+          name: KillTheKing-G5-4-2DContact-32CPU-WINS-NOT-G8-4
+          path: |
+            recovered/army/candidates/dist/KillTheKing_G5_4_2D_Temas_Oyna.html
+            recovered/army/candidates/dist/KillTheKing_G5_4_2D_Temas_Oyna_BUILD.json
+            recovered/army/candidates/dist/contact-2d/FULL_32_MATCH_CLOSURE.json
+            recovered/army/candidates/G5_4_2D_CONTACT_32_MATCH_REPORT.md
+          if-no-files-found: error
