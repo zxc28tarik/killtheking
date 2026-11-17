@@ -1,0 +1,79 @@
+name: G5.4 real blue/red side swap — paired CPU trials
+on:
+  push:
+    branches:
+      - codex/recover-g5-4-army-source
+    paths:
+      - 'recovered/army/mirror/**'
+      - '.github/workflows/g5_4_true_side_swap.yml'
+  workflow_dispatch:
+jobs:
+  verify-red-owner:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify source syntax and 16 red-team/blue-regression tests
+        run: |
+          node --check recovered/army/mirror/arena-army-battle-true-side-swap.js
+          node --test recovered/army/mirror/test_g5_4_true_side_swap.mjs
+  pairs:
+    needs: verify-red-owner
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    strategy:
+      fail-fast: false
+      matrix:
+        start: [0, 4, 8, 12, 16, 20, 24, 28]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run 4 matched pairs (8 authentic CPU games at 600 sec max each)
+        run: node recovered/army/mirror/run_g5_4_true_side_pairs.mjs ${{ matrix.start }} 4
+      - uses: actions/upload-artifact@v4
+        with:
+          name: g54-real-side-pairs-${{ matrix.start }}
+          path: recovered/army/mirror/dist/mirror/part_${{ matrix.start }}.json
+          if-no-files-found: error
+  audit:
+    needs: pairs
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: g54-real-side-pairs-*
+          path: recovered/army/mirror/dist/mirror
+          merge-multiple: true
+      - name: Merge source-bound 32 matched pairs and reject fake wins
+        run: node recovered/army/mirror/merge_g5_4_true_side_pairs.mjs
+      - name: Generate explicit fairness/coverage status
+        run: |
+          node --input-type=module -e '
+            import fs from "node:fs";
+            const p="recovered/army/mirror/dist/mirror/FULL_64_TRUE_SIDE_SWAP.json";
+            const d=JSON.parse(fs.readFileSync(p,"utf8"));
+            const s=d.summary;
+            const report=["# G5.4 — Real side swap report", "", "- 32 matched seeds/roles/orders, 64 actual engine games", "- Natural conclusions: "+s.naturalWins+"/"+s.battles, "- Unresolved: "+s.unresolved, "- Human blue-side wins: "+s.bluePlayerWins+"/32", "- Human red-side wins: "+s.redPlayerWins+"/32", "- Same-color winner across paired team swaps: "+s.sameColorWinnerPairs, "- Opposite-color winner pairs: "+s.opposingColorWinnerPairs, "", "**Fairness approval: NOT GRANTED.** Side-swap results diagnose team and human-command bias; traits/position randomization are not perfectly geometrically mirrored. No GPU/WebGL play was validated. G8.4 is missing. No public release authorized.", ""];
+            fs.writeFileSync("recovered/army/mirror/dist/mirror/G5_4_SIDE_SWAP_REPORT.md",report.join("\n"));
+            console.log(report.join("\n"));'
+      - name: Preserve CPU evidence (not a release build)
+        uses: actions/upload-artifact@v4
+        with:
+          name: KillTheKing-G5-4-REAL-SideSwap-64CPU-NOT-RELEASE
+          path: |
+            recovered/army/mirror/dist/mirror/FULL_64_TRUE_SIDE_SWAP.json
+            recovered/army/mirror/dist/mirror/G5_4_SIDE_SWAP_REPORT.md
+            recovered/army/mirror/arena-army-battle-true-side-swap.js
+            recovered/army/mirror/test_g5_4_true_side_swap.mjs
+            recovered/army/mirror/run_g5_4_true_side_pairs.mjs
+            recovered/army/mirror/merge_g5_4_true_side_pairs.mjs
+          if-no-files-found: error
