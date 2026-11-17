@@ -1,0 +1,26 @@
+name: G8.5 isolated QA — 357 checks
+on:
+  pull_request:
+    paths:
+      - 'tools/g8-5c/**'
+      - '.github/workflows/g8_5e_qa.yml'
+  push:
+    branches:
+      - 'codex/g8-5c-telemetry-mirror-qa'
+    paths:
+      - 'tools/g8-5c/**'
+      - '.github/workflows/g8_5e_qa.yml'
+jobs:
+  full-qa:
+    name: G8.5 isolated tooling — 15 suites
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify all 357 isolated checks (not production battles)
+        run: python tools/g8-5c/run_full_qa.py

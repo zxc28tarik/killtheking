@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Kill the King · G8.5G Kaynak Kurtarma</title>
+<style>
+:root{color-scheme:dark;--bg:#0e1420;--panel:#182132;--edge:#344257;--text:#edf3f9;--muted:#a8b8cb;--hi:#70c5fa;--good:#90e0b2;--warn:#f9cb7a}
+*{box-sizing:border-box}body{font:16px/1.55 system-ui,-apple-system,Segoe UI,sans-serif;margin:0;background:var(--bg);color:var(--text)}main{max-width:960px;margin:auto;padding:32px 20px 56px}header{margin-bottom:26px}h1{font-size:clamp(25px,4vw,38px);line-height:1.2;margin:6px 0 12px}h2{font-size:19px}p{color:var(--muted)}small{color:var(--muted)}.pill{display:inline-block;font-size:12px;letter-spacing:.06em;text-transform:uppercase;padding:3px 10px;border-radius:999px;border:1px solid var(--edge);color:var(--hi)}.panel{border:1px solid var(--edge);background:var(--panel);border-radius:16px;padding:22px;margin:16px 0}.actions{display:flex;gap:12px;flex-wrap:wrap}.pick{cursor:pointer;border:1px solid #577898;background:#253c55;padding:11px 17px;color:#fff;border-radius:9px;font-size:14px;font-weight:700}.pick:hover{border-color:var(--hi)}.pick.secondary{background:transparent}.pick input{display:none}button{cursor:pointer}.pick:focus-within{outline:2px solid var(--hi)}.status{font-weight:600}.result{padding:16px 0;border-top:1px solid var(--edge)}.result:first-child{border:0}.file{word-break:break-word;color:#fff;font-weight:700}.ok{color:var(--good)}.warn{color:var(--warn)}.bad{color:var(--muted)}.meta{font-size:13px;color:var(--muted);word-break:break-all}code{background:#263246;padding:2px 5px;border-radius:4px}#export{display:none}.note{border-left:3px solid var(--warn);padding-left:15px}a{color:var(--hi)}
+</style></head><body><main>
+<header><span class="pill">G8.5G · çevrimdışı</span><h1>Kill the King — kaynak dosyası bulucu</h1>
+<p>16 Kasım'da üretilen G8.4 sürümünü eski oyun kodlarıyla karıştırmamak için bilgisayarındaki dosya ve klasörleri <strong>yalnızca sen seçtiğinde</strong> tarar. Hiçbir dosyayı internete göndermez, değiştirmez veya çalıştırmaz.</p></header>
+<section class="panel"><h2>1. Dosya veya klasör seç</h2><p>Önce <strong>İndirilenler (Downloads)</strong> klasörünü seç. Gerekirse Masaüstü veya Belgeler'i de ayrı ayrı tarayabilirsin. Tarama tarayıcı içinde gerçekleşir.</p>
+<div class="actions"><label class="pick">Klasör seç <input id="folder" type="file" webkitdirectory multiple></label><label class="pick secondary">HTML / ZIP dosyaları seç <input id="files" type="file" accept=".html,.htm,.zip" multiple></label><button id="export" class="pick secondary" type="button">Sonuç raporunu kaydet</button></div>
+<p id="status" class="status" aria-live="polite">Henüz dosya seçilmedi.</p></section>
+<section class="panel"><h2>2. Bulunan adaylar</h2><div id="results"><p>Seçtiğin klasördeki G8.4/G8.5 dosyaları burada listelenir.</p></div></section>
+<section class="panel"><h2>3. Kaynak bulunursa</h2><p class="note">Önce oynanabilir <code>KillTheKing_G8_4_Ikmal_Hatti_Savas_Raporu_Oyna.html</code> dosyasını, ardından varsa <code>KillTheKing_G8_4_KaynakKod.zip</code> paketini bu sohbete ekle. Dosya adının eşleşmesi tek başına sürüm doğrulaması değildir; gerçek oyun kodu ve testleri ayrıca kontrol edilecek.</p><small>Bu araç ZIP içeriğini açıp karşılaştırmaz. Kaynak paketi ile HTML'nin birebir uyumu, G8.5F kaynak denetimi kullanılarak ayrıca doğrulanır.</small></section>
+</main><script>
+(function(root){
+'use strict';
+const VERSION=1, MAX_FILES=50000, MAX_BYTES=30*1024*1024;
+const GAME_RE=/kill[ _.-]*the[ _.-]*king|killtheking|ikmal[ _.-]*hatt|g8[ _.-]?[45]/i;
+const HTML_RE=/\.html?$/i, ZIP_RE=/\.zip$/i;
+function assess(name,text){
+ const found={army:/\bArenaArmyBattle\b|\bcreateArmyBattle\b|\bmeadowBattleState\b/.test(text),
+  supply:/\bsupply_line\b|\bsupplyLine\b|ikmalHatt[iı]/i.test(text),
+  g8Tag:/\bG8[._ -]?[45](?:[A-Z])?\b/i.test(text),
+  supplyLabel:/İkmal Hattı|Ikmal Hatti|Supply Line/i.test(text)};
+ const plausible=found.army&&(found.supply||(found.g8Tag&&found.supplyLabel));
+ return {plausible,status:plausible?'inceleme_adayı':'yetersiz_sürüm_kanıtı',found,
+  warning:'Metin işaretleri gerçek oyun motorunun çalıştığını veya sürümü kanıtlamaz.'};
+}
+function isCandidate(file){return GAME_RE.test(file.name) && (HTML_RE.test(file.name)||ZIP_RE.test(file.name))}
+function sorted(files){return [...files].filter(isCandidate).sort((a,b)=>{
+ const ap=/^KillTheKing_G8_4_Ikmal_Hatti_Savas_Raporu_Oyna\.html$/i.test(a.name)?2:/^KillTheKing_G8_4_KaynakKod\.zip$/i.test(a.name)?1:0;
+ const bp=/^KillTheKing_G8_4_Ikmal_Hatti_Savas_Raporu_Oyna\.html$/i.test(b.name)?2:/^KillTheKing_G8_4_KaynakKod\.zip$/i.test(b.name)?1:0;
+ return bp-ap||(b.lastModified||0)-(a.lastModified||0)||a.name.localeCompare(b.name);
+})}
+root.KtkSourceFinder={assess,isCandidate,sorted,MAX_BYTES,VERSION};
+if(typeof document==='undefined')return;
+const $=s=>document.querySelector(s), status=$('#status'),results=$('#results'),exportButton=$('#export');
+let lastReport=null;
+const clean=n=>typeof n==='string'?n:'';
+function element(tag,css,text){const el=document.createElement(tag);if(css)el.className=css;if(text!==undefined)el.textContent=text;return el}
+function render(report){results.replaceChildren();const hits=report.candidates;
+ if(!hits.length){results.append(element('p','', 'Bu seçimde eşleşen dosya adı bulunamadı. Başka bir klasör deneyebilirsin.'));return}
+ for(const r of hits){const wrap=element('article','result'),state=element('div',r.status==='inceleme_adayı'?'ok':r.status==='kaynak_zip_adayı'?'warn':'bad',r.statusLabel);
+ wrap.append(element('div','file',r.relativePath),state);
+ wrap.append(element('div','meta',r.kind.toUpperCase()+' · '+(r.bytes/1048576).toFixed(2)+' MB'+(r.sha256?' · SHA256 '+r.sha256:'')));
+ if(r.found){const keys=Object.entries(r.found).filter(([,v])=>v).map(([k])=>k).join(', ');wrap.append(element('div','meta','Kod işaretleri: '+(keys||'yok')));}
+ results.append(wrap)}
+}
+async function hash(file){if(!root.crypto?.subtle||!file.arrayBuffer)return null;const buf=await file.arrayBuffer();const digest=await root.crypto.subtle.digest('SHA-256',buf);return [...new Uint8Array(digest)].map(v=>v.toString(16).padStart(2,'0')).join('')}
+async function analyzeFiles(selected){
+ if(selected.length>MAX_FILES){status.textContent='Çok fazla dosya seçildi. Daha küçük bir klasör seç.';return}
+ const candidates=sorted(selected);status.textContent='Dosyalar yerel olarak inceleniyor: '+candidates.length+' aday.';
+ const rows=[];for(const [index,file] of candidates.slice(0,40).entries()){
+  let record={relativePath:clean(file.webkitRelativePath)||file.name,kind:HTML_RE.test(file.name)?'html':'zip',bytes:file.size,status:'yetersiz_sürüm_kanıtı',statusLabel:'Ek doğrulama gerekli'};
+  try{
+   if(file.size>MAX_BYTES){record.status='cok_buyuk';record.statusLabel='30 MB üstü: elle incele';}
+   else if(HTML_RE.test(file.name)){
+    const data=assess(file.name,await file.text());record={...record,...data};
+    record.statusLabel=data.plausible?'G8 kod işaretleri var · elle doğrula':'Sürüm işaretleri yetersiz';
+   } else {record.status='kaynak_zip_adayı';record.statusLabel='ZIP adayı · içeriği burada doğrulanmadı'};
+   if(file.size<=MAX_BYTES)record.sha256=await hash(file);
+  }catch(err){record.status='okunamadi';record.statusLabel='Dosya okunamadı: '+String(err).slice(0,160)}
+  rows.push(record);if(index%5===0)status.textContent='Taranan aday: '+(index+1)+' / '+Math.min(candidates.length,40);
+ }
+ lastReport={format:'KTK_G8_5G_BROWSER_DISCOVERY_V1',localOnly:true,selectedCount:selected.length,candidateCount:candidates.length,
+ candidates:rows,warning:'Source identification only; no playable build, WebGL or AI regression has been verified.'};
+ render(lastReport);status.textContent=selected.length+' dosya arasından '+candidates.length+' isim adayı bulundu. '+rows.filter(x=>x.status==='inceleme_adayı').length+' HTML incelemeye uygun.';
+ exportButton.style.display='inline-block';
+}
+for(const sel of ['#folder','#files']) $(sel).addEventListener('change',e=>{analyzeFiles(e.target.files||[]).catch(err=>{status.textContent='Tarama hatası: '+err.message})});
+exportButton.addEventListener('click',()=>{
+ if(!lastReport)return;const blob=new Blob([JSON.stringify(lastReport,null,2)],{type:'application/json'});
+ const url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download='KillTheKing_G8_5G_Yerel_Tarama_Raporu.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+});
+})(typeof window!=='undefined'?window:globalThis);
+</script></body></html>
