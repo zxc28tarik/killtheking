@@ -16,6 +16,8 @@ jobs:
         env:
           RECOVERY_MANIFEST_OUT: recovered/army/G5_4_Recovery_Manifest.json
         run: node recovered/army/check_g5_4_archive.mjs
+      - name: Run actual G5.4 engine contract tests (not GPU tests)
+        run: node --test recovered/army/test_g5_4_army_contract.mjs
       - name: Publish G5.4 recovered HTML and checksum
         uses: actions/upload-artifact@v4
         with:
