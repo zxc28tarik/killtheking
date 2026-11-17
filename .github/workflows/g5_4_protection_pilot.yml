@@ -1,0 +1,81 @@
+name: G5.4 protective sword AI candidate — paired A/B (NOT APPROVED)
+on:
+  push:
+    branches:
+      - codex/recover-g5-4-army-source
+    paths:
+      - 'recovered/army/mirror/defense/**'
+      - 'recovered/army/mirror/arena-army-battle-protection-candidate.js'
+      - '.github/workflows/g5_4_protection_pilot.yml'
+  workflow_dispatch:
+jobs:
+  engine-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax and player/team/soldier regression tests
+        run: |
+          node --check recovered/army/mirror/arena-army-battle-protection-candidate.js
+          node --check recovered/army/mirror/defense/protection_pilot.mjs
+          node --check recovered/army/mirror/defense/verify_protection_pilot.mjs
+          node --test recovered/army/mirror/defense/test_protection_pilot.mjs
+  replay-four-pairs:
+    needs: engine-contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    strategy:
+      fail-fast: false
+      matrix:
+        start: [0, 4, 8]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Independently rerun 4 baseline + 4 candidate 600-second-cap CPU matches
+        shell: bash
+        working-directory: recovered/army/mirror/defense
+        env:
+          START: \${{ matrix.start }}
+          KTK_PROTECT_OUT_DIR: replay
+        run: |
+          for i in $(seq "$START" "$((START + 3))"); do
+            node protection_pilot.mjs "$i"
+          done
+      - name: Preserve native CPU results for audit
+        uses: actions/upload-artifact@v4
+        with:
+          name: g54-protection-pilot-\${{ matrix.start }}
+          path: recovered/army/mirror/defense/replay/part_*.json
+          if-no-files-found: error
+  audit-not-release:
+    needs: replay-four-pairs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: g54-protection-pilot-*
+          path: recovered/army/mirror/defense/replay
+          merge-multiple: true
+      - name: Audit all 24 matches, pin SHA and verify three coverage regressions
+        run: node recovered/army/mirror/defense/verify_protection_pilot.mjs
+      - name: Preserve full outcome evidence (NOT a playable release)
+        uses: actions/upload-artifact@v4
+        with:
+          name: KillTheKing-G5-4-GuardPilot-24CPU-NOT-APPROVED
+          path: |
+            recovered/army/mirror/arena-army-battle-protection-candidate.js
+            recovered/army/mirror/defense/G5_4_PROTECTION_PILOT_REPORT.md
+            recovered/army/mirror/defense/protection_pilot_reference.json
+            recovered/army/mirror/defense/replay/PILOT_12_PAIRED_MATCHES.json
+            recovered/army/mirror/defense/protection_pilot.mjs
+            recovered/army/mirror/defense/test_protection_pilot.mjs
+            recovered/army/mirror/defense/verify_protection_pilot.mjs
+          if-no-files-found: error
