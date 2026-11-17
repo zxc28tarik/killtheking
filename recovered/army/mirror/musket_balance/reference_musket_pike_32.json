@@ -1,0 +1,266 @@
+{
+  "version": "g54-archive-reference-v1",
+  "source": {
+    "githubRun": 44085979061,
+    "artifactId": 14329142853,
+    "engineSha256": "307987855abc0973ea9177fdd659c39d1d02673c8381c0501be8b63c04ddf841"
+  },
+  "rows": [
+    {
+      "seed": 1600,
+      "role": "musket",
+      "order": "advance",
+      "side": "blue",
+      "winner": "red",
+      "seconds": 223.36
+    },
+    {
+      "seed": 1600,
+      "role": "musket",
+      "order": "advance",
+      "side": "red",
+      "winner": "blue",
+      "seconds": 210.56
+    },
+    {
+      "seed": 1600,
+      "role": "musket",
+      "order": "hold",
+      "side": "blue",
+      "winner": "red",
+      "seconds": 333.68
+    },
+    {
+      "seed": 1600,
+      "role": "musket",
+      "order": "hold",
+      "side": "red",
+      "winner": "blue",
+      "seconds": 296.88
+    },
+    {
+      "seed": 1600,
+      "role": "pike",
+      "order": "advance",
+      "side": "blue",
+      "winner": "red",
+      "seconds": 278.48
+    },
+    {
+      "seed": 1600,
+      "role": "pike",
+      "order": "advance",
+      "side": "red",
+      "winner": "red",
+      "seconds": 237.2
+    },
+    {
+      "seed": 1600,
+      "role": "pike",
+      "order": "hold",
+      "side": "blue",
+      "winner": "blue",
+      "seconds": 256.24
+    },
+    {
+      "seed": 1600,
+      "role": "pike",
+      "order": "hold",
+      "side": "red",
+      "winner": "red",
+      "seconds": 313.04
+    },
+    {
+      "seed": 1776,
+      "role": "musket",
+      "order": "advance",
+      "side": "blue",
+      "winner": "red",
+      "seconds": 240.64
+    },
+    {
+      "seed": 1776,
+      "role": "musket",
+      "order": "advance",
+      "side": "red",
+      "winner": "blue",
+      "seconds": 293.36
+    },
+    {
+      "seed": 1776,
+      "role": "musket",
+      "order": "hold",
+      "side": "blue",
+      "winner": "red",
+      "seconds": 289.12
+    },
+    {
+      "seed": 1776,
+      "role": "musket",
+      "order": "hold",
+      "side": "red",
+      "winner": "blue",
+      "seconds": 331.04
+    },
+    {
+      "seed": 1776,
+      "role": "pike",
+      "order": "advance",
+      "side": "blue",
+      "winner": "blue",
+      "seconds": 243.44
+    },
+    {
+      "seed": 1776,
+      "role": "pike",
+      "order": "advance",
+      "side": "red",
+      "winner": "red",
+      "seconds": 308.88
+    },
+    {
+      "seed": 1776,
+      "role": "pike",
+      "order": "hold",
+      "side": "blue",
+      "winner": "blue",
+      "seconds": 290.88
+    },
+    {
+      "seed": 1776,
+      "role": "pike",
+      "order": "hold",
+      "side": "red",
+      "winner": "red",
+      "seconds": 255.2
+    },
+    {
+      "seed": 2026,
+      "role": "musket",
+      "order": "advance",
+      "side": "blue",
+      "winner": "red",
+      "seconds": 241.28
+    },
+    {
+      "seed": 2026,
+      "role": "musket",
+      "order": "advance",
+      "side": "red",
+      "winner": "blue",
+      "seconds": 279.76
+    },
+    {
+      "seed": 2026,
+      "role": "musket",
+      "order": "hold",
+      "side": "blue",
+      "winner": "red",
+      "seconds": 323.12
+    },
+    {
+      "seed": 2026,
+      "role": "musket",
+      "order": "hold",
+      "side": "red",
+      "winner": "blue",
+      "seconds": 274.64
+    },
+    {
+      "seed": 2026,
+      "role": "pike",
+      "order": "advance",
+      "side": "blue",
+      "winner": "red",
+      "seconds": 238.72
+    },
+    {
+      "seed": 2026,
+      "role": "pike",
+      "order": "advance",
+      "side": "red",
+      "winner": "red",
+      "seconds": 288.48
+    },
+    {
+      "seed": 2026,
+      "role": "pike",
+      "order": "hold",
+      "side": "blue",
+      "winner": "blue",
+      "seconds": 239.28
+    },
+    {
+      "seed": 2026,
+      "role": "pike",
+      "order": "hold",
+      "side": "red",
+      "winner": "red",
+      "seconds": 269.68
+    },
+    {
+      "seed": 31415,
+      "role": "musket",
+      "order": "advance",
+      "side": "blue",
+      "winner": "blue",
+      "seconds": 323.76
+    },
+    {
+      "seed": 31415,
+      "role": "musket",
+      "order": "advance",
+      "side": "red",
+      "winner": "blue",
+      "seconds": 300.8
+    },
+    {
+      "seed": 31415,
+      "role": "musket",
+      "order": "hold",
+      "side": "blue",
+      "winner": "red",
+      "seconds": 248.48
+    },
+    {
+      "seed": 31415,
+      "role": "musket",
+      "order": "hold",
+      "side": "red",
+      "winner": "blue",
+      "seconds": 270.56
+    },
+    {
+      "seed": 31415,
+      "role": "pike",
+      "order": "advance",
+      "side": "blue",
+      "winner": "blue",
+      "seconds": 226.56
+    },
+    {
+      "seed": 31415,
+      "role": "pike",
+      "order": "advance",
+      "side": "red",
+      "winner": "red",
+      "seconds": 290.64
+    },
+    {
+      "seed": 31415,
+      "role": "pike",
+      "order": "hold",
+      "side": "blue",
+      "winner": "blue",
+      "seconds": 284.32
+    },
+    {
+      "seed": 31415,
+      "role": "pike",
+      "order": "hold",
+      "side": "red",
+      "winner": "red",
+      "seconds": 257.6
+    }
+  ]
+}
