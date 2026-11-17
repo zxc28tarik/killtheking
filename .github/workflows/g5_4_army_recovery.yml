@@ -43,6 +43,27 @@ jobs:
           mkdir -p recovered/army/dist
           node recovered/army/run_g5_4_commander_quality_trials.mjs recovered/army/dist/G5_4_REAL_ENGINE_QUALITY_MATRIX.json
           cmp recovered/army/G5_4_REAL_ENGINE_QUALITY_MATRIX.json recovered/army/dist/G5_4_REAL_ENGINE_QUALITY_MATRIX.json
+      - name: All 93 G5.4 actual engine tests (no WebGL claim)
+        run: |
+          node --test \
+            recovered/army/test_g5_4_army_contract.mjs \
+            recovered/army/test_g5_4_passive_trace.mjs \
+            recovered/army/test_g5_4_commander_quality_audit.mjs \
+            recovered/army/test_g5_4_long_battle_diagnostics.mjs
+      - name: Reproduce 8 real G5.4 120s CPU battles and check stored evidence
+        run: |
+          node recovered/army/run_g5_4_extended_trials.mjs \
+            recovered/army/dist/G5_4_LONG_BATTLE_MATRIX.json 120
+          node --input-type=module -e "import fs from 'node:fs'; import assert from 'node:assert/strict'; const a=JSON.parse(fs.readFileSync('recovered/army/G5_4_LONG_BATTLE_MATRIX.json','utf8')); const b=JSON.parse(fs.readFileSync('recovered/army/dist/G5_4_LONG_BATTLE_MATRIX.json','utf8')); assert.deepEqual(b,a); assert.equal(b.summary.trials,8); assert.equal(b.summary.reachedDestinationPauses,13); console.log('Eight real G5.4 120s traces reproduce exactly. NOT G8.4.');"
+      - name: Upload long-term G5.4 CPU AI evidence (NOT a WebGL match)
+        uses: actions/upload-artifact@v4
+        with:
+          name: KillTheKing-G5-4-Long-8x120s-Actual-Engine
+          path: |
+            recovered/army/dist/G5_4_LONG_BATTLE_MATRIX.json
+            recovered/army/G5_4_LONG_BATTLE_SUMMARY.json
+            recovered/army/G5_4_LONG_BATTLE_REPORT.md
+          if-no-files-found: error
       - name: Publish actual G5.4 AI audit and all 16 runs (NOT G8.5 mirror QA)
         uses: actions/upload-artifact@v4
         with:
