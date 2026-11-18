@@ -1,4 +1,4 @@
-/** Source-pinned FFA targeting and explicitly approved 0.5s archer-draw candidate: 4s cadence, 1s recovery, other weapons and modes unchanged. */
+/** Source-pinned FFA aggro and arena BOT archer 0.5s windup; player bow remains 2s minimum / 3s full draw. */
 import {createHash} from 'node:crypto';
 export const sha256=text=>createHash('sha256').update(text).digest('hex');
 export const ORIGINAL_FFA_SHA='18dca2a895763f0955566f2fc90651f1ab1a98f86597e399cbac42ac2fc6f15a';
@@ -44,20 +44,14 @@ export function patchFfaAggro(ffa){
   '                } else if (isGameActive && arenaTarget && arenaDist <= bot.range) {',
   '                } else if (isGameActive && arenaTarget && arenaDist <= bot.range && hasClearShot) {');
 
- // Explicit 18 Nov 2026 approval: FFA archer 0.5s preparation, for both
- // player-controlled bow and normal bot ranged-windup. IMPORTANT: retain
- // the absolute 4s between arrows (<=15/min) and the 1s post-shot recovery.
- // The historical October game is never overwritten; only this isolated
- // candidate gets the exact, hash-pinned, uniquely-matched patch.
+ // Clarified by the user on 18 Nov 2026: ONLY the FFA arena BOT
+ // archer telegraph is 0.5s. The human player's NORMAL bow retains
+ // its original 2s minimum draw / 3s full-power draw. The original
+ // four-second arrow cadence and one-second recovery are untouched.
+ // Keep the October source immutable; apply exactly one source-locked edit.
  patched=swapOne(patched,
   'archer:Object.freeze({cooldown:4,variance:0,windup:3,aimArc:.36}),',
   'archer:Object.freeze({cooldown:4,variance:0,windup:.5,aimArc:.36}),');
- patched=swapOne(patched,
-  'const BOW_MIN_DRAW_SECONDS=2;',
-  'const BOW_MIN_DRAW_SECONDS=.5;');
- patched=swapOne(patched,
-  'const BOW_DRAW_SECONDS=3;',
-  'const BOW_DRAW_SECONDS=.5;');
  return patched;
 }
 export function patchArmyAggro(engine){
