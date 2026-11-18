@@ -8,6 +8,7 @@ import {fileURLToPath} from 'node:url';
 import {createHash} from 'node:crypto';
 import vm from 'node:vm';
 import {assembleArmies,createLauncher,build} from './build_isolated_launcher.mjs';
+import {patchFfaAggro,patchArmyAggro} from './player_target_hotfix.mjs';
 
 const here=dirname(fileURLToPath(import.meta.url));
 const armySource=readFileSync(resolve(here,'../KillTheKing_G5_4_Kanat_Savunmasi_Oyna.html'),'utf8');
@@ -32,20 +33,21 @@ const originalScripts=scripts(armySource),patchedScripts=scripts(g54.html);
 
 test('FFA A5 approved Oct 18 artifact is an immutable source input',()=>{
  assert.equal(sha(ffa),'18dca2a895763f0955566f2fc90651f1ab1a98f86597e399cbac42ac2fc6f15a');
- assert.equal(decodeFrom('ffa'),ffa);
- assert.equal(sha(decodeFrom('ffa')),sha(ffa));
+ assert.equal(decodeFrom('ffa'),patchFfaAggro(ffa));
+ assert.notEqual(sha(decodeFrom('ffa')),sha(ffa));
+ assert.equal(sha(decodeFrom('ffa')),'6fd8a0c6342067e4ba3f3546b716e9fa1b9cce8a9e1c3a09c499fe925480289e');
 });
 test('source G5.4 archive immutable and preserved',()=>{
  assert.equal(sha(armySource),'1d5f72768054b4138ba742e10923bfb20c00bd37fe789cdc3e40a65967cccfe2');
  assert.equal(originalScripts.length,29);
  assert.equal(patchedScripts.length,30);
 });
-test('only embedded battle engine changed; no arena AI, graphics, FFA/TDM code modifications',()=>{
+test('only G5.4 army engine changed; all other graphics/FFA embedded scripts unchanged',()=>{
  const oldIndex=originalScripts.findIndex(s=>patchEngine.test(s[1]));
  const newIndex=patchedScripts.findIndex(s=>patchEngine.test(s[1]));
  assert.equal(oldIndex,26);assert.equal(newIndex,26);
  for(let i=0;i<29;i++){
-  if(i===26){assert.equal(patchedScripts[i][1],engine);continue;}
+  if(i===26){assert.equal(patchedScripts[i][1],patchArmyAggro(engine));continue;}
   assert.equal(singleScript(originalScripts[i]),singleScript(patchedScripts[i]),'unexpected modified G5.4 script '+i);
  }
  assert(armySource.includes('meadowBattleMode = false'));
@@ -66,7 +68,7 @@ test('launcher embeds BOTH full games and cannot execute game source on parent p
 test('army corrected engine loads without browser and owns genuine blue or red player company',()=>{
  const ctx=vm.createContext({console});
  new vm.Script(weapon,{filename:'weapon-balance.js'}).runInContext(ctx);
- new vm.Script(engine,{filename:'arena-army-battle-true-side-swap.js'}).runInContext(ctx);
+ new vm.Script(patchArmyAggro(engine),{filename:'arena-army-battle-player-hotfix.js'}).runInContext(ctx);
  const core=ctx.ArenaArmyBattle;
  assert(core&&typeof core.step==='function');
  for(const team of ['blue','red'])for(const role of ['musket','pike','bow','sword']){
@@ -82,7 +84,7 @@ test('army corrected engine loads without browser and owns genuine blue or red p
  }
 });
 test('all 29 source scripts and new launcher controller have correct JS syntax',()=>{
- for(const [index,s] of scripts(ffa).entries())
+ for(const [index,s] of scripts(patchFfaAggro(ffa)).entries())
   new vm.Script(s[1],{filename:'ffa-'+index+'.js'});
  for(const [index,s] of scripts(g54.html).entries())
   new vm.Script(s[1],{filename:'army-'+index+'.js'});
@@ -98,6 +100,10 @@ test('deterministic standalone HTML build and source-provenance manifest',()=>{
  assert.equal(onDisk,html);
  assert.equal(built.manifest.launcherSHA256,sha(onDisk));
  assert.equal(manifest.ffaBytes,Buffer.byteLength(ffa));
+ assert.equal(manifest.ffaHotfixedSHA256,'6fd8a0c6342067e4ba3f3546b716e9fa1b9cce8a9e1c3a09c499fe925480289e');
+ assert.equal(manifest.armyEngineHotfixedSHA256,'5a078a89efde450a34c2d406d916bc326aabd8b2b6945993c70697c0759132a8');
+ assert.equal(manifest.ffaTargetingChanged,true);
+ assert.equal(manifest.armyTargetingChanged,true);
  assert.equal(manifest.armyBytes,Buffer.byteLength(g54.html));
  assert.equal(manifest.approval,'CANDIDATE_NOT_APPROVED');
  assert.equal(manifest.realGPUAccepted,false);
