@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kill the King — Kuşatma Kalesi S1 Harita ve Hedef Önizlemesi</title>
+<style>
+:root{color-scheme:dark;--ink:#f9f0de;--muted:#cfcaaf;--gold:#e7ac48;--edge:#6b5436;--red:#dc5143;--blue:#5eb5d5;--bg:#171a19}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;font-family:system-ui,'Segoe UI',sans-serif;background:var(--bg);color:var(--ink)}
+body{display:flex;flex-direction:column;overflow:hidden}
+header{padding:13px 22px;background:#232321;border-bottom:2px solid #6e5935;display:flex;align-items:center;justify-content:space-between;gap:15px;flex-wrap:wrap;z-index:4}
+h1{font-family:Georgia,serif;margin:0;font-size:clamp(20px,3vw,30px);letter-spacing:.04em}header small{font-size:12px;color:#dcc69b;letter-spacing:.1em}
+.warning{font-size:12px;line-height:1.4;color:#f5d7a5;background:#553f21;padding:8px 11px;border:1px solid #936532;border-radius:5px;max-width:420px}
+main{display:grid;grid-template-columns:minmax(0,1fr) 355px;flex:1;min-height:0}
+#scene{position:relative;min-width:0;overflow:hidden;background:linear-gradient(#8a9ca8,#bfd5c5 50%,#898b65);cursor:grab}
+#scene:active{cursor:grabbing}#scene canvas{display:block;width:100%;height:100%}
+#scene-label{position:absolute;left:17px;bottom:18px;padding:9px 13px;background:#222a24dd;border:1px solid #c1a56a99;font-size:12px;pointer-events:none;line-height:1.6}
+#legend{position:absolute;left:15px;top:16px;background:#202b28e3;padding:11px;border:1px solid #a29a7c66;pointer-events:none;font-size:12px;line-height:1.65}
+.dot{display:inline-block;width:9px;height:9px;border-radius:100%;margin-right:5px}.dot.red{background:var(--red)}.dot.blue{background:var(--blue)}
+aside{overflow:auto;background:#252622;padding:17px;border-left:2px solid #625234;display:flex;flex-direction:column;gap:13px}
+aside h2{font:20px Georgia,serif;margin:0;border-bottom:1px solid #786342;padding-bottom:8px}h3{font-size:12px;text-transform:uppercase;letter-spacing:.12em;color:#dfbd80;margin:0 0 8px}
+.phase{padding:12px;background:#303b31;border-left:4px solid var(--gold)}#phase-value{font-size:19px;font-weight:800;letter-spacing:.04em}#result{display:none;font-size:15px;font-weight:800;color:#ffdfa0;padding:13px;border:1px solid #b18b50}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.stat{padding:8px 9px;border:1px solid #625e4d;background:#30342c}.stat strong{display:block;font-size:17px}.stat span{display:block;font-size:11px;color:#c3bea9;margin-top:4px}
+.progress{height:8px;background:#161915;overflow:hidden;border-radius:20px;border:1px solid #545d4d}.bar{height:100%;background:var(--gold);width:0%;transition:width .1s}
+.controls{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+button{padding:10px 7px;color:#f9edd6;background:#4c4430;border:1px solid #ae8954;cursor:pointer;border-radius:4px;font:600 12px system-ui}
+button:hover{background:#675636}button:focus-visible{outline:2px solid #efbf73}button:disabled{opacity:.38;cursor:not-allowed}
+button.danger{border-color:#ce6c59;background:#55392f}button.success{border-color:#56a4a6;background:#2c4c4d}
+button.full{grid-column:span 2}
+.help{font-size:12px;color:#c9c4b3;line-height:1.55}
+#event-log{font-size:11px;color:#deccaa;line-height:1.45;background:#191e19;padding:10px;min-height:85px;white-space:pre-wrap;overflow-wrap:anywhere}
+#status-error{display:none;background:#752f29;padding:10px;color:white;font-size:13px}
+footer{font-size:11px;color:#c9c0a7;background:#191b19;padding:8px 18px;border-top:1px solid #52472e}
+@media(max-width:950px){main{grid-template-columns:1fr;grid-template-rows:minmax(260px,1fr) minmax(250px,44%)}aside{border-left:0;border-top:2px solid #625234}header{padding:8px 12px}h1{font-size:21px}}
+</style>
+</head>
+<body>
+<header>
+  <div><small>KILL THE KING • KUŞATMA S1</small><h1>Kuşatma Kalesi</h1></div>
+  <div class="warning"><b>Geliştirici önizlemesi:</b> Kale yerleşimi ve kuşatma hedef kuralları çalışır. Görünen askerler <b>yerleşim işaretleri</b>, gerçek 140 asker savaş AI'sı değil.</div>
+</header>
+<main>
+  <section id="scene" aria-label="Üç boyutlu kuşatma kale haritası">
+    <div id="legend"><div><span class="dot red"></span>Kırmızı saldıran</div><div><span class="dot blue"></span>Mavi savunan</div><div>3 giriş: kapı + batı / doğu</div></div>
+    <div id="scene-label">Sürükle: kamerayı döndür • Tekerlek: yakınlaştır • Sahne Three.js • Ayrı S1 önizlemesi</div>
+  </section>
+  <aside>
+    <h2>Senaryo Kontrolü</h2>
+    <div class="phase"><h3>Saldırı aşaması</h3><div id="phase-value">YAKLAŞMA</div><div class="help" id="phase-help">Kapıyı kır veya iki sur çıkışından birini hazırla.</div></div>
+    <div id="result" role="status" aria-live="polite"></div>
+    <div class="grid">
+      <div class="stat"><strong id="timer-value">15:00</strong><span>Örnek senaryo süresi</span></div>
+      <div class="stat"><strong>70 / 70</strong><span>Planlanan asker yerleşimi</span></div>
+      <div class="stat"><strong id="gate-value">600 HP</strong><span>Ana kapı • prototip</span></div>
+      <div class="stat"><strong id="route-value">0 / 3</strong><span>Açık kuşatma rotası</span></div>
+    </div>
+    <div><h3>Ana kapı dayanıklılığı</h3><div class="progress"><div class="bar" id="gate-bar"></div></div></div>
+    <div class="grid">
+      <div class="stat"><strong id="courtyard-value">0 / 12 s</strong><span>İç avlu kontrolü</span></div>
+      <div class="stat"><strong id="keep-value">0 / 20 s</strong><span>İç kale kontrolü</span></div>
+    </div>
+    <div>
+      <h3>S1 test olayları — gerçek asker AI'sı DEĞİL</h3>
+      <div class="controls">
+        <button data-siege="gate" class="danger">Kapıya darbe (75)</button>
+        <button data-siege="west">Batı merdiveni +25</button>
+        <button data-siege="east">Doğu merdiveni +25</button>
+        <button data-siege="court" class="success">Avluyu ele geçir</button>
+        <button data-siege="court-contest">Avluyu savun</button>
+        <button data-siege="keep" class="success">İç kaleye gir</button>
+        <button data-siege="keep-contest">İç kaleyi savun</button>
+        <button data-siege="wipe" class="danger">Saldıranları tüket</button>
+        <button data-siege="reset" class="full">Senaryoyu yeniden başlat</button>
+      </div>
+    </div>
+    <p class="help">Kapı veya yan merdiven açılmadan avlu alınamaz. Avlu alınmadan iç kale hedefi açılamaz. Savunucu ilgili alandaysa ele geçirme ilerlemez. Bu düğmeler yalnız S1 senaryo motorunu elle doğrular.</p>
+    <div><h3>Olay kaydı</h3><div id="event-log">Henüz olay yok.</div></div>
+    <div id="status-error" role="alert"></div>
+  </aside>
+</main>
+<footer>Bu önizleme FFA/TDM veya G5.4 ordu oyunlarını değiştirmez. Gerçek 140 askerli kuşatma, FPS/TPS ve komuta sistemi sonraki S2–S5 aşamalarında entegre edilecektir.</footer>
+<!-- KTK_THREE_JS -->
+<!-- KTK_SIEGE_MAP_JS -->
+<!-- KTK_SIEGE_OBJECTIVES_JS -->
+<!-- KTK_SIEGE_PREVIEW_JS -->
+</body>
+</html>
