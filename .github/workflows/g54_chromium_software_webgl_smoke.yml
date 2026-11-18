@@ -1,0 +1,48 @@
+name: Kill the King - experimental Chromium software WebGL smoke (NOT GPU approval)
+on:
+  push:
+    branches:
+      - codex/g54-ffa-army-isolated-launcher
+    paths:
+      - 'recovered/army/integration/browser_chromium_smoke.mjs'
+      - '.github/workflows/g54_chromium_software_webgl_smoke.yml'
+  workflow_dispatch:
+jobs:
+  chromium-software-webgl:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Checkout exact accepted Oct A5 FFA independently
+        uses: actions/checkout@v4
+        with:
+          ref: codex/a5-meadow-twentyfold-area
+          path: ffa-source
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Rebuild pinned A5 source and isolated HTML
+        run: |
+          python3 ffa-source/tools/build_offline.py --out dist/KillTheKing_Oyna.html
+          echo '18dca2a895763f0955566f2fc90651f1ab1a98f86597e399cbac42ac2fc6f15a  ffa-source/dist/KillTheKing_Oyna.html' | sha256sum --check -
+          node recovered/army/integration/build_isolated_launcher.mjs ffa-source/dist/KillTheKing_Oyna.html recovered/army/integration/dist/KillTheKing_Birlesik_FFA_Ordu_G5_4_Aday.html
+          echo '8107f370af490617db619d9ffa3a8fba1b1293afe58262db02f0babd1921f033  recovered/army/integration/dist/KillTheKing_Birlesik_FFA_Ordu_G5_4_Aday.html' | sha256sum --check -
+      - name: Install Playwright Chromium + software WebGL dependencies
+        run: |
+          npm install --no-save --no-package-lock playwright@1.58.2
+          npx playwright install --with-deps chromium
+      - name: Exercise actual FFA + G5.4 iframes with Chromium browser
+        env:
+          KTK_BROWSER_REPORT_DIR: recovered/army/integration/browser-evidence
+        run: |
+          node recovered/army/integration/browser_chromium_smoke.mjs recovered/army/integration/dist/KillTheKing_Birlesik_FFA_Ordu_G5_4_Aday.html
+      - name: Archive software-WebGL evidence even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: KillTheKing-Chromium-SOFTWARE-WebGL-Evidence-NOT-HARDWARE-ACCEPTANCE
+          path: |
+            recovered/army/integration/browser-evidence/
+            recovered/army/integration/dist/KillTheKing_Birlesik_FFA_Ordu_G5_4_Aday.html.build.json
+          if-no-files-found: warn
