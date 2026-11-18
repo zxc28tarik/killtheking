@@ -66,7 +66,7 @@ test('large meadow: player is detectable at distance 130 without changing weapon
 test('original source remains archived; both targeted changes are SHA-bound',()=>{
  assert.equal(sha256(ffa),'18dca2a895763f0955566f2fc90651f1ab1a98f86597e399cbac42ac2fc6f15a');
  assert.equal(sha256(engineOriginal),'307987855abc0973ea9177fdd659c39d1d02673c8381c0501be8b63c04ddf841');
- assert.equal(sha256(patchFfaAggro(ffa)),'NEW_FFA_CANDIDATE_SHA_PENDING_CI');
+ assert.equal(sha256(patchFfaAggro(ffa)),'4066a2c7e10d6f21b54df17cf2ee4c73250ecd6ce556fbf06b043d9aef1db5ec');
  assert.equal(sha256(patchArmyAggro(engineOriginal)),'497c945c059b541fcf76231e7d9ff2983dd8b235e98d7b78b93e9ed52235c348');
 });
 test('FFA player AND bot bow have 0.5s preparation but retain 4s per-arrow cadence',()=>{
