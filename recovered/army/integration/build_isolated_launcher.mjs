@@ -10,6 +10,7 @@ import {resolve,dirname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {createHash} from 'node:crypto';
 import vm from 'node:vm';
+import {patchFfaAggro,patchArmyAggro} from './player_target_hotfix.mjs';
 
 const dir=dirname(fileURLToPath(import.meta.url));
 const archive=resolve(dir,'../KillTheKing_G5_4_Kanat_Savunmasi_Oyna.html');
@@ -28,22 +29,24 @@ export function assembleArmies(raw,engine){
  const engineMatches=scripts(raw).filter(m=>m[1].includes('root.ArenaArmyBattle=api'));
  if(engineMatches.length!==1||scripts(raw).length!==29||engineMatches[0][1].length!==148663)
   throw Error('Not the historically recovered G5.4 full arena/army source');
- if(engine.includes('</script'))throw Error('Unsafe engine close tag');
+ const hotfixedEngine=patchArmyAggro(engine);
+ if(hotfixedEngine.includes('</script'))throw Error('Unsafe engine close tag');
  const found=engineMatches[0],opening=found[0].slice(0,found[0].indexOf('>')+1);
  const tail=found[0].slice(found[0].lastIndexOf('</script'));
- let source=raw.slice(0,found.index)+opening+engine+tail+raw.slice(found.index+found[0].length);
+ let source=raw.slice(0,found.index)+opening+hotfixedEngine+tail+raw.slice(found.index+found[0].length);
  // Default to the historical G5.4 army selection in its own isolated frame.
  // The demo menu is already implemented in the original game source.
  const startup='<script id="ktk-g54-autoselect-army">window.addEventListener("DOMContentLoaded",function(){var b=document.getElementById("meadow-army-demo-btn");if(b&&b.getAttribute("aria-pressed")!=="true")b.click();});</script>';
  if(!source.includes('</body>')||source.includes('ktk-g54-autoselect-army'))
   throw Error('Unexpected G5.4 HTML body');
  source=source.replace('</body>',startup+'\n</body>');
- return {html:source,originalModule:found[1],engineModule:engine};
+ return {html:source,originalModule:found[1],engineModule:hotfixedEngine};
 }
 
 export function createLauncher(ffa,army){
  if(sha(ffa)!==checksums.ffa)throw Error('Original A5 FFA is not byte-identical');
- const encodedFFA=Buffer.from(ffa,'utf8').toString('base64');
+ const ffaWithHotfix=patchFfaAggro(ffa);
+ const encodedFFA=Buffer.from(ffaWithHotfix,'utf8').toString('base64');
  const encodedArmy=Buffer.from(army,'utf8').toString('base64');
  const header=[
  '<!doctype html><html lang="tr"><head><meta charset="utf-8">',
@@ -67,15 +70,15 @@ export function createLauncher(ffa,army){
  '#notice{display:none;background:#1a2940;border-top:1px solid #344562;padding:5px 14px;color:#ced9e9;font-size:11px}',
  '@media(max-width:760px){#shell{align-items:flex-start;flex-wrap:wrap}.mark{min-width:140px}#meta{max-width:unset;width:100%}.facts{grid-template-columns:1fr}}',
  '</style></head><body>',
- '<header id="shell"><div class="mark"><strong>KILL THE KING</strong><small>İZOLE MOD ENTEGRASYONU • ADAY</small></div>',
+ '<header id="shell"><div class="mark"><strong>KILL THE KING</strong><small>BOT HEDEFLEME DÜZELTMESİ • ADAY</small></div>',
  '<nav id="nav" aria-label="Oyun modu seçimi">',
  '<button type="button" class="pick" data-ktk-launch="ffa">⚔ SERBEST ARENA / TDM</button>',
  '<button type="button" class="pick" data-ktk-launch="army">🛡 140 ASKERLİ ORDU SAVAŞI</button>',
  '</nav><div id="meta" aria-live="polite">Bir mod seç. Mod değişimi oyunu yeniden başlatır.</div></header>',
  '<main id="intro"><article><h1>İki oyun modu, ayrı çalışma ortamları</h1>',
- '<p>Bu aday, Ekim 2026 tarihli kabul edilmiş FFA oyununun kodunu <strong>değiştirmeden</strong> korur. G5.4 ordu savaşı ayrı bir oyun penceresinde açılır; geçişte önceki oyun kapatılır. Her iki oyun aynı çevrimdışı HTML içindedir.</p>',
- '<div class="facts"><section><strong>Serbest Arena / TDM</strong><span>Orijinal kale, 20× çimenlik meydan, dört sınıf, FFA ve takım savaşı. Ekim FFA dosyası birebir korunur.</span></section>',
- '<section><strong>G5.4 Ordu Savaşı</strong><span>70’e 70 asker, komuta ve formasyonlar. Kaynak G5.4; yalnızca doğrulanmış temas kurtarma ve oyuncu tarafı desteği bulunan motor modülü kullanılır. Bu sürümde oyuncu tarafı mavi.</span></section></div>',
+ '<p>Bu aday, Ekim 2026 tarihli kabul edilmiş FFA oyununun özgün sürümünü arşivler; FFA hedef seçimine sınırlı düzeltme uygular. G5.4 ordu savaşı ayrı bir oyun penceresinde açılır; geçişte önceki oyun kapatılır. Her iki oyun aynı çevrimdışı HTML içindedir.</p>',
+ '<div class="facts"><section><strong>Serbest Arena / TDM</strong><span>Orijinal kale, 20× çimenlik meydan, dört sınıf, FFA ve takım savaşı. Ekim FFA görselleri ve dövüş değerleri korunur; bot hedef seçimi düzeltildi.</span></section>',
+ '<section><strong>G5.4 Ordu Savaşı</strong><span>70’e 70 asker, komuta ve formasyonlar. Kaynak G5.4; temas kurtarma ve oyuncuyu hedefleme düzeltmesi bulunan G5.4 ordu motoru kullanılır. Bu sürümde oyuncu tarafı mavi.</span></section></div>',
  '<p><strong>Bu henüz son birleşik oyun değildir.</strong> Modlar ayrı çalışır; paylaşılan ilerleme/kayıt sistemi, G8.4 senaryoları ve gerçek GPU kabulü daha sonra yapılacaktır. Moddan çıkmadan önce ESC ile fare kilidini bırak.</p>',
  '</article></main><div id="stage" aria-label="Oyun çalışma alanı"></div>',
  '<footer id="notice">Oyun içinde ESC ile fareyi serbest bırak. Üst menüden diğer moda geçerken mevcut maç sıfırlanır.</footer>',
@@ -102,7 +105,7 @@ export function createLauncher(ffa,army){
  'intro.style.display="none";stage.style.display="block";notice.style.display="block";',
  'document.querySelectorAll("[data-ktk-launch]").forEach(function(b){const selected=b.dataset.ktkLaunch===mode;',
  'b.classList.toggle("active",selected);b.setAttribute("aria-pressed",String(selected));});',
- 'info.textContent=mode==="ffa"?"FFA / TDM • Orijinal Ekim sürümü":"G5.4 • 70 mavi + 70 kırmızı • motor düzeltme adayı";}',
+ 'info.textContent=mode==="ffa"?"FFA / TDM • Oyuncu da hedeflenir":"G5.4 • 70 mavi + 70 kırmızı • oyuncu hedefleme düzeltmesi";}',
  'document.querySelectorAll("[data-ktk-launch]").forEach(function(b){b.addEventListener("click",function(){launch(b.dataset.ktkLaunch)});});',
  '})();',
  '</script></body></html>'
@@ -123,10 +126,12 @@ export function build(ffaFile,outFile){
  writeFileSync(dest,result,'utf8');
  const manifest={
   kind:'isolated-ffa-army-phase1-not-release',engineOriginal:'G5.4',ffaOriginal:'2026-10-18',
-  sources:checksums,armyPatchedSHA256:sha(army.html),launcherSHA256:sha(result),
+  sources:checksums,ffaHotfixedSHA256:sha(patchFfaAggro(ffa)),
+  armyEngineHotfixedSHA256:sha(army.engineModule),armyPatchedSHA256:sha(army.html),launcherSHA256:sha(result),
   ffaBytes:Buffer.byteLength(ffa),armyBytes:Buffer.byteLength(army.html),
   launcherBytes:Buffer.byteLength(result),modes:['ffa','army'],
-  preservedFfaByteIdentical:true,engineReplacedOnlyInArmy:true,
+  originalFfaRecoverable:true,ffaTargetingChanged:true,armyTargetingChanged:true,
+  originalGraphicsAndWeaponsUnchanged:true,
   strictSharedSimulation:false,realGPUAccepted:false,g84Restored:false,
   approval:'CANDIDATE_NOT_APPROVED'
  };
