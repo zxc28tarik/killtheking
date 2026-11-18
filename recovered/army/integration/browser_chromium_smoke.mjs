@@ -93,8 +93,21 @@ try{
  await enterFFA('castle');
  await page.keyboard.press('Escape');
  await page.locator('[data-ktk-launch="army"]').click();
+ await page.waitForTimeout(1800);
+ const armyDom=await page.evaluate(()=>{
+    const iframe=document.querySelector('#stage iframe'),doc=iframe?.contentDocument;
+    return {iframeExists:!!iframe,iframeTitle:iframe?.title,
+      encodedDocLength:iframe?.srcdoc?.length||0,documentState:doc?.readyState,
+      bodyLength:doc?.body?.innerHTML.length||0,
+      autoselectExists:!!doc?.getElementById('meadow-army-demo-btn'),
+      playExists:!!doc?.getElementById('play-btn'),
+      headTitle:doc?.title,
+      firstText:doc?.body?.textContent?.slice(0,150)};
+ });
+ notes.checks.push('Army iframe after switch: '+JSON.stringify(armyDom));
+ await page.screenshot({path:resolve(reportDir,'army-after-switch.png'),fullPage:true});
  const army=page.frameLocator('#stage iframe');
- await army.locator('#meadow-army-demo-btn').waitFor({state:'attached',timeout:45000});
+ await army.locator('#meadow-army-demo-btn').waitFor({state:'attached',timeout:25000});
  const armySelected=await army.locator('#meadow-army-demo-btn').getAttribute('aria-pressed');
  assert.equal(armySelected,'true','G5.4 army demo was not auto-selected');
  await waitGame(army,'G5.4 Army');
