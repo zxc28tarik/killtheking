@@ -31,7 +31,13 @@ jobs:
       - name: Install Playwright Chromium + software WebGL dependencies
         run: |
           npm install --no-save --no-package-lock playwright@1.58.2
-          npx playwright install --with-deps chromium
+          if command -v google-chrome >/dev/null 2>&1; then
+            echo "KTK_CHROME_EXECUTABLE=$(command -v google-chrome)" >> "$GITHUB_ENV"
+          elif command -v google-chrome-stable >/dev/null 2>&1; then
+            echo "KTK_CHROME_EXECUTABLE=$(command -v google-chrome-stable)" >> "$GITHUB_ENV"
+          else
+            npx playwright install chromium
+          fi
       - name: Exercise actual FFA + G5.4 iframes with Chromium browser
         env:
           KTK_BROWSER_REPORT_DIR: recovered/army/integration/browser-evidence
