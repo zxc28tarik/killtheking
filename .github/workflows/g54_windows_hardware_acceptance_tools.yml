@@ -1,0 +1,65 @@
+name: Kill the King - Windows real GPU acceptance tools (static checks only)
+on:
+  push:
+    branches:
+      - codex/g54-ffa-army-isolated-launcher
+    paths:
+      - 'recovered/army/integration/windows_acceptance_rules.mjs'
+      - 'recovered/army/integration/windows_acceptance_rules.test.mjs'
+      - 'recovered/army/integration/windows_gpu_acceptance.mjs'
+      - 'recovered/army/integration/run_windows_gpu_acceptance.ps1'
+      - 'recovered/army/integration/WINDOWS_GPU_ACCEPTANCE_TR.md'
+      - '.github/workflows/g54_windows_hardware_acceptance_tools.yml'
+  workflow_dispatch:
+jobs:
+  reporting-library:
+    name: Node.js GPU / ESC / 240s QA strictness tests
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: JavaScript syntax must parse before installing browsers
+        run: |
+          node --check recovered/army/integration/windows_acceptance_rules.mjs
+          node --check recovered/army/integration/windows_acceptance_rules.test.mjs
+          node --check recovered/army/integration/windows_gpu_acceptance.mjs
+      - name: All GPU classification, manual ESC and real-time sampling rules must pass
+        run: node --test recovered/army/integration/windows_acceptance_rules.test.mjs
+      - name: Explicitly reject Linux as a source of Windows hardware acceptance
+        shell: bash
+        run: |
+          set +e
+          output=$(node recovered/army/integration/windows_gpu_acceptance.mjs /dev/null --browser=edge 2>&1)
+          rc=$?
+          set -e
+          if [[ $rc -eq 0 ]]; then
+            echo "ERROR: Linux was incorrectly treated as physical Windows acceptance"
+            exit 1
+          fi
+          grep -q "Physical Windows acceptance must run on Windows" <<< "$output" ||
+            { echo "$output"; exit 1; }
+          echo "PASS: Linux cannot award Windows GPU acceptance."
+  windows-powershell-parser:
+    name: Parse actual Windows PowerShell launcher (no GPU approval)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: PowerShell AST syntax test without executing browser acceptance
+        shell: pwsh
+        run: |
+          $path = 'recovered/army/integration/run_windows_gpu_acceptance.ps1'
+          $tokens = $null
+          $parseErrors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path $path).Path, [ref]$tokens, [ref]$parseErrors) | Out-Null
+          if ($parseErrors.Count -gt 0) {
+            $parseErrors | Format-List | Out-String | Write-Error
+            throw 'Windows PowerShell runner contains syntax errors'
+          }
+          Write-Host 'PASS: Windows PowerShell launcher parses without executing the game.'
+      - name: Do not misrepresent Windows GitHub runner as a real physical GPU test
+        shell: pwsh
+        run: |
+          Write-Host 'RUNNER_ONLY_STATIC_CHECK: No Windows headed game launched and no GPU acceptance granted.'
