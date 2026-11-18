@@ -85,3 +85,22 @@ test('G5.4 real army engine loads and preserves 140 soldiers, both player sides 
   }
  }
 });
+test('G5.4 genuine native soldier melee/bow engagements damage a nearby enemy player',()=>{
+ const ctx=vm.createContext({console});
+ vm.runInContext(weapon,ctx,{timeout:2500});
+ vm.runInContext(patchArmyAggro(engineOriginal),ctx,{timeout:2500});
+ const core=ctx.ArenaArmyBattle;
+ const state=core.create(1600,'musket','blue');
+ // The player moves into a real red pike/archer formation (not a synthetic hit).
+ core.setPlayerPosition(state,163,-26.4);
+ const hits=[];
+ for(let i=0;i<125;i++){
+  core.step(state,.08);
+  hits.push(...core.drainPlayerHits(state));
+  if(!state.playerActive)break;
+ }
+ assert(hits.length>=1,'real enemy soldiers must actually strike the player');
+ assert(state.playerHealth<100,'genuine hit path must reduce human health');
+ assert(hits.every(hit=>state.soldiers[hit.attackerId].team==='red'),
+  'friendly soldiers cannot wound the human commander');
+});
