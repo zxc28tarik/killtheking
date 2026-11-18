@@ -8,8 +8,10 @@ test('Windows native WebGL hardware GPU string is only likely until user signoff
  assert.equal(o.kind,'LIKELY_HARDWARE');
  const v=assessAcceptance({renderer:{webglUnmasked:'NVIDIA RTX 4060'},
   manualEscape:{nativeReleased:true,phaseAfter:'paused'},
-  samples:[{phase:'playing',webgl:{contextLost:false},
-    performance:{averageFPS:87,onePercentLowFPS:62,p95FrameMs:20}}],
+  samples:Array.from({length:48},(_,i)=>({phase:'playing',
+    atWallSeconds:(i+1)*5,atGameSeconds:(i+1)*5,
+    webgl:{contextLost:false},
+    performance:{averageFPS:87,onePercentLowFPS:62,p95FrameMs:20}})),
   end:{phase:'results',remaining:0,durationSeconds:240,
     scoreboardRows:7,elapsedWallSeconds:240}});
  assert.equal(v.finalDisposition,'MEASURED_HARDWARE_SESSION_PENDING_USER_SIGNOFF');
@@ -83,4 +85,28 @@ test('WebGL software takes priority even if CDP lists physical GPU',()=>{
  const o=classifyRenderer({webglUnmasked:'SwiftShader',
    gpuDevices:[{deviceString:'NVIDIA GeForce RTX 4060'}]});
  assert.equal(o.kind,'SOFTWARE_OR_EMULATED');
+});
+
+test('Actual WebGL NVIDIA renderer is not mislabeled because CDP listed a backup SwiftShader',()=>{
+ const a=classifyRenderer({webglUnmasked:'ANGLE (NVIDIA GeForce RTX 4060)',
+   gpuDevices:[{deviceString:'NVIDIA GeForce RTX 4060'},
+     {deviceString:'Google SwiftShader'}]});
+ assert.equal(a.kind,'LIKELY_HARDWARE');
+});
+
+test('CDP list alone does not prove which GPU renders WebGL',()=>{
+ const a=classifyRenderer({webglUnmasked:'WebKit WebGL',
+   gpuDevices:[{deviceString:'NVIDIA RTX 4060'}]});
+ assert.equal(a.kind,'UNVERIFIED');
+});
+
+test('A single benchmark sample never passes continuous 240s real-render gate',()=>{
+ const a=assessAcceptance({renderer:{webglUnmasked:'NVIDIA RTX 4060'},
+   manualEscape:{nativeReleased:true,phaseAfter:'paused'},
+   samples:[{phase:'playing',atWallSeconds:240,atGameSeconds:240}],
+   end:{phase:'results',remaining:0,scoreboardRows:7,
+     durationSeconds:240,elapsedWallSeconds:240}});
+ assert.equal(a.checks.complete240GameSeconds,true);
+ assert.equal(a.checks.continuousObservedRun,false);
+ assert.equal(a.finalDisposition,'MANUAL_OR_FULL_ROUND_GATE_OPEN');
 });
