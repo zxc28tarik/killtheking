@@ -64,8 +64,8 @@ export function validate(pairs){
       one.ended&&(one.winner==='blue'?one.redAlive!==0:one.blueAlive!==0)||
       !one.ended&&one.seconds<599.9||
       one.playerKilled>70||one.enemyKilled>70||
-      !Number.isFinite(one.friendlyShooterHits)||
-      !Number.isFinite(one.friendlyMeleeHits))
+      !Number.isFinite(one.shooterDamage)||
+      !Number.isFinite(one.meleeDamage))
     throw Error('Untrustworthy actual '+mode+' combat events '+i);
   }
  }
