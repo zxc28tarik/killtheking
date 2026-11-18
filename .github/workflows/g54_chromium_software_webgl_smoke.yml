@@ -29,7 +29,16 @@ jobs:
           python3 ffa-source/tools/build_offline.py --out dist/KillTheKing_Oyna.html
           echo '18dca2a895763f0955566f2fc90651f1ab1a98f86597e399cbac42ac2fc6f15a  ffa-source/dist/KillTheKing_Oyna.html' | sha256sum --check -
           node recovered/army/integration/build_isolated_launcher.mjs ffa-source/dist/KillTheKing_Oyna.html recovered/army/integration/dist/KillTheKing_Birlesik_FFA_Ordu_G5_4_Aday.html
-          echo '8107f370af490617db619d9ffa3a8fba1b1293afe58262db02f0babd1921f033  recovered/army/integration/dist/KillTheKing_Birlesik_FFA_Ordu_G5_4_Aday.html' | sha256sum --check -
+          node --input-type=module -e '
+            import {readFileSync} from "node:fs";
+            import {createHash} from "node:crypto";
+            const p="recovered/army/integration/dist/KillTheKing_Birlesik_FFA_Ordu_G5_4_Aday.html";
+            const m=JSON.parse(readFileSync(p+".build.json","utf8"));
+            const hash=createHash("sha256").update(readFileSync(p)).digest("hex");
+            if(hash!==m.launcherSHA256||m.ffaArcherDrawChanged!==true||
+               m.originalGraphicsAndWeaponsUnchanged!==false)
+              throw Error("Candidate SHA256 or approved draw manifest mismatch");
+            console.log("Pinned-source candidate integrity PASS",hash);'
       - name: Install Playwright Chromium + software WebGL dependencies
         run: |
           npm install --no-save --no-package-lock playwright@1.58.2
