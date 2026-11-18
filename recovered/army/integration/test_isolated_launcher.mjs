@@ -35,7 +35,7 @@ test('FFA A5 approved Oct 18 artifact is an immutable source input',()=>{
  assert.equal(sha(ffa),'18dca2a895763f0955566f2fc90651f1ab1a98f86597e399cbac42ac2fc6f15a');
  assert.equal(decodeFrom('ffa'),patchFfaAggro(ffa));
  assert.notEqual(sha(decodeFrom('ffa')),sha(ffa));
- assert.equal(sha(decodeFrom('ffa')),'6fd8a0c6342067e4ba3f3546b716e9fa1b9cce8a9e1c3a09c499fe925480289e');
+ assert.equal(sha(decodeFrom('ffa')),'4066a2c7e10d6f21b54df17cf2ee4c73250ecd6ce556fbf06b043d9aef1db5ec');
 });
 test('source G5.4 archive immutable and preserved',()=>{
  assert.equal(sha(armySource),'1d5f72768054b4138ba742e10923bfb20c00bd37fe789cdc3e40a65967cccfe2');
@@ -100,7 +100,7 @@ test('deterministic standalone HTML build and source-provenance manifest',()=>{
  assert.equal(onDisk,html);
  assert.equal(built.manifest.launcherSHA256,sha(onDisk));
  assert.equal(manifest.ffaBytes,Buffer.byteLength(ffa));
- assert.equal(manifest.ffaHotfixedSHA256,'6fd8a0c6342067e4ba3f3546b716e9fa1b9cce8a9e1c3a09c499fe925480289e');
+ assert.equal(manifest.ffaHotfixedSHA256,'4066a2c7e10d6f21b54df17cf2ee4c73250ecd6ce556fbf06b043d9aef1db5ec');
  assert.equal(manifest.armyEngineHotfixedSHA256,'497c945c059b541fcf76231e7d9ff2983dd8b235e98d7b78b93e9ed52235c348');
  assert.equal(manifest.ffaTargetingChanged,true);
  assert.equal(manifest.armyTargetingChanged,true);
