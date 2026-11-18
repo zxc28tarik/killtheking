@@ -66,34 +66,38 @@ test('large meadow: player is detectable at distance 130 without changing weapon
 test('original source remains archived; both targeted changes are SHA-bound',()=>{
  assert.equal(sha256(ffa),'18dca2a895763f0955566f2fc90651f1ab1a98f86597e399cbac42ac2fc6f15a');
  assert.equal(sha256(engineOriginal),'307987855abc0973ea9177fdd659c39d1d02673c8381c0501be8b63c04ddf841');
- assert.equal(sha256(patchFfaAggro(ffa)),'3d00d872e9df3fa7cec14238f036e3cafdadb9d998e1457870c940ce9e9d0301');
+ assert.equal(sha256(patchFfaAggro(ffa)),'bbf86d76ae05d23f7069024cef329c222752d98f0ac29d4d120a3d2fd7949538');
  assert.equal(sha256(patchArmyAggro(engineOriginal)),'497c945c059b541fcf76231e7d9ff2983dd8b235e98d7b78b93e9ed52235c348');
 });
-test('FFA player AND bot bow have 0.5s preparation but retain 4s per-arrow cadence',()=>{
+test('ONLY arena bot archer has 0.5s windup; normal player bow remains unchanged',()=>{
  const patched=patchFfaAggro(ffa);
  const scripts=[...patched.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script\s*>/gi)].map(m=>m[1]);
+ const originalScripts=[...ffa.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script\s*>/gi)].map(m=>m[1]);
  const archer=scripts.find(s=>s.includes('root.ArenaBotOffense=api'));
  const weapon=scripts.find(s=>s.includes('root.ArenaWeaponBalance=api'));
- assert(archer&&weapon,'Unmodified source module boundaries missing');
+ const originalWeapon=originalScripts.find(s=>s.includes('root.ArenaWeaponBalance=api'));
+ assert(archer&&weapon&&originalWeapon,'Original A5 bow modules missing');
+ assert.equal(weapon,originalWeapon,'Normal player bow module MUST be byte-identical to historical source');
  const ctx=vm.createContext({console});
  vm.runInContext(archer+'\n'+weapon,ctx,{timeout:2500});
  const bot=ctx.ArenaBotOffense,player=ctx.ArenaWeaponBalance;
- assert.equal(bot.windup('archer'),.5);
+ assert.equal(bot.windup('archer'),.5,'Only arena bot is faster');
  assert.equal(bot.nextCooldown('archer'),4);
  assert.equal(bot.windup('musket'),.36);
- assert.equal(player.BOW_MIN_DRAW_SECONDS,.5);
- assert.equal(player.BOW_DRAW_SECONDS,.5);
+ assert.equal(player.BOW_MIN_DRAW_SECONDS,2,'Human minimum windup restored');
+ assert.equal(player.BOW_DRAW_SECONDS,3,'Human full draw restored');
  assert.equal(player.BOW_RECOVERY_SECONDS,1);
  assert.equal(player.SHOT_INTERVAL.bow,4);
- assert.equal(player.bowStrength(.5),1);
- assert.equal(player.bowCanRelease(-Infinity,.49,.49),false);
- assert.equal(player.bowCanRelease(-Infinity,.5,.5),true);
+ assert.equal(player.bowStrength(3),1);
+ assert.equal(player.bowStrength(.5),1/6);
+ assert.equal(player.bowCanRelease(-Infinity,.5,.5),false);
+ assert.equal(player.bowCanRelease(-Infinity,1.99,1.99),false);
+ assert.equal(player.bowCanRelease(-Infinity,2,2),true);
  assert.equal(player.bowCanDraw(1,1.99),false);
  assert.equal(player.bowCanDraw(1,2),true);
- assert.equal(player.bowCanRelease(1,4.99,.5),false);
- assert.equal(player.bowCanRelease(1,5,.5),true);
+ assert.equal(player.bowCanRelease(1,4.99,3),false);
+ assert.equal(player.bowCanRelease(1,5,3),true);
  assert.equal(player.SHOT_INTERVAL.musket,15);
- assert.equal(player.bowStrength(.25),.5);
 });
 test('G5.4 real army engine loads and preserves 140 soldiers, both player sides and HOLD',()=>{
  for(const source of [engineOriginal,patchArmyAggro(engineOriginal)]){
