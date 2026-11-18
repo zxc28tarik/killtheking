@@ -588,6 +588,165 @@ try{
  };
  await testRangedRole('archer');
  await testRangedRole('musket');
+ // Independent natural-map investigation: start a FRESH actual FFA meadow
+ // match with real UI buttons. Do not relocate, freeze, choose targets for,
+ // rearm, reset timers for, or override any bot/player. Unlike the earlier
+ // close-range fixtures, only the game's native updateGame(dt) is invoked
+ // to fast-step a naturally spawned FFA match (0.05s per tick). This runs
+ // real targeting, movement, navigation, attack timing, hit geometry, HUD,
+ // and all six bot brains in actual Chromium DOM, without GPU render per
+ // accelerated tick. It is NOT a claim of RAF realtime/GPU performance.
+ await page.reload({waitUntil:'domcontentloaded'});
+ assert.equal(await page.locator('[data-ktk-launch]').count(),2,
+   'Natural experiment must begin in a clean dual-mode launcher');
+ await enterFFA('meadow');
+ const freshFFA=page.frameLocator('#stage iframe');
+ const naturalStart=await freshFFA.locator('body').evaluate(()=>{
+   const st=window.krunkerArenaStatus(),p=window.eval('player');
+   const b=window.eval('bots');
+   return {phase:st.matchPhase,map:st.map,botCount:b.length,
+     simClock:window.eval('arenaClock'),hp:p.hp,deaths:p.deaths,
+     positions:b.map(x=>({id:x.id,role:x.role,x:x.mesh.position.x,
+       z:x.mesh.position.z,target:x.arenaTargetType,
+       distance:Math.hypot(x.mesh.position.x-p.pos.x,
+         x.mesh.position.z-p.pos.z)}))};
+ });
+ notes.checks.push('NATURAL FAST-STEP CONTROL: no actor reposition/AI '+
+   'override, fresh menu-launched meadow: '+JSON.stringify(naturalStart));
+ assert.equal(naturalStart.phase,'playing');
+ assert.equal(naturalStart.botCount,6);
+ const naturalTrace={
+   kind:'NATIVE_BROWSER_GAME_UPDATE_NO_REPOSITION_NO_RENDER_ACCELERATED',
+   purpose:'Natural FFA target/approach/attack/player damage, not real-time FPS',
+   initial:naturalStart,gameSecondsPerTick:.05,batches:[],
+   playerDamageEvents:[],playerTargetedFires:[],playerTargetedMelee:[],
+   playerChases:[],result:'NOT_YET_OBSERVED'
+ };
+ let simulatedFrames=0;
+ for(let batch=0;batch<15;batch++){
+   const snap=await freshFFA.locator('body').evaluate((_body,frames)=>{
+     const update=window.eval('updateGame');
+     const p=window.eval('player'),bots=window.eval('bots');
+     if(typeof update!=='function')throw Error('Real FFA native updateGame missing');
+     const hpBefore=p.hp,deathsBefore=p.deaths;
+     const starts=bots.map(b=>({id:b.id,x:b.mesh.position.x,
+       z:b.mesh.position.z,target:b.arenaTargetType}));
+     const damage=[],shots=[],melee=[],chases=[];
+     let targetedFrames=0,botFightFrames=0,highestPursuers=0;
+     const elapsedStart=window.eval('arenaClock');
+     const t0=performance.now();
+     for(let i=0;i<frames;i++){
+       if(window.krunkerArenaStatus().matchPhase!=='playing')break;
+       const prevHP=p.hp,prevDeaths=p.deaths;
+       const previous=bots.map(b=>({id:b.id,shot:b.lastRangedShotAt,
+         melee:b.meleeWindup,target:b.arenaTargetType,
+         x:b.mesh.position.x,z:b.mesh.position.z}));
+       update(.05); // Actual source, 100% native AI/combat. No direct attack.
+       const clock=window.eval('arenaClock');
+       const hunters=bots.filter(b=>!b.dead&&b.arenaTargetType==='player');
+       if(hunters.length>highestPursuers)highestPursuers=hunters.length;
+       targetedFrames+=hunters.length;
+       botFightFrames+=bots.filter(b=>!b.dead&&b.arenaTargetType==='bot').length;
+       if(p.hp<prevHP-1e-6||p.deaths>prevDeaths)
+         damage.push({clock,hpBefore:prevHP,hpAfter:p.hp,
+           deathsBefore:prevDeaths,deathsAfter:p.deaths});
+       for(let k=0;k<bots.length;k++){
+         const b=bots[k],v=previous[k];
+         if((b.role==='archer'||b.role==='musket')&&
+           b.lastRangedShotAt!==v.shot&&
+           Number.isFinite(b.lastRangedShotAt))
+           shots.push({clock,id:b.id,role:b.role,
+             targetBefore:v.target,targetAfter:b.arenaTargetType,
+             shotAt:b.lastRangedShotAt});
+         if((b.role==='knight'||b.role==='pikeman')&&
+           v.melee>0&&b.meleeWindup<=0)
+           melee.push({clock,id:b.id,role:b.role,
+             targetBefore:v.target,targetAfter:b.arenaTargetType});
+         if(v.target==='player'||b.arenaTargetType==='player'){
+           const before=Math.hypot(v.x-p.pos.x,v.z-p.pos.z);
+           const after=Math.hypot(b.mesh.position.x-p.pos.x,
+             b.mesh.position.z-p.pos.z);
+           if(after<before-.05)
+             chases.push({clock,id:b.id,role:b.role,
+               from:before,to:after});
+         }
+       }
+     }
+     const stat=window.krunkerArenaStatus();
+     return {elapsedStart,elapsedEnd:window.eval('arenaClock'),
+       cpuMs:performance.now()-t0,phase:stat.matchPhase,
+       hpBefore,hpAfter:p.hp,deathsBefore,deathsAfter:p.deaths,
+       hud:document.querySelector('#hud-hp-text')?.textContent,
+       targetFrames:targetedFrames,botFightFrames,
+       highestPursuers,damage,shots,melee,
+       chases:chases.slice(0,14),
+       final:bots.map(b=>({id:b.id,role:b.role,
+         x:b.mesh.position.x,z:b.mesh.position.z,
+         target:b.arenaTargetType,dead:b.dead,
+         distToPlayer:Math.hypot(b.mesh.position.x-p.pos.x,
+           b.mesh.position.z-p.pos.z)})),
+       totalShotCounters:stat.telemetry.rangedFire};
+   },80);
+   simulatedFrames+=Math.round((snap.elapsedEnd-snap.elapsedStart)/.05);
+   naturalTrace.batches.push({...snap,
+     damage:snap.damage.slice(0,12),shots:snap.shots.slice(0,18),
+     melee:snap.melee.slice(0,18)});
+   naturalTrace.playerDamageEvents.push(...snap.damage);
+   naturalTrace.playerTargetedFires.push(...snap.shots.filter(s=>
+     s.targetBefore==='player'||s.targetAfter==='player'));
+   naturalTrace.playerTargetedMelee.push(...snap.melee.filter(s=>
+     s.targetBefore==='player'||s.targetAfter==='player'));
+   naturalTrace.playerChases.push(...snap.chases);
+   if(naturalTrace.playerDamageEvents.length>=1&&
+     (naturalTrace.playerTargetedFires.length+
+      naturalTrace.playerTargetedMelee.length)>=1)break;
+   if(snap.phase!=='playing')break;
+ }
+ naturalTrace.simulatedFrames=simulatedFrames;
+ naturalTrace.totalSimulatedSeconds=naturalTrace.batches.reduce((s,b)=>
+   s+b.elapsedEnd-b.elapsedStart,0);
+ naturalTrace.playerTargetTotalFrames=naturalTrace.batches.reduce((s,b)=>
+   s+b.targetFrames,0);
+ naturalTrace.botVsBotTotalFrames=naturalTrace.batches.reduce((s,b)=>
+   s+b.botFightFrames,0);
+ naturalTrace.result=naturalTrace.playerDamageEvents.length>0
+   ?'NATURAL_PLAYER_HP_DAMAGE_CONFIRMED'
+   :naturalTrace.playerTargetedFires.length>0
+     ?'NATURAL_PLAYER_TARGETED_SHOTS_OBSERVED_NO_HP_DAMAGE'
+     :'NATURAL_TARGETING_OBSERVED_WITHOUT_CONFIRMED_SHOT';
+ notes.naturalMatch=naturalTrace;
+ notes.checks.push('NATURAL UNMODIFIED MATCH native logic fast-step: '+
+   JSON.stringify({kind:naturalTrace.kind,result:naturalTrace.result,
+     simulatedSeconds:naturalTrace.totalSimulatedSeconds,
+     targetedFrames:naturalTrace.playerTargetTotalFrames,
+     botFightFrames:naturalTrace.botVsBotTotalFrames,
+     targetedShots:naturalTrace.playerTargetedFires.slice(0,8),
+     targetedMelee:naturalTrace.playerTargetedMelee.slice(0,8),
+     damageEvents:naturalTrace.playerDamageEvents.slice(0,8),
+     chases:naturalTrace.playerChases.slice(0,8)}));
+ assert(naturalTrace.totalSimulatedSeconds>=2,
+   'Natural FFA native logic failed to advance after clean UI start');
+ assert(naturalTrace.playerTargetTotalFrames>0,
+   'Normal six-bot FFA never targeted the player during native simulation');
+ assert(naturalTrace.botVsBotTotalFrames>0,
+   'FFA must continue bot-vs-bot fights; no everyone-targets-player regressions');
+ if(naturalTrace.playerDamageEvents.length){
+   const last=naturalTrace.batches[naturalTrace.batches.length-1];
+   assert.match(last.hud,/^\d+\s*\/\s*\d+$/,
+     'HUD missing after naturally inflicted player damage');
+   assert.equal(Number(last.hud.split('/')[0]),Math.ceil(last.hpAfter),
+     'Natural damage left incorrect player HP HUD');
+   notes.checks.push('PASS_NATURAL_SPAWN_NO_MANUAL_ACTOR_CHANGES: '+
+     'real AI native engine ticks naturally wounded player at least once');
+ }else{
+   notes.checks.push('OPEN_NATURAL_DAMAGE_PROOF: no player HP reduction '+
+     'in '+naturalTrace.totalSimulatedSeconds.toFixed(1)+
+     's native fast-step; test is explicitly INCONCLUSIVE, not PASS');
+ }
+ writeFileSync(resolve(reportDir,'ffa-natural-spawn-native-match.json'),
+   JSON.stringify(naturalTrace,null,2)+'\n');
+ await page.screenshot({path:resolve(reportDir,
+   'ffa-natural-spawn-after-native-match.png'),fullPage:true});
  assert.equal(notes.pageErrors.length,0,
    'Uncaught browser JavaScript exceptions: '+notes.pageErrors.join(' | '));
  notes.result='PASS_HEADLESS_SOFTWARE_WEBGL_ONLY';
