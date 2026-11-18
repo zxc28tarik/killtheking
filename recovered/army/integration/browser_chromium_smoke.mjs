@@ -223,6 +223,100 @@ try{
  notes.checks.push('Army -> FFA removed old iframe and loaded clean original menu');
  await enterFFA('meadow'); // Same-mode launcher click must not reset the new FFA menu.
  assert.equal(await page.locator('#stage iframe').count(),1);
+ // Controlled *browser-only* close-contact encounter. The published game and
+ // its rules are not patched; a genuine running FFA knight AI is repositioned
+ // in the live Chromium page so test throughput does not depend on random
+ // cross-map encounters. Target acquisition, windup, facing, damage and HUD
+ // must then be handled by the game's normal requestAnimationFrame loop.
+ const ffaCombat=page.frameLocator('#stage iframe');
+ const prepared=await ffaCombat.locator('body').evaluate(()=>{
+   const player=window.eval('player');
+   const bots=window.eval('bots');
+   const chooseTarget=window.eval('chooseArenaTarget');
+   const lineOfSight=window.eval('arenaLineOfSight');
+   const candidate=bots.find(b=>b.role==='knight'&&!b.dead);
+   if(!candidate||!player||typeof chooseTarget!=='function')
+     throw Error('Real FFA actor/targeting code not available to test');
+   const origin={x:player.pos.x,y:player.pos.y,z:player.pos.z};
+   const originalBotPosition=candidate.mesh.position.toArray();
+   // Only the test session changes a spawn, never the shipped HTML.
+   const offsets=[[3,0],[-3,0],[0,3],[0,-3],[2.2,2.2],
+     [-2.2,2.2],[2.2,-2.2],[-2.2,-2.2]];
+   let offset=null;
+   for(const [dx,dz] of offsets){
+     candidate.mesh.position.set(origin.x+dx,
+       origin.y-player.currentHeight,origin.z+dz);
+     if(lineOfSight(candidate,player.pos,true)){offset=[dx,dz];break;}
+   }
+   if(!offset)throw Error('No visible close-range placement on the real FFA map');
+   // Release earlier player-hunter slots, so the controlled candidate can
+   // acquire the player through the *normal* FFA candidate scoring rules.
+   for(const b of bots){
+     if(b!==candidate&&b.arenaTargetType==='player'){
+       b.arenaTargetType=null;b.arenaTargetId=null;b.arenaLockTime=0;
+     }
+   }
+   candidate.arenaTargetType=null;
+   candidate.arenaTargetId=null;
+   candidate.arenaLockTime=0;
+   candidate.arenaAggroType=null;
+   candidate.arenaAggroUntil=0;
+   if(candidate.navRecovery){
+     candidate.navRecovery.avoidKey=null;candidate.navRecovery.avoidFor=0;
+   }
+   candidate.mesh.rotation.y=Math.atan2(
+     player.pos.x-candidate.mesh.position.x,
+     player.pos.z-candidate.mesh.position.z);
+   candidate.attackTimer=0;
+   candidate.meleeWindup=0;candidate.rangedWindup=0;
+   candidate.windupTargetKey=null;
+   candidate.staggerTime=0;
+   const choice=chooseTarget(candidate);
+   return {botId:candidate.id,role:candidate.role,weapon:candidate.weapon,
+     offset,originalBotPosition,playerPosition:origin,
+     target:choice?.type||null,lockedTarget:candidate.arenaTargetType,
+     playerHp:player.hp,playerMaxHp:player.maxHp,playerDeaths:player.deaths,
+     visible:lineOfSight(candidate,player.pos,true),
+     hudHp:document.querySelector('#hud-hp-text')?.textContent};
+ });
+ notes.checks.push('TEST-FIXTURE close-range FFA setup (not natural-map performance): '+
+   JSON.stringify(prepared));
+ assert.equal(prepared.role,'knight');
+ assert.equal(prepared.target,'player',
+   'A nearby enemy knight did not naturally acquire the actual player');
+ assert.equal(prepared.lockedTarget,'player');
+ assert.equal(prepared.visible,true,'World line of sight blocked target');
+ const combatSamples=[];
+ let damaged=false;
+ for(let attempt=0;attempt<7;attempt++){
+   await page.waitForTimeout(6000);
+   const sample=await ffaCombat.locator('body').evaluate(()=>{
+     const st=window.krunkerArenaStatus();
+     const p=window.eval('player');
+     const b=window.eval('bots').find(x=>x.role==='knight'&&!x.dead);
+     return {playerHp:p.hp,playerMaxHp:p.maxHp,deaths:p.deaths,
+       hudHp:document.querySelector('#hud-hp-text')?.textContent,
+       target:b?.arenaTargetType,windup:b?.meleeWindup,
+       attackTimer:b?.attackTimer,
+       matchPhase:st.matchPhase,simulationElapsed:st.matchDurationSeconds-st.matchRemaining};
+   });
+   combatSamples.push(sample);
+   if(sample.playerHp<prepared.playerHp||sample.deaths>prepared.playerDeaths){
+     damaged=true;break;
+   }
+ }
+ notes.checks.push('Real FFA autonomous melee windup -> HP/HUD combat samples: '+
+   JSON.stringify(combatSamples));
+ await page.screenshot({path:resolve(reportDir,'ffa-player-damage-fixture.png'),
+   fullPage:true});
+ assert(damaged,'Real running FFA knight failed to inflict player HP damage '+
+   'within the fixture observation window: '+JSON.stringify(combatSamples));
+ const damageSample=combatSamples[combatSamples.length-1];
+ assert.match(damageSample.hudHp,/^\d+\s*\/\s*\d+$/,
+   'Damage was not reflected on the real visible HUD');
+ assert.equal(damageSample.matchPhase,'playing','FFA stopped after player damage');
+ notes.checks.push('PASS_FIXTURE_ASSISTED_PLAYER_DAMAGE_REAL_BROWSER_LOOP: '+
+   'normal AI frames and native damage lowered human HP and updated HUD');
  assert.equal(notes.pageErrors.length,0,
    'Uncaught browser JavaScript exceptions: '+notes.pageErrors.join(' | '));
  notes.result='PASS_HEADLESS_SOFTWARE_WEBGL_ONLY';
