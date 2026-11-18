@@ -38,11 +38,14 @@ export function summarizeFrames(samples){
  };
 }
 /** Strict observational gates. Never claim a manual or real-GPU pass without evidence. */
-export function assessAcceptance({renderer={},manualEscape={},end={},samples=[]}={}){
+export function assessAcceptance({renderer={},manualEscape={},end={},samples=[],errors=[]}={}){
  const gpu=classifyRenderer(renderer);
  const frames=summarizeFrames(samples);
  const escapeVerified=manualEscape.nativeReleased===true&&
    manualEscape.phaseAfter==='paused';
+ const manualCameraVerified=manualEscape.playerMovedCamera===true;
+ const runtimeFaults=Array.isArray(errors)?errors.filter(e=>
+   /^(?:PAGE |CONSOLE |WebGL context lost|Natural match was interrupted)/i.test(String(e))):[];
  const naturalEnd=end.phase==='results'&&
    end.remaining===0&&end.scoreboardRows===7&&
    end.durationSeconds===240;
@@ -54,12 +57,15 @@ export function assessAcceptance({renderer={},manualEscape={},end={},samples=[]}
    finite(samples[0]?.atWallSeconds)&&samples[0].atWallSeconds<=20&&
    finite(samples.at(-1)?.atGameSeconds)&&
    samples.at(-1).atGameSeconds>=230;
- const continuous=naturalEnd&&sampleCoverage&&!interrupted&&!contextLost;
+ const continuous=naturalEnd&&sampleCoverage&&!interrupted&&
+   !contextLost&&runtimeFaults.length===0;
  return {
    gpu,frames,
    checks:{
      actualHardwareIdentified:gpu.kind==='LIKELY_HARDWARE',
      nativeManualEscapeAndPause:escapeVerified,
+     physicalMouseCameraMovement:manualCameraVerified,
+     noRuntimeJavaScriptErrors:runtimeFaults.length===0,
      complete240GameSeconds:naturalEnd,
      continuousObservedRun:continuous,
      sampled240sOfRealTime:sampleCoverage,
@@ -70,7 +76,7 @@ export function assessAcceptance({renderer={},manualEscape={},end={},samples=[]}
      ?'NOT_HARDWARE_GPU_ACCEPTANCE'
      :gpu.kind!=='LIKELY_HARDWARE'
        ?'HARDWARE_IDENTITY_NOT_VERIFIED'
-       :!escapeVerified||!continuous
+       :!escapeVerified||!manualCameraVerified||!continuous
          ?'MANUAL_OR_FULL_ROUND_GATE_OPEN'
          :'MEASURED_HARDWARE_SESSION_PENDING_USER_SIGNOFF',
    performanceApproval:'NOT_DECIDED_NO_USER_APPROVED_FPS_THRESHOLD',
