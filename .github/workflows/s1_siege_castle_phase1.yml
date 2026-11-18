@@ -1,0 +1,93 @@
+name: Kill the King - S1 Castle Siege Map Objective Engine and 3D Preview
+on:
+  push:
+    branches:
+      - codex/s1-siege-castle-phase1
+    paths:
+      - 'recovered/siege/**'
+      - 'docs/SIEGE_CASTLE_**'
+      - '.github/workflows/s1_siege_castle_phase1.yml'
+  workflow_dispatch:
+jobs:
+  siege-source-and-build:
+    name: S1 map/objective/standalone 3D build contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax of new isolated siege modules only
+        run: |
+          node --check recovered/siege/siege-map.js
+          node --check recovered/siege/siege-objectives.js
+          node --check recovered/siege/siege-preview.js
+          node --check recovered/siege/build_siege_preview.mjs
+          node --check recovered/siege/test_siege_phase1.mjs
+          node --check recovered/siege/browser_siege_preview_smoke.mjs
+      - name: Run deterministic siege objective and isolation tests
+        run: node --test recovered/siege/test_siege_phase1.mjs
+      - name: Compile offline real Three.js S1 castle preview
+        run: |
+          node recovered/siege/build_siege_preview.mjs \
+            recovered/siege/dist/KillTheKing_Kusatma_Kalesi_S1_Onizleme.html
+          node --input-type=module -e "
+          import {readFileSync} from 'node:fs';
+          const p='recovered/siege/dist/KillTheKing_Kusatma_Kalesi_S1_Onizleme.html';
+          const m=JSON.parse(readFileSync(p+'.build.json','utf8'));
+          if(m.realArmyBattleConnected!==false ||
+            m.originalFfaModified!==false ||
+            m.originalArmyModified!==false ||
+            m.publicationApproved!==false)throw Error('S1 preview mislabeled as production army');
+          if(!readFileSync(p,'utf8').includes('Kuşatma Kalesi'))
+            throw Error('Offline siege castle preview is missing');
+          console.log('PASS source-labelled S1 independent Three.js offline HTML');
+          "
+      - name: Upload runnable S1 3D castle map and debug objective PREVIEW
+        uses: actions/upload-artifact@v4
+        with:
+          name: KillTheKing-S1-SiegeCastle-3D-Map-Preview-NOT-Real-140-Soldier-Battle
+          path: |
+            recovered/siege/dist/KillTheKing_Kusatma_Kalesi_S1_Onizleme.html
+            recovered/siege/dist/KillTheKing_Kusatma_Kalesi_S1_Onizleme.html.build.json
+            docs/SIEGE_CASTLE_DEVELOPMENT_PLAN_TR.md
+            docs/SIEGE_CASTLE_DESIGN_CONTRACT_TR.md
+          if-no-files-found: error
+  real-chromium-preview:
+    name: Actual Chromium SwiftShader 3D castle and debug gate/breach UI
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    needs: siege-source-and-build
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Rebuild isolated S1 preview
+        run: node recovered/siege/build_siege_preview.mjs recovered/siege/dist/KillTheKing_Kusatma_Kalesi_S1_Onizleme.html
+      - name: Install pinned browser test runner
+        run: |
+          npm install --no-save --no-package-lock playwright@1.58.2
+          if command -v google-chrome >/dev/null 2>&1; then
+            echo "KTK_CHROME_EXECUTABLE=$(command -v google-chrome)" >> "$GITHUB_ENV"
+          elif command -v google-chrome-stable >/dev/null 2>&1; then
+            echo "KTK_CHROME_EXECUTABLE=$(command -v google-chrome-stable)" >> "$GITHUB_ENV"
+          else
+            npx playwright install chromium
+          fi
+      - name: Real Three.js castle, two breach paths and S1 debug controls
+        env:
+          KTK_SIEGE_REPORT_DIR: recovered/siege/browser-evidence
+        run: |
+          node recovered/siege/browser_siege_preview_smoke.mjs \
+            recovered/siege/dist/KillTheKing_Kusatma_Kalesi_S1_Onizleme.html
+      - name: Preserve screenshot, browser JSON and preview even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: KillTheKing-S1-SiegeCastle-Chromium-SOFTWARE-WebGL-Evidence
+          path: |
+            recovered/siege/browser-evidence/
+            recovered/siege/dist/KillTheKing_Kusatma_Kalesi_S1_Onizleme.html.build.json
+          if-no-files-found: warn
