@@ -40,9 +40,25 @@ export function patchFfaAggro(ffa){
  // every cancelled windup restarted on the next frame, wasting decisions.
  // This gate only delays starting a windup until line of sight is clear;
  // it never changes cooldown, damage, movement, or target allegiance.
- return swapOne(swapOne(ffa,before,after),
+ let patched=swapOne(swapOne(ffa,before,after),
   '                } else if (isGameActive && arenaTarget && arenaDist <= bot.range) {',
   '                } else if (isGameActive && arenaTarget && arenaDist <= bot.range && hasClearShot) {');
+
+ // Explicit 18 Nov 2026 approval: FFA archer 0.5s preparation, for both
+ // player-controlled bow and normal bot ranged-windup. IMPORTANT: retain
+ // the absolute 4s between arrows (<=15/min) and the 1s post-shot recovery.
+ // The historical October game is never overwritten; only this isolated
+ // candidate gets the exact, hash-pinned, uniquely-matched patch.
+ patched=swapOne(patched,
+  'archer:Object.freeze({cooldown:4,variance:0,windup:3,aimArc:.36}),',
+  'archer:Object.freeze({cooldown:4,variance:0,windup:.5,aimArc:.36}),');
+ patched=swapOne(patched,
+  'const BOW_MIN_DRAW_SECONDS=2;',
+  'const BOW_MIN_DRAW_SECONDS=.5;');
+ patched=swapOne(patched,
+  'const BOW_DRAW_SECONDS=3;',
+  'const BOW_DRAW_SECONDS=.5;');
+ return patched;
 }
 export function patchArmyAggro(engine){
  if(sha256(engine)!==ORIGINAL_ARMY_SHA)throw Error('Unsupported G5.4 army source; no hotfix applied');
