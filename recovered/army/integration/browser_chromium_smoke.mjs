@@ -323,7 +323,7 @@ try{
  // Only navigation and rival positions are frozen by the TEST FIXTURE, never
  // in production or in the published combined HTML.
  const testRangedRole=async role=>{
-   const first=await ffaCombat.locator('body').evaluate(role=>{
+   const first=await ffaCombat.locator('body').evaluate((_body,role)=>{
      const p=window.eval('player'),bots=window.eval('bots');
      const attacker=bots.find(b=>b.role===role&&!b.dead);
      const choose=window.eval('chooseArenaTarget');
@@ -385,7 +385,7 @@ try{
    const observations=[];
    for(let i=0;i<20;i++){
      await page.waitForTimeout(5500);
-     const s=await ffaCombat.locator('body').evaluate(({role,id})=>{
+     const s=await ffaCombat.locator('body').evaluate((_body,{role,id})=>{
        const st=window.krunkerArenaStatus(),p=window.eval('player');
        const b=window.eval('bots').find(e=>e.id===id);
        const fire=st.telemetry.rangedFire[role];
