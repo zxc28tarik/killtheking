@@ -1,4 +1,4 @@
-/** Source-pinned player-engagement correction: does NOT change weapons or FFA/TDM modes. */
+/** Source-pinned FFA targeting and explicitly approved 0.5s archer-draw candidate: 4s cadence, 1s recovery, other weapons and modes unchanged. */
 import {createHash} from 'node:crypto';
 export const sha256=text=>createHash('sha256').update(text).digest('hex');
 export const ORIGINAL_FFA_SHA='18dca2a895763f0955566f2fc90651f1ab1a98f86597e399cbac42ac2fc6f15a';
