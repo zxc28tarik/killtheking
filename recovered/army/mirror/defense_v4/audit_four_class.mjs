@@ -60,8 +60,8 @@ export function validate(pairs){
       one.near+one.uncovered<=0||one.shootersInRange+one.shootersOutOfRange!==one.near+one.uncovered||
       Math.round(1000*one.near/(one.near+one.uncovered))/10!==one.protectedPct||
       Math.round(1000*one.shootersInRange/(one.shootersInRange+one.shootersOutOfRange))/10!==one.firingOpportunityPct||
-      one.blueAlive<0||one.redAlive<0||one.blueAlive>70||one.redAlive>70||
-      one.ended&&(one.winner==='blue'?one.redAlive!==0:one.blueAlive!==0)||
+      one.aliveBlue<0||one.aliveRed<0||one.aliveBlue>70||one.aliveRed>70||
+      one.ended&&(one.winner==='blue'?one.aliveRed!==0:one.aliveBlue!==0)||
       !one.ended&&one.seconds<599.9||
       one.playerKilled>70||one.enemyKilled>70||
       !Number.isFinite(one.shooterDamage)||
