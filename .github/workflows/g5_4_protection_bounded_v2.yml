@@ -1,0 +1,79 @@
+name: G5.4 bounded sword reserve v2 — authentic A/B (NOT APPROVED)
+on:
+  push:
+    branches:
+      - codex/recover-g5-4-army-source
+    paths:
+      - 'recovered/army/mirror/defense_v2/**'
+      - 'recovered/army/mirror/arena-army-battle-protection-v2-bounded.js'
+      - '.github/workflows/g5_4_protection_bounded_v2.yml'
+  workflow_dispatch:
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax, source hashes, real player orders, 140 soldiers and both sides
+        run: |
+          node --check recovered/army/mirror/arena-army-battle-protection-v2-bounded.js
+          node --check recovered/army/mirror/defense_v2/run_v2_paired.mjs
+          node --check recovered/army/mirror/defense_v2/verify_v2_paired.mjs
+          node --test recovered/army/mirror/defense_v2/test_v2_contract.mjs
+  pairs:
+    needs: contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    strategy:
+      fail-fast: false
+      matrix:
+        start: [0, 4, 8]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Rerun four authentic baseline and bounded G5.4 paired CPU games
+        working-directory: recovered/army/mirror/defense_v2
+        env:
+          START: ${{ matrix.start }}
+          KTK_V2_OUT_DIR: dist/replay
+        run: |
+          for i in $(seq "$START" "$((START + 3))"); do
+            node run_v2_paired.mjs "$i"
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: g54-bounded-guard-v2-${{ matrix.start }}
+          path: recovered/army/mirror/defense_v2/dist/replay/part_*.json
+          if-no-files-found: error
+  audit:
+    needs: pairs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: g54-bounded-guard-v2-*
+          path: recovered/army/mirror/defense_v2/dist/replay
+          merge-multiple: true
+      - name: Verify all 24 natural endings, identical conditions and source hashes
+        run: node recovered/army/mirror/defense_v2/verify_v2_paired.mjs
+      - name: Archive real evidence without falsely approving release
+        uses: actions/upload-artifact@v4
+        with:
+          name: KillTheKing-G5-4-BoundedGuard-v2-24CPU-NOT-APPROVED
+          path: |
+            recovered/army/mirror/arena-army-battle-protection-v2-bounded.js
+            recovered/army/mirror/defense_v2/protection_v2_reference.json
+            recovered/army/mirror/defense_v2/G5_4_BOUNDED_GUARD_V2_REPORT_TR.md
+            recovered/army/mirror/defense_v2/dist/replay/BOUNDED_GUARD_12_MATCH_PAIRS.json
+            recovered/army/mirror/defense_v2/run_v2_paired.mjs
+            recovered/army/mirror/defense_v2/verify_v2_paired.mjs
+            recovered/army/mirror/defense_v2/test_v2_contract.mjs
+          if-no-files-found: error

@@ -1,0 +1,5901 @@
+{
+  "format": "killtheking-g5.4-quality-matrix-v1",
+  "summary": {
+    "source": "recovered G5.4 actual ArenaArmyBattle",
+    "g8_4GameRecovered": false,
+    "g8_5PairedMirrorMatches": 0,
+    "limitations": "CPU-only, no WebGL, scripted player commands; each trial is standalone G5.4 rather than paired G8.5 mirrored battle.",
+    "trials": 16,
+    "simulatedSeconds": 640,
+    "totalDecisions": 1186,
+    "totalOrderChanges": 168,
+    "totalShortReversals": 29,
+    "totalTargetChanges": 178,
+    "totalNativeSoldierStallWarnings": 0,
+    "totalStationaryOrderWarnings": 9,
+    "totalRouteReplans": 0,
+    "finalWins": {
+      "blue": 0,
+      "red": 0,
+      "draw": 0,
+      "none": 16
+    },
+    "byRole": [
+      {
+        "role": "musket",
+        "n": 4,
+        "averageBlueAlive": 64.5,
+        "averageRedAlive": 65.25,
+        "decisions": 296,
+        "shortReversals": 7,
+        "engineStallWarnings": 0
+      },
+      {
+        "role": "pike",
+        "n": 4,
+        "averageBlueAlive": 63.25,
+        "averageRedAlive": 66.5,
+        "decisions": 295,
+        "shortReversals": 11,
+        "engineStallWarnings": 0
+      },
+      {
+        "role": "bow",
+        "n": 4,
+        "averageBlueAlive": 64.25,
+        "averageRedAlive": 65.25,
+        "decisions": 298,
+        "shortReversals": 1,
+        "engineStallWarnings": 0
+      },
+      {
+        "role": "sword",
+        "n": 4,
+        "averageBlueAlive": 66.25,
+        "averageRedAlive": 66.25,
+        "decisions": 297,
+        "shortReversals": 10,
+        "engineStallWarnings": 0
+      }
+    ]
+  },
+  "trials": [
+    {
+      "role": "musket",
+      "seed": 1600,
+      "command": "advance",
+      "simulatedSeconds": 40,
+      "ticks": 500,
+      "winner": null,
+      "combatEventsDrainedByNativeEngine": 119,
+      "finalAlive": {
+        "blue": 64,
+        "red": 64
+      },
+      "format": "killtheking-g5.4-commander-quality-v1",
+      "engine": "actual recovered ArenaArmyBattle G5.4",
+      "newerG8_4Verified": false,
+      "actualG8_5MirrorTrials": 0,
+      "phase": "finished",
+      "initial": {
+        "seed": 1600,
+        "playerType": "musket",
+        "elapsed": 0,
+        "tick": 0,
+        "soldierCount": 140,
+        "squadCount": 8,
+        "humanSquadId": 0,
+        "scenario": "G5.4 historic 140-soldier field; scripted command inputs, no human play"
+      },
+      "observedSteps": 500,
+      "elapsedObserved": 40,
+      "totals": {
+        "decisions": 72,
+        "orderChanges": 9,
+        "shortReversals": 0,
+        "targetChanges": 12,
+        "movementDistance": 1627.898,
+        "routeReplans": 0,
+        "nativeSoldierStallWarnings": 0,
+        "stationaryMovementOrderWarnings": 0,
+        "engineWinner": null
+      },
+      "bySquad": [
+        {
+          "id": 0,
+          "team": "blue",
+          "type": "musket",
+          "playerControlled": true,
+          "decisions": 0,
+          "orderChanges": 0,
+          "shortReversals": 0,
+          "targetChanges": 0,
+          "pathDistance": 155.44,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1
+          },
+          "roles": {
+            "fire-support": 1
+          },
+          "decisionIntervals": [],
+          "decisionIntervalMean": null
+        },
+        {
+          "id": 1,
+          "team": "blue",
+          "type": "pike",
+          "playerControlled": false,
+          "decisions": 11,
+          "orderChanges": 0,
+          "shortReversals": 0,
+          "targetChanges": 2,
+          "pathDistance": 203.228,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1
+          },
+          "roles": {
+            "frontline": 1,
+            "screen": 11
+          },
+          "decisionIntervals": [
+            4.08,
+            2.64,
+            2.8,
+            4.08,
+            3.04,
+            4.32,
+            4,
+            3.92,
+            4.24,
+            4.48
+          ],
+          "decisionIntervalMean": 3.76
+        },
+        {
+          "id": 2,
+          "team": "blue",
+          "type": "bow",
+          "playerControlled": false,
+          "decisions": 10,
+          "orderChanges": 1,
+          "shortReversals": 0,
+          "targetChanges": 1,
+          "pathDistance": 144.753,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1,
+            "hold": 1
+          },
+          "roles": {
+            "fire-support": 1,
+            "reserve": 10
+          },
+          "decisionIntervals": [
+            5.28,
+            4.16,
+            4.88,
+            2.96,
+            5.04,
+            2.96,
+            4.08,
+            4.4,
+            3.28
+          ],
+          "decisionIntervalMean": 4.116
+        },
+        {
+          "id": 3,
+          "team": "blue",
+          "type": "sword",
+          "playerControlled": false,
+          "decisions": 10,
+          "orderChanges": 3,
+          "shortReversals": 0,
+          "targetChanges": 2,
+          "pathDistance": 330.648,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 2,
+            "flank": 1,
+            "charge": 1
+          },
+          "roles": {
+            "frontline": 1,
+            "envelopment": 7,
+            "counter-charge": 3
+          },
+          "decisionIntervals": [
+            4.08,
+            5.12,
+            4.48,
+            4.48,
+            3.68,
+            4.72,
+            5.2,
+            3.36,
+            3.44
+          ],
+          "decisionIntervalMean": 4.284
+        },
+        {
+          "id": 4,
+          "team": "red",
+          "type": "musket",
+          "playerControlled": false,
+          "decisions": 11,
+          "orderChanges": 1,
+          "shortReversals": 0,
+          "targetChanges": 2,
+          "pathDistance": 128.228,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1,
+            "hold": 1
+          },
+          "roles": {
+            "fire-support": 1,
+            "defensive-fire": 11
+          },
+          "decisionIntervals": [
+            5.2,
+            5.36,
+            4.08,
+            5.2,
+            4.48,
+            2.72,
+            2.96,
+            3.2,
+            4.08,
+            2.64
+          ],
+          "decisionIntervalMean": 3.992
+        },
+        {
+          "id": 5,
+          "team": "red",
+          "type": "pike",
+          "playerControlled": false,
+          "decisions": 10,
+          "orderChanges": 0,
+          "shortReversals": 0,
+          "targetChanges": 2,
+          "pathDistance": 196.742,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1
+          },
+          "roles": {
+            "frontline": 1,
+            "screen": 10
+          },
+          "decisionIntervals": [
+            5.84,
+            5.28,
+            5.44,
+            2.88,
+            4.64,
+            3.36,
+            5.2,
+            2.8,
+            3.84
+          ],
+          "decisionIntervalMean": 4.364
+        },
+        {
+          "id": 6,
+          "team": "red",
+          "type": "bow",
+          "playerControlled": false,
+          "decisions": 10,
+          "orderChanges": 1,
+          "shortReversals": 0,
+          "targetChanges": 1,
+          "pathDistance": 154.769,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1,
+            "hold": 1
+          },
+          "roles": {
+            "fire-support": 1,
+            "reserve": 10
+          },
+          "decisionIntervals": [
+            3.44,
+            5.28,
+            3.12,
+            4.48,
+            4.8,
+            2.8,
+            3.52,
+            5.6,
+            4.4
+          ],
+          "decisionIntervalMean": 4.16
+        },
+        {
+          "id": 7,
+          "team": "red",
+          "type": "sword",
+          "playerControlled": false,
+          "decisions": 10,
+          "orderChanges": 3,
+          "shortReversals": 0,
+          "targetChanges": 2,
+          "pathDistance": 314.088,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 2,
+            "flank": 1,
+            "charge": 1
+          },
+          "roles": {
+            "frontline": 1,
+            "envelopment": 8,
+            "counter-charge": 2
+          },
+          "decisionIntervals": [
+            3.76,
+            3.76,
+            5.2,
+            3.84,
+            5.36,
+            5.52,
+            4.88,
+            2.96,
+            3.44
+          ],
+          "decisionIntervalMean": 4.302
+        }
+      ],
+      "teamPlanTransitions": {
+        "blue": {
+          "operationChanges": 3,
+          "defenseChanges": 0,
+          "withdrawalChanges": 0,
+          "lastOperation": "enveloping",
+          "lastWithdrawal": null,
+          "lastDefense": null,
+          "communicationsDelivered": 2,
+          "communicationsExpired": 0
+        },
+        "red": {
+          "operationChanges": 4,
+          "defenseChanges": 0,
+          "withdrawalChanges": 0,
+          "lastOperation": "assault",
+          "lastWithdrawal": null,
+          "lastDefense": null,
+          "communicationsDelivered": 3,
+          "communicationsExpired": 0
+        }
+      },
+      "final": {
+        "winner": null,
+        "blue": 64,
+        "red": 64,
+        "elapsed": 39.9999999999995,
+        "playerSquadId": 0
+      },
+      "findings": [],
+      "droppedFindings": 0,
+      "limits": "Stall warnings are heuristics: standing still can be tactically correct. No rendered/WebGL or human-played match was tested."
+    },
+    {
+      "role": "musket",
+      "seed": 1701,
+      "command": "advance",
+      "simulatedSeconds": 40,
+      "ticks": 500,
+      "winner": null,
+      "combatEventsDrainedByNativeEngine": 113,
+      "finalAlive": {
+        "blue": 65,
+        "red": 64
+      },
+      "format": "killtheking-g5.4-commander-quality-v1",
+      "engine": "actual recovered ArenaArmyBattle G5.4",
+      "newerG8_4Verified": false,
+      "actualG8_5MirrorTrials": 0,
+      "phase": "finished",
+      "initial": {
+        "seed": 1701,
+        "playerType": "musket",
+        "elapsed": 0,
+        "tick": 0,
+        "soldierCount": 140,
+        "squadCount": 8,
+        "humanSquadId": 0,
+        "scenario": "G5.4 historic 140-soldier field; scripted command inputs, no human play"
+      },
+      "observedSteps": 500,
+      "elapsedObserved": 40,
+      "totals": {
+        "decisions": 79,
+        "orderChanges": 11,
+        "shortReversals": 2,
+        "targetChanges": 12,
+        "movementDistance": 1610.939,
+        "routeReplans": 0,
+        "nativeSoldierStallWarnings": 0,
+        "stationaryMovementOrderWarnings": 0,
+        "engineWinner": null
+      },
+      "bySquad": [
+        {
+          "id": 0,
+          "team": "blue",
+          "type": "musket",
+          "playerControlled": true,
+          "decisions": 0,
+          "orderChanges": 0,
+          "shortReversals": 0,
+          "targetChanges": 0,
+          "pathDistance": 155.44,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1
+          },
+          "roles": {
+            "fire-support": 1
+          },
+          "decisionIntervals": [],
+          "decisionIntervalMean": null
+        },
+        {
+          "id": 1,
+          "team": "blue",
+          "type": "pike",
+          "playerControlled": false,
+          "decisions": 11,
+          "orderChanges": 0,
+          "shortReversals": 0,
+          "targetChanges": 2,
+          "pathDistance": 204.791,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1
+          },
+          "roles": {
+            "frontline": 1,
+            "screen": 11
+          },
+          "decisionIntervals": [
+            2.64,
+            4.88,
+            4.56,
+            4.4,
+            3.52,
+            3.28,
+            3.52,
+            2.56,
+            3.84,
+            3.04
+          ],
+          "decisionIntervalMean": 3.624
+        },
+        {
+          "id": 2,
+          "team": "blue",
+          "type": "bow",
+          "playerControlled": false,
+          "decisions": 10,
+          "orderChanges": 1,
+          "shortReversals": 0,
+          "targetChanges": 1,
+          "pathDistance": 146.145,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1,
+            "hold": 1
+          },
+          "roles": {
+            "fire-support": 1,
+            "reserve": 10
+          },
+          "decisionIntervals": [
+            4.16,
+            2.48,
+            4.4,
+            4.32,
+            3.36,
+            4.56,
+            3.92,
+            4.72,
+            4.4
+          ],
+          "decisionIntervalMean": 4.036
+        },
+        {
+          "id": 3,
+          "team": "blue",
+          "type": "sword",
+          "playerControlled": false,
+          "decisions": 10,
+          "orderChanges": 3,
+          "shortReversals": 0,
+          "targetChanges": 2,
+          "pathDistance": 325.128,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 2,
+            "flank": 1,
+            "charge": 1
+          },
+          "roles": {
+            "frontline": 1,
+            "envelopment": 8,
+            "counter-charge": 2
+          },
+          "decisionIntervals": [
+            3.92,
+            4.88,
+            4.48,
+            4.24,
+            3.52,
+            4.4,
+            3.28,
+            4.08,
+            3.52
+          ],
+          "decisionIntervalMean": 4.036
+        },
+        {
+          "id": 4,
+          "team": "red",
+          "type": "musket",
+          "playerControlled": false,
+          "decisions": 13,
+          "orderChanges": 2,
+          "shortReversals": 1,
+          "targetChanges": 2,
+          "pathDistance": 126.11,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 2,
+            "hold": 1
+          },
+          "roles": {
+            "fire-support": 1,
+            "defensive-fire": 13
+          },
+          "decisionIntervals": [
+            3.76,
+            2.24,
+            3.92,
+            4.64,
+            3.68,
+            3.76,
+            2.56,
+            2.8,
+            2.64,
+            2.56,
+            3.28,
+            3.2
+          ],
+          "decisionIntervalMean": 3.253
+        },
+        {
+          "id": 5,
+          "team": "red",
+          "type": "pike",
+          "playerControlled": false,
+          "decisions": 12,
+          "orderChanges": 0,
+          "shortReversals": 0,
+          "targetChanges": 2,
+          "pathDistance": 195.537,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1
+          },
+          "roles": {
+            "frontline": 1,
+            "screen": 12
+          },
+          "decisionIntervals": [
+            2.56,
+            3.6,
+            3.04,
+            4.24,
+            3.92,
+            4.32,
+            2.4,
+            3.2,
+            3.92,
+            4.32,
+            4.4
+          ],
+          "decisionIntervalMean": 3.629
+        },
+        {
+          "id": 6,
+          "team": "red",
+          "type": "bow",
+          "playerControlled": false,
+          "decisions": 13,
+          "orderChanges": 3,
+          "shortReversals": 1,
+          "targetChanges": 1,
+          "pathDistance": 149.589,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 2,
+            "hold": 2
+          },
+          "roles": {
+            "fire-support": 1,
+            "reserve": 13
+          },
+          "decisionIntervals": [
+            3.68,
+            2.24,
+            2.4,
+            4.24,
+            2.24,
+            2.96,
+            3.36,
+            2.48,
+            3.52,
+            3.68,
+            3.92,
+            2.56
+          ],
+          "decisionIntervalMean": 3.107
+        },
+        {
+          "id": 7,
+          "team": "red",
+          "type": "sword",
+          "playerControlled": false,
+          "decisions": 10,
+          "orderChanges": 2,
+          "shortReversals": 0,
+          "targetChanges": 2,
+          "pathDistance": 308.2,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 2,
+            "flank": 1
+          },
+          "roles": {
+            "frontline": 1,
+            "envelopment": 9,
+            "counter-charge": 1
+          },
+          "decisionIntervals": [
+            2.88,
+            5.6,
+            2.88,
+            5.52,
+            2.8,
+            4.24,
+            3.84,
+            3.44,
+            4.24
+          ],
+          "decisionIntervalMean": 3.938
+        }
+      ],
+      "teamPlanTransitions": {
+        "blue": {
+          "operationChanges": 3,
+          "defenseChanges": 0,
+          "withdrawalChanges": 0,
+          "lastOperation": "enveloping",
+          "lastWithdrawal": null,
+          "lastDefense": null,
+          "communicationsDelivered": 3,
+          "communicationsExpired": 0
+        },
+        "red": {
+          "operationChanges": 4,
+          "defenseChanges": 0,
+          "withdrawalChanges": 0,
+          "lastOperation": "assault",
+          "lastWithdrawal": null,
+          "lastDefense": null,
+          "communicationsDelivered": 3,
+          "communicationsExpired": 0
+        }
+      },
+      "final": {
+        "winner": null,
+        "blue": 65,
+        "red": 64,
+        "elapsed": 39.9999999999995,
+        "playerSquadId": 0
+      },
+      "findings": [
+        {
+          "kind": "short-order-reversal",
+          "at": 35.92,
+          "squadId": 4,
+          "from": "hold",
+          "to": "advance"
+        },
+        {
+          "kind": "short-order-reversal",
+          "at": 37.36,
+          "squadId": 6,
+          "from": "advance",
+          "to": "hold"
+        }
+      ],
+      "droppedFindings": 0,
+      "limits": "Stall warnings are heuristics: standing still can be tactically correct. No rendered/WebGL or human-played match was tested."
+    },
+    {
+      "role": "musket",
+      "seed": 1802,
+      "command": "advance",
+      "simulatedSeconds": 40,
+      "ticks": 500,
+      "winner": null,
+      "combatEventsDrainedByNativeEngine": 98,
+      "finalAlive": {
+        "blue": 65,
+        "red": 65
+      },
+      "format": "killtheking-g5.4-commander-quality-v1",
+      "engine": "actual recovered ArenaArmyBattle G5.4",
+      "newerG8_4Verified": false,
+      "actualG8_5MirrorTrials": 0,
+      "phase": "finished",
+      "initial": {
+        "seed": 1802,
+        "playerType": "musket",
+        "elapsed": 0,
+        "tick": 0,
+        "soldierCount": 140,
+        "squadCount": 8,
+        "humanSquadId": 0,
+        "scenario": "G5.4 historic 140-soldier field; scripted command inputs, no human play"
+      },
+      "observedSteps": 500,
+      "elapsedObserved": 40,
+      "totals": {
+        "decisions": 73,
+        "orderChanges": 13,
+        "shortReversals": 3,
+        "targetChanges": 13,
+        "movementDistance": 1597.237,
+        "routeReplans": 0,
+        "nativeSoldierStallWarnings": 0,
+        "stationaryMovementOrderWarnings": 0,
+        "engineWinner": null
+      },
+      "bySquad": [
+        {
+          "id": 0,
+          "team": "blue",
+          "type": "musket",
+          "playerControlled": true,
+          "decisions": 0,
+          "orderChanges": 0,
+          "shortReversals": 0,
+          "targetChanges": 0,
+          "pathDistance": 155.44,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1
+          },
+          "roles": {
+            "fire-support": 1
+          },
+          "decisionIntervals": [],
+          "decisionIntervalMean": null
+        },
+        {
+          "id": 1,
+          "team": "blue",
+          "type": "pike",
+          "playerControlled": false,
+          "decisions": 10,
+          "orderChanges": 0,
+          "shortReversals": 0,
+          "targetChanges": 2,
+          "pathDistance": 201.412,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1
+          },
+          "roles": {
+            "frontline": 1,
+            "screen": 10
+          },
+          "decisionIntervals": [
+            4.96,
+            3.04,
+            4.56,
+            3.84,
+            4.08,
+            4.48,
+            3.6,
+            4.32,
+            4.32
+          ],
+          "decisionIntervalMean": 4.133
+        },
+        {
+          "id": 2,
+          "team": "blue",
+          "type": "bow",
+          "playerControlled": false,
+          "decisions": 10,
+          "orderChanges": 3,
+          "shortReversals": 2,
+          "targetChanges": 1,
+          "pathDistance": 147.736,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 2,
+            "hold": 2
+          },
+          "roles": {
+            "fire-support": 1,
+            "reserve": 10
+          },
+          "decisionIntervals": [
+            3.68,
+            4.8,
+            3.52,
+            5.04,
+            5.68,
+            4.56,
+            3.44,
+            3.92,
+            3.6
+          ],
+          "decisionIntervalMean": 4.249
+        },
+        {
+          "id": 3,
+          "team": "blue",
+          "type": "sword",
+          "playerControlled": false,
+          "decisions": 11,
+          "orderChanges": 3,
+          "shortReversals": 0,
+          "targetChanges": 2,
+          "pathDistance": 319.24,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 2,
+            "flank": 1,
+            "charge": 1
+          },
+          "roles": {
+            "frontline": 1,
+            "envelopment": 9,
+            "counter-charge": 2
+          },
+          "decisionIntervals": [
+            3.28,
+            2.88,
+            3.04,
+            4.64,
+            4.88,
+            3.04,
+            3.28,
+            4.24,
+            4.08,
+            4.24
+          ],
+          "decisionIntervalMean": 3.76
+        },
+        {
+          "id": 4,
+          "team": "red",
+          "type": "musket",
+          "playerControlled": false,
+          "decisions": 12,
+          "orderChanges": 1,
+          "shortReversals": 0,
+          "targetChanges": 2,
+          "pathDistance": 123.052,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1,
+            "hold": 1
+          },
+          "roles": {
+            "fire-support": 1,
+            "defensive-fire": 12
+          },
+          "decisionIntervals": [
+            3.44,
+            3.84,
+            3.6,
+            2.64,
+            3.12,
+            4.8,
+            4.88,
+            3.2,
+            2.4,
+            3.84,
+            2.32
+          ],
+          "decisionIntervalMean": 3.462
+        },
+        {
+          "id": 5,
+          "team": "red",
+          "type": "pike",
+          "playerControlled": false,
+          "decisions": 9,
+          "orderChanges": 0,
+          "shortReversals": 0,
+          "targetChanges": 2,
+          "pathDistance": 190.654,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1
+          },
+          "roles": {
+            "frontline": 1,
+            "screen": 9
+          },
+          "decisionIntervals": [
+            5.44,
+            4.8,
+            3.6,
+            4.08,
+            2.96,
+            4.16,
+            5.2,
+            5.2
+          ],
+          "decisionIntervalMean": 4.43
+        },
+        {
+          "id": 6,
+          "team": "red",
+          "type": "bow",
+          "playerControlled": false,
+          "decisions": 12,
+          "orderChanges": 3,
+          "shortReversals": 1,
+          "targetChanges": 1,
+          "pathDistance": 147.872,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 2,
+            "hold": 1,
+            "skirmish": 1
+          },
+          "roles": {
+            "fire-support": 1,
+            "reserve": 10,
+            "committed-reserve": 2
+          },
+          "decisionIntervals": [
+            2.8,
+            3.04,
+            4,
+            4.64,
+            3.68,
+            4.16,
+            2.8,
+            2.4,
+            3.12,
+            4.16,
+            4.08
+          ],
+          "decisionIntervalMean": 3.535
+        },
+        {
+          "id": 7,
+          "team": "red",
+          "type": "sword",
+          "playerControlled": false,
+          "decisions": 9,
+          "orderChanges": 3,
+          "shortReversals": 0,
+          "targetChanges": 3,
+          "pathDistance": 311.832,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 2,
+            "flank": 1,
+            "retreat": 1
+          },
+          "roles": {
+            "frontline": 1,
+            "envelopment": 7,
+            "counter-charge": 1,
+            "elastic-defense": 1
+          },
+          "decisionIntervals": [
+            3.6,
+            4.48,
+            4.96,
+            5.84,
+            5.52,
+            5.52,
+            5.12,
+            3.28
+          ],
+          "decisionIntervalMean": 4.79
+        }
+      ],
+      "teamPlanTransitions": {
+        "blue": {
+          "operationChanges": 3,
+          "defenseChanges": 0,
+          "withdrawalChanges": 0,
+          "lastOperation": "enveloping",
+          "lastWithdrawal": null,
+          "lastDefense": null,
+          "communicationsDelivered": 3,
+          "communicationsExpired": 0
+        },
+        "red": {
+          "operationChanges": 4,
+          "defenseChanges": 0,
+          "withdrawalChanges": 0,
+          "lastOperation": "assault",
+          "lastWithdrawal": null,
+          "lastDefense": null,
+          "communicationsDelivered": 3,
+          "communicationsExpired": 0
+        }
+      },
+      "final": {
+        "winner": null,
+        "blue": 65,
+        "red": 65,
+        "elapsed": 39.9999999999995,
+        "playerSquadId": 0
+      },
+      "findings": [
+        {
+          "kind": "short-order-reversal",
+          "at": 30.72,
+          "squadId": 6,
+          "from": "hold",
+          "to": "advance"
+        },
+        {
+          "kind": "short-order-reversal",
+          "at": 30.8,
+          "squadId": 2,
+          "from": "hold",
+          "to": "advance"
+        },
+        {
+          "kind": "short-order-reversal",
+          "at": 38.32,
+          "squadId": 2,
+          "from": "advance",
+          "to": "hold"
+        }
+      ],
+      "droppedFindings": 0,
+      "limits": "Stall warnings are heuristics: standing still can be tactically correct. No rendered/WebGL or human-played match was tested."
+    },
+    {
+      "role": "pike",
+      "seed": 1600,
+      "command": "advance",
+      "simulatedSeconds": 40,
+      "ticks": 500,
+      "winner": null,
+      "combatEventsDrainedByNativeEngine": 94,
+      "finalAlive": {
+        "blue": 59,
+        "red": 67
+      },
+      "format": "killtheking-g5.4-commander-quality-v1",
+      "engine": "actual recovered ArenaArmyBattle G5.4",
+      "newerG8_4Verified": false,
+      "actualG8_5MirrorTrials": 0,
+      "phase": "finished",
+      "initial": {
+        "seed": 1600,
+        "playerType": "pike",
+        "elapsed": 0,
+        "tick": 0,
+        "soldierCount": 140,
+        "squadCount": 8,
+        "humanSquadId": 1,
+        "scenario": "G5.4 historic 140-soldier field; scripted command inputs, no human play"
+      },
+      "observedSteps": 500,
+      "elapsedObserved": 40,
+      "totals": {
+        "decisions": 71,
+        "orderChanges": 8,
+        "shortReversals": 0,
+        "targetChanges": 11,
+        "movementDistance": 1597.032,
+        "routeReplans": 0,
+        "nativeSoldierStallWarnings": 0,
+        "stationaryMovementOrderWarnings": 0,
+        "engineWinner": null
+      },
+      "bySquad": [
+        {
+          "id": 0,
+          "team": "blue",
+          "type": "musket",
+          "playerControlled": false,
+          "decisions": 10,
+          "orderChanges": 1,
+          "shortReversals": 0,
+          "targetChanges": 1,
+          "pathDistance": 127.409,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1,
+            "hold": 1
+          },
+          "roles": {
+            "fire-support": 1,
+            "reserve": 10
+          },
+          "decisionIntervals": [
+            4.24,
+            3.92,
+            4,
+            2.88,
+            4.96,
+            3.76,
+            4.72,
+            4.56,
+            4.24
+          ],
+          "decisionIntervalMean": 4.142
+        },
+        {
+          "id": 1,
+          "team": "blue",
+          "type": "pike",
+          "playerControlled": true,
+          "decisions": 0,
+          "orderChanges": 0,
+          "shortReversals": 0,
+          "targetChanges": 0,
+          "pathDistance": 223.673,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1
+          },
+          "roles": {
+            "frontline": 1
+          },
+          "decisionIntervals": [],
+          "decisionIntervalMean": null
+        },
+        {
+          "id": 2,
+          "team": "blue",
+          "type": "bow",
+          "playerControlled": false,
+          "decisions": 10,
+          "orderChanges": 1,
+          "shortReversals": 0,
+          "targetChanges": 1,
+          "pathDistance": 155.945,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1,
+            "hold": 1
+          },
+          "roles": {
+            "fire-support": 1,
+            "defensive-fire": 10
+          },
+          "decisionIntervals": [
+            5.28,
+            4.16,
+            4.88,
+            2.96,
+            5.04,
+            2.96,
+            4.08,
+            4.4,
+            3.28
+          ],
+          "decisionIntervalMean": 4.116
+        },
+        {
+          "id": 3,
+          "team": "blue",
+          "type": "sword",
+          "playerControlled": false,
+          "decisions": 10,
+          "orderChanges": 0,
+          "shortReversals": 0,
+          "targetChanges": 2,
+          "pathDistance": 245.342,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1
+          },
+          "roles": {
+            "frontline": 1,
+            "screen": 10
+          },
+          "decisionIntervals": [
+            4.08,
+            5.12,
+            4.48,
+            4.48,
+            3.68,
+            4.72,
+            5.2,
+            3.36,
+            3.44
+          ],
+          "decisionIntervalMean": 4.284
+        },
+        {
+          "id": 4,
+          "team": "red",
+          "type": "musket",
+          "playerControlled": false,
+          "decisions": 11,
+          "orderChanges": 2,
+          "shortReversals": 0,
+          "targetChanges": 1,
+          "pathDistance": 149.161,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1,
+            "hold": 1,
+            "retreat": 1
+          },
+          "roles": {
+            "fire-support": 1,
+            "defensive-fire": 9,
+            "staged-withdrawal": 2
+          },
+          "decisionIntervals": [
+            5.2,
+            5.36,
+            4.08,
+            5.2,
+            4.48,
+            2.72,
+            2.96,
+            3.2,
+            4.08,
+            2.64
+          ],
+          "decisionIntervalMean": 3.992
+        },
+        {
+          "id": 5,
+          "team": "red",
+          "type": "pike",
+          "playerControlled": false,
+          "decisions": 10,
+          "orderChanges": 0,
+          "shortReversals": 0,
+          "targetChanges": 3,
+          "pathDistance": 199.375,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1
+          },
+          "roles": {
+            "frontline": 1,
+            "screen": 8,
+            "retreat-escort": 2
+          },
+          "decisionIntervals": [
+            5.84,
+            5.28,
+            5.44,
+            2.88,
+            4.64,
+            3.36,
+            5.2,
+            2.8,
+            3.84
+          ],
+          "decisionIntervalMean": 4.364
+        },
+        {
+          "id": 6,
+          "team": "red",
+          "type": "bow",
+          "playerControlled": false,
+          "decisions": 10,
+          "orderChanges": 2,
+          "shortReversals": 0,
+          "targetChanges": 1,
+          "pathDistance": 195.928,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1,
+            "hold": 1,
+            "retreat": 1
+          },
+          "roles": {
+            "fire-support": 1,
+            "reserve": 8,
+            "committed-reserve": 1,
+            "staged-withdrawal": 1
+          },
+          "decisionIntervals": [
+            3.44,
+            5.28,
+            3.12,
+            4.48,
+            4.8,
+            2.8,
+            3.52,
+            5.6,
+            4.4
+          ],
+          "decisionIntervalMean": 4.16
+        },
+        {
+          "id": 7,
+          "team": "red",
+          "type": "sword",
+          "playerControlled": false,
+          "decisions": 10,
+          "orderChanges": 2,
+          "shortReversals": 0,
+          "targetChanges": 2,
+          "pathDistance": 300.199,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 2,
+            "flank": 1
+          },
+          "roles": {
+            "frontline": 1,
+            "envelopment": 7,
+            "counter-charge": 1,
+            "rear-guard": 2
+          },
+          "decisionIntervals": [
+            3.76,
+            3.76,
+            5.2,
+            3.84,
+            5.36,
+            5.52,
+            4.88,
+            2.96,
+            3.44
+          ],
+          "decisionIntervalMean": 4.302
+        }
+      ],
+      "teamPlanTransitions": {
+        "blue": {
+          "operationChanges": 3,
+          "defenseChanges": 0,
+          "withdrawalChanges": 0,
+          "lastOperation": "enveloping",
+          "lastWithdrawal": null,
+          "lastDefense": null,
+          "communicationsDelivered": 2,
+          "communicationsExpired": 0
+        },
+        "red": {
+          "operationChanges": 3,
+          "defenseChanges": 0,
+          "withdrawalChanges": 1,
+          "lastOperation": "enveloping",
+          "lastWithdrawal": "withdraw",
+          "lastDefense": null,
+          "communicationsDelivered": 2,
+          "communicationsExpired": 0
+        }
+      },
+      "final": {
+        "winner": null,
+        "blue": 59,
+        "red": 67,
+        "elapsed": 39.9999999999995,
+        "playerSquadId": 1
+      },
+      "findings": [],
+      "droppedFindings": 0,
+      "limits": "Stall warnings are heuristics: standing still can be tactically correct. No rendered/WebGL or human-played match was tested."
+    },
+    {
+      "role": "pike",
+      "seed": 1701,
+      "command": "advance",
+      "simulatedSeconds": 40,
+      "ticks": 500,
+      "winner": null,
+      "combatEventsDrainedByNativeEngine": 55,
+      "finalAlive": {
+        "blue": 63,
+        "red": 66
+      },
+      "format": "killtheking-g5.4-commander-quality-v1",
+      "engine": "actual recovered ArenaArmyBattle G5.4",
+      "newerG8_4Verified": false,
+      "actualG8_5MirrorTrials": 0,
+      "phase": "finished",
+      "initial": {
+        "seed": 1701,
+        "playerType": "pike",
+        "elapsed": 0,
+        "tick": 0,
+        "soldierCount": 140,
+        "squadCount": 8,
+        "humanSquadId": 1,
+        "scenario": "G5.4 historic 140-soldier field; scripted command inputs, no human play"
+      },
+      "observedSteps": 500,
+      "elapsedObserved": 40,
+      "totals": {
+        "decisions": 79,
+        "orderChanges": 16,
+        "shortReversals": 5,
+        "targetChanges": 11,
+        "movementDistance": 1621.461,
+        "routeReplans": 0,
+        "nativeSoldierStallWarnings": 0,
+        "stationaryMovementOrderWarnings": 0,
+        "engineWinner": null
+      },
+      "bySquad": [
+        {
+          "id": 0,
+          "team": "blue",
+          "type": "musket",
+          "playerControlled": false,
+          "decisions": 11,
+          "orderChanges": 3,
+          "shortReversals": 1,
+          "targetChanges": 1,
+          "pathDistance": 133.368,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 2,
+            "hold": 1,
+            "skirmish": 1
+          },
+          "roles": {
+            "fire-support": 1,
+            "reserve": 10,
+            "committed-reserve": 1
+          },
+          "decisionIntervals": [
+            3.2,
+            2.8,
+            5.04,
+            3.68,
+            3.52,
+            5.2,
+            3.12,
+            3.68,
+            4.88,
+            3.76
+          ],
+          "decisionIntervalMean": 3.888
+        },
+        {
+          "id": 1,
+          "team": "blue",
+          "type": "pike",
+          "playerControlled": true,
+          "decisions": 0,
+          "orderChanges": 0,
+          "shortReversals": 0,
+          "targetChanges": 0,
+          "pathDistance": 223.673,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1
+          },
+          "roles": {
+            "frontline": 1
+          },
+          "decisionIntervals": [],
+          "decisionIntervalMean": null
+        },
+        {
+          "id": 2,
+          "team": "blue",
+          "type": "bow",
+          "playerControlled": false,
+          "decisions": 10,
+          "orderChanges": 4,
+          "shortReversals": 3,
+          "targetChanges": 1,
+          "pathDistance": 157.487,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 3,
+            "hold": 2
+          },
+          "roles": {
+            "fire-support": 1,
+            "defensive-fire": 10
+          },
+          "decisionIntervals": [
+            4.16,
+            2.48,
+            4.4,
+            4.32,
+            3.36,
+            4.56,
+            3.92,
+            4.72,
+            4.4
+          ],
+          "decisionIntervalMean": 4.036
+        },
+        {
+          "id": 3,
+          "team": "blue",
+          "type": "sword",
+          "playerControlled": false,
+          "decisions": 10,
+          "orderChanges": 0,
+          "shortReversals": 0,
+          "targetChanges": 2,
+          "pathDistance": 252.586,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1
+          },
+          "roles": {
+            "frontline": 1,
+            "screen": 10
+          },
+          "decisionIntervals": [
+            3.92,
+            4.88,
+            4.48,
+            4.24,
+            3.52,
+            4.4,
+            3.28,
+            4.08,
+            3.52
+          ],
+          "decisionIntervalMean": 4.036
+        },
+        {
+          "id": 4,
+          "team": "red",
+          "type": "musket",
+          "playerControlled": false,
+          "decisions": 13,
+          "orderChanges": 3,
+          "shortReversals": 1,
+          "targetChanges": 1,
+          "pathDistance": 144.461,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 2,
+            "hold": 1,
+            "retreat": 1
+          },
+          "roles": {
+            "fire-support": 1,
+            "defensive-fire": 12,
+            "staged-withdrawal": 1
+          },
+          "decisionIntervals": [
+            3.76,
+            2.24,
+            3.92,
+            4.64,
+            3.68,
+            3.76,
+            2.56,
+            2.8,
+            2.64,
+            2.56,
+            3.28,
+            3.2
+          ],
+          "decisionIntervalMean": 3.253
+        },
+        {
+          "id": 5,
+          "team": "red",
+          "type": "pike",
+          "playerControlled": false,
+          "decisions": 12,
+          "orderChanges": 0,
+          "shortReversals": 0,
+          "targetChanges": 3,
+          "pathDistance": 195.704,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1
+          },
+          "roles": {
+            "frontline": 1,
+            "screen": 11,
+            "retreat-escort": 1
+          },
+          "decisionIntervals": [
+            2.56,
+            3.6,
+            3.04,
+            4.24,
+            3.92,
+            4.32,
+            2.4,
+            3.2,
+            3.92,
+            4.32,
+            4.4
+          ],
+          "decisionIntervalMean": 3.629
+        },
+        {
+          "id": 6,
+          "team": "red",
+          "type": "bow",
+          "playerControlled": false,
+          "decisions": 13,
+          "orderChanges": 3,
+          "shortReversals": 0,
+          "targetChanges": 1,
+          "pathDistance": 185.007,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1,
+            "hold": 1,
+            "skirmish": 1,
+            "retreat": 1
+          },
+          "roles": {
+            "fire-support": 1,
+            "reserve": 10,
+            "committed-reserve": 3
+          },
+          "decisionIntervals": [
+            3.68,
+            2.24,
+            2.4,
+            4.24,
+            2.24,
+            2.96,
+            3.36,
+            2.48,
+            3.52,
+            3.68,
+            3.92,
+            2.56
+          ],
+          "decisionIntervalMean": 3.107
+        },
+        {
+          "id": 7,
+          "team": "red",
+          "type": "sword",
+          "playerControlled": false,
+          "decisions": 10,
+          "orderChanges": 3,
+          "shortReversals": 0,
+          "targetChanges": 2,
+          "pathDistance": 329.176,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 2,
+            "flank": 1,
+            "charge": 1
+          },
+          "roles": {
+            "frontline": 1,
+            "envelopment": 8,
+            "counter-charge": 2
+          },
+          "decisionIntervals": [
+            2.88,
+            5.6,
+            2.88,
+            5.52,
+            2.8,
+            4.24,
+            3.84,
+            3.44,
+            4.24
+          ],
+          "decisionIntervalMean": 3.938
+        }
+      ],
+      "teamPlanTransitions": {
+        "blue": {
+          "operationChanges": 3,
+          "defenseChanges": 0,
+          "withdrawalChanges": 0,
+          "lastOperation": "enveloping",
+          "lastWithdrawal": null,
+          "lastDefense": null,
+          "communicationsDelivered": 2,
+          "communicationsExpired": 0
+        },
+        "red": {
+          "operationChanges": 3,
+          "defenseChanges": 0,
+          "withdrawalChanges": 1,
+          "lastOperation": "enveloping",
+          "lastWithdrawal": "withdraw",
+          "lastDefense": null,
+          "communicationsDelivered": 2,
+          "communicationsExpired": 0
+        }
+      },
+      "final": {
+        "winner": null,
+        "blue": 63,
+        "red": 66,
+        "elapsed": 39.9999999999995,
+        "playerSquadId": 1
+      },
+      "findings": [
+        {
+          "kind": "short-order-reversal",
+          "at": 27.28,
+          "squadId": 2,
+          "from": "hold",
+          "to": "advance"
+        },
+        {
+          "kind": "short-order-reversal",
+          "at": 32,
+          "squadId": 2,
+          "from": "advance",
+          "to": "hold"
+        },
+        {
+          "kind": "short-order-reversal",
+          "at": 32.64,
+          "squadId": 4,
+          "from": "hold",
+          "to": "advance"
+        },
+        {
+          "kind": "short-order-reversal",
+          "at": 35.2,
+          "squadId": 0,
+          "from": "hold",
+          "to": "advance"
+        },
+        {
+          "kind": "short-order-reversal",
+          "at": 36.4,
+          "squadId": 2,
+          "from": "hold",
+          "to": "advance"
+        }
+      ],
+      "droppedFindings": 0,
+      "limits": "Stall warnings are heuristics: standing still can be tactically correct. No rendered/WebGL or human-played match was tested."
+    },
+    {
+      "role": "pike",
+      "seed": 1802,
+      "command": "advance",
+      "simulatedSeconds": 40,
+      "ticks": 500,
+      "winner": null,
+      "combatEventsDrainedByNativeEngine": 90,
+      "finalAlive": {
+        "blue": 61,
+        "red": 65
+      },
+      "format": "killtheking-g5.4-commander-quality-v1",
+      "engine": "actual recovered ArenaArmyBattle G5.4",
+      "newerG8_4Verified": false,
+      "actualG8_5MirrorTrials": 0,
+      "phase": "finished",
+      "initial": {
+        "seed": 1802,
+        "playerType": "pike",
+        "elapsed": 0,
+        "tick": 0,
+        "soldierCount": 140,
+        "squadCount": 8,
+        "humanSquadId": 1,
+        "scenario": "G5.4 historic 140-soldier field; scripted command inputs, no human play"
+      },
+      "observedSteps": 500,
+      "elapsedObserved": 40,
+      "totals": {
+        "decisions": 74,
+        "orderChanges": 16,
+        "shortReversals": 6,
+        "targetChanges": 10,
+        "movementDistance": 1575.342,
+        "routeReplans": 0,
+        "nativeSoldierStallWarnings": 0,
+        "stationaryMovementOrderWarnings": 0,
+        "engineWinner": null
+      },
+      "bySquad": [
+        {
+          "id": 0,
+          "team": "blue",
+          "type": "musket",
+          "playerControlled": false,
+          "decisions": 11,
+          "orderChanges": 2,
+          "shortReversals": 0,
+          "targetChanges": 1,
+          "pathDistance": 124.635,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1,
+            "hold": 1,
+            "skirmish": 1
+          },
+          "roles": {
+            "fire-support": 1,
+            "reserve": 10,
+            "committed-reserve": 1
+          },
+          "decisionIntervals": [
+            3.44,
+            2.8,
+            3.92,
+            4.24,
+            4.32,
+            3.12,
+            3.6,
+            3.76,
+            4.88,
+            3.36
+          ],
+          "decisionIntervalMean": 3.744
+        },
+        {
+          "id": 1,
+          "team": "blue",
+          "type": "pike",
+          "playerControlled": true,
+          "decisions": 0,
+          "orderChanges": 0,
+          "shortReversals": 0,
+          "targetChanges": 0,
+          "pathDistance": 219.647,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1
+          },
+          "roles": {
+            "frontline": 1
+          },
+          "decisionIntervals": [],
+          "decisionIntervalMean": null
+        },
+        {
+          "id": 2,
+          "team": "blue",
+          "type": "bow",
+          "playerControlled": false,
+          "decisions": 10,
+          "orderChanges": 5,
+          "shortReversals": 3,
+          "targetChanges": 1,
+          "pathDistance": 151.391,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 3,
+            "hold": 3
+          },
+          "roles": {
+            "fire-support": 1,
+            "defensive-fire": 10
+          },
+          "decisionIntervals": [
+            3.68,
+            4.8,
+            3.52,
+            5.04,
+            5.68,
+            4.56,
+            3.44,
+            3.92,
+            3.6
+          ],
+          "decisionIntervalMean": 4.249
+        },
+        {
+          "id": 3,
+          "team": "blue",
+          "type": "sword",
+          "playerControlled": false,
+          "decisions": 11,
+          "orderChanges": 0,
+          "shortReversals": 0,
+          "targetChanges": 2,
+          "pathDistance": 248.333,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1
+          },
+          "roles": {
+            "frontline": 1,
+            "screen": 11
+          },
+          "decisionIntervals": [
+            3.28,
+            2.88,
+            3.04,
+            4.64,
+            4.88,
+            3.04,
+            3.28,
+            4.24,
+            4.08,
+            4.24
+          ],
+          "decisionIntervalMean": 3.76
+        },
+        {
+          "id": 4,
+          "team": "red",
+          "type": "musket",
+          "playerControlled": false,
+          "decisions": 12,
+          "orderChanges": 3,
+          "shortReversals": 2,
+          "targetChanges": 1,
+          "pathDistance": 136.413,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 2,
+            "hold": 2
+          },
+          "roles": {
+            "fire-support": 1,
+            "defensive-fire": 12
+          },
+          "decisionIntervals": [
+            3.44,
+            3.84,
+            3.6,
+            2.64,
+            3.12,
+            4.8,
+            4.88,
+            3.2,
+            2.4,
+            3.84,
+            2.32
+          ],
+          "decisionIntervalMean": 3.462
+        },
+        {
+          "id": 5,
+          "team": "red",
+          "type": "pike",
+          "playerControlled": false,
+          "decisions": 9,
+          "orderChanges": 0,
+          "shortReversals": 0,
+          "targetChanges": 3,
+          "pathDistance": 194.95,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1
+          },
+          "roles": {
+            "frontline": 1,
+            "screen": 9
+          },
+          "decisionIntervals": [
+            5.44,
+            4.8,
+            3.6,
+            4.08,
+            2.96,
+            4.16,
+            5.2,
+            5.2
+          ],
+          "decisionIntervalMean": 4.43
+        },
+        {
+          "id": 6,
+          "team": "red",
+          "type": "bow",
+          "playerControlled": false,
+          "decisions": 12,
+          "orderChanges": 3,
+          "shortReversals": 0,
+          "targetChanges": 1,
+          "pathDistance": 184.683,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1,
+            "hold": 1,
+            "skirmish": 1,
+            "retreat": 1
+          },
+          "roles": {
+            "fire-support": 1,
+            "reserve": 9,
+            "committed-reserve": 2,
+            "staged-withdrawal": 1
+          },
+          "decisionIntervals": [
+            2.8,
+            3.04,
+            4,
+            4.64,
+            3.68,
+            4.16,
+            2.8,
+            2.4,
+            3.12,
+            4.16,
+            4.08
+          ],
+          "decisionIntervalMean": 3.535
+        },
+        {
+          "id": 7,
+          "team": "red",
+          "type": "sword",
+          "playerControlled": false,
+          "decisions": 9,
+          "orderChanges": 3,
+          "shortReversals": 1,
+          "targetChanges": 1,
+          "pathDistance": 315.291,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1,
+            "flank": 2,
+            "retreat": 1
+          },
+          "roles": {
+            "frontline": 1,
+            "envelopment": 8,
+            "elastic-defense": 1
+          },
+          "decisionIntervals": [
+            3.6,
+            4.48,
+            4.96,
+            5.84,
+            5.52,
+            5.52,
+            5.12,
+            3.28
+          ],
+          "decisionIntervalMean": 4.79
+        }
+      ],
+      "teamPlanTransitions": {
+        "blue": {
+          "operationChanges": 3,
+          "defenseChanges": 0,
+          "withdrawalChanges": 0,
+          "lastOperation": "enveloping",
+          "lastWithdrawal": null,
+          "lastDefense": null,
+          "communicationsDelivered": 2,
+          "communicationsExpired": 0
+        },
+        "red": {
+          "operationChanges": 3,
+          "defenseChanges": 0,
+          "withdrawalChanges": 1,
+          "lastOperation": "enveloping",
+          "lastWithdrawal": "withdraw",
+          "lastDefense": null,
+          "communicationsDelivered": 2,
+          "communicationsExpired": 0
+        }
+      },
+      "final": {
+        "winner": null,
+        "blue": 61,
+        "red": 65,
+        "elapsed": 39.9999999999995,
+        "playerSquadId": 1
+      },
+      "findings": [
+        {
+          "kind": "short-order-reversal",
+          "at": 12.08,
+          "squadId": 2,
+          "from": "hold",
+          "to": "advance"
+        },
+        {
+          "kind": "short-order-reversal",
+          "at": 30.8,
+          "squadId": 2,
+          "from": "hold",
+          "to": "advance"
+        },
+        {
+          "kind": "short-order-reversal",
+          "at": 32,
+          "squadId": 4,
+          "from": "hold",
+          "to": "advance"
+        },
+        {
+          "kind": "short-order-reversal",
+          "at": 35.84,
+          "squadId": 4,
+          "from": "advance",
+          "to": "hold"
+        },
+        {
+          "kind": "short-order-reversal",
+          "at": 38.32,
+          "squadId": 2,
+          "from": "advance",
+          "to": "hold"
+        },
+        {
+          "kind": "short-order-reversal",
+          "at": 38.4,
+          "squadId": 7,
+          "from": "retreat",
+          "to": "flank"
+        }
+      ],
+      "droppedFindings": 0,
+      "limits": "Stall warnings are heuristics: standing still can be tactically correct. No rendered/WebGL or human-played match was tested."
+    },
+    {
+      "role": "bow",
+      "seed": 1600,
+      "command": "advance",
+      "simulatedSeconds": 40,
+      "ticks": 500,
+      "winner": null,
+      "combatEventsDrainedByNativeEngine": 141,
+      "finalAlive": {
+        "blue": 64,
+        "red": 64
+      },
+      "format": "killtheking-g5.4-commander-quality-v1",
+      "engine": "actual recovered ArenaArmyBattle G5.4",
+      "newerG8_4Verified": false,
+      "actualG8_5MirrorTrials": 0,
+      "phase": "finished",
+      "initial": {
+        "seed": 1600,
+        "playerType": "bow",
+        "elapsed": 0,
+        "tick": 0,
+        "soldierCount": 140,
+        "squadCount": 8,
+        "humanSquadId": 2,
+        "scenario": "G5.4 historic 140-soldier field; scripted command inputs, no human play"
+      },
+      "observedSteps": 500,
+      "elapsedObserved": 40,
+      "totals": {
+        "decisions": 72,
+        "orderChanges": 11,
+        "shortReversals": 0,
+        "targetChanges": 12,
+        "movementDistance": 1567.611,
+        "routeReplans": 0,
+        "nativeSoldierStallWarnings": 0,
+        "stationaryMovementOrderWarnings": 1,
+        "engineWinner": null
+      },
+      "bySquad": [
+        {
+          "id": 0,
+          "team": "blue",
+          "type": "musket",
+          "playerControlled": false,
+          "decisions": 10,
+          "orderChanges": 2,
+          "shortReversals": 0,
+          "targetChanges": 1,
+          "pathDistance": 135.825,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1,
+            "hold": 1,
+            "skirmish": 1
+          },
+          "roles": {
+            "fire-support": 1,
+            "reserve": 9,
+            "committed-reserve": 1
+          },
+          "decisionIntervals": [
+            4.24,
+            3.92,
+            4,
+            2.88,
+            4.96,
+            3.76,
+            4.72,
+            4.56,
+            4.24
+          ],
+          "decisionIntervalMean": 4.142
+        },
+        {
+          "id": 1,
+          "team": "blue",
+          "type": "pike",
+          "playerControlled": false,
+          "decisions": 11,
+          "orderChanges": 0,
+          "shortReversals": 0,
+          "targetChanges": 2,
+          "pathDistance": 188.312,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1
+          },
+          "roles": {
+            "frontline": 1,
+            "screen": 11
+          },
+          "decisionIntervals": [
+            4.08,
+            2.64,
+            2.8,
+            4.08,
+            3.04,
+            4.32,
+            4,
+            3.92,
+            4.24,
+            4.48
+          ],
+          "decisionIntervalMean": 3.76
+        },
+        {
+          "id": 2,
+          "team": "blue",
+          "type": "bow",
+          "playerControlled": true,
+          "decisions": 0,
+          "orderChanges": 0,
+          "shortReversals": 0,
+          "targetChanges": 0,
+          "pathDistance": 161.703,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 1,
+          "orders": {
+            "advance": 1
+          },
+          "roles": {
+            "fire-support": 1
+          },
+          "decisionIntervals": [],
+          "decisionIntervalMean": null
+        },
+        {
+          "id": 3,
+          "team": "blue",
+          "type": "sword",
+          "playerControlled": false,
+          "decisions": 10,
+          "orderChanges": 3,
+          "shortReversals": 0,
+          "targetChanges": 3,
+          "pathDistance": 314.824,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 2,
+            "flank": 1,
+            "charge": 1
+          },
+          "roles": {
+            "frontline": 1,
+            "envelopment": 7,
+            "counter-charge": 3
+          },
+          "decisionIntervals": [
+            4.08,
+            5.12,
+            4.48,
+            4.48,
+            3.68,
+            4.72,
+            5.2,
+            3.36,
+            3.44
+          ],
+          "decisionIntervalMean": 4.284
+        },
+        {
+          "id": 4,
+          "team": "red",
+          "type": "musket",
+          "playerControlled": false,
+          "decisions": 11,
+          "orderChanges": 1,
+          "shortReversals": 0,
+          "targetChanges": 1,
+          "pathDistance": 120.311,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1,
+            "hold": 1
+          },
+          "roles": {
+            "fire-support": 1,
+            "defensive-fire": 11
+          },
+          "decisionIntervals": [
+            5.2,
+            5.36,
+            4.08,
+            5.2,
+            4.48,
+            2.72,
+            2.96,
+            3.2,
+            4.08,
+            2.64
+          ],
+          "decisionIntervalMean": 3.992
+        },
+        {
+          "id": 5,
+          "team": "red",
+          "type": "pike",
+          "playerControlled": false,
+          "decisions": 10,
+          "orderChanges": 0,
+          "shortReversals": 0,
+          "targetChanges": 2,
+          "pathDistance": 179.66,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1
+          },
+          "roles": {
+            "frontline": 1,
+            "screen": 10
+          },
+          "decisionIntervals": [
+            5.84,
+            5.28,
+            5.44,
+            2.88,
+            4.64,
+            3.36,
+            5.2,
+            2.8,
+            3.84
+          ],
+          "decisionIntervalMean": 4.364
+        },
+        {
+          "id": 6,
+          "team": "red",
+          "type": "bow",
+          "playerControlled": false,
+          "decisions": 10,
+          "orderChanges": 2,
+          "shortReversals": 0,
+          "targetChanges": 1,
+          "pathDistance": 141.987,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1,
+            "hold": 1,
+            "skirmish": 1
+          },
+          "roles": {
+            "fire-support": 1,
+            "reserve": 9,
+            "committed-reserve": 1
+          },
+          "decisionIntervals": [
+            3.44,
+            5.28,
+            3.12,
+            4.48,
+            4.8,
+            2.8,
+            3.52,
+            5.6,
+            4.4
+          ],
+          "decisionIntervalMean": 4.16
+        },
+        {
+          "id": 7,
+          "team": "red",
+          "type": "sword",
+          "playerControlled": false,
+          "decisions": 10,
+          "orderChanges": 3,
+          "shortReversals": 0,
+          "targetChanges": 2,
+          "pathDistance": 324.99,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 2,
+            "flank": 1,
+            "charge": 1
+          },
+          "roles": {
+            "frontline": 1,
+            "envelopment": 7,
+            "counter-charge": 3
+          },
+          "decisionIntervals": [
+            3.76,
+            3.76,
+            5.2,
+            3.84,
+            5.36,
+            5.52,
+            4.88,
+            2.96,
+            3.44
+          ],
+          "decisionIntervalMean": 4.302
+        }
+      ],
+      "teamPlanTransitions": {
+        "blue": {
+          "operationChanges": 4,
+          "defenseChanges": 0,
+          "withdrawalChanges": 0,
+          "lastOperation": "assault",
+          "lastWithdrawal": null,
+          "lastDefense": null,
+          "communicationsDelivered": 3,
+          "communicationsExpired": 0
+        },
+        "red": {
+          "operationChanges": 3,
+          "defenseChanges": 0,
+          "withdrawalChanges": 0,
+          "lastOperation": "enveloping",
+          "lastWithdrawal": null,
+          "lastDefense": null,
+          "communicationsDelivered": 3,
+          "communicationsExpired": 0
+        }
+      },
+      "final": {
+        "winner": null,
+        "blue": 64,
+        "red": 64,
+        "elapsed": 39.9999999999995,
+        "playerSquadId": 2
+      },
+      "findings": [
+        {
+          "kind": "stationary-movement-order",
+          "at": 34.24,
+          "squadId": 2,
+          "team": "blue",
+          "type": "bow",
+          "aiRole": "fire-support",
+          "defenseRole": null,
+          "operationRole": null,
+          "tacticalReason": "Hedef arıyor",
+          "order": "advance",
+          "seconds": 3.28,
+          "nearestEnemyDistance": 52.492,
+          "routeTargetDistance": null,
+          "classification": "possible-tactical-engagement"
+        }
+      ],
+      "droppedFindings": 0,
+      "limits": "Stall warnings are heuristics: standing still can be tactically correct. No rendered/WebGL or human-played match was tested."
+    },
+    {
+      "role": "bow",
+      "seed": 1701,
+      "command": "advance",
+      "simulatedSeconds": 40,
+      "ticks": 500,
+      "winner": null,
+      "combatEventsDrainedByNativeEngine": 137,
+      "finalAlive": {
+        "blue": 67,
+        "red": 65
+      },
+      "format": "killtheking-g5.4-commander-quality-v1",
+      "engine": "actual recovered ArenaArmyBattle G5.4",
+      "newerG8_4Verified": false,
+      "actualG8_5MirrorTrials": 0,
+      "phase": "finished",
+      "initial": {
+        "seed": 1701,
+        "playerType": "bow",
+        "elapsed": 0,
+        "tick": 0,
+        "soldierCount": 140,
+        "squadCount": 8,
+        "humanSquadId": 2,
+        "scenario": "G5.4 historic 140-soldier field; scripted command inputs, no human play"
+      },
+      "observedSteps": 500,
+      "elapsedObserved": 40,
+      "totals": {
+        "decisions": 80,
+        "orderChanges": 9,
+        "shortReversals": 0,
+        "targetChanges": 12,
+        "movementDistance": 1563.143,
+        "routeReplans": 0,
+        "nativeSoldierStallWarnings": 0,
+        "stationaryMovementOrderWarnings": 2,
+        "engineWinner": null
+      },
+      "bySquad": [
+        {
+          "id": 0,
+          "team": "blue",
+          "type": "musket",
+          "playerControlled": false,
+          "decisions": 11,
+          "orderChanges": 1,
+          "shortReversals": 0,
+          "targetChanges": 1,
+          "pathDistance": 138.652,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1,
+            "skirmish": 1
+          },
+          "roles": {
+            "fire-support": 1,
+            "reserve": 9,
+            "committed-reserve": 2
+          },
+          "decisionIntervals": [
+            3.2,
+            2.8,
+            5.04,
+            3.68,
+            3.52,
+            5.2,
+            3.12,
+            3.68,
+            4.88,
+            3.76
+          ],
+          "decisionIntervalMean": 3.888
+        },
+        {
+          "id": 1,
+          "team": "blue",
+          "type": "pike",
+          "playerControlled": false,
+          "decisions": 11,
+          "orderChanges": 0,
+          "shortReversals": 0,
+          "targetChanges": 2,
+          "pathDistance": 182.161,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1
+          },
+          "roles": {
+            "frontline": 1,
+            "screen": 11
+          },
+          "decisionIntervals": [
+            2.64,
+            4.88,
+            4.56,
+            4.4,
+            3.52,
+            3.28,
+            3.52,
+            2.56,
+            3.84,
+            3.04
+          ],
+          "decisionIntervalMean": 3.624
+        },
+        {
+          "id": 2,
+          "team": "blue",
+          "type": "bow",
+          "playerControlled": true,
+          "decisions": 0,
+          "orderChanges": 0,
+          "shortReversals": 0,
+          "targetChanges": 0,
+          "pathDistance": 169.454,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 2,
+          "orders": {
+            "advance": 1
+          },
+          "roles": {
+            "fire-support": 1
+          },
+          "decisionIntervals": [],
+          "decisionIntervalMean": null
+        },
+        {
+          "id": 3,
+          "team": "blue",
+          "type": "sword",
+          "playerControlled": false,
+          "decisions": 10,
+          "orderChanges": 2,
+          "shortReversals": 0,
+          "targetChanges": 3,
+          "pathDistance": 308.2,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 2,
+            "flank": 1
+          },
+          "roles": {
+            "frontline": 1,
+            "envelopment": 8,
+            "counter-charge": 2
+          },
+          "decisionIntervals": [
+            3.92,
+            4.88,
+            4.48,
+            4.24,
+            3.52,
+            4.4,
+            3.28,
+            4.08,
+            3.52
+          ],
+          "decisionIntervalMean": 4.036
+        },
+        {
+          "id": 4,
+          "team": "red",
+          "type": "musket",
+          "playerControlled": false,
+          "decisions": 13,
+          "orderChanges": 1,
+          "shortReversals": 0,
+          "targetChanges": 1,
+          "pathDistance": 126.528,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1,
+            "hold": 1
+          },
+          "roles": {
+            "fire-support": 1,
+            "defensive-fire": 13
+          },
+          "decisionIntervals": [
+            3.76,
+            2.24,
+            3.92,
+            4.64,
+            3.68,
+            3.76,
+            2.56,
+            2.8,
+            2.64,
+            2.56,
+            3.28,
+            3.2
+          ],
+          "decisionIntervalMean": 3.253
+        },
+        {
+          "id": 5,
+          "team": "red",
+          "type": "pike",
+          "playerControlled": false,
+          "decisions": 12,
+          "orderChanges": 0,
+          "shortReversals": 0,
+          "targetChanges": 2,
+          "pathDistance": 178.614,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1
+          },
+          "roles": {
+            "frontline": 1,
+            "screen": 12
+          },
+          "decisionIntervals": [
+            2.56,
+            3.6,
+            3.04,
+            4.24,
+            3.92,
+            4.32,
+            2.4,
+            3.2,
+            3.92,
+            4.32,
+            4.4
+          ],
+          "decisionIntervalMean": 3.629
+        },
+        {
+          "id": 6,
+          "team": "red",
+          "type": "bow",
+          "playerControlled": false,
+          "decisions": 13,
+          "orderChanges": 2,
+          "shortReversals": 0,
+          "targetChanges": 1,
+          "pathDistance": 139.997,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1,
+            "hold": 1,
+            "skirmish": 1
+          },
+          "roles": {
+            "fire-support": 1,
+            "reserve": 11,
+            "committed-reserve": 2
+          },
+          "decisionIntervals": [
+            3.68,
+            2.24,
+            2.4,
+            4.24,
+            2.24,
+            2.96,
+            3.36,
+            2.48,
+            3.52,
+            3.68,
+            3.92,
+            2.56
+          ],
+          "decisionIntervalMean": 3.107
+        },
+        {
+          "id": 7,
+          "team": "red",
+          "type": "sword",
+          "playerControlled": false,
+          "decisions": 10,
+          "orderChanges": 3,
+          "shortReversals": 0,
+          "targetChanges": 2,
+          "pathDistance": 319.537,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 2,
+            "flank": 1,
+            "charge": 1
+          },
+          "roles": {
+            "frontline": 1,
+            "envelopment": 8,
+            "counter-charge": 2
+          },
+          "decisionIntervals": [
+            2.88,
+            5.6,
+            2.88,
+            5.52,
+            2.8,
+            4.24,
+            3.84,
+            3.44,
+            4.24
+          ],
+          "decisionIntervalMean": 3.938
+        }
+      ],
+      "teamPlanTransitions": {
+        "blue": {
+          "operationChanges": 3,
+          "defenseChanges": 0,
+          "withdrawalChanges": 0,
+          "lastOperation": "enveloping",
+          "lastWithdrawal": null,
+          "lastDefense": null,
+          "communicationsDelivered": 3,
+          "communicationsExpired": 0
+        },
+        "red": {
+          "operationChanges": 4,
+          "defenseChanges": 0,
+          "withdrawalChanges": 0,
+          "lastOperation": "assault",
+          "lastWithdrawal": null,
+          "lastDefense": null,
+          "communicationsDelivered": 3,
+          "communicationsExpired": 0
+        }
+      },
+      "final": {
+        "winner": null,
+        "blue": 67,
+        "red": 65,
+        "elapsed": 39.9999999999995,
+        "playerSquadId": 2
+      },
+      "findings": [
+        {
+          "kind": "stationary-movement-order",
+          "at": 34.24,
+          "squadId": 2,
+          "team": "blue",
+          "type": "bow",
+          "aiRole": "fire-support",
+          "defenseRole": null,
+          "operationRole": null,
+          "tacticalReason": "Hedef arıyor",
+          "order": "advance",
+          "seconds": 3.28,
+          "nearestEnemyDistance": 56.962,
+          "routeTargetDistance": null,
+          "classification": "possible-tactical-engagement"
+        },
+        {
+          "kind": "stationary-movement-order",
+          "at": 38.48,
+          "squadId": 2,
+          "team": "blue",
+          "type": "bow",
+          "aiRole": "fire-support",
+          "defenseRole": null,
+          "operationRole": null,
+          "tacticalReason": "Hedef arıyor",
+          "order": "advance",
+          "seconds": 3.28,
+          "nearestEnemyDistance": 24.021,
+          "routeTargetDistance": null,
+          "classification": "possible-tactical-engagement"
+        }
+      ],
+      "droppedFindings": 0,
+      "limits": "Stall warnings are heuristics: standing still can be tactically correct. No rendered/WebGL or human-played match was tested."
+    },
+    {
+      "role": "bow",
+      "seed": 1802,
+      "command": "advance",
+      "simulatedSeconds": 40,
+      "ticks": 500,
+      "winner": null,
+      "combatEventsDrainedByNativeEngine": 123,
+      "finalAlive": {
+        "blue": 64,
+        "red": 64
+      },
+      "format": "killtheking-g5.4-commander-quality-v1",
+      "engine": "actual recovered ArenaArmyBattle G5.4",
+      "newerG8_4Verified": false,
+      "actualG8_5MirrorTrials": 0,
+      "phase": "finished",
+      "initial": {
+        "seed": 1802,
+        "playerType": "bow",
+        "elapsed": 0,
+        "tick": 0,
+        "soldierCount": 140,
+        "squadCount": 8,
+        "humanSquadId": 2,
+        "scenario": "G5.4 historic 140-soldier field; scripted command inputs, no human play"
+      },
+      "observedSteps": 500,
+      "elapsedObserved": 40,
+      "totals": {
+        "decisions": 74,
+        "orderChanges": 11,
+        "shortReversals": 1,
+        "targetChanges": 11,
+        "movementDistance": 1619.832,
+        "routeReplans": 0,
+        "nativeSoldierStallWarnings": 0,
+        "stationaryMovementOrderWarnings": 1,
+        "engineWinner": null
+      },
+      "bySquad": [
+        {
+          "id": 0,
+          "team": "blue",
+          "type": "musket",
+          "playerControlled": false,
+          "decisions": 11,
+          "orderChanges": 2,
+          "shortReversals": 0,
+          "targetChanges": 1,
+          "pathDistance": 163.979,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1,
+            "hold": 1,
+            "retreat": 1
+          },
+          "roles": {
+            "fire-support": 1,
+            "reserve": 10,
+            "staged-withdrawal": 1
+          },
+          "decisionIntervals": [
+            3.44,
+            2.8,
+            3.92,
+            4.24,
+            4.32,
+            3.12,
+            3.6,
+            3.76,
+            4.88,
+            3.36
+          ],
+          "decisionIntervalMean": 3.744
+        },
+        {
+          "id": 1,
+          "team": "blue",
+          "type": "pike",
+          "playerControlled": false,
+          "decisions": 10,
+          "orderChanges": 0,
+          "shortReversals": 0,
+          "targetChanges": 2,
+          "pathDistance": 205.922,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1
+          },
+          "roles": {
+            "frontline": 1,
+            "screen": 9,
+            "retreat-escort": 1
+          },
+          "decisionIntervals": [
+            4.96,
+            3.04,
+            4.56,
+            3.84,
+            4.08,
+            4.48,
+            3.6,
+            4.32,
+            4.32
+          ],
+          "decisionIntervalMean": 4.133
+        },
+        {
+          "id": 2,
+          "team": "blue",
+          "type": "bow",
+          "playerControlled": true,
+          "decisions": 0,
+          "orderChanges": 0,
+          "shortReversals": 0,
+          "targetChanges": 0,
+          "pathDistance": 161.682,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 1,
+          "orders": {
+            "advance": 1
+          },
+          "roles": {
+            "fire-support": 1
+          },
+          "decisionIntervals": [],
+          "decisionIntervalMean": null
+        },
+        {
+          "id": 3,
+          "team": "blue",
+          "type": "sword",
+          "playerControlled": false,
+          "decisions": 11,
+          "orderChanges": 2,
+          "shortReversals": 0,
+          "targetChanges": 2,
+          "pathDistance": 304.132,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 2,
+            "flank": 1
+          },
+          "roles": {
+            "frontline": 1,
+            "envelopment": 9,
+            "counter-charge": 1,
+            "rear-guard": 1
+          },
+          "decisionIntervals": [
+            3.28,
+            2.88,
+            3.04,
+            4.64,
+            4.88,
+            3.04,
+            3.28,
+            4.24,
+            4.08,
+            4.24
+          ],
+          "decisionIntervalMean": 3.76
+        },
+        {
+          "id": 4,
+          "team": "red",
+          "type": "musket",
+          "playerControlled": false,
+          "decisions": 12,
+          "orderChanges": 1,
+          "shortReversals": 0,
+          "targetChanges": 1,
+          "pathDistance": 129.637,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1,
+            "hold": 1
+          },
+          "roles": {
+            "fire-support": 1,
+            "defensive-fire": 12
+          },
+          "decisionIntervals": [
+            3.44,
+            3.84,
+            3.6,
+            2.64,
+            3.12,
+            4.8,
+            4.88,
+            3.2,
+            2.4,
+            3.84,
+            2.32
+          ],
+          "decisionIntervalMean": 3.462
+        },
+        {
+          "id": 5,
+          "team": "red",
+          "type": "pike",
+          "playerControlled": false,
+          "decisions": 9,
+          "orderChanges": 0,
+          "shortReversals": 0,
+          "targetChanges": 2,
+          "pathDistance": 189.3,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1
+          },
+          "roles": {
+            "frontline": 1,
+            "screen": 9
+          },
+          "decisionIntervals": [
+            5.44,
+            4.8,
+            3.6,
+            4.08,
+            2.96,
+            4.16,
+            5.2,
+            5.2
+          ],
+          "decisionIntervalMean": 4.43
+        },
+        {
+          "id": 6,
+          "team": "red",
+          "type": "bow",
+          "playerControlled": false,
+          "decisions": 12,
+          "orderChanges": 3,
+          "shortReversals": 1,
+          "targetChanges": 1,
+          "pathDistance": 149.252,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 2,
+            "hold": 1,
+            "skirmish": 1
+          },
+          "roles": {
+            "fire-support": 1,
+            "reserve": 10,
+            "committed-reserve": 2
+          },
+          "decisionIntervals": [
+            2.8,
+            3.04,
+            4,
+            4.64,
+            3.68,
+            4.16,
+            2.8,
+            2.4,
+            3.12,
+            4.16,
+            4.08
+          ],
+          "decisionIntervalMean": 3.535
+        },
+        {
+          "id": 7,
+          "team": "red",
+          "type": "sword",
+          "playerControlled": false,
+          "decisions": 9,
+          "orderChanges": 3,
+          "shortReversals": 0,
+          "targetChanges": 2,
+          "pathDistance": 315.928,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 2,
+            "flank": 1,
+            "charge": 1
+          },
+          "roles": {
+            "frontline": 1,
+            "envelopment": 7,
+            "counter-charge": 2
+          },
+          "decisionIntervals": [
+            3.6,
+            4.48,
+            4.96,
+            5.84,
+            5.52,
+            5.52,
+            5.12,
+            3.28
+          ],
+          "decisionIntervalMean": 4.79
+        }
+      ],
+      "teamPlanTransitions": {
+        "blue": {
+          "operationChanges": 4,
+          "defenseChanges": 0,
+          "withdrawalChanges": 1,
+          "lastOperation": "assault",
+          "lastWithdrawal": "withdraw",
+          "lastDefense": null,
+          "communicationsDelivered": 3,
+          "communicationsExpired": 0
+        },
+        "red": {
+          "operationChanges": 3,
+          "defenseChanges": 0,
+          "withdrawalChanges": 0,
+          "lastOperation": "enveloping",
+          "lastWithdrawal": null,
+          "lastDefense": null,
+          "communicationsDelivered": 3,
+          "communicationsExpired": 0
+        }
+      },
+      "final": {
+        "winner": null,
+        "blue": 64,
+        "red": 64,
+        "elapsed": 39.9999999999995,
+        "playerSquadId": 2
+      },
+      "findings": [
+        {
+          "kind": "short-order-reversal",
+          "at": 30.72,
+          "squadId": 6,
+          "from": "hold",
+          "to": "advance"
+        },
+        {
+          "kind": "stationary-movement-order",
+          "at": 34.24,
+          "squadId": 2,
+          "team": "blue",
+          "type": "bow",
+          "aiRole": "fire-support",
+          "defenseRole": null,
+          "operationRole": null,
+          "tacticalReason": "Hedef arıyor",
+          "order": "advance",
+          "seconds": 3.28,
+          "nearestEnemyDistance": 52.66,
+          "routeTargetDistance": null,
+          "classification": "possible-tactical-engagement"
+        }
+      ],
+      "droppedFindings": 0,
+      "limits": "Stall warnings are heuristics: standing still can be tactically correct. No rendered/WebGL or human-played match was tested."
+    },
+    {
+      "role": "sword",
+      "seed": 1600,
+      "command": "advance",
+      "simulatedSeconds": 40,
+      "ticks": 500,
+      "winner": null,
+      "combatEventsDrainedByNativeEngine": 93,
+      "finalAlive": {
+        "blue": 67,
+        "red": 66
+      },
+      "format": "killtheking-g5.4-commander-quality-v1",
+      "engine": "actual recovered ArenaArmyBattle G5.4",
+      "newerG8_4Verified": false,
+      "actualG8_5MirrorTrials": 0,
+      "phase": "finished",
+      "initial": {
+        "seed": 1600,
+        "playerType": "sword",
+        "elapsed": 0,
+        "tick": 0,
+        "soldierCount": 140,
+        "squadCount": 8,
+        "humanSquadId": 3,
+        "scenario": "G5.4 historic 140-soldier field; scripted command inputs, no human play"
+      },
+      "observedSteps": 500,
+      "elapsedObserved": 40,
+      "totals": {
+        "decisions": 72,
+        "orderChanges": 9,
+        "shortReversals": 1,
+        "targetChanges": 11,
+        "movementDistance": 1509.563,
+        "routeReplans": 0,
+        "nativeSoldierStallWarnings": 0,
+        "stationaryMovementOrderWarnings": 0,
+        "engineWinner": null
+      },
+      "bySquad": [
+        {
+          "id": 0,
+          "team": "blue",
+          "type": "musket",
+          "playerControlled": false,
+          "decisions": 10,
+          "orderChanges": 1,
+          "shortReversals": 0,
+          "targetChanges": 1,
+          "pathDistance": 117.736,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1,
+            "hold": 1
+          },
+          "roles": {
+            "fire-support": 1,
+            "reserve": 10
+          },
+          "decisionIntervals": [
+            4.24,
+            3.92,
+            4,
+            2.88,
+            4.96,
+            3.76,
+            4.72,
+            4.56,
+            4.24
+          ],
+          "decisionIntervalMean": 4.142
+        },
+        {
+          "id": 1,
+          "team": "blue",
+          "type": "pike",
+          "playerControlled": false,
+          "decisions": 11,
+          "orderChanges": 0,
+          "shortReversals": 0,
+          "targetChanges": 2,
+          "pathDistance": 189.221,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1
+          },
+          "roles": {
+            "frontline": 1,
+            "screen": 11
+          },
+          "decisionIntervals": [
+            4.08,
+            2.64,
+            2.8,
+            4.08,
+            3.04,
+            4.32,
+            4,
+            3.92,
+            4.24,
+            4.48
+          ],
+          "decisionIntervalMean": 3.76
+        },
+        {
+          "id": 2,
+          "team": "blue",
+          "type": "bow",
+          "playerControlled": false,
+          "decisions": 10,
+          "orderChanges": 1,
+          "shortReversals": 0,
+          "targetChanges": 1,
+          "pathDistance": 159.99,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1,
+            "hold": 1
+          },
+          "roles": {
+            "fire-support": 1,
+            "defensive-fire": 10
+          },
+          "decisionIntervals": [
+            5.28,
+            4.16,
+            4.88,
+            2.96,
+            5.04,
+            2.96,
+            4.08,
+            4.4,
+            3.28
+          ],
+          "decisionIntervalMean": 4.116
+        },
+        {
+          "id": 3,
+          "team": "blue",
+          "type": "sword",
+          "playerControlled": true,
+          "decisions": 0,
+          "orderChanges": 0,
+          "shortReversals": 0,
+          "targetChanges": 0,
+          "pathDistance": 278.452,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1
+          },
+          "roles": {
+            "frontline": 1
+          },
+          "decisionIntervals": [],
+          "decisionIntervalMean": null
+        },
+        {
+          "id": 4,
+          "team": "red",
+          "type": "musket",
+          "playerControlled": false,
+          "decisions": 11,
+          "orderChanges": 2,
+          "shortReversals": 0,
+          "targetChanges": 1,
+          "pathDistance": 129.492,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 2,
+            "hold": 1
+          },
+          "roles": {
+            "fire-support": 1,
+            "defensive-fire": 11
+          },
+          "decisionIntervals": [
+            5.2,
+            5.36,
+            4.08,
+            5.2,
+            4.48,
+            2.72,
+            2.96,
+            3.2,
+            4.08,
+            2.64
+          ],
+          "decisionIntervalMean": 3.992
+        },
+        {
+          "id": 5,
+          "team": "red",
+          "type": "pike",
+          "playerControlled": false,
+          "decisions": 10,
+          "orderChanges": 0,
+          "shortReversals": 0,
+          "targetChanges": 2,
+          "pathDistance": 182.478,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1
+          },
+          "roles": {
+            "frontline": 1,
+            "screen": 10
+          },
+          "decisionIntervals": [
+            5.84,
+            5.28,
+            5.44,
+            2.88,
+            4.64,
+            3.36,
+            5.2,
+            2.8,
+            3.84
+          ],
+          "decisionIntervalMean": 4.364
+        },
+        {
+          "id": 6,
+          "team": "red",
+          "type": "bow",
+          "playerControlled": false,
+          "decisions": 10,
+          "orderChanges": 2,
+          "shortReversals": 0,
+          "targetChanges": 1,
+          "pathDistance": 148.309,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1,
+            "hold": 1,
+            "skirmish": 1
+          },
+          "roles": {
+            "fire-support": 1,
+            "reserve": 7,
+            "committed-reserve": 3
+          },
+          "decisionIntervals": [
+            3.44,
+            5.28,
+            3.12,
+            4.48,
+            4.8,
+            2.8,
+            3.52,
+            5.6,
+            4.4
+          ],
+          "decisionIntervalMean": 4.16
+        },
+        {
+          "id": 7,
+          "team": "red",
+          "type": "sword",
+          "playerControlled": false,
+          "decisions": 10,
+          "orderChanges": 3,
+          "shortReversals": 1,
+          "targetChanges": 3,
+          "pathDistance": 303.885,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 2,
+            "flank": 2
+          },
+          "roles": {
+            "frontline": 1,
+            "envelopment": 9,
+            "counter-charge": 1
+          },
+          "decisionIntervals": [
+            3.76,
+            3.76,
+            5.2,
+            3.84,
+            5.36,
+            5.52,
+            4.88,
+            2.96,
+            3.44
+          ],
+          "decisionIntervalMean": 4.302
+        }
+      ],
+      "teamPlanTransitions": {
+        "blue": {
+          "operationChanges": 3,
+          "defenseChanges": 0,
+          "withdrawalChanges": 0,
+          "lastOperation": "enveloping",
+          "lastWithdrawal": null,
+          "lastDefense": null,
+          "communicationsDelivered": 2,
+          "communicationsExpired": 0
+        },
+        "red": {
+          "operationChanges": 3,
+          "defenseChanges": 0,
+          "withdrawalChanges": 0,
+          "lastOperation": "enveloping",
+          "lastWithdrawal": null,
+          "lastDefense": null,
+          "communicationsDelivered": 2,
+          "communicationsExpired": 0
+        }
+      },
+      "final": {
+        "winner": null,
+        "blue": 67,
+        "red": 66,
+        "elapsed": 39.9999999999995,
+        "playerSquadId": 3
+      },
+      "findings": [
+        {
+          "kind": "short-order-reversal",
+          "at": 32.4,
+          "squadId": 7,
+          "from": "advance",
+          "to": "flank"
+        }
+      ],
+      "droppedFindings": 0,
+      "limits": "Stall warnings are heuristics: standing still can be tactically correct. No rendered/WebGL or human-played match was tested."
+    },
+    {
+      "role": "sword",
+      "seed": 1701,
+      "command": "advance",
+      "simulatedSeconds": 40,
+      "ticks": 500,
+      "winner": null,
+      "combatEventsDrainedByNativeEngine": 98,
+      "finalAlive": {
+        "blue": 66,
+        "red": 67
+      },
+      "format": "killtheking-g5.4-commander-quality-v1",
+      "engine": "actual recovered ArenaArmyBattle G5.4",
+      "newerG8_4Verified": false,
+      "actualG8_5MirrorTrials": 0,
+      "phase": "finished",
+      "initial": {
+        "seed": 1701,
+        "playerType": "sword",
+        "elapsed": 0,
+        "tick": 0,
+        "soldierCount": 140,
+        "squadCount": 8,
+        "humanSquadId": 3,
+        "scenario": "G5.4 historic 140-soldier field; scripted command inputs, no human play"
+      },
+      "observedSteps": 500,
+      "elapsedObserved": 40,
+      "totals": {
+        "decisions": 80,
+        "orderChanges": 14,
+        "shortReversals": 6,
+        "targetChanges": 12,
+        "movementDistance": 1542.787,
+        "routeReplans": 0,
+        "nativeSoldierStallWarnings": 0,
+        "stationaryMovementOrderWarnings": 0,
+        "engineWinner": null
+      },
+      "bySquad": [
+        {
+          "id": 0,
+          "team": "blue",
+          "type": "musket",
+          "playerControlled": false,
+          "decisions": 11,
+          "orderChanges": 2,
+          "shortReversals": 0,
+          "targetChanges": 1,
+          "pathDistance": 120.425,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1,
+            "hold": 1,
+            "skirmish": 1
+          },
+          "roles": {
+            "fire-support": 1,
+            "reserve": 10,
+            "committed-reserve": 1
+          },
+          "decisionIntervals": [
+            3.2,
+            2.8,
+            5.04,
+            3.68,
+            3.52,
+            5.2,
+            3.12,
+            3.68,
+            4.88,
+            3.76
+          ],
+          "decisionIntervalMean": 3.888
+        },
+        {
+          "id": 1,
+          "team": "blue",
+          "type": "pike",
+          "playerControlled": false,
+          "decisions": 11,
+          "orderChanges": 0,
+          "shortReversals": 0,
+          "targetChanges": 2,
+          "pathDistance": 182.584,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1
+          },
+          "roles": {
+            "frontline": 1,
+            "screen": 11
+          },
+          "decisionIntervals": [
+            2.64,
+            4.88,
+            4.56,
+            4.4,
+            3.52,
+            3.28,
+            3.52,
+            2.56,
+            3.84,
+            3.04
+          ],
+          "decisionIntervalMean": 3.624
+        },
+        {
+          "id": 2,
+          "team": "blue",
+          "type": "bow",
+          "playerControlled": false,
+          "decisions": 10,
+          "orderChanges": 3,
+          "shortReversals": 2,
+          "targetChanges": 1,
+          "pathDistance": 160.776,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 2,
+            "hold": 2
+          },
+          "roles": {
+            "fire-support": 1,
+            "defensive-fire": 10
+          },
+          "decisionIntervals": [
+            4.16,
+            2.48,
+            4.4,
+            4.32,
+            3.36,
+            4.56,
+            3.92,
+            4.72,
+            4.4
+          ],
+          "decisionIntervalMean": 4.036
+        },
+        {
+          "id": 3,
+          "team": "blue",
+          "type": "sword",
+          "playerControlled": true,
+          "decisions": 0,
+          "orderChanges": 0,
+          "shortReversals": 0,
+          "targetChanges": 0,
+          "pathDistance": 288.357,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1
+          },
+          "roles": {
+            "frontline": 1
+          },
+          "decisionIntervals": [],
+          "decisionIntervalMean": null
+        },
+        {
+          "id": 4,
+          "team": "red",
+          "type": "musket",
+          "playerControlled": false,
+          "decisions": 13,
+          "orderChanges": 4,
+          "shortReversals": 3,
+          "targetChanges": 1,
+          "pathDistance": 133.318,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 3,
+            "hold": 2
+          },
+          "roles": {
+            "fire-support": 1,
+            "defensive-fire": 13
+          },
+          "decisionIntervals": [
+            3.76,
+            2.24,
+            3.92,
+            4.64,
+            3.68,
+            3.76,
+            2.56,
+            2.8,
+            2.64,
+            2.56,
+            3.28,
+            3.2
+          ],
+          "decisionIntervalMean": 3.253
+        },
+        {
+          "id": 5,
+          "team": "red",
+          "type": "pike",
+          "playerControlled": false,
+          "decisions": 12,
+          "orderChanges": 0,
+          "shortReversals": 0,
+          "targetChanges": 3,
+          "pathDistance": 192.056,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1
+          },
+          "roles": {
+            "frontline": 1,
+            "screen": 11,
+            "returning-support": 1
+          },
+          "decisionIntervals": [
+            2.56,
+            3.6,
+            3.04,
+            4.24,
+            3.92,
+            4.32,
+            2.4,
+            3.2,
+            3.92,
+            4.32,
+            3.28
+          ],
+          "decisionIntervalMean": 3.527
+        },
+        {
+          "id": 6,
+          "team": "red",
+          "type": "bow",
+          "playerControlled": false,
+          "decisions": 13,
+          "orderChanges": 2,
+          "shortReversals": 0,
+          "targetChanges": 1,
+          "pathDistance": 157.07,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1,
+            "hold": 1,
+            "skirmish": 1
+          },
+          "roles": {
+            "fire-support": 1,
+            "reserve": 9,
+            "committed-reserve": 4
+          },
+          "decisionIntervals": [
+            3.68,
+            2.24,
+            2.4,
+            4.24,
+            2.24,
+            2.96,
+            3.36,
+            2.48,
+            3.52,
+            3.68,
+            3.92,
+            2.56
+          ],
+          "decisionIntervalMean": 3.107
+        },
+        {
+          "id": 7,
+          "team": "red",
+          "type": "sword",
+          "playerControlled": false,
+          "decisions": 10,
+          "orderChanges": 3,
+          "shortReversals": 1,
+          "targetChanges": 3,
+          "pathDistance": 308.2,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 2,
+            "flank": 2
+          },
+          "roles": {
+            "frontline": 1,
+            "envelopment": 9,
+            "counter-charge": 1
+          },
+          "decisionIntervals": [
+            2.88,
+            5.6,
+            2.88,
+            5.52,
+            2.8,
+            4.24,
+            3.84,
+            3.44,
+            4.24
+          ],
+          "decisionIntervalMean": 3.938
+        }
+      ],
+      "teamPlanTransitions": {
+        "blue": {
+          "operationChanges": 3,
+          "defenseChanges": 0,
+          "withdrawalChanges": 0,
+          "lastOperation": "enveloping",
+          "lastWithdrawal": null,
+          "lastDefense": null,
+          "communicationsDelivered": 2,
+          "communicationsExpired": 0
+        },
+        "red": {
+          "operationChanges": 3,
+          "defenseChanges": 0,
+          "withdrawalChanges": 0,
+          "lastOperation": "enveloping",
+          "lastWithdrawal": null,
+          "lastDefense": null,
+          "communicationsDelivered": 2,
+          "communicationsExpired": 0
+        }
+      },
+      "final": {
+        "winner": null,
+        "blue": 66,
+        "red": 67,
+        "elapsed": 39.9999999999995,
+        "playerSquadId": 3
+      },
+      "findings": [
+        {
+          "kind": "short-order-reversal",
+          "at": 27.28,
+          "squadId": 2,
+          "from": "hold",
+          "to": "advance"
+        },
+        {
+          "kind": "short-order-reversal",
+          "at": 31.28,
+          "squadId": 7,
+          "from": "advance",
+          "to": "flank"
+        },
+        {
+          "kind": "short-order-reversal",
+          "at": 32,
+          "squadId": 2,
+          "from": "advance",
+          "to": "hold"
+        },
+        {
+          "kind": "short-order-reversal",
+          "at": 32.64,
+          "squadId": 4,
+          "from": "hold",
+          "to": "advance"
+        },
+        {
+          "kind": "short-order-reversal",
+          "at": 35.92,
+          "squadId": 4,
+          "from": "advance",
+          "to": "hold"
+        },
+        {
+          "kind": "short-order-reversal",
+          "at": 39.12,
+          "squadId": 4,
+          "from": "hold",
+          "to": "advance"
+        }
+      ],
+      "droppedFindings": 0,
+      "limits": "Stall warnings are heuristics: standing still can be tactically correct. No rendered/WebGL or human-played match was tested."
+    },
+    {
+      "role": "sword",
+      "seed": 1802,
+      "command": "advance",
+      "simulatedSeconds": 40,
+      "ticks": 500,
+      "winner": null,
+      "combatEventsDrainedByNativeEngine": 99,
+      "finalAlive": {
+        "blue": 62,
+        "red": 65
+      },
+      "format": "killtheking-g5.4-commander-quality-v1",
+      "engine": "actual recovered ArenaArmyBattle G5.4",
+      "newerG8_4Verified": false,
+      "actualG8_5MirrorTrials": 0,
+      "phase": "finished",
+      "initial": {
+        "seed": 1802,
+        "playerType": "sword",
+        "elapsed": 0,
+        "tick": 0,
+        "soldierCount": 140,
+        "squadCount": 8,
+        "humanSquadId": 3,
+        "scenario": "G5.4 historic 140-soldier field; scripted command inputs, no human play"
+      },
+      "observedSteps": 500,
+      "elapsedObserved": 40,
+      "totals": {
+        "decisions": 73,
+        "orderChanges": 10,
+        "shortReversals": 3,
+        "targetChanges": 11,
+        "movementDistance": 1552.723,
+        "routeReplans": 0,
+        "nativeSoldierStallWarnings": 0,
+        "stationaryMovementOrderWarnings": 0,
+        "engineWinner": null
+      },
+      "bySquad": [
+        {
+          "id": 0,
+          "team": "blue",
+          "type": "musket",
+          "playerControlled": false,
+          "decisions": 11,
+          "orderChanges": 1,
+          "shortReversals": 0,
+          "targetChanges": 1,
+          "pathDistance": 120.738,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1,
+            "hold": 1
+          },
+          "roles": {
+            "fire-support": 1,
+            "reserve": 11
+          },
+          "decisionIntervals": [
+            3.44,
+            2.8,
+            3.92,
+            4.24,
+            4.32,
+            3.12,
+            3.6,
+            3.76,
+            4.88,
+            3.36
+          ],
+          "decisionIntervalMean": 3.744
+        },
+        {
+          "id": 1,
+          "team": "blue",
+          "type": "pike",
+          "playerControlled": false,
+          "decisions": 10,
+          "orderChanges": 0,
+          "shortReversals": 0,
+          "targetChanges": 2,
+          "pathDistance": 186.371,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1
+          },
+          "roles": {
+            "frontline": 1,
+            "screen": 10
+          },
+          "decisionIntervals": [
+            4.96,
+            3.04,
+            4.56,
+            3.84,
+            4.08,
+            4.48,
+            3.6,
+            4.32,
+            4.32
+          ],
+          "decisionIntervalMean": 4.133
+        },
+        {
+          "id": 2,
+          "team": "blue",
+          "type": "bow",
+          "playerControlled": false,
+          "decisions": 10,
+          "orderChanges": 1,
+          "shortReversals": 0,
+          "targetChanges": 1,
+          "pathDistance": 159.572,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1,
+            "hold": 1
+          },
+          "roles": {
+            "fire-support": 1,
+            "defensive-fire": 10
+          },
+          "decisionIntervals": [
+            3.68,
+            4.8,
+            3.52,
+            5.04,
+            5.68,
+            4.56,
+            3.44,
+            3.92,
+            3.6
+          ],
+          "decisionIntervalMean": 4.249
+        },
+        {
+          "id": 3,
+          "team": "blue",
+          "type": "sword",
+          "playerControlled": true,
+          "decisions": 0,
+          "orderChanges": 0,
+          "shortReversals": 0,
+          "targetChanges": 0,
+          "pathDistance": 278.119,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1
+          },
+          "roles": {
+            "frontline": 1
+          },
+          "decisionIntervals": [],
+          "decisionIntervalMean": null
+        },
+        {
+          "id": 4,
+          "team": "red",
+          "type": "musket",
+          "playerControlled": false,
+          "decisions": 12,
+          "orderChanges": 3,
+          "shortReversals": 2,
+          "targetChanges": 1,
+          "pathDistance": 134.285,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 2,
+            "hold": 2
+          },
+          "roles": {
+            "fire-support": 1,
+            "defensive-fire": 12
+          },
+          "decisionIntervals": [
+            3.44,
+            3.84,
+            3.6,
+            2.64,
+            3.12,
+            4.8,
+            4.88,
+            3.2,
+            2.4,
+            3.84,
+            2.32
+          ],
+          "decisionIntervalMean": 3.462
+        },
+        {
+          "id": 5,
+          "team": "red",
+          "type": "pike",
+          "playerControlled": false,
+          "decisions": 9,
+          "orderChanges": 0,
+          "shortReversals": 0,
+          "targetChanges": 2,
+          "pathDistance": 197.347,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1
+          },
+          "roles": {
+            "frontline": 1,
+            "screen": 9
+          },
+          "decisionIntervals": [
+            5.44,
+            4.8,
+            3.6,
+            4.08,
+            2.96,
+            4.16,
+            5.2,
+            5.2
+          ],
+          "decisionIntervalMean": 4.43
+        },
+        {
+          "id": 6,
+          "team": "red",
+          "type": "bow",
+          "playerControlled": false,
+          "decisions": 12,
+          "orderChanges": 2,
+          "shortReversals": 0,
+          "targetChanges": 1,
+          "pathDistance": 170.557,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1,
+            "hold": 1,
+            "skirmish": 1
+          },
+          "roles": {
+            "fire-support": 1,
+            "reserve": 8,
+            "committed-reserve": 4
+          },
+          "decisionIntervals": [
+            2.8,
+            3.04,
+            4,
+            4.64,
+            3.68,
+            4.16,
+            2.8,
+            2.4,
+            3.12,
+            4.16,
+            4.08
+          ],
+          "decisionIntervalMean": 3.535
+        },
+        {
+          "id": 7,
+          "team": "red",
+          "type": "sword",
+          "playerControlled": false,
+          "decisions": 9,
+          "orderChanges": 3,
+          "shortReversals": 1,
+          "targetChanges": 3,
+          "pathDistance": 305.734,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 2,
+            "flank": 2
+          },
+          "roles": {
+            "frontline": 1,
+            "envelopment": 8,
+            "counter-charge": 1
+          },
+          "decisionIntervals": [
+            3.6,
+            4.48,
+            4.96,
+            5.84,
+            5.52,
+            5.52,
+            5.12,
+            3.28
+          ],
+          "decisionIntervalMean": 4.79
+        }
+      ],
+      "teamPlanTransitions": {
+        "blue": {
+          "operationChanges": 3,
+          "defenseChanges": 0,
+          "withdrawalChanges": 0,
+          "lastOperation": "enveloping",
+          "lastWithdrawal": null,
+          "lastDefense": null,
+          "communicationsDelivered": 2,
+          "communicationsExpired": 0
+        },
+        "red": {
+          "operationChanges": 3,
+          "defenseChanges": 0,
+          "withdrawalChanges": 0,
+          "lastOperation": "enveloping",
+          "lastWithdrawal": null,
+          "lastDefense": null,
+          "communicationsDelivered": 2,
+          "communicationsExpired": 0
+        }
+      },
+      "final": {
+        "winner": null,
+        "blue": 62,
+        "red": 65,
+        "elapsed": 39.9999999999995,
+        "playerSquadId": 3
+      },
+      "findings": [
+        {
+          "kind": "short-order-reversal",
+          "at": 32,
+          "squadId": 4,
+          "from": "hold",
+          "to": "advance"
+        },
+        {
+          "kind": "short-order-reversal",
+          "at": 35.12,
+          "squadId": 7,
+          "from": "advance",
+          "to": "flank"
+        },
+        {
+          "kind": "short-order-reversal",
+          "at": 35.84,
+          "squadId": 4,
+          "from": "advance",
+          "to": "hold"
+        }
+      ],
+      "droppedFindings": 0,
+      "limits": "Stall warnings are heuristics: standing still can be tactically correct. No rendered/WebGL or human-played match was tested."
+    },
+    {
+      "role": "musket",
+      "seed": 1600,
+      "command": "hold",
+      "simulatedSeconds": 40,
+      "ticks": 500,
+      "winner": null,
+      "combatEventsDrainedByNativeEngine": 79,
+      "finalAlive": {
+        "blue": 64,
+        "red": 68
+      },
+      "format": "killtheking-g5.4-commander-quality-v1",
+      "engine": "actual recovered ArenaArmyBattle G5.4",
+      "newerG8_4Verified": false,
+      "actualG8_5MirrorTrials": 0,
+      "phase": "finished",
+      "initial": {
+        "seed": 1600,
+        "playerType": "musket",
+        "elapsed": 0,
+        "tick": 0,
+        "soldierCount": 140,
+        "squadCount": 8,
+        "humanSquadId": 0,
+        "scenario": "G5.4 historic 140-soldier field; scripted command inputs, no human play"
+      },
+      "observedSteps": 500,
+      "elapsedObserved": 40,
+      "totals": {
+        "decisions": 72,
+        "orderChanges": 9,
+        "shortReversals": 2,
+        "targetChanges": 12,
+        "movementDistance": 1472.595,
+        "routeReplans": 0,
+        "nativeSoldierStallWarnings": 0,
+        "stationaryMovementOrderWarnings": 0,
+        "engineWinner": null
+      },
+      "bySquad": [
+        {
+          "id": 0,
+          "team": "blue",
+          "type": "musket",
+          "playerControlled": true,
+          "decisions": 0,
+          "orderChanges": 0,
+          "shortReversals": 0,
+          "targetChanges": 0,
+          "pathDistance": 0,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "hold": 1
+          },
+          "roles": {
+            "fire-support": 1
+          },
+          "decisionIntervals": [],
+          "decisionIntervalMean": null
+        },
+        {
+          "id": 1,
+          "team": "blue",
+          "type": "pike",
+          "playerControlled": false,
+          "decisions": 11,
+          "orderChanges": 0,
+          "shortReversals": 0,
+          "targetChanges": 2,
+          "pathDistance": 199.519,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1
+          },
+          "roles": {
+            "frontline": 1,
+            "screen": 11
+          },
+          "decisionIntervals": [
+            4.08,
+            2.64,
+            2.8,
+            4.08,
+            3.04,
+            4.32,
+            4,
+            3.92,
+            4.24,
+            4.48
+          ],
+          "decisionIntervalMean": 3.76
+        },
+        {
+          "id": 2,
+          "team": "blue",
+          "type": "bow",
+          "playerControlled": false,
+          "decisions": 10,
+          "orderChanges": 1,
+          "shortReversals": 0,
+          "targetChanges": 1,
+          "pathDistance": 149.04,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1,
+            "hold": 1
+          },
+          "roles": {
+            "fire-support": 1,
+            "reserve": 10
+          },
+          "decisionIntervals": [
+            5.28,
+            4.16,
+            4.88,
+            2.96,
+            5.04,
+            2.96,
+            4.08,
+            4.4,
+            3.28
+          ],
+          "decisionIntervalMean": 4.116
+        },
+        {
+          "id": 3,
+          "team": "blue",
+          "type": "sword",
+          "playerControlled": false,
+          "decisions": 10,
+          "orderChanges": 4,
+          "shortReversals": 1,
+          "targetChanges": 3,
+          "pathDistance": 311.313,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 2,
+            "flank": 2,
+            "retreat": 1
+          },
+          "roles": {
+            "frontline": 1,
+            "envelopment": 8,
+            "counter-charge": 1,
+            "elastic-defense": 1
+          },
+          "decisionIntervals": [
+            4.08,
+            5.12,
+            4.48,
+            4.48,
+            3.68,
+            4.72,
+            5.2,
+            3.36,
+            3.44
+          ],
+          "decisionIntervalMean": 4.284
+        },
+        {
+          "id": 4,
+          "team": "red",
+          "type": "musket",
+          "playerControlled": false,
+          "decisions": 11,
+          "orderChanges": 2,
+          "shortReversals": 1,
+          "targetChanges": 2,
+          "pathDistance": 149.423,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 2,
+            "hold": 1
+          },
+          "roles": {
+            "fire-support": 1,
+            "defensive-fire": 11
+          },
+          "decisionIntervals": [
+            5.2,
+            5.36,
+            4.08,
+            5.2,
+            4.48,
+            2.72,
+            2.96,
+            3.2,
+            4.08,
+            2.64
+          ],
+          "decisionIntervalMean": 3.992
+        },
+        {
+          "id": 5,
+          "team": "red",
+          "type": "pike",
+          "playerControlled": false,
+          "decisions": 10,
+          "orderChanges": 0,
+          "shortReversals": 0,
+          "targetChanges": 2,
+          "pathDistance": 185.65,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1
+          },
+          "roles": {
+            "frontline": 1,
+            "screen": 10
+          },
+          "decisionIntervals": [
+            5.84,
+            5.28,
+            5.44,
+            2.88,
+            4.64,
+            3.36,
+            5.2,
+            2.8,
+            3.84
+          ],
+          "decisionIntervalMean": 4.364
+        },
+        {
+          "id": 6,
+          "team": "red",
+          "type": "bow",
+          "playerControlled": false,
+          "decisions": 10,
+          "orderChanges": 1,
+          "shortReversals": 0,
+          "targetChanges": 1,
+          "pathDistance": 169.449,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1,
+            "hold": 1
+          },
+          "roles": {
+            "fire-support": 1,
+            "reserve": 10
+          },
+          "decisionIntervals": [
+            3.44,
+            5.28,
+            3.12,
+            4.48,
+            4.8,
+            2.8,
+            3.52,
+            5.6,
+            4.4
+          ],
+          "decisionIntervalMean": 4.16
+        },
+        {
+          "id": 7,
+          "team": "red",
+          "type": "sword",
+          "playerControlled": false,
+          "decisions": 10,
+          "orderChanges": 1,
+          "shortReversals": 0,
+          "targetChanges": 1,
+          "pathDistance": 308.2,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1,
+            "flank": 1
+          },
+          "roles": {
+            "frontline": 1,
+            "envelopment": 10
+          },
+          "decisionIntervals": [
+            3.76,
+            3.76,
+            5.2,
+            3.84,
+            5.36,
+            5.52,
+            4.88,
+            2.96,
+            3.44
+          ],
+          "decisionIntervalMean": 4.302
+        }
+      ],
+      "teamPlanTransitions": {
+        "blue": {
+          "operationChanges": 3,
+          "defenseChanges": 0,
+          "withdrawalChanges": 0,
+          "lastOperation": "enveloping",
+          "lastWithdrawal": null,
+          "lastDefense": null,
+          "communicationsDelivered": 2,
+          "communicationsExpired": 0
+        },
+        "red": {
+          "operationChanges": 3,
+          "defenseChanges": 0,
+          "withdrawalChanges": 0,
+          "lastOperation": "enveloping",
+          "lastWithdrawal": null,
+          "lastDefense": null,
+          "communicationsDelivered": 2,
+          "communicationsExpired": 0
+        }
+      },
+      "final": {
+        "winner": null,
+        "blue": 64,
+        "red": 68,
+        "elapsed": 39.9999999999995,
+        "playerSquadId": 0
+      },
+      "findings": [
+        {
+          "kind": "short-order-reversal",
+          "at": 31.84,
+          "squadId": 3,
+          "from": "advance",
+          "to": "flank"
+        },
+        {
+          "kind": "short-order-reversal",
+          "at": 33.28,
+          "squadId": 4,
+          "from": "hold",
+          "to": "advance"
+        }
+      ],
+      "droppedFindings": 0,
+      "limits": "Stall warnings are heuristics: standing still can be tactically correct. No rendered/WebGL or human-played match was tested."
+    },
+    {
+      "role": "pike",
+      "seed": 1600,
+      "command": "hold",
+      "simulatedSeconds": 40,
+      "ticks": 500,
+      "winner": null,
+      "combatEventsDrainedByNativeEngine": 12,
+      "finalAlive": {
+        "blue": 70,
+        "red": 68
+      },
+      "format": "killtheking-g5.4-commander-quality-v1",
+      "engine": "actual recovered ArenaArmyBattle G5.4",
+      "newerG8_4Verified": false,
+      "actualG8_5MirrorTrials": 0,
+      "phase": "finished",
+      "initial": {
+        "seed": 1600,
+        "playerType": "pike",
+        "elapsed": 0,
+        "tick": 0,
+        "soldierCount": 140,
+        "squadCount": 8,
+        "humanSquadId": 1,
+        "scenario": "G5.4 historic 140-soldier field; scripted command inputs, no human play"
+      },
+      "observedSteps": 500,
+      "elapsedObserved": 40,
+      "totals": {
+        "decisions": 71,
+        "orderChanges": 6,
+        "shortReversals": 0,
+        "targetChanges": 8,
+        "movementDistance": 1269.664,
+        "routeReplans": 0,
+        "nativeSoldierStallWarnings": 0,
+        "stationaryMovementOrderWarnings": 2,
+        "engineWinner": null
+      },
+      "bySquad": [
+        {
+          "id": 0,
+          "team": "blue",
+          "type": "musket",
+          "playerControlled": false,
+          "decisions": 10,
+          "orderChanges": 2,
+          "shortReversals": 0,
+          "targetChanges": 1,
+          "pathDistance": 94.246,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 2,
+            "hold": 1
+          },
+          "roles": {
+            "fire-support": 1,
+            "reserve": 10
+          },
+          "decisionIntervals": [
+            4.24,
+            3.92,
+            4,
+            2.88,
+            4.96,
+            3.76,
+            4.72,
+            4.56,
+            4.24
+          ],
+          "decisionIntervalMean": 4.142
+        },
+        {
+          "id": 1,
+          "team": "blue",
+          "type": "pike",
+          "playerControlled": true,
+          "decisions": 0,
+          "orderChanges": 0,
+          "shortReversals": 0,
+          "targetChanges": 0,
+          "pathDistance": 0,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "hold": 1
+          },
+          "roles": {
+            "frontline": 1
+          },
+          "decisionIntervals": [],
+          "decisionIntervalMean": null
+        },
+        {
+          "id": 2,
+          "team": "blue",
+          "type": "bow",
+          "playerControlled": false,
+          "decisions": 10,
+          "orderChanges": 2,
+          "shortReversals": 0,
+          "targetChanges": 1,
+          "pathDistance": 120.341,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 2,
+            "hold": 1
+          },
+          "roles": {
+            "fire-support": 1,
+            "defensive-fire": 10
+          },
+          "decisionIntervals": [
+            5.28,
+            4.16,
+            4.88,
+            2.96,
+            5.04,
+            2.96,
+            4.08,
+            4.4,
+            3.28
+          ],
+          "decisionIntervalMean": 4.116
+        },
+        {
+          "id": 3,
+          "team": "blue",
+          "type": "sword",
+          "playerControlled": false,
+          "decisions": 10,
+          "orderChanges": 0,
+          "shortReversals": 0,
+          "targetChanges": 2,
+          "pathDistance": 175.273,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 2,
+          "orders": {
+            "advance": 1
+          },
+          "roles": {
+            "frontline": 1,
+            "screen": 10
+          },
+          "decisionIntervals": [
+            4.08,
+            5.12,
+            4.48,
+            4.48,
+            3.68,
+            4.72,
+            5.2,
+            3.36,
+            3.44
+          ],
+          "decisionIntervalMean": 4.284
+        },
+        {
+          "id": 4,
+          "team": "red",
+          "type": "musket",
+          "playerControlled": false,
+          "decisions": 11,
+          "orderChanges": 0,
+          "shortReversals": 0,
+          "targetChanges": 1,
+          "pathDistance": 155.44,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1
+          },
+          "roles": {
+            "fire-support": 1,
+            "defensive-fire": 11
+          },
+          "decisionIntervals": [
+            5.2,
+            5.36,
+            4.08,
+            5.2,
+            4.48,
+            2.72,
+            2.96,
+            3.2,
+            4.08,
+            2.64
+          ],
+          "decisionIntervalMean": 3.992
+        },
+        {
+          "id": 5,
+          "team": "red",
+          "type": "pike",
+          "playerControlled": false,
+          "decisions": 10,
+          "orderChanges": 0,
+          "shortReversals": 0,
+          "targetChanges": 1,
+          "pathDistance": 212.326,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1
+          },
+          "roles": {
+            "frontline": 1,
+            "screen": 10
+          },
+          "decisionIntervals": [
+            5.84,
+            5.28,
+            5.44,
+            2.88,
+            4.64,
+            3.36,
+            5.2,
+            2.8,
+            3.84
+          ],
+          "decisionIntervalMean": 4.364
+        },
+        {
+          "id": 6,
+          "team": "red",
+          "type": "bow",
+          "playerControlled": false,
+          "decisions": 10,
+          "orderChanges": 1,
+          "shortReversals": 0,
+          "targetChanges": 1,
+          "pathDistance": 203.837,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1,
+            "hold": 1
+          },
+          "roles": {
+            "fire-support": 1,
+            "reserve": 10
+          },
+          "decisionIntervals": [
+            3.44,
+            5.28,
+            3.12,
+            4.48,
+            4.8,
+            2.8,
+            3.52,
+            5.6,
+            4.4
+          ],
+          "decisionIntervalMean": 4.16
+        },
+        {
+          "id": 7,
+          "team": "red",
+          "type": "sword",
+          "playerControlled": false,
+          "decisions": 10,
+          "orderChanges": 1,
+          "shortReversals": 0,
+          "targetChanges": 1,
+          "pathDistance": 308.2,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1,
+            "flank": 1
+          },
+          "roles": {
+            "frontline": 1,
+            "envelopment": 10
+          },
+          "decisionIntervals": [
+            3.76,
+            3.76,
+            5.2,
+            3.84,
+            5.36,
+            5.52,
+            4.88,
+            2.96,
+            3.44
+          ],
+          "decisionIntervalMean": 4.302
+        }
+      ],
+      "teamPlanTransitions": {
+        "blue": {
+          "operationChanges": 3,
+          "defenseChanges": 0,
+          "withdrawalChanges": 0,
+          "lastOperation": "enveloping",
+          "lastWithdrawal": null,
+          "lastDefense": null,
+          "communicationsDelivered": 2,
+          "communicationsExpired": 0
+        },
+        "red": {
+          "operationChanges": 3,
+          "defenseChanges": 0,
+          "withdrawalChanges": 0,
+          "lastOperation": "enveloping",
+          "lastWithdrawal": null,
+          "lastDefense": null,
+          "communicationsDelivered": 0,
+          "communicationsExpired": 0
+        }
+      },
+      "final": {
+        "winner": null,
+        "blue": 70,
+        "red": 68,
+        "elapsed": 39.9999999999995,
+        "playerSquadId": 1
+      },
+      "findings": [
+        {
+          "kind": "stationary-movement-order",
+          "at": 21.2,
+          "squadId": 3,
+          "team": "blue",
+          "type": "sword",
+          "aiRole": "screen",
+          "defenseRole": "screen",
+          "operationRole": "pin",
+          "tacticalReason": "Menzilli birliklere kılıçlı yakın koruma sağla",
+          "order": "advance",
+          "seconds": 3.28,
+          "nearestEnemyDistance": 120.807,
+          "routeTargetDistance": null,
+          "classification": "possible-protective-screen"
+        },
+        {
+          "kind": "stationary-movement-order",
+          "at": 25.2,
+          "squadId": 3,
+          "team": "blue",
+          "type": "sword",
+          "aiRole": "screen",
+          "defenseRole": "screen",
+          "operationRole": "pin",
+          "tacticalReason": "Menzilli birliklere kılıçlı yakın koruma sağla",
+          "order": "advance",
+          "seconds": 3.28,
+          "nearestEnemyDistance": 94.347,
+          "routeTargetDistance": null,
+          "classification": "possible-protective-screen"
+        }
+      ],
+      "droppedFindings": 0,
+      "limits": "Stall warnings are heuristics: standing still can be tactically correct. No rendered/WebGL or human-played match was tested."
+    },
+    {
+      "role": "bow",
+      "seed": 1600,
+      "command": "hold",
+      "simulatedSeconds": 40,
+      "ticks": 500,
+      "winner": null,
+      "combatEventsDrainedByNativeEngine": 101,
+      "finalAlive": {
+        "blue": 62,
+        "red": 68
+      },
+      "format": "killtheking-g5.4-commander-quality-v1",
+      "engine": "actual recovered ArenaArmyBattle G5.4",
+      "newerG8_4Verified": false,
+      "actualG8_5MirrorTrials": 0,
+      "phase": "finished",
+      "initial": {
+        "seed": 1600,
+        "playerType": "bow",
+        "elapsed": 0,
+        "tick": 0,
+        "soldierCount": 140,
+        "squadCount": 8,
+        "humanSquadId": 2,
+        "scenario": "G5.4 historic 140-soldier field; scripted command inputs, no human play"
+      },
+      "observedSteps": 500,
+      "elapsedObserved": 40,
+      "totals": {
+        "decisions": 72,
+        "orderChanges": 10,
+        "shortReversals": 0,
+        "targetChanges": 12,
+        "movementDistance": 1451.968,
+        "routeReplans": 0,
+        "nativeSoldierStallWarnings": 0,
+        "stationaryMovementOrderWarnings": 1,
+        "engineWinner": null
+      },
+      "bySquad": [
+        {
+          "id": 0,
+          "team": "blue",
+          "type": "musket",
+          "playerControlled": false,
+          "decisions": 10,
+          "orderChanges": 2,
+          "shortReversals": 0,
+          "targetChanges": 1,
+          "pathDistance": 130.792,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1,
+            "hold": 1,
+            "skirmish": 1
+          },
+          "roles": {
+            "fire-support": 1,
+            "reserve": 9,
+            "committed-reserve": 1
+          },
+          "decisionIntervals": [
+            4.24,
+            3.92,
+            4,
+            2.88,
+            4.96,
+            3.76,
+            4.72,
+            4.56,
+            4.24
+          ],
+          "decisionIntervalMean": 4.142
+        },
+        {
+          "id": 1,
+          "team": "blue",
+          "type": "pike",
+          "playerControlled": false,
+          "decisions": 11,
+          "orderChanges": 0,
+          "shortReversals": 0,
+          "targetChanges": 2,
+          "pathDistance": 199.38,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 1,
+          "orders": {
+            "advance": 1
+          },
+          "roles": {
+            "frontline": 1,
+            "screen": 11
+          },
+          "decisionIntervals": [
+            4.08,
+            2.64,
+            2.8,
+            4.08,
+            3.04,
+            4.32,
+            4,
+            3.92,
+            4.24,
+            4.48
+          ],
+          "decisionIntervalMean": 3.76
+        },
+        {
+          "id": 2,
+          "team": "blue",
+          "type": "bow",
+          "playerControlled": true,
+          "decisions": 0,
+          "orderChanges": 0,
+          "shortReversals": 0,
+          "targetChanges": 0,
+          "pathDistance": 0,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "hold": 1
+          },
+          "roles": {
+            "fire-support": 1
+          },
+          "decisionIntervals": [],
+          "decisionIntervalMean": null
+        },
+        {
+          "id": 3,
+          "team": "blue",
+          "type": "sword",
+          "playerControlled": false,
+          "decisions": 10,
+          "orderChanges": 3,
+          "shortReversals": 0,
+          "targetChanges": 2,
+          "pathDistance": 330.648,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 2,
+            "flank": 1,
+            "charge": 1
+          },
+          "roles": {
+            "frontline": 1,
+            "envelopment": 7,
+            "counter-charge": 3
+          },
+          "decisionIntervals": [
+            4.08,
+            5.12,
+            4.48,
+            4.48,
+            3.68,
+            4.72,
+            5.2,
+            3.36,
+            3.44
+          ],
+          "decisionIntervalMean": 4.284
+        },
+        {
+          "id": 4,
+          "team": "red",
+          "type": "musket",
+          "playerControlled": false,
+          "decisions": 11,
+          "orderChanges": 1,
+          "shortReversals": 0,
+          "targetChanges": 2,
+          "pathDistance": 119.369,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1,
+            "hold": 1
+          },
+          "roles": {
+            "fire-support": 1,
+            "defensive-fire": 11
+          },
+          "decisionIntervals": [
+            5.2,
+            5.36,
+            4.08,
+            5.2,
+            4.48,
+            2.72,
+            2.96,
+            3.2,
+            4.08,
+            2.64
+          ],
+          "decisionIntervalMean": 3.992
+        },
+        {
+          "id": 5,
+          "team": "red",
+          "type": "pike",
+          "playerControlled": false,
+          "decisions": 10,
+          "orderChanges": 0,
+          "shortReversals": 0,
+          "targetChanges": 2,
+          "pathDistance": 190.649,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1
+          },
+          "roles": {
+            "frontline": 1,
+            "screen": 10
+          },
+          "decisionIntervals": [
+            5.84,
+            5.28,
+            5.44,
+            2.88,
+            4.64,
+            3.36,
+            5.2,
+            2.8,
+            3.84
+          ],
+          "decisionIntervalMean": 4.364
+        },
+        {
+          "id": 6,
+          "team": "red",
+          "type": "bow",
+          "playerControlled": false,
+          "decisions": 10,
+          "orderChanges": 1,
+          "shortReversals": 0,
+          "targetChanges": 1,
+          "pathDistance": 151.218,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1,
+            "hold": 1
+          },
+          "roles": {
+            "fire-support": 1,
+            "reserve": 10
+          },
+          "decisionIntervals": [
+            3.44,
+            5.28,
+            3.12,
+            4.48,
+            4.8,
+            2.8,
+            3.52,
+            5.6,
+            4.4
+          ],
+          "decisionIntervalMean": 4.16
+        },
+        {
+          "id": 7,
+          "team": "red",
+          "type": "sword",
+          "playerControlled": false,
+          "decisions": 10,
+          "orderChanges": 3,
+          "shortReversals": 0,
+          "targetChanges": 2,
+          "pathDistance": 329.912,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 2,
+            "flank": 1,
+            "charge": 1
+          },
+          "roles": {
+            "frontline": 1,
+            "envelopment": 7,
+            "counter-charge": 3
+          },
+          "decisionIntervals": [
+            3.76,
+            3.76,
+            5.2,
+            3.84,
+            5.36,
+            5.52,
+            4.88,
+            2.96,
+            3.44
+          ],
+          "decisionIntervalMean": 4.302
+        }
+      ],
+      "teamPlanTransitions": {
+        "blue": {
+          "operationChanges": 3,
+          "defenseChanges": 0,
+          "withdrawalChanges": 0,
+          "lastOperation": "enveloping",
+          "lastWithdrawal": null,
+          "lastDefense": null,
+          "communicationsDelivered": 2,
+          "communicationsExpired": 0
+        },
+        "red": {
+          "operationChanges": 3,
+          "defenseChanges": 0,
+          "withdrawalChanges": 0,
+          "lastOperation": "enveloping",
+          "lastWithdrawal": null,
+          "lastDefense": null,
+          "communicationsDelivered": 3,
+          "communicationsExpired": 0
+        }
+      },
+      "final": {
+        "winner": null,
+        "blue": 62,
+        "red": 68,
+        "elapsed": 39.9999999999995,
+        "playerSquadId": 2
+      },
+      "findings": [
+        {
+          "kind": "stationary-movement-order",
+          "at": 25.68,
+          "squadId": 1,
+          "team": "blue",
+          "type": "pike",
+          "aiRole": "screen",
+          "defenseRole": "screen",
+          "operationRole": "pin",
+          "tacticalReason": "Menzilli birliklerin önünde savunma perdesi kur",
+          "order": "advance",
+          "seconds": 3.28,
+          "nearestEnemyDistance": 51.352,
+          "routeTargetDistance": null,
+          "classification": "possible-protective-screen"
+        }
+      ],
+      "droppedFindings": 0,
+      "limits": "Stall warnings are heuristics: standing still can be tactically correct. No rendered/WebGL or human-played match was tested."
+    },
+    {
+      "role": "sword",
+      "seed": 1600,
+      "command": "hold",
+      "simulatedSeconds": 40,
+      "ticks": 500,
+      "winner": null,
+      "combatEventsDrainedByNativeEngine": 11,
+      "finalAlive": {
+        "blue": 70,
+        "red": 67
+      },
+      "format": "killtheking-g5.4-commander-quality-v1",
+      "engine": "actual recovered ArenaArmyBattle G5.4",
+      "newerG8_4Verified": false,
+      "actualG8_5MirrorTrials": 0,
+      "phase": "finished",
+      "initial": {
+        "seed": 1600,
+        "playerType": "sword",
+        "elapsed": 0,
+        "tick": 0,
+        "soldierCount": 140,
+        "squadCount": 8,
+        "humanSquadId": 3,
+        "scenario": "G5.4 historic 140-soldier field; scripted command inputs, no human play"
+      },
+      "observedSteps": 500,
+      "elapsedObserved": 40,
+      "totals": {
+        "decisions": 72,
+        "orderChanges": 6,
+        "shortReversals": 0,
+        "targetChanges": 8,
+        "movementDistance": 1214.506,
+        "routeReplans": 0,
+        "nativeSoldierStallWarnings": 0,
+        "stationaryMovementOrderWarnings": 2,
+        "engineWinner": null
+      },
+      "bySquad": [
+        {
+          "id": 0,
+          "team": "blue",
+          "type": "musket",
+          "playerControlled": false,
+          "decisions": 10,
+          "orderChanges": 2,
+          "shortReversals": 0,
+          "targetChanges": 1,
+          "pathDistance": 95.063,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 2,
+            "hold": 1
+          },
+          "roles": {
+            "fire-support": 1,
+            "reserve": 10
+          },
+          "decisionIntervals": [
+            4.24,
+            3.92,
+            4,
+            2.88,
+            4.96,
+            3.76,
+            4.72,
+            4.56,
+            4.24
+          ],
+          "decisionIntervalMean": 4.142
+        },
+        {
+          "id": 1,
+          "team": "blue",
+          "type": "pike",
+          "playerControlled": false,
+          "decisions": 11,
+          "orderChanges": 0,
+          "shortReversals": 0,
+          "targetChanges": 2,
+          "pathDistance": 129.779,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 2,
+          "orders": {
+            "advance": 1
+          },
+          "roles": {
+            "frontline": 1,
+            "screen": 11
+          },
+          "decisionIntervals": [
+            4.08,
+            2.64,
+            2.8,
+            4.08,
+            3.04,
+            4.32,
+            4,
+            3.92,
+            4.24,
+            4.48
+          ],
+          "decisionIntervalMean": 3.76
+        },
+        {
+          "id": 2,
+          "team": "blue",
+          "type": "bow",
+          "playerControlled": false,
+          "decisions": 10,
+          "orderChanges": 2,
+          "shortReversals": 0,
+          "targetChanges": 1,
+          "pathDistance": 110.377,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 2,
+            "hold": 1
+          },
+          "roles": {
+            "fire-support": 1,
+            "defensive-fire": 10
+          },
+          "decisionIntervals": [
+            5.28,
+            4.16,
+            4.88,
+            2.96,
+            5.04,
+            2.96,
+            4.08,
+            4.4,
+            3.28
+          ],
+          "decisionIntervalMean": 4.116
+        },
+        {
+          "id": 3,
+          "team": "blue",
+          "type": "sword",
+          "playerControlled": true,
+          "decisions": 0,
+          "orderChanges": 0,
+          "shortReversals": 0,
+          "targetChanges": 0,
+          "pathDistance": 0,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "hold": 1
+          },
+          "roles": {
+            "frontline": 1
+          },
+          "decisionIntervals": [],
+          "decisionIntervalMean": null
+        },
+        {
+          "id": 4,
+          "team": "red",
+          "type": "musket",
+          "playerControlled": false,
+          "decisions": 11,
+          "orderChanges": 0,
+          "shortReversals": 0,
+          "targetChanges": 1,
+          "pathDistance": 155.44,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1
+          },
+          "roles": {
+            "fire-support": 1,
+            "defensive-fire": 11
+          },
+          "decisionIntervals": [
+            5.2,
+            5.36,
+            4.08,
+            5.2,
+            4.48,
+            2.72,
+            2.96,
+            3.2,
+            4.08,
+            2.64
+          ],
+          "decisionIntervalMean": 3.992
+        },
+        {
+          "id": 5,
+          "team": "red",
+          "type": "pike",
+          "playerControlled": false,
+          "decisions": 10,
+          "orderChanges": 0,
+          "shortReversals": 0,
+          "targetChanges": 1,
+          "pathDistance": 212.042,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1
+          },
+          "roles": {
+            "frontline": 1,
+            "screen": 10
+          },
+          "decisionIntervals": [
+            5.84,
+            5.28,
+            5.44,
+            2.88,
+            4.64,
+            3.36,
+            5.2,
+            2.8,
+            3.84
+          ],
+          "decisionIntervalMean": 4.364
+        },
+        {
+          "id": 6,
+          "team": "red",
+          "type": "bow",
+          "playerControlled": false,
+          "decisions": 10,
+          "orderChanges": 1,
+          "shortReversals": 0,
+          "targetChanges": 1,
+          "pathDistance": 203.605,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1,
+            "hold": 1
+          },
+          "roles": {
+            "fire-support": 1,
+            "reserve": 10
+          },
+          "decisionIntervals": [
+            3.44,
+            5.28,
+            3.12,
+            4.48,
+            4.8,
+            2.8,
+            3.52,
+            5.6,
+            4.4
+          ],
+          "decisionIntervalMean": 4.16
+        },
+        {
+          "id": 7,
+          "team": "red",
+          "type": "sword",
+          "playerControlled": false,
+          "decisions": 10,
+          "orderChanges": 1,
+          "shortReversals": 0,
+          "targetChanges": 1,
+          "pathDistance": 308.2,
+          "nativeSoldierStallWarnings": 0,
+          "routeReplans": 0,
+          "stationaryMovementOrderWarnings": 0,
+          "orders": {
+            "advance": 1,
+            "flank": 1
+          },
+          "roles": {
+            "frontline": 1,
+            "envelopment": 10
+          },
+          "decisionIntervals": [
+            3.76,
+            3.76,
+            5.2,
+            3.84,
+            5.36,
+            5.52,
+            4.88,
+            2.96,
+            3.44
+          ],
+          "decisionIntervalMean": 4.302
+        }
+      ],
+      "teamPlanTransitions": {
+        "blue": {
+          "operationChanges": 3,
+          "defenseChanges": 0,
+          "withdrawalChanges": 0,
+          "lastOperation": "enveloping",
+          "lastWithdrawal": null,
+          "lastDefense": null,
+          "communicationsDelivered": 2,
+          "communicationsExpired": 0
+        },
+        "red": {
+          "operationChanges": 3,
+          "defenseChanges": 0,
+          "withdrawalChanges": 0,
+          "lastOperation": "enveloping",
+          "lastWithdrawal": null,
+          "lastDefense": null,
+          "communicationsDelivered": 0,
+          "communicationsExpired": 0
+        }
+      },
+      "final": {
+        "winner": null,
+        "blue": 70,
+        "red": 67,
+        "elapsed": 39.9999999999995,
+        "playerSquadId": 3
+      },
+      "findings": [
+        {
+          "kind": "stationary-movement-order",
+          "at": 21.04,
+          "squadId": 1,
+          "team": "blue",
+          "type": "pike",
+          "aiRole": "screen",
+          "defenseRole": "screen",
+          "operationRole": "pin",
+          "tacticalReason": "Menzilli birliklerin önünde savunma perdesi kur",
+          "order": "advance",
+          "seconds": 3.28,
+          "nearestEnemyDistance": 120.487,
+          "routeTargetDistance": null,
+          "classification": "possible-protective-screen"
+        },
+        {
+          "kind": "stationary-movement-order",
+          "at": 25.12,
+          "squadId": 1,
+          "team": "blue",
+          "type": "pike",
+          "aiRole": "screen",
+          "defenseRole": "screen",
+          "operationRole": "pin",
+          "tacticalReason": "Menzilli birliklerin önünde savunma perdesi kur",
+          "order": "advance",
+          "seconds": 3.28,
+          "nearestEnemyDistance": 94.497,
+          "routeTargetDistance": null,
+          "classification": "possible-protective-screen"
+        }
+      ],
+      "droppedFindings": 0,
+      "limits": "Stall warnings are heuristics: standing still can be tactically correct. No rendered/WebGL or human-played match was tested."
+    }
+  ]
+}

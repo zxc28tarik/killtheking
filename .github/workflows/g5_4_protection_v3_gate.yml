@@ -1,0 +1,77 @@
+name: G5.4 third guarded sword AI experiment (NOT APPROVED)
+on:
+  push:
+    branches:
+      - codex/recover-g5-4-army-source
+    paths:
+      - 'recovered/army/mirror/defense_v3/**'
+      - 'recovered/army/mirror/arena-army-battle-protection-v3-role-gated.js'
+      - '.github/workflows/g5_4_protection_v3_gate.yml'
+  workflow_dispatch:
+jobs:
+  source-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify native candidate syntax, single movement change, team ownership, player orders
+        run: |
+          node --check recovered/army/mirror/arena-army-battle-protection-v3-role-gated.js
+          node --check recovered/army/mirror/defense_v3/replay_v3.mjs
+          node --check recovered/army/mirror/defense_v3/audit_v3.mjs
+          node --test recovered/army/mirror/defense_v3/test_guard_v3.mjs
+  replay:
+    needs: source-contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    strategy:
+      fail-fast: false
+      matrix:
+        start: [0, 4, 8]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Re-run four authentic 140-soldier G5.4 v3 CPU battles
+        shell: bash
+        env:
+          START: ${{ matrix.start }}
+        run: |
+          for i in $(seq "$START" "$((START + 3))"); do
+            node recovered/army/mirror/defense_v3/replay_v3.mjs "$i"
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: g54-v3-actual-cpu-${{ matrix.start }}
+          path: recovered/army/mirror/defense_v3/replay/part_*.json
+          if-no-files-found: error
+  gate:
+    needs: replay
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: g54-v3-actual-cpu-*
+          path: recovered/army/mirror/defense_v3/replay
+          merge-multiple: true
+      - name: Audit all 12 v3 real motor outcomes against source and historical references
+        run: node recovered/army/mirror/defense_v3/audit_v3.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: KillTheKing-G5-4-GuardV3-12CPU-EXPERIMENT-NOT-APPROVED
+          path: |
+            recovered/army/mirror/arena-army-battle-protection-v3-role-gated.js
+            recovered/army/mirror/defense_v3/replay/G5_4_GUARD_V3_12_NATIVE_COMPARISON.json
+            recovered/army/mirror/defense_v3/G5_4_GUARD_V3_REPORT_TR.md
+            recovered/army/mirror/defense_v3/guard_v3_reference.json
+            recovered/army/mirror/defense_v3/replay_v3.mjs
+            recovered/army/mirror/defense_v3/audit_v3.mjs
+            recovered/army/mirror/defense_v3/test_guard_v3.mjs
+          if-no-files-found: error

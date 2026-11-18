@@ -1,0 +1,84 @@
+name: G5.4 army source recovery artifact
+on:
+  push:
+    branches:
+      - codex/recover-g5-4-army-source
+  workflow_dispatch:
+jobs:
+  archive:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate recovered HTML syntax and write provenance
+        env:
+          RECOVERY_MANIFEST_OUT: recovered/army/G5_4_Recovery_Manifest.json
+        run: node recovered/army/check_g5_4_archive.mjs
+      - name: Run 78 actual G5.4 army, passive telemetry and AI quality tests
+        run: node --test recovered/army/test_g5_4_army_contract.mjs recovered/army/test_g5_4_passive_trace.mjs recovered/army/test_g5_4_commander_quality_audit.mjs
+      - name: Publish G5.4 recovered HTML and checksum
+        uses: actions/upload-artifact@v4
+        with:
+          name: KillTheKing-G5-4-Recovered-Army-HTML
+          path: |
+            recovered/army/KillTheKing_G5_4_Kanat_Savunmasi_Oyna.html
+            recovered/army/G5_4_Recovery_Manifest.json
+            recovered/army/README_G5_4.md
+            recovered/army/G5_4_ENGINE_SOURCE_MAP.md
+            recovered/army/test_g5_4_army_contract.mjs
+            recovered/army/modules/weapon-balance.js
+            recovered/army/modules/arena-army-battle.js
+          if-no-files-found: error
+
+      - name: Build passive telemetry edition without changing original gameplay
+        run: |
+          node recovered/army/inject_g5_4_passive_trace.mjs \
+            recovered/army/KillTheKing_G5_4_Kanat_Savunmasi_Oyna.html \
+            recovered/army/g5_4_passive_battle_trace.js \
+            recovered/army/dist/KillTheKing_G5_4_Pasif_Telemetri_Oyna.html
+      - name: Reproduce 16 actual G5.4 battles (40s each, NOT G8.4)
+        run: |
+          mkdir -p recovered/army/dist
+          node recovered/army/run_g5_4_commander_quality_trials.mjs recovered/army/dist/G5_4_REAL_ENGINE_QUALITY_MATRIX.json
+          cmp recovered/army/G5_4_REAL_ENGINE_QUALITY_MATRIX.json recovered/army/dist/G5_4_REAL_ENGINE_QUALITY_MATRIX.json
+      - name: All 93 G5.4 actual engine tests (no WebGL claim)
+        run: |
+          node --test \
+            recovered/army/test_g5_4_army_contract.mjs \
+            recovered/army/test_g5_4_passive_trace.mjs \
+            recovered/army/test_g5_4_commander_quality_audit.mjs \
+            recovered/army/test_g5_4_long_battle_diagnostics.mjs
+      - name: Reproduce 8 real G5.4 120s CPU battles and check stored evidence
+        run: |
+          node recovered/army/run_g5_4_extended_trials.mjs \
+            recovered/army/dist/G5_4_LONG_BATTLE_MATRIX.json 120
+          node --input-type=module -e "import fs from 'node:fs'; import assert from 'node:assert/strict'; const a=JSON.parse(fs.readFileSync('recovered/army/G5_4_LONG_BATTLE_MATRIX.json','utf8')); const b=JSON.parse(fs.readFileSync('recovered/army/dist/G5_4_LONG_BATTLE_MATRIX.json','utf8')); assert.deepEqual(b,a); assert.equal(b.summary.trials,8); assert.equal(b.summary.reachedDestinationPauses,13); console.log('Eight real G5.4 120s traces reproduce exactly. NOT G8.4.');"
+      - name: Upload long-term G5.4 CPU AI evidence (NOT a WebGL match)
+        uses: actions/upload-artifact@v4
+        with:
+          name: KillTheKing-G5-4-Long-8x120s-Actual-Engine
+          path: |
+            recovered/army/dist/G5_4_LONG_BATTLE_MATRIX.json
+            recovered/army/G5_4_LONG_BATTLE_SUMMARY.json
+            recovered/army/G5_4_LONG_BATTLE_REPORT.md
+          if-no-files-found: error
+      - name: Publish actual G5.4 AI audit and all 16 runs (NOT G8.5 mirror QA)
+        uses: actions/upload-artifact@v4
+        with:
+          name: KillTheKing-G5-4-Actual-AI-Quality-16-Runs
+          path: |
+            recovered/army/dist/G5_4_REAL_ENGINE_QUALITY_MATRIX.json
+            recovered/army/G5_4_REAL_ENGINE_QUALITY_SUMMARY.json
+            recovered/army/G5_4_REAL_ENGINE_QUALITY_REPORT.md
+          if-no-files-found: error
+      - name: Upload separately named OBSERVED G5.4 offline HTML (NOT G8.4)
+        uses: actions/upload-artifact@v4
+        with:
+          name: KillTheKing-G5-4-Observed-Real-Engine-Not-G8-4
+          path: |
+            recovered/army/dist/KillTheKing_G5_4_Pasif_Telemetri_Oyna.html
+            recovered/army/dist/KillTheKing_G5_4_Pasif_Telemetri_Oyna_BUILD.json
+            recovered/army/README_G5_4_TELEMETRY.md
+          if-no-files-found: error
