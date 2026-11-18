@@ -79,7 +79,12 @@ try{
       visibility:document.visibilityState,
       hudTimer:document.querySelector('#hud-timer')?.textContent,
       hudFps:document.querySelector('#hud-fps')?.textContent,
-      startError:document.querySelector('#ktk-startup-error')?.textContent
+      startError:document.querySelector('#ktk-startup-error')?.textContent,
+      bowTiming:{arenaBot:window.ArenaBotOffense?.windup('archer'),
+        normalPlayerMinDraw:window.ArenaWeaponBalance?.BOW_MIN_DRAW_SECONDS,
+        normalPlayerFullDraw:window.ArenaWeaponBalance?.BOW_DRAW_SECONDS,
+        bowCadence:window.ArenaWeaponBalance?.SHOT_INTERVAL?.bow,
+        postShotRecovery:window.ArenaWeaponBalance?.BOW_RECOVERY_SECONDS}
    }));
    const status=diagnostic.status;
    notes.checks.push('FFA '+map+' post-click diagnostics: '+JSON.stringify({
@@ -95,6 +100,11 @@ try{
    assert.equal(status.matchPhase,'playing','FFA did not start/resume');
    assert.equal(status.map,map,'Wrong rendered FFA map selected');
    assert.equal(status.botCount,6,'FFA bot roster changed');
+   assert.deepEqual(diagnostic.bowTiming,{
+     arenaBot:.5,normalPlayerMinDraw:2,normalPlayerFullDraw:3,
+     bowCadence:4,postShotRecovery:1},
+     'FFA must speed ONLY the arena bot archer, not the normal player bow');
+   notes.checks.push('FFA '+map+' BOW TIMING: '+JSON.stringify(diagnostic.bowTiming));
    // Software SwiftShader often advances only a fraction of real-time;
    // assert nonzero simulation progress, NOT hardware-performance acceptance.
    assert(status.matchRemaining<status.matchDurationSeconds-0.1,
