@@ -1,0 +1,91 @@
+# KILL THE KING — KUŞATMA KALESİ SAVAŞI: UYGULAMA PLANI
+
+**Tarih:** 18 Kasım 2026  
+**Durum:** Kullanıcının onayladığı **1 adet ayrı kuşatma kalesi savaşı**; uygulama başlangıcı.  
+**Geliştirme dalı:** `codex/s1-siege-castle-phase1` (temel: `codex/g54-ffa-army-isolated-launcher`).  
+**Önemli:** Ana dalı, FFA/TDM'yi, G5.4 ordu adayını, tarihî HTML'yi veya mevcut silah sürelerini değiştirme. Bu proje tek kuşatma senaryosudur; üçüncü FFA haritası değildir.
+
+## 0. Kesin kabul edilen kapsam
+
+- **Bir yeni harita:** dış saldırı alanı, ana kapı, iki yan sur çıkış hattı, sur üstü mevziler, iç avlu ve iç kale/komuta noktası.
+- **İki taraf:** kırmızı saldıranlar, mavi kale savunucuları. Oyuncu saldıran **veya** savunan olabilir; taraf seçimi gerçek oyun arayüzünde uygulanacak.
+- **Dört mevcut asker sınıfı:** kılıçlı, mızraklı, okçu, tüfekçi. Mevcut silah hasarı ve atış ritmi korunur; hiçbir yeni varsayılan denge onayı verilmedi.
+- **Senaryo hedefli oyun:** saldıran kapı **veya** sur çıkışı üzerinden kaleye girip avlu ve iç kale/komuta noktasını alır. Savunucu saldıranları etkisiz hale getirerek veya senaryo süresini doldurarak kazanır.
+- **Saldırı ve savunma AI ayrı taktikler:** kapı saldırı takımı, surdan sızma, sur üstü ateş desteği, mızrak/kılıç koruması, avlu karşı taarruzu, son komuta noktası savunması.
+- **Mevcut oyun kimliği:** Krunker benzeri stil, hızlı FPS/TPS kontrolleri, senaryo dışında herkesin birbirine saldırdığı FFA korunur.
+
+## 1. Teknik karar ve değişebilen tasarım önerileri
+
+| Konu | Başlangıç taslağı | Karar sınırı |
+| --- | --- | --- |
+| Ordu ölçeği | G5.4 doğrulanan **70+70 / 140 asker** adayının sözleşmesi | 200/280 ve varsayılan sayı **ayrı onay** |
+| Renkler | Kırmızı saldırır, mavi savunur | Tarafların değişmesi UI seçimidir, kozmetik simülasyon sonucu değil |
+| Ana giriş | HP'li kapı ve kuşatma darbe sistemi | **HP sayısı geçici prototip değeri**; gerçek G5.4 hasarına entegrasyonda ayarlanacak |
+| İki sur çıkışı | Geçerli nav bağlantısı / merdiven noktası | Tam kuşatma merdiveni karakter animasyonu S4–S5 |
+| Harita boyutu | Yoğun kuşatma için orta ölçekli, **geometri verisinde** tanımlı | Kesin ölçüler ilk harita kabulünde revize edilebilir |
+| Maç süresi | Prototip motorunda zaman sınırı veriyle ayarlanabilir | **Nihai dakika/denge kullanıcı onayı olmadan kilitlenmez** |
+| Komuta ele geçirme | Ön şart avlu, sonra iç kale noktasında yeterli süre varlık | Prototipte basit kural, gerçek asker işgali ve itirazı S3 |
+| İlk veri motoru | Kaynak bağımsız, deterministik kuşatma senaryo FSM'i | **Henüz gerçek 140 asker motorunun yerine geçmez** |
+| Render | Var olan Three.js / stil ve gerçek kale collider'larıyla bağımsız kuşatma sahnesi | İlk önizlemede basit placeholder asker ve UI açıkça etiketlenecek |
+
+### Korunması zorunlu sözleşme
+1. **FFA normal oyuncu yayı:** 2 saniye ilk bırakma, 3 saniye tam çekiş, 4 saniye ok aralığı, 1 saniye toparlanma. **Arena bot okçusu 0,5 saniye.** Ordu okçusu ayrıca değiştirilmedi.
+2. G5.4, G8.4 değildir. **Eksik G8.4 kaynak dosyası / Issue #44** çözülmeden daha yeni sürüm elde edildiği iddia edilmez.
+3. FFA arena AI ve ordu AI birbirine karıştırılmaz. Kuşatma senaryosu ayrı kaynak/işleyici ile başlar.
+4. Oyun içindeki asıl asker ölüm ve kapı hasarı olayları ileride G5.4 gerçek motorundan alınacak; prototipin elle düğmeyle ürettiği olaylar **savaş AI kanıtı değildir**.
+5. PR **DRAFT**, `main` korunur. Kullanıcı onayı olmadan önemli denge ve mimari sözleşmesi kilitlenmez.
+
+## 2. Geliştirme aşamaları ve durum
+
+### S1 — Harita sözleşmesi + deterministik kuşatma senaryo motoru [P0]
+- [x] Geliştirme planı ve ayrı senaryo teknik sözleşmesi Markdown dosyalarına yazılır.
+- [ ] Yerleşim: dış hat, sur, kapı, iki çıkış, avlu, iç kale; kapı HP/engel/nav işaretleri ve spawn bölgeleri.
+- [ ] Kaynak bağımsız saf JavaScript kuşatma FSM: `APPROACH → BREACH → COURTYARD → KEEP → RESULT`; saldırı alternatifleri kapı/merdiven; süre/ölüm zaferi.
+- [ ] Geçersiz olay, sonsuz sayı, taraf ihlali, avlu atlama, sahte kazanma engellenir.
+- [ ] Gerçek modlara dokunmadan başlangıç görsel/test prototipi (isteğe göre 3B).
+- [ ] CI: harita geçitleri, kapı/sur alternatifi, avlu, iç kale, zaman, taraf/zafer ve kaynak izolasyonu testleri.
+**Kabul:** deterministik senaryo motoru doğru fazlara geçer; 2 farklı ihlal rotası denenir; gerçek oynanabilir 140 asker/grafik iddiası YOK.
+
+### S2 — 3B kuşatma haritası, fizik, asker yerleşimi [P0/P1]
+- [ ] Özgün grafik dilinde kale, sur, ana kapı, yan merdiven noktaları, dış siperler, avlu, iç kale.
+- [ ] Görünür/katı nesnelerin collider ve raycast eşleşmesi; kapı yıkılınca collision ve nav geçişi güncellemesi.
+- [ ] Mavi savunma sur/spawn; kırmızı dış saldırı/kuşatma spawn; merdiven çıkış/iniş güvenliği.
+- [ ] Harita taktik minik harita/asker konumu ve objektif HUD.
+**Kabul:** gerçek WebGL ve fiziksel oyuncuyla kapı, iki yan rota, sur, avlu ve iç kale erişimi.
+
+### S3 — Gerçek 70v70 G5.4 savaş motoruyla ilk bütünleşme [P0]
+- [ ] G5.4`ArenaArmyBattle.create/step/snapshot` sözleşmesiyle 8 bölük ve 140 gerçek asker üret.
+- [ ] Kale engellerini **gerçek** `setWorldObstacles({x,y,z,w,h,d,solid})` üzerinden bağla.
+- [ ] Asker ölümü, mevzi durumu, gerçek kapı saldırısı ve gerçek bölge işgali kaynak doğruluğuyla senaryo motoruna aksın; sahte debug olayları yasak.
+- [ ] Oyuncu iki taraftan birine gerçek komuta versin; sıfır dost ateşi hatası.
+- [ ] Birleşik başlatıcıya **üçüncü bağımsız kuşatma modu** ekle; FFA ve ordu modlarını koru.
+**Kabul:** gerçek asker/HP/kapı/nav/sonuç tutarlılığı, komuta ve iki taraf testi; ordu kaynak SHA bütünlüğü.
+
+### S4 — Kuşatma savaşı yapay zekâsı ve iş birliği [P1]
+- [ ] Kırmızı: kapı taarruzu/yan merdiven takımı, destek ateşi, iç avlu birikmesi, iç kaleye ilerleme.
+- [ ] Mavi: sur savunması, tüfekçi/okçu koruma, kapı gerisi mızrak, avluda karşı taarruz, iç kale rezervi.
+- [ ] Birlikler birbirini engellemesin; saldıranlar tek kapıda sıkışmasın; saldırı/koruma öncelikleri ayrışsın.
+- [ ] 8 bölük × formasyon/komut ve oyuncu emrinin takım AI tarafından çiğnenmemesi.
+**Kabul:** gerçek 140 asker, üç farklı tohum ve iki gerçek oyuncu tarafıyla savaş ölçümleri.
+
+### S5 — Oynanış ve kalite cilası [P1]
+- [ ] Kapı vuruş/ses/hasar efekti; sur üstü nişan/kapalı görüş; merdiven çıkış animasyonu; objektif göstergesi.
+- [ ] Kuşatma sonu **Kale Ele Geçirildi / Savunuldu**, tekrar oyna ve ana menü.
+- [ ] Kendi tarafını değiştir, 4 asker sınıfını dene, friendly-fire kontrolü.
+- [ ] Ses, performans ve erişilebilirlik; silah dengesi gerekirse ayrıca önerilerek onaylanır.
+**Kabul:** oyuncunun 2 tarafta tamamlayabildiği, açık hedefleri olan tek kaliteli kale kuşatması.
+
+### S6 — Kabul, yayın hazırlığı [P0]
+- [ ] 15+ dakika gerçek Windows GPU/Chrome/Edge (FPS/1%low, fare kilidi, duvar/rampa, sonuç).
+- [ ] 140 asker yük/stres, sızıntı, 30 dakika test; 200/280 ayrı performans kararı.
+- [ ] FFA/TDM/G5.4 bağımsız regresyon; senaryo modunu aç/kapat.
+- [ ] Kaynak ZIP, tek offline HTML, SHA, test raporları, oyuncu onayı.
+**Kabul:** manuel onay olmadan merge veya release yok.
+
+## 3. Kullanıcıya gösterilecek sonuç formatı
+
+Her adımda GitHub commit, uygulanan dosyalar, CI test özeti, **YAPILDI / KISMEN / YAPILMADI** ve açık riskler belirtilir. Bir test geçmesi gerçek oyuncu/real GPU kabulü sayılmaz.
+
+## 4. Bu sefer yapılacak ilk iş
+
+**Önce S1'i kodlayıp doğrula.** Ayrı `recovered/siege/` altında kuşatma harita sözleşmesi, senaryo motoru, kullanıcı tarafından incelenebilir ilk bağımsız önizleme ve CI. Sonra S2/S3. Başka oyun modlarının iç kodlarına dokunma.
