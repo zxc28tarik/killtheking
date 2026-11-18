@@ -19,7 +19,7 @@ HTML dosyasını Chrome/Edge'de aç; üst menüden **SERBEST ARENA / TDM** veya 
 
 GitHub Actions bu adımları otomatik uygular ve SHA-256 bilgilerini manifestine yazar.
 
-Güvenlik kapısı: Orijinal kaynaklar saklanır; bu sürümde FFA hedeflemesi ve G5.4 ordu hedeflemesi seçici olarak güncellenir. Bu nedenle üretilen FFA orijinalle byte-byte aynı DEĞİLDİR. Yeni FFA SHA-256: **6fd8a0c6342067e4ba3f3546b716e9fa1b9cce8a9e1c3a09c499fe925480289e**. Yeni ordu motoru SHA-256: **5a078a89efde450a34c2d406d916bc326aabd8b2b6945993c70697c0759132a8**.
+Güvenlik kapısı: Orijinal kaynaklar saklanır; bu sürümde FFA hedeflemesi ve G5.4 ordu hedeflemesi seçici olarak güncellenir. Bu nedenle üretilen FFA orijinalle byte-byte aynı DEĞİLDİR. Yeni FFA SHA-256: **4066a2c7e10d6f21b54df17cf2ee4c73250ecd6ce556fbf06b043d9aef1db5ec**. Yeni ordu motoru SHA-256: **5a078a89efde450a34c2d406d916bc326aabd8b2b6945993c70697c0759132a8**.
 
 Güvenlik kapısı: FFA SHA-256 **18dca2a895763f0955566f2fc90651f1ab1a98f86597e399cbac42ac2fc6f15a**, G5.4 kurtarma SHA-256 **1d5f72768054b4138ba742e10923bfb20c00bd37fe789cdc3e40a65967cccfe2**, motor SHA-256 **307987855abc0973ea9177fdd659c39d1d02673c8381c0501be8b63c04ddf841**; uyuşmazlık varsa oyun üretilmez.
 
@@ -42,3 +42,12 @@ Güvenlik kapısı: FFA SHA-256 **18dca2a895763f0955566f2fc90651f1ab1a98f86597e3
 - **G5.4 ordu:** oyuncunun başka askere göre 0,72 kat yakın olmasını gerektiren eski öncelik eşiği rahatlatıldı; düşmanların yalnız 1/5'i aynı anda oyuncuya öncelik verebilir. Diğer asker hedefleri ve silahlar korunur.
 - **GitHub Actions 20/20 test başarılı:** https://github.com/zxc28tarik/killtheking/actions/runs/44216398861; özgün kaynağın birebir SHA doğrulaması, değişen iki kodun keskin sınırları, oyuncu hedef seçimi ve birleşik HTML derlemesi kontrol edildi.
 - **Uyarı:** Bunlar kaynak/VM/DOM testleridir, gerçek GPU sahnesinde görülmüş isabet kanıtı değildir. Ordu önceki doğal galibiyet örneklemi yeni hedeflemeyle yeniden denetlenmeden genel denge kesin kabul edilmez.
+
+## 18 Kasım — gerçek FFA bot hareket/saldırı döngüsü ve görüş hattı düzeltmesi
+
+- **Kök neden:** Eski FFA güncelleme kodu menzil içindeki botun saldırı hazırlığını görüş kapalıyken de başlatıyordu. Hazırlık iptal edilse bile aynı döngü sonraki karede yeniden başlayabiliyordu. Bu, okçu/tüfekçinin duvar arkasında sürekli hazırlık animasyonuna dönmesine yol açabiliyordu.
+- **Tek satırlık oyun düzeltmesi:** `isGameActive && arenaTarget && arenaDist <= bot.range` koşuluna yalnız `&& hasClearShot` eklendi. Yalnız saldırıya hazırlığın başlama kapısı değişti; görüş kontrolü gerçek `arenaLineOfSight` fonksiyonundandır. Taktik planlama, A* hareket, fizik, silah/atış süresi, takım dostluğu veya ordu motoru değiştirilmedi.
+- **Gerçek kod VM denetimi:** dört sınıfın gerçek `bots.forEach` güncellemesi, `chooseArenaTarget`, `arenaBotAttack`, gerçek Three.js r128, gerçek taktik/hareket/toparlanma/hasar modülleriyle çalıştırıldı. 11/11 yeni test; tüm entegrasyon CI **41/41 PASS**: https://github.com/zxc28tarik/killtheking/actions/runs/44223905908.
+- **Hedefler:** dört sınıfta hedef seçimi→yaklaşma→windup→HP azalması; hareketli oyuncuyu kovalama; duvar arkasından vuramama; görüş kaybında rüzgâr/germe döngüsünün tekrar başlamaması; bloke rotada toparlanma; TDM dost oyuncunun zarar görmemesi; hızın üstünde ilerleme/ışınlanma olmaması.
+- **Kaynak:** FFA hotfix SHA-256 `4066a2c7e10d6f21b54df17cf2ee4c73250ecd6ce556fbf06b043d9aef1db5ec`; birleşik HTML SHA-256 `8107f370af490617db619d9ffa3a8fba1b1293afe58262db02f0babd1921f033` (3.069.613 bayt).
+- **Kabul sınırı:** VM gerçek oyun fonksiyonlarını kullansa da yürütme düz bir navigasyon sahnesi üzerinde ve görüntülemesizdir. **Gerçek Chrome/Edge WebGL, kamera/pointer-lock, GPU performans ve tam oynanış kabulü yapılmadı.** PR #48 taslak, `main` aynı, G8.4 (#44) hâlâ eksik. Bu düzeltme tek başına herkesin oyuncuya saldıracağı anlamına gelmez; FFA herkesin birbiriyle savaştığı moddur.
