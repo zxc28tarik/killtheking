@@ -48,7 +48,7 @@ export function validate(pairs){
   throw Error('G5.4 motor source hashes changed');
  for(let i=0;i<32;i++){
   const p=pairs[i],scenario=scenarioIndex[i];
-  if(!p||p.index!==i||p.format!=='ktk-g54-four-class-v3-v1'||
+  if(!p||p.scenarioIndex!==i||p.format!=='ktk-g54-four-class-v3-v1'||
      JSON.stringify(p.scenario)!==JSON.stringify(scenario)||
      JSON.stringify(p.sourceHashes)!==JSON.stringify(expectedHashes))
    throw Error('Missing, duplicate or fake game scenario/source '+i);
@@ -75,13 +75,8 @@ export function validate(pairs){
 }
 if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)){
  const folder=resolve(process.argv[2]||resolve(here,'replay'));
- const pairs=Array.from({length:8},(_,i)=>{
-  const part=JSON.parse(readFileSync(resolve(folder,'part_'+i*4+'.json'),'utf8'));
-  if(part.format!=='ktk-g54-four-class-v3-part-v1'||part.start!==i*4||part.count!==4||
-     JSON.stringify(part.sourceHashes)!==JSON.stringify(expectedHashes)||part.rows?.length!==4)
-   throw Error('Invalid evidence shard '+i);
-  return part.rows;
- }).flat();
+ const pairs=Array.from({length:32},(_,i)=>
+  JSON.parse(readFileSync(resolve(folder,'part_'+i+'.json'),'utf8')));
  const report=validate(pairs),out=resolve(folder,'FULL_64_ACTUAL_G54_BATTLES.json');
  writeFileSync(out,JSON.stringify(report,null,2)+'\n');
  console.log(JSON.stringify(report.summary,null,2));
