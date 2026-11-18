@@ -22,6 +22,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Check Chromium test module JavaScript syntax before browser setup
+        run: node --check recovered/army/integration/browser_chromium_smoke.mjs
       - name: Rebuild pinned A5 source and isolated HTML
         run: |
           python3 ffa-source/tools/build_offline.py --out dist/KillTheKing_Oyna.html
