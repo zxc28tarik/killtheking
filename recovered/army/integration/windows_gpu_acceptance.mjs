@@ -24,7 +24,7 @@ if(!Number.isFinite(maxWallMinutes)||maxWallMinutes<5||maxWallMinutes>90)
 const skipEsc=args.includes('--skip-manual-escape');
 const html=resolve(htmlArg);
 if(!existsSync(html))throw Error('Built combined HTML missing: '+html);
-if(process.platform!=='win32'&&!args.includes('--allow-nonwindows'))
+if(process.platform!=='win32')
   throw Error('Physical Windows acceptance must run on Windows, not a CI Linux GPU emulator.');
 // Import browser machinery only AFTER the physical-platform gate: CI can
 // prove Linux is rejected without installing a browser or Playwright.
