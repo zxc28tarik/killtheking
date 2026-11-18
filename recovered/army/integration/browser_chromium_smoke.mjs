@@ -154,12 +154,26 @@ try{
  await page.waitForTimeout(7000);
  const armySnapshot=await army.locator('body').evaluate(()=>{
    const c=document.querySelector('#game-canvas');
+   const state=typeof window.krunkerArenaStatus==='function'?window.krunkerArenaStatus():null;
+   const battle=state?.meadowBattle;
    return {canvasWidth:c?.width,canvasHeight:c?.height,
      menuHidden:document.getElementById('menu-overlay')?.classList.contains('hidden'),
-     playButtonVisible:!!document.getElementById('play-btn')};
+     playButtonVisible:!!document.getElementById('play-btn'),
+     matchPhase:state?.matchPhase,map:state?.map,
+     meadowBattleMode:state?.meadowBattleMode,
+     blue: battle?.blue,red:battle?.red,squads:battle?.squads?.length,
+     playerSquadId:battle?.playerSquadId,
+     armyHudVisible:!document.getElementById('meadow-army-hud')?.classList.contains('hidden')};
  });
  assert.equal(armySnapshot.menuHidden,true,'Army menu did not close on Start');
- notes.checks.push('Army start clicked and 3D scene active: '+JSON.stringify(armySnapshot));
+ assert.equal(armySnapshot.meadowBattleMode,true,'Army engine mode not active despite demo selection');
+ assert.equal(armySnapshot.matchPhase,'playing','Army match not actually running');
+ assert.equal(armySnapshot.map,'meadow','Army field not loaded');
+ assert(armySnapshot.blue>0&&armySnapshot.red>0,
+   'The live 70/70 blue/red army engine is not populated');
+ assert.equal(armySnapshot.squads,8,'Expected exactly 8 genuine army companies');
+ assert.equal(armySnapshot.armyHudVisible,true,'Army command HUD not visible in actual battle');
+ notes.checks.push('G5.4 native Army started and populated: '+JSON.stringify(armySnapshot));
  await page.screenshot({path:resolve(reportDir,'army-g54.png'),fullPage:true});
  await exitPointerLockForHeadlessSwitch();
  await page.locator('[data-ktk-launch="ffa"]').click();
