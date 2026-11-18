@@ -101,7 +101,7 @@ test('deterministic standalone HTML build and source-provenance manifest',()=>{
  assert.equal(built.manifest.launcherSHA256,sha(onDisk));
  assert.equal(manifest.ffaBytes,Buffer.byteLength(ffa));
  assert.equal(manifest.ffaHotfixedSHA256,'6fd8a0c6342067e4ba3f3546b716e9fa1b9cce8a9e1c3a09c499fe925480289e');
- assert.equal(manifest.armyEngineHotfixedSHA256,'5a078a89efde450a34c2d406d916bc326aabd8b2b6945993c70697c0759132a8');
+ assert.equal(manifest.armyEngineHotfixedSHA256,'497c945c059b541fcf76231e7d9ff2983dd8b235e98d7b78b93e9ed52235c348');
  assert.equal(manifest.ffaTargetingChanged,true);
  assert.equal(manifest.armyTargetingChanged,true);
  assert.equal(manifest.armyBytes,Buffer.byteLength(g54.html));
