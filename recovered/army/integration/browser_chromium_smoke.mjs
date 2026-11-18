@@ -174,6 +174,47 @@ try{
  assert.equal(armySnapshot.squads,8,'Expected exactly 8 genuine army companies');
  assert.equal(armySnapshot.armyHudVisible,true,'Army command HUD not visible in actual battle');
  notes.checks.push('G5.4 native Army started and populated: '+JSON.stringify(armySnapshot));
+ // Real user key events, delivered to the focused running iframe; no direct
+ // ArenaArmyBattle API calls or game-state mutation in the test harness.
+ const armyCommandState=async()=>army.locator('body').evaluate(()=>{
+   const st=typeof window.krunkerArenaStatus==='function'?window.krunkerArenaStatus():null;
+   const battle=st?.meadowBattle, own=battle?.squads?.[battle.playerSquadId];
+   return {matchPhase:st?.matchPhase,playerSquadId:battle?.playerSquadId,
+      totalSquads:battle?.squads?.length,playerControlled:own?.playerControlled,
+      playerTeam:own?.team,playerType:own?.type,
+      order:own?.order,formation:own?.formation,fireMode:own?.fireMode,
+      ownerCount:battle?.squads?.filter(s=>s.playerControlled).length,
+      redCount:battle?.squads?.filter(s=>s.team==='red').length};
+ });
+ const initialCommand=await armyCommandState();
+ assert.equal(initialCommand.playerControlled,true,'Player does not own selected squad');
+ assert.equal(initialCommand.playerTeam,'blue');
+ assert.equal(initialCommand.ownerCount,1);
+ assert.equal(initialCommand.totalSquads,8);
+ assert.equal(initialCommand.redCount,4);
+ notes.checks.push('Army initial real command snapshot: '+JSON.stringify(initialCommand));
+ const armyKeys=[
+   {key:'KeyK',field:'order',value:'İLERLE'},
+   {key:'KeyJ',field:'order',value:'MEVZİ TUT'},
+   {key:'KeyX',field:'formation',value:'Yürüyüş kolu'},
+   {key:'KeyZ',field:'formation',value:'Saf düzeni'}
+ ];
+ if(initialCommand.playerType==='musket'||initialCommand.playerType==='bow'){
+   armyKeys.push({key:'Digit9',field:'fireMode',value:'ATEŞİ KES'});
+   armyKeys.push({key:'Digit7',field:'fireMode',value:'SERBEST ATIŞ'});
+ }
+ for(const command of armyKeys){
+   await page.keyboard.press(command.key);
+   const current=await armyCommandState();
+   notes.checks.push('Army real keyboard '+command.key+': '+
+     command.field+'='+current[command.field]+', ownerCount='+current.ownerCount);
+   assert.equal(current.matchPhase,'playing','Army stopped during keyboard order');
+   assert.equal(current[command.field],command.value,
+     'Real browser key '+command.key+' failed to apply to owned company');
+   assert.equal(current.playerSquadId,initialCommand.playerSquadId,
+     'Keyboard command changed player ownership');
+   assert.equal(current.ownerCount,1,'Keyboard command leaked command ownership');
+ }
  await page.screenshot({path:resolve(reportDir,'army-g54.png'),fullPage:true});
  await exitPointerLockForHeadlessSwitch();
  await page.locator('[data-ktk-launch="ffa"]').click();
