@@ -415,7 +415,7 @@ try{
    assert.equal(final.phase,'playing',role+' encounter stopped');
    assert.match(final.hud,/^\d+\s*\/\s*\d+$/,role+' HUD missing');
    assert.equal(Number(final.hud.split('/')[0].trim()),Math.ceil(final.hp),
-     role+' visible HUD does not match the player's real HP');
+     role+' visible HUD does not match actual player HP');
    notes.checks.push('PASS_FIXTURE_ASSISTED_REAL_BROWSER_'+
       role.toUpperCase()+'_HIT: player HP '+first.hp+' -> '+final.hp+
       ', real shots '+first.shots+' -> '+final.shots+
