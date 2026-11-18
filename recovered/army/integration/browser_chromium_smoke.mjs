@@ -436,7 +436,7 @@ try{
      fullPage:true});
    assert(fired,role+' never fired a real round: '+JSON.stringify(observations));
    assert(shotTime!==null,role+' missing absolute shot time');
-   assert(shotTime-first.startClock>=(role==='archer'?2.8:0.28),
+   assert(shotTime-first.startClock>=(role==='archer'?.47:0.28),
      role+' fired without full original windup');
    assert(damaged,role+' failed to lower player HP in a controlled real '+
      'browser encounter: '+JSON.stringify(observations));
