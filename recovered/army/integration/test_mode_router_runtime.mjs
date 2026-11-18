@@ -7,6 +7,7 @@ import {readFileSync} from 'node:fs';
 import {resolve,dirname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {build} from './build_isolated_launcher.mjs';
+import {patchFfaAggro} from './player_target_hotfix.mjs';
 
 const dir=dirname(fileURLToPath(import.meta.url));
 const input=process.env.KTK_FFA_HTML;
@@ -55,7 +56,7 @@ test('launch FFA and preserve original Oct A5 bytes inside a real mode-route eve
  assert.equal(b.activeFrame,null);
  b.buttons[0].click();
  assert(b.activeFrame);
- assert.equal(b.activeFrame.srcdoc,result.ffa);
+ assert.equal(b.activeFrame.srcdoc,patchFfaAggro(result.ffa));
  assert.equal(b.buttons[0].attrs['aria-pressed'],'true');
  assert.equal(b.buttons[1].attrs['aria-pressed'],'false');
  assert.equal(b.byId.get('stage').style.display,'block');
@@ -104,7 +105,7 @@ test('return from Army to FFA creates clean fresh original game again',()=>{
  const first=b.activeFrame;
  b.buttons[0].click();
  assert.notEqual(b.activeFrame,first);
- assert.equal(b.activeFrame.srcdoc,result.ffa);
+ assert.equal(b.activeFrame.srcdoc,patchFfaAggro(result.ffa));
  assert.equal(b.byId.get('stage').children.length,1);
  assert.equal(b.confirmCalls,1);
 });
