@@ -18,7 +18,8 @@ const save=()=>writeFileSync(resolve(reportDir,'browser-smoke.json'),
   JSON.stringify(notes,null,2)+'\n');
 let browser;
 try{
- browser=await chromium.launch({headless:true,args:[
+ browser=await chromium.launch({headless:true,
+  executablePath:process.env.KTK_CHROME_EXECUTABLE||undefined,args:[
    '--use-angle=swiftshader','--enable-unsafe-swiftshader','--enable-webgl',
    '--no-sandbox','--disable-dev-shm-usage'
  ]});
