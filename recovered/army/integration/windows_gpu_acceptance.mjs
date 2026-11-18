@@ -44,7 +44,7 @@ const report={
 const save=()=>{
   report.ruleAssessment=assessAcceptance({
     renderer:report.renderer,manualEscape:report.manualEscape,
-    samples:report.samples,end:report.end});
+    samples:report.samples,end:report.end,errors:report.errors});
   writeFileSync(resolve(output,'windows-gpu-acceptance.json'),
     JSON.stringify(report,null,2)+'\n');
   const a=report.ruleAssessment;
@@ -58,6 +58,8 @@ const save=()=>{
     '- GPU kanıtı: '+a.gpu.kind+' — '+a.gpu.reason,
     '- Kaydedilen GPU: '+a.gpu.details,
     '- Fiziksel Escape ve duraklama: '+(a.checks.nativeManualEscapeAndPause?'PASS':'OPEN / FAIL'),
+    '- Fiziksel fare ile kamera dönüşü: '+(a.checks.physicalMouseCameraMovement?'PASS':'OPEN / FAIL'),
+    '- Oyun JavaScript çalışma hataları: '+(a.checks.noRuntimeJavaScriptErrors?'0 / PASS':'ERROR / OPEN'),
     '- 240 oyun saniyesi ve 7 satırlı sonuç: '+(a.checks.complete240GameSeconds?'PASS':'OPEN / FAIL'),
     '- Kesintisiz oturum: '+(a.checks.continuousObservedRun?'PASS':'OPEN / FAIL'),
     '- Ortalama gözlenen FPS (örneklenmiş): '+a.frames.averageObservedFPS,
