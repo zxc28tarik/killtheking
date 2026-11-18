@@ -339,14 +339,44 @@ try{
        b.arenaTargetType=null;b.arenaTargetId=null;
        b.arenaAggroType=null;b.arenaAggroUntil=0;b.arenaLockTime=0;
      }
-     const options=[[7,0],[-7,0],[0,7],[0,-7],
-       [6,3],[-6,3],[3,-6],[-3,-6]];
-     let offset;
+     // Preflight real unmodified 3D hit volumes / world obstruction over
+     // a small fixed aim grid. This is a READ-ONLY geometry probe; it does
+     // not fire a shot, override random spread, or alter live weapon damage.
+     // A valid LOS to the actor's CENTER does not guarantee that its
+     // anatomically shaped hit volumes are intersected by a spread shot.
+     const options=[[3,3],[-3,-3],[3,-3],[-3,3],
+       [4,4],[-4,4],[4,-4],[-4,-4],[7,0],[0,7]];
+     const rolls=[.05,.275,.5,.725,.95];
+     const aim=window.ArenaWeaponBalance.aimedShot;
+     const collide=window.ArenaCombatHit3D.resolvePlayer;
+     const blocked=window.eval('arenaWorldBlockBetween');
+     const THREE=window.THREE;
+     const trialScores=[];
+     let offset=null,bestHitGrid=-1;
      for(const [dx,dz] of options){
        attacker.mesh.position.set(p.pos.x+dx,ground,p.pos.z+dz);
-       if(see(attacker,p.pos,true)){offset=[dx,dz];break;}
+       if(!see(attacker,p.pos,true)){
+         trialScores.push({offset:[dx,dz],centerVisible:false,hits:0});
+         continue;
+       }
+       const origin=attacker.mesh.position.clone().add(
+         new THREE.Vector3(0,1.8,0));
+       const base={x:p.pos.x,y:ground,z:p.pos.z};
+       let hits=0;
+       for(const a of rolls)for(const b of rolls){
+         const point=aim(role,origin,base,a,b,3).point;
+         if(!point)continue;
+         const impact=collide(THREE,origin,
+           new THREE.Vector3(point.x,point.y,point.z),p);
+         if(impact&&!blocked(origin,impact.point))hits++;
+       }
+       trialScores.push({offset:[dx,dz],centerVisible:true,hits});
+       if(hits>bestHitGrid){bestHitGrid=hits;offset=[dx,dz];}
      }
-     if(!offset)throw Error('Cannot find unobstructed '+role+' test location');
+     if(!offset||bestHitGrid<20)throw Error('No high-confidence open '+
+       role+' 3D hit position in real scene: '+JSON.stringify(trialScores));
+     attacker.mesh.position.set(p.pos.x+offset[0],ground,
+       p.pos.z+offset[1]);
      // Stationary target practice; attack direction/draw/shot remain native.
      attacker.tacticMode='hold';attacker.tacticGoal=null;
      attacker.tacticTargetKey='player:player';
@@ -371,7 +401,7 @@ try{
      const picked=choose(attacker);
      const shots=window.krunkerArenaStatus().telemetry.rangedFire[role];
      return {role,id:attacker.id,weapon:attacker.weapon,
-       offset,target:picked?.type,locked:attacker.arenaTargetType,
+       offset,predictedHits:bestHitGrid,trialScores,target:picked?.type,locked:attacker.arenaTargetType,
        visible:see(attacker,p.pos,true),hp:p.hp,deaths:p.deaths,
        shots:shots.shots,hits:shots.hits,
        startClock:window.eval('arenaClock'),priorShotAt};
