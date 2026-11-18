@@ -19,7 +19,7 @@ HTML dosyasını Chrome/Edge'de aç; üst menüden **SERBEST ARENA / TDM** veya 
 
 GitHub Actions bu adımları otomatik uygular ve SHA-256 bilgilerini manifestine yazar.
 
-Güvenlik kapısı: Orijinal kaynaklar saklanır; bu sürümde FFA hedeflemesi ve G5.4 ordu hedeflemesi seçici olarak güncellenir. Bu nedenle üretilen FFA orijinalle byte-byte aynı DEĞİLDİR. Yeni FFA SHA-256: **4066a2c7e10d6f21b54df17cf2ee4c73250ecd6ce556fbf06b043d9aef1db5ec**. Yeni ordu motoru SHA-256: **5a078a89efde450a34c2d406d916bc326aabd8b2b6945993c70697c0759132a8**.
+Güvenlik kapısı: Orijinal kaynaklar saklanır; bu sürümde FFA hedeflemesi, FFA okçusunun 0,5 saniyelik atış hazırlığı ve G5.4 ordu hedeflemesi seçici olarak güncellenir. Bu nedenle üretilen FFA orijinalle byte-byte aynı DEĞİLDİR. Yeni FFA SHA-256 (0,5 saniye germe): **3d00d872e9df3fa7cec14238f036e3cafdadb9d998e1457870c940ce9e9d0301**. Yeni ordu motoru SHA-256: **5a078a89efde450a34c2d406d916bc326aabd8b2b6945993c70697c0759132a8**.
 
 Güvenlik kapısı: FFA SHA-256 **18dca2a895763f0955566f2fc90651f1ab1a98f86597e399cbac42ac2fc6f15a**, G5.4 kurtarma SHA-256 **1d5f72768054b4138ba742e10923bfb20c00bd37fe789cdc3e40a65967cccfe2**, motor SHA-256 **307987855abc0973ea9177fdd659c39d1d02673c8381c0501be8b63c04ddf841**; uyuşmazlık varsa oyun üretilmez.
 
@@ -51,3 +51,11 @@ Güvenlik kapısı: FFA SHA-256 **18dca2a895763f0955566f2fc90651f1ab1a98f86597e3
 - **Hedefler:** dört sınıfta hedef seçimi→yaklaşma→windup→HP azalması; hareketli oyuncuyu kovalama; duvar arkasından vuramama; görüş kaybında rüzgâr/germe döngüsünün tekrar başlamaması; bloke rotada toparlanma; TDM dost oyuncunun zarar görmemesi; hızın üstünde ilerleme/ışınlanma olmaması.
 - **Kaynak:** FFA hotfix SHA-256 `4066a2c7e10d6f21b54df17cf2ee4c73250ecd6ce556fbf06b043d9aef1db5ec`; birleşik HTML SHA-256 `8107f370af490617db619d9ffa3a8fba1b1293afe58262db02f0babd1921f033` (3.069.613 bayt).
 - **Kabul sınırı:** VM gerçek oyun fonksiyonlarını kullansa da yürütme düz bir navigasyon sahnesi üzerinde ve görüntülemesizdir. **Gerçek Chrome/Edge WebGL, kamera/pointer-lock, GPU performans ve tam oynanış kabulü yapılmadı.** PR #48 taslak, `main` aynı, G8.4 (#44) hâlâ eksik. Bu düzeltme tek başına herkesin oyuncuya saldıracağı anlamına gelmez; FFA herkesin birbiriyle savaştığı moddur.
+
+## 18 Kasım — Kullanıcı kararı: FFA okçusunun atış hazırlığı 0,5 saniye
+
+- **Oyuncu yayı:** Minimum germe/serbest bırakma sınırı **2 → 0,5 saniye**, tam güç germe süresi **3 → 0,5 saniye**. Nişan sapması ve hasar değerleri aynı. Oyuncu artık tam güç yayı 0,5 saniyede hazırlayabilir.
+- **FFA bot okçusu:** Germe/telegraph **3 → 0,5 saniye**. Okçu botunun nişan, hedef seçimi, görüş hattı, isabet hesapları ve diğer sınıfların hazırlık süreleri aynı.
+- **Korunan sınırlar:** İki ok arası **en az 4 saniye = azami 15 ok/dakika**; atış sonrası **1 saniye toparlanma**. Bu, eskiden belirlenen **ilk 2 saniye ok atılamaz** kuralının kullanıcı kararıyla değiştiği anlamına gelir; 0,5 saniye germe ilk atışta da geçerlidir.
+- **Kapsam:** Yalnız **FFA/TDM** oyuncu ve bot okçusu; izole G5.4 ordu savaşındaki okçular değişmedi. Kaynak A5 tarihî arşivi hâlâ byte-byte korunuyor.
+- **Kaynak bütünlüğü:** yeni FFA SHA-256 `3d00d872e9df3fa7cec14238f036e3cafdadb9d998e1457870c940ce9e9d0301`; değişiklik yalnız kaynak SHA-kilitli derleyicide uygulanıyor. PR #48 taslak, `main` değişmedi.
