@@ -7,7 +7,7 @@ test('Windows native WebGL hardware GPU string is only likely until user signoff
  const o=classifyRenderer({webglUnmasked:'ANGLE (NVIDIA GeForce RTX 4060 Direct3D11 vs_5_0 ps_5_0)'});
  assert.equal(o.kind,'LIKELY_HARDWARE');
  const v=assessAcceptance({renderer:{webglUnmasked:'NVIDIA RTX 4060'},
-  manualEscape:{nativeReleased:true,phaseAfter:'paused'},
+  manualEscape:{nativeReleased:true,phaseAfter:'paused',playerMovedCamera:true},
   samples:Array.from({length:48},(_,i)=>({phase:'playing',
     atWallSeconds:(i+1)*5,atGameSeconds:(i+1)*5,
     webgl:{contextLost:false},
@@ -109,4 +109,25 @@ test('A single benchmark sample never passes continuous 240s real-render gate',(
  assert.equal(a.checks.complete240GameSeconds,true);
  assert.equal(a.checks.continuousObservedRun,false);
  assert.equal(a.finalDisposition,'MANUAL_OR_FULL_ROUND_GATE_OPEN');
+});
+
+
+test('Manual camera movement must be observed before granting measured physical session',()=>{
+ const samples=Array.from({length:48},(_,i)=>({phase:'playing',
+   atWallSeconds:(i+1)*5,atGameSeconds:(i+1)*5,
+   webgl:{contextLost:false},performance:{averageFPS:60}}));
+ const base={renderer:{webglUnmasked:'NVIDIA RTX 4070'},
+   manualEscape:{nativeReleased:true,phaseAfter:'paused',
+     playerMovedCamera:false},samples,
+   end:{phase:'results',remaining:0,scoreboardRows:7,
+     durationSeconds:240,elapsedWallSeconds:240}};
+ const noCamera=assessAcceptance(base);
+ assert.equal(noCamera.checks.physicalMouseCameraMovement,false);
+ assert.equal(noCamera.finalDisposition,'MANUAL_OR_FULL_ROUND_GATE_OPEN');
+ const fault=assessAcceptance({...base,
+   manualEscape:{...base.manualEscape,playerMovedCamera:true},
+   errors:['PAGE TypeError: bad runtime event']});
+ assert.equal(fault.checks.noRuntimeJavaScriptErrors,false);
+ assert.equal(fault.checks.continuousObservedRun,false);
+ assert.equal(fault.finalDisposition,'MANUAL_OR_FULL_ROUND_GATE_OPEN');
 });
