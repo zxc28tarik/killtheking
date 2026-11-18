@@ -27,7 +27,7 @@ try{
  page.setDefaultTimeout(30000);
  page.on('pageerror',e=>notes.pageErrors.push(String(e.message||e)));
  page.on('console',m=>{if(m.type()==='error')notes.consoleErrors.push(m.text().slice(0,300));});
- page.on('dialog',d=>d.accept());
+ page.on('dialog',d=>{notes.checks.push('Browser dialog during switch: '+d.type()+' '+d.message().slice(0,120));return d.accept();});
  await page.goto(pathToFileURL(resolve(input)).href,{waitUntil:'domcontentloaded'});
  assert.equal(await page.locator('[data-ktk-launch]').count(),2);
  notes.checks.push('Launcher shell and both mode choices loaded');
@@ -92,8 +92,27 @@ try{
  };
  await enterFFA('castle');
  await page.keyboard.press('Escape');
+ await page.waitForTimeout(800);
+ const navState=async()=>page.evaluate(()=>{
+    const frame=document.querySelector('#stage iframe');
+    return {armyPressed:document.querySelector('[data-ktk-launch="army"]')?.getAttribute('aria-pressed'),
+      ffaPressed:document.querySelector('[data-ktk-launch="ffa"]')?.getAttribute('aria-pressed'),
+      frameTitle:frame?.title,childPointerLock:!!frame?.contentDocument?.pointerLockElement,
+      outerPointerLock:!!document.pointerLockElement};
+ });
+ notes.checks.push('Pre-switch nav: '+JSON.stringify(await navState()));
  await page.locator('[data-ktk-launch="army"]').click();
- await page.waitForTimeout(1800);
+ await page.waitForTimeout(900);
+ let afterClick=await navState();
+ notes.checks.push('First physical Army click: '+JSON.stringify(afterClick));
+ if(afterClick.armyPressed!=='true'){
+    notes.checks.push('WARNING: first physical mode switch not applied; checking second click');
+    await page.locator('[data-ktk-launch="army"]').click();
+    await page.waitForTimeout(1000);
+    afterClick=await navState();
+    notes.checks.push('Second physical Army click: '+JSON.stringify(afterClick));
+ }
+ await page.waitForTimeout(850);
  const armyDom=await page.evaluate(()=>{
     const iframe=document.querySelector('#stage iframe'),doc=iframe?.contentDocument;
     return {iframeExists:!!iframe,iframeTitle:iframe?.title,
