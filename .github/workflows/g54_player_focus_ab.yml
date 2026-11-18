@@ -1,0 +1,61 @@
+name: G5.4 FFA-target hotfix army consequences - 32 native CPU games
+on:
+  push:
+    branches:
+      - codex/g54-ffa-army-isolated-launcher
+    paths:
+      - 'recovered/army/integration/run_army_player_focus_ab.mjs'
+      - 'recovered/army/integration/audit_army_player_focus_ab.mjs'
+      - 'recovered/army/integration/player_target_hotfix.mjs'
+      - '.github/workflows/g54_player_focus_ab.yml'
+  workflow_dispatch:
+jobs:
+  matched-real-army-war:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        start: [0, 4, 8, 12]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check actual 140-soldier CPU battle source and native runner
+        run: |
+          node --check recovered/army/integration/run_army_player_focus_ab.mjs
+          node --check recovered/army/integration/audit_army_player_focus_ab.mjs
+          node --check recovered/army/integration/player_target_hotfix.mjs
+      - name: Run four baseline/fixed matched CPU battles, 600 sim seconds each
+        run: node recovered/army/integration/run_army_player_focus_ab.mjs ${{ matrix.start }} 4
+      - uses: actions/upload-artifact@v4
+        with:
+          name: g54-human-focus-real-match-${{ matrix.start }}
+          path: recovered/army/integration/dist/player-focus/part_${{ matrix.start }}.json
+          if-no-files-found: error
+  result-integrity:
+    needs: matched-real-army-war
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: g54-human-focus-real-match-*
+          path: recovered/army/integration/dist/player-focus
+          merge-multiple: true
+      - name: Verify 32 real wins, no fake victory, source-bound player focus metrics
+        run: node recovered/army/integration/audit_army_player_focus_ab.mjs
+      - name: Preserve gameplay evidence (NEVER a GPU acceptance)
+        uses: actions/upload-artifact@v4
+        with:
+          name: KillTheKing-G5-4-PLAYER-TARGET-32REAL-CPU-NOT-RELEASE
+          path: |
+            recovered/army/integration/dist/player-focus/FULL_32_REAL_BATTLES.json
+            recovered/army/integration/run_army_player_focus_ab.mjs
+            recovered/army/integration/audit_army_player_focus_ab.mjs
+            recovered/army/integration/player_target_hotfix.mjs
+          if-no-files-found: error
