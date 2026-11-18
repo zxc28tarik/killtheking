@@ -172,6 +172,75 @@ try{
      distinctWalls:collision.wallCount,x:collision.xCount,z:collision.zCount}));
  await page.screenshot({path:resolve(reportDir,'castle-after-camera-and-collision-tests.png'),
    fullPage:true});
+ // EXTRA INTEGRATION FIXTURE: real keyboard KeyW -> native updateGame(.05) ->
+ // native resolvePlayerCollisions on an original castle wall. This checks
+ // the *full player movement path*, not merely the standalone swept solver.
+ // Only the browser TEST SESSION changes the player starting point/yaw; no
+ // changes to the exported game, map, collision code or weapon stats.
+ const walkingWall=await f.locator('body').evaluate(()=>{
+   const p=window.eval('player'),walls=window.eval('colliders');
+   const collision=window.ArenaPlayerCollision;
+   const r=p.radius,h=p.currentHeight;
+   let choice=null;
+   for(let i=0;i<walls.length;i++){
+     const c=walls[i];
+     if(c.minY>0.16||c.maxY<3.5||
+       (c.maxZ-c.minZ)<7||(c.maxX-c.minX)<1.5)continue;
+     const start={x:c.minX-r-.65,y:h,z:(c.minZ+c.maxZ)/2};
+     if(collision.overlaps(start,r,h,walls))continue;
+     const sweep=collision.move({from:start,
+       velocity:{x:100,z:0},dt:.05,radius:r,height:h,colliders:walls});
+     if(!sweep.hitX||sweep.x>c.minX-r+.004)continue;
+     choice={index:i,wall:c,boundary:c.minX-r,start};break;
+   }
+   if(!choice)throw Error('No open real castle wall to test with actual KeyW');
+   p.pos.set(choice.start.x,choice.start.y,choice.start.z);
+   p.vel.set(0,0,0);p.onGround=true;
+   p.yaw=-Math.PI/2;p.pitch=0;
+   return choice;
+ });
+ await page.keyboard.down('w');
+ const wallPressed=await f.locator('body').evaluate(()=>
+   !!window.eval('keys')['KeyW']);
+ assert(wallPressed,'Real KeyW event did not reach the castle iframe');
+ const walkResult=await f.locator('body').evaluate((_body,plan)=>{
+   const p=window.eval('player');
+   const update=window.eval('updateGame');
+   const collision=window.ArenaPlayerCollision;
+   const walls=window.eval('colliders');
+   let maxX=p.pos.x,minX=p.pos.x,overlaps=0;
+   const checkpoints=[];
+   for(let i=0;i<30;i++){
+     update(.05);
+     if(collision.overlaps(p.pos,p.radius,p.currentHeight,walls))
+       overlaps++;
+     maxX=Math.max(maxX,p.pos.x);minX=Math.min(minX,p.pos.x);
+     if(i%5===0||i===29)checkpoints.push({step:i,
+       x:p.pos.x,z:p.pos.z,velX:p.vel.x,velZ:p.vel.z});
+   }
+   return {from:plan.start,to:{x:p.pos.x,y:p.pos.y,z:p.pos.z},
+     maxX,minX,boundary:plan.boundary,wallIndex:plan.index,
+     overlaps,checkpoints,clock:window.eval('arenaClock')};
+ },walkingWall);
+ await page.keyboard.up('w');
+ report.realPlayerWallWalk={kind:'TEST_ONLY_PLAYER_PLACEMENT_REAL_KEYW_NATIVE_GAME_TICKS',
+   pressed:true,steps:30,wall:walkingWall,result:walkResult};
+ assert(walkResult.maxX<=walkingWall.boundary+.007,
+   'Actual KeyW movement tunneled through original castle wall: '+
+   JSON.stringify(walkResult));
+ assert.equal(walkResult.overlaps,0,
+   'Actual player became embedded in a castle collider while pressing W');
+ assert(walkResult.to.x>walkingWall.start.x+.2,
+   'Actual player did not approach the wall under held W key');
+ assert(walkingWall.boundary-walkResult.to.x<.12,
+   'Actual player did not reach the wall for meaningful blocking test');
+ report.checks.push('PASS_REAL_KEYW_NATIVE_PLAYER_PHYSICS_BLOCKED_BY_CASTLE_WALL: '+
+   JSON.stringify({wallIndex:walkingWall.index,
+     fromX:walkingWall.start.x,wallBoundary:walkingWall.boundary,
+     finalX:walkResult.to.x,maxX:walkResult.maxX,
+     embeddedTicks:walkResult.overlaps}));
+ await page.screenshot({path:resolve(reportDir,'castle-actual-keyw-collision-fixture.png'),
+   fullPage:true});
 
  // Escape is a real browser key. Some CI Chrome pointer-lock implementations
  // ignore it; never silently claim ESC works if the native release fails.
