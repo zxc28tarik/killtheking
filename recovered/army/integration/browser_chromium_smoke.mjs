@@ -317,6 +317,113 @@ try{
  assert.equal(damageSample.matchPhase,'playing','FFA stopped after player damage');
  notes.checks.push('PASS_FIXTURE_ASSISTED_PLAYER_DAMAGE_REAL_BROWSER_LOOP: '+
    'normal AI frames and native damage lowered human HP and updated HUD');
+ // Ranged tests use a browser-session-only controlled close encounter. Keep
+ // unmodified weapon spread, 3s bow draw, 15s musket cadence, hitscan/Box3
+ // collision, AI windup and HUD update in the native requestAnimationFrame loop.
+ // Only navigation and rival positions are frozen by the TEST FIXTURE, never
+ // in production or in the published combined HTML.
+ const testRangedRole=async role=>{
+   const first=await ffaCombat.locator('body').evaluate(role=>{
+     const p=window.eval('player'),bots=window.eval('bots');
+     const attacker=bots.find(b=>b.role===role&&!b.dead);
+     const choose=window.eval('chooseArenaTarget');
+     const see=window.eval('arenaLineOfSight');
+     if(!attacker||!p||!choose||!see)throw Error('Missing original FFA '+role);
+     const ground=p.pos.y-p.currentHeight;
+     // Preserve all six living bots while keeping only the test shooter nearby.
+     for(const b of bots){
+       if(b===attacker)continue;
+       b.mesh.position.set(p.pos.x+370+b.id*12,ground,
+         p.pos.z+380+b.id*7);
+       b.attackTimer=9999;b.rangedWindup=0;b.meleeWindup=0;
+       b.arenaTargetType=null;b.arenaTargetId=null;
+       b.arenaAggroType=null;b.arenaAggroUntil=0;b.arenaLockTime=0;
+     }
+     const options=[[7,0],[-7,0],[0,7],[0,-7],
+       [6,3],[-6,3],[3,-6],[-3,-6]];
+     let offset;
+     for(const [dx,dz] of options){
+       attacker.mesh.position.set(p.pos.x+dx,ground,p.pos.z+dz);
+       if(see(attacker,p.pos,true)){offset=[dx,dz];break;}
+     }
+     if(!offset)throw Error('Cannot find unobstructed '+role+' test location');
+     // Stationary target practice; attack direction/draw/shot remain native.
+     attacker.tacticMode='hold';attacker.tacticGoal=null;
+     attacker.tacticTargetKey='player:player';
+     attacker.tacticLastTarget=p.pos.clone();attacker.tacticRefresh=10000;
+     attacker.navPath.length=0;attacker.navGoal=null;
+     attacker.navRecovery=window.ArenaBotRecovery.create();
+     attacker.arenaTargetType=null;attacker.arenaTargetId=null;
+     attacker.arenaLockTime=0;attacker.arenaAggroType=null;
+     attacker.arenaAggroUntil=0;
+     attacker.meleeWindup=0;attacker.rangedWindup=0;
+     attacker.windupTargetKey=null;attacker.staggerTime=0;
+     attacker.attackTimer=0;
+     const priorShotAt=Number.isFinite(attacker.lastRangedShotAt)
+       ?attacker.lastRangedShotAt:null;
+     // Fresh first round in this isolated encounter. Original post-shot
+     // cadence is still enforced by the live weapon system.
+     attacker.lastRangedShotAt=-Infinity;
+     attacker.mesh.rotation.y=Math.atan2(
+       p.pos.x-attacker.mesh.position.x,p.pos.z-attacker.mesh.position.z);
+     p.hp=p.maxHp;p.isShielding=false;p.shieldParryTime=0;
+     window.eval('updateHUD()');
+     const picked=choose(attacker);
+     const shots=window.krunkerArenaStatus().telemetry.rangedFire[role];
+     return {role,id:attacker.id,weapon:attacker.weapon,
+       offset,target:picked?.type,locked:attacker.arenaTargetType,
+       visible:see(attacker,p.pos,true),hp:p.hp,deaths:p.deaths,
+       shots:shots.shots,hits:shots.hits,
+       startClock:window.eval('arenaClock'),priorShotAt};
+   },role);
+   notes.checks.push('RANGED CONTROLLED BROWSER FIXTURE '+role+': '+
+      JSON.stringify(first));
+   assert.equal(first.target,'player',role+' did not select human normally');
+   assert.equal(first.locked,'player');
+   assert(first.visible,role+' lacks unobstructed sight');
+   let fired=false,damaged=false,shotTime=null;
+   const observations=[];
+   for(let i=0;i<20;i++){
+     await page.waitForTimeout(5500);
+     const s=await ffaCombat.locator('body').evaluate(({role,id})=>{
+       const st=window.krunkerArenaStatus(),p=window.eval('player');
+       const b=window.eval('bots').find(e=>e.id===id);
+       const fire=st.telemetry.rangedFire[role];
+       return {clock:window.eval('arenaClock'),hp:p.hp,deaths:p.deaths,
+         hud:document.querySelector('#hud-hp-text')?.textContent,
+         phase:st.matchPhase,target:b?.arenaTargetType,
+         windup:b?.rangedWindup,attackTimer:b?.attackTimer,
+         shotAt:Number.isFinite(b?.lastRangedShotAt)?b.lastRangedShotAt:null,
+         shots:fire.shots,hits:fire.hits};
+     },{role,id:first.id});
+     observations.push(s);
+     if(s.shots>first.shots){fired=true;if(shotTime===null)shotTime=s.shotAt;}
+     if(s.hp<first.hp||s.deaths>first.deaths){damaged=true;break;}
+   }
+   notes.checks.push('RANGED '+role+' LIVE FRAME LOOP: '+
+     JSON.stringify({fixture:first,observations}).slice(0,13000));
+   await page.screenshot({path:resolve(reportDir,'ffa-'+role+'-player-hit.png'),
+     fullPage:true});
+   assert(fired,role+' never fired a real round: '+JSON.stringify(observations));
+   assert(shotTime!==null,role+' missing absolute shot time');
+   assert(shotTime-first.startClock>=(role==='archer'?2.8:0.28),
+     role+' fired without full original windup');
+   assert(damaged,role+' failed to lower player HP in a controlled real '+
+     'browser encounter: '+JSON.stringify(observations));
+   const final=observations[observations.length-1];
+   assert(final.hits>first.hits,role+' real 3D hit counter did not increase');
+   assert.equal(final.phase,'playing',role+' encounter stopped');
+   assert.match(final.hud,/^\d+\s*\/\s*\d+$/,role+' HUD missing');
+   assert.equal(Number(final.hud.split('/')[0].trim()),Math.ceil(final.hp),
+     role+' visible HUD does not match the player's real HP');
+   notes.checks.push('PASS_FIXTURE_ASSISTED_REAL_BROWSER_'+
+      role.toUpperCase()+'_HIT: player HP '+first.hp+' -> '+final.hp+
+      ', real shots '+first.shots+' -> '+final.shots+
+      ', hits '+first.hits+' -> '+final.hits+
+      ', original attack time '+(shotTime-first.startClock).toFixed(2)+'s');
+ };
+ await testRangedRole('archer');
+ await testRangedRole('musket');
  assert.equal(notes.pageErrors.length,0,
    'Uncaught browser JavaScript exceptions: '+notes.pageErrors.join(' | '));
  notes.result='PASS_HEADLESS_SOFTWARE_WEBGL_ONLY';
