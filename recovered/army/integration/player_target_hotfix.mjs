@@ -35,7 +35,14 @@ export function patchFfaAggro(ffa){
                     score: playerDistance + (closeToHuman ? -11 : 2) +
                         playerHunters * 7 + Math.random() * 5 });
             }`;
- return swapOne(ffa,before,after);
+ // The actual movement/combat frame used to start a ranged or melee windup
+ // solely because a target was inside weapon reach. With a wall in the way,
+ // every cancelled windup restarted on the next frame, wasting decisions.
+ // This gate only delays starting a windup until line of sight is clear;
+ // it never changes cooldown, damage, movement, or target allegiance.
+ return swapOne(swapOne(ffa,before,after),
+  '                } else if (isGameActive && arenaTarget && arenaDist <= bot.range) {',
+  '                } else if (isGameActive && arenaTarget && arenaDist <= bot.range && hasClearShot) {');
 }
 export function patchArmyAggro(engine){
  if(sha256(engine)!==ORIGINAL_ARMY_SHA)throw Error('Unsupported G5.4 army source; no hotfix applied');
