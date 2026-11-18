@@ -81,10 +81,11 @@ function create(role,opts={}){
   tick(dt=.05){ctx.arenaClock+=dt;ctx.__tick(dt)}};
 }
 test('exact A5 source patched only via the source-hashed player/LOS hotfix',()=>{
- assert.equal(sha256(html),'3d00d872e9df3fa7cec14238f036e3cafdadb9d998e1457870c940ce9e9d0301');
+ assert.equal(sha256(html),'bbf86d76ae05d23f7069024cef329c222752d98f0ac29d4d120a3d2fd7949538');
  assert.equal(loop.includes('arenaDist <= bot.range && hasClearShot'),true);
  assert.equal(html.includes('windup:.5,aimArc:.36'),true);
- assert.equal(html.includes('const BOW_MIN_DRAW_SECONDS=.5;'),true);
+ assert.equal(html.includes('const BOW_MIN_DRAW_SECONDS=2;'),true);
+ assert.equal(html.includes('const BOW_DRAW_SECONDS=3;'),true);
 });
 for(const role of Object.keys(profiles)){
  test(role+' ACTUAL bot update picks human, moves, winds up and applies real HP damage',()=>{
