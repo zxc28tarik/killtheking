@@ -6,14 +6,19 @@ const KNOWN_HARDWARE=/(?:nvidia|geforce|quadro|rtx\s*\d|gtx\s*\d|radeon|amd\s+gr
 
 export function classifyRenderer({webglUnmasked='',webglRenderer='',gpuDevices=[]}={}){
  const devices=Array.isArray(gpuDevices)?gpuDevices:[];
- const strings=[webglUnmasked,webglRenderer,...devices.map(d=>
-   [d.vendorString,d.deviceString].filter(Boolean).join(' '))];
- const combined=strings.join(' / ');
- if(SOFTWARE.test(combined))
-   return {kind:'SOFTWARE_OR_EMULATED',reason:'Software rasterizer indicator found',details:combined.slice(0,700)};
- if(KNOWN_HARDWARE.test(combined))
-   return {kind:'LIKELY_HARDWARE',reason:'Named physical GPU detected; user must confirm physical GPU and driver',details:combined.slice(0,700)};
- return {kind:'UNVERIFIED',reason:'Insufficient GPU vendor/renderer evidence',details:combined.slice(0,700)};
+ const renderer=[webglUnmasked,webglRenderer].filter(Boolean).join(' / ');
+ const discovered=devices.map(d=>
+   [d.vendorString,d.deviceString].filter(Boolean).join(' ')).join(' / ');
+ const details=(renderer+'; CDP listed devices: '+discovered).slice(0,700);
+ // CDP can list a SwiftShader fallback device next to a working NVIDIA GPU.
+ // Judge the EFFECTIVE WebGL renderer first, not an unused fallback device.
+ if(SOFTWARE.test(renderer))
+   return {kind:'SOFTWARE_OR_EMULATED',reason:'Effective WebGL renderer is software',details};
+ if(KNOWN_HARDWARE.test(renderer))
+   return {kind:'LIKELY_HARDWARE',reason:'Named effective WebGL physical GPU; user confirmation required',details};
+ if(SOFTWARE.test(discovered)&&!KNOWN_HARDWARE.test(discovered))
+   return {kind:'SOFTWARE_OR_EMULATED',reason:'Only software GPU reported via CDP',details};
+ return {kind:'UNVERIFIED',reason:'Cannot verify effective hardware WebGL device, even if CDP lists one',details};
 }
 const finite=n=>typeof n==='number'&&Number.isFinite(n);
 const r=n=>Math.round(n*100)/100;
@@ -43,7 +48,13 @@ export function assessAcceptance({renderer={},manualEscape={},end={},samples=[]}
    end.durationSeconds===240;
  const contextLost=samples.some(s=>s.webgl?.contextLost===true);
  const interrupted=samples.some(s=>s.phase==='paused'||s.phase==='menu');
- const continuous=naturalEnd&&!interrupted&&!contextLost;
+ const observedWall=end.elapsedWallSeconds??0;
+ const sampleCoverage=samples.length>=12&&
+   finite(observedWall)&&observedWall>=230&&
+   finite(samples[0]?.atWallSeconds)&&samples[0].atWallSeconds<=20&&
+   finite(samples.at(-1)?.atGameSeconds)&&
+   samples.at(-1).atGameSeconds>=230;
+ const continuous=naturalEnd&&sampleCoverage&&!interrupted&&!contextLost;
  return {
    gpu,frames,
    checks:{
@@ -51,6 +62,7 @@ export function assessAcceptance({renderer={},manualEscape={},end={},samples=[]}
      nativeManualEscapeAndPause:escapeVerified,
      complete240GameSeconds:naturalEnd,
      continuousObservedRun:continuous,
+     sampled240sOfRealTime:sampleCoverage,
      noWebGLContextLoss:!contextLost,
      elapsedWallSeconds:end.elapsedWallSeconds??null
    },
