@@ -35,6 +35,7 @@ jobs:
           node --test recovered/army/integration/test_isolated_launcher.mjs
           node --test recovered/army/integration/test_mode_router_runtime.mjs
           node --test recovered/army/integration/test_player_target_hotfix.mjs
+          node --test recovered/army/integration/test_ffa_native_damage.mjs
       - name: Package ONE standalone dual-mode HTML with pinned provenance
         run: |
           node recovered/army/integration/build_isolated_launcher.mjs \
@@ -65,4 +66,5 @@ jobs:
             recovered/army/integration/test_mode_router_runtime.mjs
             recovered/army/integration/player_target_hotfix.mjs
             recovered/army/integration/test_player_target_hotfix.mjs
+            recovered/army/integration/test_ffa_native_damage.mjs
           if-no-files-found: error
