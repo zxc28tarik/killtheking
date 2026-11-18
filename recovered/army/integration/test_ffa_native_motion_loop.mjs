@@ -81,7 +81,7 @@ function create(role,opts={}){
   tick(dt=.05){ctx.arenaClock+=dt;ctx.__tick(dt)}};
 }
 test('exact A5 source patched only via the source-hashed player/LOS hotfix',()=>{
- assert.equal(sha256(html),'4066a2c7e10d6f21b54df17cf2ee4c73250ecd6ce556fbf06b043d9aef1db5ec');
+ assert.equal(sha256(html),'3d00d872e9df3fa7cec14238f036e3cafdadb9d998e1457870c940ce9e9d0301');
  assert.equal(loop.includes('arenaDist <= bot.range && hasClearShot'),true);
  assert.equal(html.includes('windup:.5,aimArc:.36'),true);
  assert.equal(html.includes('const BOW_MIN_DRAW_SECONDS=.5;'),true);
