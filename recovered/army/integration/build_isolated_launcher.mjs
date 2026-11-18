@@ -77,7 +77,7 @@ export function createLauncher(ffa,army){
  '</nav><div id="meta" aria-live="polite">Bir mod seç. Mod değişimi oyunu yeniden başlatır.</div></header>',
  '<main id="intro"><article><h1>İki oyun modu, ayrı çalışma ortamları</h1>',
  '<p>Bu aday, Ekim 2026 tarihli kabul edilmiş FFA oyununun özgün sürümünü arşivler; FFA hedef seçimine sınırlı düzeltme uygular. G5.4 ordu savaşı ayrı bir oyun penceresinde açılır; geçişte önceki oyun kapatılır. Her iki oyun aynı çevrimdışı HTML içindedir.</p>',
- '<div class="facts"><section><strong>Serbest Arena / TDM</strong><span>Orijinal kale, 20× çimenlik meydan, dört sınıf, FFA ve takım savaşı. Ekim FFA görselleri korunur; bot hedef seçimi düzeltildi, FFA okçusunda atış hazırlığı 0,5 saniyedir. Ok sınırı 4 saniye/atış ve atış sonrası toparlanma 1 saniyedir.</span></section>',
+ '<div class="facts"><section><strong>Serbest Arena / TDM</strong><span>Orijinal kale, 20× çimenlik meydan, dört sınıf, FFA ve takım savaşı. Ekim FFA görselleri korunur; bot hedef seçimi düzeltildi. Arena BOT okçusu 0,5 saniyede atışa hazırlanır; oyuncunun normal okçusunda 2 saniye asgari/3 saniye tam germe korunur. Ok sınırı 4 saniye/atış ve atış sonrası toparlanma 1 saniyedir.</span></section>',
  '<section><strong>G5.4 Ordu Savaşı</strong><span>70’e 70 asker, komuta ve formasyonlar. Kaynak G5.4; temas kurtarma ve oyuncuyu hedefleme düzeltmesi bulunan G5.4 ordu motoru kullanılır. Bu sürümde oyuncu tarafı mavi.</span></section></div>',
  '<p><strong>Bu henüz son birleşik oyun değildir.</strong> Modlar ayrı çalışır; paylaşılan ilerleme/kayıt sistemi, G8.4 senaryoları ve gerçek GPU kabulü daha sonra yapılacaktır. Moddan çıkmadan önce ESC ile fare kilidini bırak.</p>',
  '</article></main><div id="stage" aria-label="Oyun çalışma alanı"></div>',
@@ -132,6 +132,7 @@ export function build(ffaFile,outFile){
   launcherBytes:Buffer.byteLength(result),modes:['ffa','army'],
   originalFfaRecoverable:true,ffaTargetingChanged:true,armyTargetingChanged:true,
   originalGraphicsAndWeaponsUnchanged:false,ffaArcherDrawChanged:true,
+  ffaPlayerBowUnchanged:true,ffaArenaBotArcherWindupSeconds:.5,
   strictSharedSimulation:false,realGPUAccepted:false,g84Restored:false,
   approval:'CANDIDATE_NOT_APPROVED'
  };
