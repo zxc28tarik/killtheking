@@ -3,7 +3,9 @@
 **Tarih:** 18 Kasım 2026  
 **Durum:** Kullanıcının onayladığı **1 adet ayrı kuşatma kalesi savaşı**; uygulama başlangıcı.  
 **Geliştirme dalı:** `codex/s1-siege-castle-phase1` (temel: `codex/g54-ffa-army-isolated-launcher`).  
-**Önemli:** Ana dalı, FFA/TDM'yi, G5.4 ordu adayını, tarihî HTML'yi veya mevcut silah sürelerini değiştirme. Bu proje tek kuşatma senaryosudur; üçüncü FFA haritası değildir.
+**Önemli:** Ana dalı, FFA/TDM'yi, G5.4 ordu adayını, tarihî HTML'yi veya mevcut silah sürelerini değiştirme.
+
+**S1 ilk teslim (18 Kasım):** 21/21 Node test + gerçek Chromium/SwiftShader 3B harita ve test arayüzü PASS. [İlk S1 raporu ve indirme bağlantıları](../recovered/siege/README.md). **Bu sadece senaryo mantığı ve 3B önizleme; gerçek FPS/TPS 140 asker savaşı değildir. S2–S6 hâlâ YAPILMADI.** Bu proje tek kuşatma senaryosudur; üçüncü FFA haritası değildir.
 
 ## 0. Kesin kabul edilen kapsam
 
@@ -39,11 +41,11 @@
 
 ### S1 — Harita sözleşmesi + deterministik kuşatma senaryo motoru [P0]
 - [x] Geliştirme planı ve ayrı senaryo teknik sözleşmesi Markdown dosyalarına yazılır.
-- [ ] Yerleşim: dış hat, sur, kapı, iki çıkış, avlu, iç kale; kapı HP/engel/nav işaretleri ve spawn bölgeleri.
-- [ ] Kaynak bağımsız saf JavaScript kuşatma FSM: `APPROACH → BREACH → COURTYARD → KEEP → RESULT`; saldırı alternatifleri kapı/merdiven; süre/ölüm zaferi.
-- [ ] Geçersiz olay, sonsuz sayı, taraf ihlali, avlu atlama, sahte kazanma engellenir.
-- [ ] Gerçek modlara dokunmadan başlangıç görsel/test prototipi (isteğe göre 3B).
-- [ ] CI: harita geçitleri, kapı/sur alternatifi, avlu, iç kale, zaman, taraf/zafer ve kaynak izolasyonu testleri.
+- [x] Yerleşim: dış hat, sur, kapı, iki çıkış, avlu, iç kale; kapı HP/engel/nav işaretleri ve spawn bölgeleri.
+- [x] Kaynak bağımsız saf JavaScript kuşatma FSM: `APPROACH → BREACH → COURTYARD → KEEP → RESULT`; saldırı alternatifleri kapı/merdiven; süre/ölüm zaferi.
+- [x] Geçersiz olay, sonsuz sayı, taraf ihlali, avlu atlama, sahte kazanma engellenir.
+- [x] Gerçek modlara dokunmadan başlangıç görsel/test prototipi (isteğe göre 3B).
+- [x] CI: harita geçitleri, kapı/sur alternatifi, avlu, iç kale, zaman, taraf/zafer ve kaynak izolasyonu testleri.
 **Kabul:** deterministik senaryo motoru doğru fazlara geçer; 2 farklı ihlal rotası denenir; gerçek oynanabilir 140 asker/grafik iddiası YOK.
 
 ### S2 — 3B kuşatma haritası, fizik, asker yerleşimi [P0/P1]
