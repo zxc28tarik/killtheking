@@ -10,7 +10,6 @@ import assert from 'node:assert/strict';
 import {existsSync,mkdirSync,writeFileSync} from 'node:fs';
 import {resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
-import {chromium} from 'playwright';
 import {assessAcceptance} from './windows_acceptance_rules.mjs';
 
 const args=process.argv.slice(2);
@@ -27,6 +26,9 @@ const html=resolve(htmlArg);
 if(!existsSync(html))throw Error('Built combined HTML missing: '+html);
 if(process.platform!=='win32'&&!args.includes('--allow-nonwindows'))
   throw Error('Physical Windows acceptance must run on Windows, not a CI Linux GPU emulator.');
+// Import browser machinery only AFTER the physical-platform gate: CI can
+// prove Linux is rejected without installing a browser or Playwright.
+const {chromium}=await import('playwright');
 const output=resolve(process.env.KTK_WINDOWS_ACCEPTANCE_OUTPUT||
   'recovered/army/integration/windows-acceptance-evidence');
 mkdirSync(output,{recursive:true});
