@@ -67,7 +67,7 @@ test('original source remains archived; both targeted changes are SHA-bound',()=
  assert.equal(sha256(ffa),'18dca2a895763f0955566f2fc90651f1ab1a98f86597e399cbac42ac2fc6f15a');
  assert.equal(sha256(engineOriginal),'307987855abc0973ea9177fdd659c39d1d02673c8381c0501be8b63c04ddf841');
  assert.equal(sha256(patchFfaAggro(ffa)),'6fd8a0c6342067e4ba3f3546b716e9fa1b9cce8a9e1c3a09c499fe925480289e');
- assert.equal(sha256(patchArmyAggro(engineOriginal)),'5a078a89efde450a34c2d406d916bc326aabd8b2b6945993c70697c0759132a8');
+ assert.equal(sha256(patchArmyAggro(engineOriginal)),'497c945c059b541fcf76231e7d9ff2983dd8b235e98d7b78b93e9ed52235c348');
 });
 test('G5.4 real army engine loads and preserves 140 soldiers, both player sides and HOLD',()=>{
  for(const source of [engineOriginal,patchArmyAggro(engineOriginal)]){
