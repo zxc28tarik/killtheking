@@ -59,3 +59,13 @@ Güvenlik kapısı: FFA SHA-256 **18dca2a895763f0955566f2fc90651f1ab1a98f86597e3
 - **Korunan sınırlar:** İki ok arası **en az 4 saniye = azami 15 ok/dakika**; atış sonrası **1 saniye toparlanma**. Bu, eskiden belirlenen **ilk 2 saniye ok atılamaz** kuralının kullanıcı kararıyla değiştiği anlamına gelir; 0,5 saniye germe ilk atışta da geçerlidir.
 - **Kapsam:** Yalnız **FFA/TDM** oyuncu ve bot okçusu; izole G5.4 ordu savaşındaki okçular değişmedi. Kaynak A5 tarihî arşivi hâlâ byte-byte korunuyor.
 - **Kaynak bütünlüğü:** yeni FFA SHA-256 `3d00d872e9df3fa7cec14238f036e3cafdadb9d998e1457870c940ce9e9d0301`; değişiklik yalnız kaynak SHA-kilitli derleyicide uygulanıyor. PR #48 taslak, `main` değişmedi.
+
+## 18 Kasım — Son düzeltme: yalnız arena BOT okçusu hızlandırıldı
+
+Kullanıcı önceki talebini netleştirdi: **0,5 saniye yalnız arena bot okçusu içindir.** Yukarıdaki “oyuncu yayı 0,5 saniye” kaydı **geri alınmış eski ara karardır**, mevcut sürüm değildir.
+
+- **Arena FFA bot okçusu:** Saldırıya hazırlık **0,5 saniye**.
+- **Oyuncunun normal yayı:** Özgün **ilk 2 saniye ok bırakılamaz**, **3 saniyede tam gerilir**; herhangi bir hızlandırma yoktur. Özgün silah modülü tek bayt değiştirilmemiştir.
+- **Ordu okçusu:** G5.4 ordu motoru aynı, değiştirilmedi.
+- **İki ok arasında en az 4 saniye, atıştan sonra 1 saniye toparlanma** aynı; ok hasarı, isabet ve diğer silahlar aynı.
+- Yeni aday FFA SHA-256: `bbf86d76ae05d23f7069024cef329c222752d98f0ac29d4d120a3d2fd7949538`. Eski oynanabilir aday SHA ve eski raporlar yalnız geçmiş sürümler içindir. `main` korunur; PR #48 DRAFT.
