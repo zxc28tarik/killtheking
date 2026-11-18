@@ -46,6 +46,23 @@ try{
    assert(result.webgl&&!result.contextLost,label+' WebGL context missing/lost: '+JSON.stringify(result));
    notes.checks.push(label+' real WebGL canvas alive: '+JSON.stringify(result));
  };
+ const exitPointerLockForHeadlessSwitch=async()=>{
+   await page.keyboard.press('Escape');
+   await page.waitForTimeout(650);
+   const locked=await page.evaluate(()=>
+      !!document.querySelector('#stage iframe')?.contentDocument?.pointerLockElement);
+   if(locked){
+     notes.checks.push('HEADLESS LIMITATION: real Escape did NOT release child-frame pointer lock; browser test explicitly calls exitPointerLock to continue. Manual ESC acceptance still OPEN.');
+     await page.evaluate(async()=>{
+       const doc=document.querySelector('#stage iframe')?.contentDocument;
+       if(doc?.pointerLockElement)await doc.exitPointerLock();
+     });
+     await page.waitForTimeout(500);
+   }
+   const after=await page.evaluate(()=>
+      !!document.querySelector('#stage iframe')?.contentDocument?.pointerLockElement);
+   assert.equal(after,false,'Unable to release actual Chrome iframe pointer lock before mode switch');
+ };
  const enterFFA=async (map)=>{
    await page.locator('[data-ktk-launch="ffa"]').click();
    const ffa=page.frameLocator('#stage iframe');
@@ -91,7 +108,7 @@ try{
    return status;
  };
  await enterFFA('castle');
- await page.keyboard.press('Escape');
+ await exitPointerLockForHeadlessSwitch();
  await page.waitForTimeout(800);
  const navState=async()=>page.evaluate(()=>{
     const frame=document.querySelector('#stage iframe');
@@ -144,7 +161,7 @@ try{
  assert.equal(armySnapshot.menuHidden,true,'Army menu did not close on Start');
  notes.checks.push('Army start clicked and 3D scene active: '+JSON.stringify(armySnapshot));
  await page.screenshot({path:resolve(reportDir,'army-g54.png'),fullPage:true});
- await page.keyboard.press('Escape');
+ await exitPointerLockForHeadlessSwitch();
  await page.locator('[data-ktk-launch="ffa"]').click();
  assert.equal(await page.locator('#stage iframe').count(),1,'Old army scene survived mode switch');
  await page.frameLocator('#stage iframe').locator('#play-btn').waitFor({state:'visible'});
