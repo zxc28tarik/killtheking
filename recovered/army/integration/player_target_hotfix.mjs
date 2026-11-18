@@ -51,13 +51,13 @@ export function patchArmyAggro(engine){
    const nearbyPlayer=soldier.team!==state.playerTeam&&state.playerActive&&
     ((soldier.id+state.seed)%5===0)&&dist(soldier,state.playerPosition)<role.range;
    const turnToPlayer=nearbyPlayer&&(!enemy||
-    dist(soldier,state.playerPosition)<Math.max(15,dist(soldier,enemy)*1.25));`);
+    dist(soldier,state.playerPosition)<Math.max(15,dist(soldier,enemy)*1.0));`);
  out=swapOne(out,
  `   const playerThreat=soldier.team!==state.playerTeam&&state.playerActive&&
     playerDist<role.range&&(!enemy||playerDist<dist(soldier,enemy)*.72)&&
     ((soldier.id+state.seed)%4===0);`,
  `   const playerThreat=soldier.team!==state.playerTeam&&state.playerActive&&
-    playerDist<role.range&&(!enemy||playerDist<Math.max(15,dist(soldier,enemy)*1.25))&&
+    playerDist<role.range&&(!enemy||playerDist<Math.max(15,dist(soldier,enemy)*1.0))&&
     ((soldier.id+state.seed)%5===0);`);
  return out;
 }
