@@ -747,6 +747,220 @@ try{
    JSON.stringify(naturalTrace,null,2)+'\n');
  await page.screenshot({path:resolve(reportDir,
    'ffa-natural-spawn-after-native-match.png'),fullPage:true});
+ // Continue the SAME naturally spawned match to the full four-minute result.
+ // This is an accelerated NATIVE updateGame(.05) test in a real Chromium DOM,
+ // not 4 wall-clock minutes, RAF/FPS validation, hardware GPU, or a bot fixture.
+ // No actor positions, AI state, target choice, reloads or HP are manipulated.
+ const fullRound={
+   kind:'NATURAL_240_SECOND_FFA_NATIVE_UPDATE_NO_RENDER_ACCELERATION',
+   environment:'Chromium DOM/real Three.js modules, manual updateGame(.05)',
+   didManipulateActors:false,startMatchSeconds:naturalTrace.totalSimulatedSeconds,
+   ticksAfterEarlyProof:0,batches:[],totals:{targetPlayerFrames:0,
+     targetBotFrames:0,targetChanges:0,naturalShots:0,
+     naturalMeleeCompletes:0,botDeaths:0,botRespawns:0,
+     playerHitEvents:0,playerDeaths:0,invalidTargetTicks:0,
+     excessPlayerHunterTicks:0,nonFinitePositionTicks:0,
+     cadenceViolations:0,approachTicks:0},
+   result:'RUNNING'
+ };
+ for(let batch=0;batch<45;batch++){
+   const item=await freshFFA.locator('body').evaluate((_body,limit)=>{
+     const update=window.eval('updateGame');
+     const match=window.eval('arenaMatch'),p=window.eval('player');
+     const bots=window.eval('bots');
+     const counters={targetPlayerFrames:0,targetBotFrames:0,
+       targetChanges:0,naturalShots:0,naturalMeleeCompletes:0,
+       botDeaths:0,botRespawns:0,playerHitEvents:0,playerDeaths:0,
+       invalidTargetTicks:0,excessPlayerHunterTicks:0,
+       nonFinitePositionTicks:0,cadenceViolations:0,approachTicks:0};
+     const events={targetChanges:[],shots:[],melee:[],
+       botDeaths:[],botRespawns:[],playerHits:[],playerDeaths:[],
+       suspicious:[]};
+     const startRemaining=match.remaining;
+     const cpuStarted=performance.now();
+     let steps=0,maxNavStuck=0;
+     for(let i=0;i<limit&&match.phase==='playing';i++){
+       const previousHP=p.hp,previousDeaths=p.deaths;
+       const old=bots.map(b=>({
+         x:b.mesh.position.x,z:b.mesh.position.z,
+         target:b.arenaTargetType,targetId:b.arenaTargetId,
+         dead:b.dead,shot:b.lastRangedShotAt,
+         melee:b.meleeWindup,health:b.hp}));
+       update(.05);steps++;
+       const elapsed=match.durationSeconds-match.remaining;
+       const hunters=bots.filter(b=>!b.dead&&b.arenaTargetType==='player');
+       counters.targetPlayerFrames+=hunters.length;
+       counters.targetBotFrames+=bots.filter(b=>
+         !b.dead&&b.arenaTargetType==='bot').length;
+       if(hunters.length>2)counters.excessPlayerHunterTicks++;
+       if(p.hp<previousHP-1e-6){
+         counters.playerHitEvents++;
+         if(events.playerHits.length<20)events.playerHits.push({
+           at:elapsed,from:previousHP,to:p.hp});
+       }
+       if(p.deaths>previousDeaths){
+         counters.playerDeaths+=p.deaths-previousDeaths;
+         if(events.playerDeaths.length<12)events.playerDeaths.push({
+           at:elapsed,from:previousDeaths,to:p.deaths,hp:p.hp});
+       }
+       for(let j=0;j<bots.length;j++){
+         const b=bots[j],before=old[j];
+         if(!Number.isFinite(b.mesh.position.x)||
+           !Number.isFinite(b.mesh.position.z)||
+           !Number.isFinite(b.hp))counters.nonFinitePositionTicks++;
+         if(Number.isFinite(b.navStuck))
+           maxNavStuck=Math.max(maxNavStuck,b.navStuck);
+         if(!b.dead&&b.arenaTargetType==='bot'&&
+            (b.arenaTargetId===b.id||
+             !bots.some(q=>q.id===b.arenaTargetId)))
+           counters.invalidTargetTicks++;
+         if(b.arenaTargetType!==before.target||
+            b.arenaTargetId!==before.targetId){
+           counters.targetChanges++;
+           if(events.targetChanges.length<28)
+             events.targetChanges.push({at:elapsed,id:b.id,
+               was:before.target,now:b.arenaTargetType,
+               oldTargetId:before.targetId,targetId:b.arenaTargetId});
+         }
+         if(b.dead&&!before.dead){
+           counters.botDeaths++;
+           if(events.botDeaths.length<18)
+             events.botDeaths.push({at:elapsed,id:b.id,
+               role:b.role,deathCount:b.arenaDeaths});
+         }
+         if(!b.dead&&before.dead){
+           counters.botRespawns++;
+           if(events.botRespawns.length<18)
+             events.botRespawns.push({at:elapsed,id:b.id,
+               hp:b.hp,maxHp:b.maxHp,spawnPos:b.mesh.position.toArray()});
+         }
+         if((b.role==='musket'||b.role==='archer')&&
+            Number.isFinite(b.lastRangedShotAt)&&
+            b.lastRangedShotAt!==before.shot){
+           counters.naturalShots++;
+           const interval=b.role==='archer'?4:15;
+           const cooldownGap=Number.isFinite(before.shot)
+             ?b.lastRangedShotAt-before.shot:null;
+           if(cooldownGap!==null&&cooldownGap<interval-.06)
+             counters.cadenceViolations++;
+           if(events.shots.length<24)
+             events.shots.push({at:elapsed,id:b.id,role:b.role,
+               gap:cooldownGap,atPlayer:before.target==='player'||
+               b.arenaTargetType==='player'});
+         }
+         if((b.role==='knight'||b.role==='pikeman')&&
+            before.melee>0&&b.meleeWindup<=0){
+           counters.naturalMeleeCompletes++;
+           if(events.melee.length<24)
+             events.melee.push({at:elapsed,id:b.id,role:b.role,
+               target:before.target});
+         }
+         if(!b.dead&&b.arenaTargetType==='player'){
+           const nowDist=Math.hypot(b.mesh.position.x-p.pos.x,
+             b.mesh.position.z-p.pos.z);
+           const prevDist=Math.hypot(before.x-p.pos.x,
+             before.z-p.pos.z);
+           if(nowDist<prevDist-.05)counters.approachTicks++;
+         }
+       }
+     }
+     const st=window.krunkerArenaStatus();
+     return {startRemaining,endRemaining:match.remaining,
+       phase:match.phase,steps,cpuMs:performance.now()-cpuStarted,
+       counters,maxNavStuck,
+       events,player:{hp:p.hp,deaths:p.deaths,kills:p.kills},
+       botCount:bots.length,
+       bots:bots.map(b=>({id:b.id,role:b.role,
+         dead:b.dead,hp:b.hp,arenaKills:b.arenaKills,
+         arenaDeaths:b.arenaDeaths})),
+       finalTelemetry:st.telemetry,matchResults:st.matchResults,
+       standings:st.matchStandings,
+       resultsShown:!document.getElementById('match-results-overlay')
+         ?.classList.contains('hidden'),
+       scoreboardRows:document.getElementById('match-results-table')
+         ?.children.length,
+       hudClock:document.getElementById('hud-timer')?.textContent};
+   },120);
+   fullRound.ticksAfterEarlyProof+=item.steps;
+   fullRound.batches.push(item);
+   for(const key of Object.keys(fullRound.totals))
+     fullRound.totals[key]+=item.counters[key];
+   notes.longMatchProgress={batches:fullRound.batches.length,
+     matchElapsed:240-item.endRemaining,remaining:item.endRemaining,
+     botDeaths:fullRound.totals.botDeaths,
+     botRespawns:fullRound.totals.botRespawns,
+     playerDeaths:fullRound.totals.playerDeaths};
+   // Persist progress each batch in case a later one encounters an engine bug.
+   writeFileSync(resolve(reportDir,'ffa-natural-240s-match.json'),
+     JSON.stringify(fullRound,null,2)+'\n');
+   if(item.phase!=='playing')break;
+ }
+ const finalRound=fullRound.batches.at(-1);
+ fullRound.elapsedSeconds=240-finalRound.endRemaining;
+ fullRound.result=finalRound.phase==='results'&&
+   finalRound.endRemaining<.0001
+   ?'FULL_240_SECOND_GAME_REACHED_RESULTS'
+   :'INCOMPLETE_OR_WRONG_MATCH_END_STATE';
+ notes.longMatch= {
+   result:fullRound.result,elapsedSeconds:fullRound.elapsedSeconds,
+   batches:fullRound.batches.length,totals:fullRound.totals,
+   finalPhase:finalRound.phase,remaining:finalRound.endRemaining,
+   matchResults:finalRound.matchResults,
+   scoreRows:finalRound.scoreboardRows,
+   botDeaths:finalRound.bots.map(b=>({id:b.id,
+     deaths:b.arenaDeaths,kills:b.arenaKills})),
+   player:finalRound.player,
+   rangedFire:finalRound.finalTelemetry?.rangedFire,
+   targetSlots:finalRound.finalTelemetry?.targetSlots
+ };
+ notes.checks.push('NATURAL 240 SECOND MATCH (unmodified six AI bots, no render '+
+   'during native accelerated ticks): '+JSON.stringify(notes.longMatch));
+ writeFileSync(resolve(reportDir,'ffa-natural-240s-match.json'),
+   JSON.stringify(fullRound,null,2)+'\n');
+ await page.screenshot({path:resolve(reportDir,'ffa-natural-240s-results.png'),
+   fullPage:true});
+ assert.equal(fullRound.result,'FULL_240_SECOND_GAME_REACHED_RESULTS',
+   'Natural four-minute match did not reach a valid end state');
+ assert.equal(finalRound.phase,'results');
+ assert.equal(finalRound.endRemaining,0);
+ assert.equal(finalRound.hudClock,'00:00');
+ assert.equal(finalRound.botCount,6);
+ assert.equal(finalRound.resultsShown,true,
+   'Real end-of-game results overlay is hidden');
+ assert.equal(finalRound.scoreboardRows,7,
+   'Final FFA scoreboard should show one human and six bots');
+ assert.equal(finalRound.standings.length,7);
+ assert.equal(finalRound.matchResults.standings.length,7);
+ assert.equal(finalRound.matchResults.seconds,240);
+ assert(finalRound.matchResults.winnerId==='player'||
+   /^bot:[0-5]$/.test(finalRound.matchResults.winnerId),
+   'Result winner is not one of the actual combatants');
+ assert(fullRound.totals.targetBotFrames>0,
+   'FFA bots stopped competing with each other');
+ assert.equal(fullRound.totals.nonFinitePositionTicks,0,
+   'Non-finite actor positions or HP in natural four-minute match');
+ assert.equal(fullRound.totals.invalidTargetTicks,0,
+   'Self-target or missing bot ID in natural four-minute match');
+ assert.equal(fullRound.totals.cadenceViolations,0,
+   'Ranged bot fired before approved bow 4s/musket 15s interval');
+ assert(finalRound.finalTelemetry.kills.botToBot+
+   finalRound.finalTelemetry.kills.botToPlayer>0,
+   'No true combat kill was produced across full four-minute FFA');
+ const botDeathSum=finalRound.bots.reduce((v,b)=>v+b.arenaDeaths,0);
+ assert.equal(finalRound.finalTelemetry.kills.botToBot,botDeathSum,
+   'Bot-vs-bot telemetry kills do not reconcile with bot deaths');
+ assert.equal(finalRound.finalTelemetry.kills.botToPlayer,
+   finalRound.player.deaths,
+   'Player death counter differs from native kill telemetry');
+ if(fullRound.totals.botDeaths>0){
+   assert(fullRound.totals.botRespawns>0,
+     'Natural FFA bot never respawned after a detected death');
+ }
+ notes.checks.push('PASS_NATURAL_240_SEC_FFA_MATCH_END_SCOREBOARD_AND_COMBAT: '+
+   'valid 00:00 end, winner+7 rows, true kills, real AI targeting, '+
+   'zero invalid targets/nonfinite states/early ranged shots; '+
+   'deaths='+fullRound.totals.botDeaths+
+   ' respawns='+fullRound.totals.botRespawns);
  assert.equal(notes.pageErrors.length,0,
    'Uncaught browser JavaScript exceptions: '+notes.pageErrors.join(' | '));
  notes.result='PASS_HEADLESS_SOFTWARE_WEBGL_ONLY';
