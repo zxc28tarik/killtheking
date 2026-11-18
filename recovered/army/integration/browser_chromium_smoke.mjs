@@ -54,9 +54,26 @@ try{
    if(map==='meadow')await ffa.locator('[data-arena-map="meadow"]').click();
    await ffa.locator('#card-class-0').click();
    await ffa.locator('#play-btn').click();
-   await page.waitForTimeout(6500);
-   const status=await ffa.locator('body').evaluate(()=>
-     typeof window.krunkerArenaStatus==='function'?window.krunkerArenaStatus():null);
+   await page.waitForTimeout(10500);
+   const diagnostic=await ffa.locator('body').evaluate(()=>({
+      status:typeof window.krunkerArenaStatus==='function'?window.krunkerArenaStatus():null,
+      perf:typeof window.krunkerPerformanceReport==='function'?window.krunkerPerformanceReport():null,
+      pointerLocked:!!document.pointerLockElement,
+      visibility:document.visibilityState,
+      hudTimer:document.querySelector('#hud-timer')?.textContent,
+      hudFps:document.querySelector('#hud-fps')?.textContent,
+      startError:document.querySelector('#ktk-startup-error')?.textContent
+   }));
+   const status=diagnostic.status;
+   notes.checks.push('FFA '+map+' post-click diagnostics: '+JSON.stringify({
+      matchPhase:status?.matchPhase,remaining:status?.matchRemaining,
+      duration:status?.matchDurationSeconds,botCount:status?.botCount,
+      samples:status?.telemetry?.samples,pointerLocked:diagnostic.pointerLocked,
+      visibility:diagnostic.visibility,hudTimer:diagnostic.hudTimer,
+      hudFps:diagnostic.hudFps,startError:diagnostic.startError,
+      perf:diagnostic.perf
+   }).slice(0,1400));
+   await page.screenshot({path:resolve(reportDir,'ffa-'+map+'.png'),fullPage:true});
    assert(status,'FFA game status unavailable after actual button click');
    assert.equal(status.matchPhase,'playing','FFA did not start/resume');
    assert.equal(status.map,map,'Wrong rendered FFA map selected');
@@ -66,7 +83,6 @@ try{
    notes.checks.push('FFA '+map+' active: bots='+status.botCount+
      ', remaining='+status.matchRemaining+', player targets='+
      JSON.stringify(status.telemetry?.targetSlots||{}));
-   await page.screenshot({path:resolve(reportDir,'ffa-'+map+'.png'),fullPage:true});
    return status;
  };
  await enterFFA('castle');
