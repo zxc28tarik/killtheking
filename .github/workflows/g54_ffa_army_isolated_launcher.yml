@@ -1,0 +1,63 @@
+name: Kill the King - offline isolated FFA plus G5.4 Army candidate
+on:
+  push:
+    branches:
+      - codex/g54-ffa-army-isolated-launcher
+    paths:
+      - 'recovered/army/integration/**'
+      - '.github/workflows/g54_ffa_army_isolated_launcher.yml'
+  workflow_dispatch:
+jobs:
+  offline-reproducible-candidate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout G5.4 integration candidate (never main)
+        uses: actions/checkout@v4
+      - name: Checkout accepted October A5 FFA into independent source folder
+        uses: actions/checkout@v4
+        with:
+          ref: codex/a5-meadow-twentyfold-area
+          path: ffa-source
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Rebuild original offline FFA from exact A5 source
+        run: |
+          python3 ffa-source/tools/build_offline.py --out dist/KillTheKing_Oyna.html
+          echo '18dca2a895763f0955566f2fc90651f1ab1a98f86597e399cbac42ac2fc6f15a  ffa-source/dist/KillTheKing_Oyna.html' | sha256sum --check -
+      - name: Run source isolation, actual blue/red army engine and script syntax tests
+        env:
+          KTK_FFA_HTML: ffa-source/dist/KillTheKing_Oyna.html
+        run: |
+          node --check recovered/army/integration/build_isolated_launcher.mjs
+          node --test recovered/army/integration/test_isolated_launcher.mjs
+      - name: Package ONE standalone dual-mode HTML with pinned provenance
+        run: |
+          node recovered/army/integration/build_isolated_launcher.mjs \
+            ffa-source/dist/KillTheKing_Oyna.html \
+            recovered/army/integration/dist/KillTheKing_Birlesik_FFA_Ordu_G5_4_Aday.html
+      - name: Validate offline HTML has no remote script or local external dependencies
+        run: |
+          node --input-type=module -e '
+            import {readFileSync} from "node:fs";
+            const p="recovered/army/integration/dist/KillTheKing_Birlesik_FFA_Ordu_G5_4_Aday.html";
+            const s=readFileSync(p,"utf8");
+            if(s.includes("<script src=")||s.includes("<link rel=\"stylesheet\" href=\"styles/"))
+             throw Error("Browser payload still has external JS/CSS");
+            if(!s.includes("ktk-source-ffa")||!s.includes("ktk-source-army"))
+             throw Error("Not both game modes in artifact");
+            console.log("Standalone dual-mode HTML structurally PASS, bytes:",Buffer.byteLength(s));'
+      - name: Archive both original A5 and combined candidate with truthful labels
+        uses: actions/upload-artifact@v4
+        with:
+          name: KillTheKing-ISOLATED-FFA-G54-ARMY-OFFLINE-HTML-NOT-RELEASE
+          path: |
+            ffa-source/dist/KillTheKing_Oyna.html
+            recovered/army/integration/dist/KillTheKing_Birlesik_FFA_Ordu_G5_4_Aday.html
+            recovered/army/integration/dist/KillTheKing_Birlesik_FFA_Ordu_G5_4_Aday.html.build.json
+            recovered/army/integration/README_ISOLATED_MODES_TR.md
+            recovered/army/integration/build_isolated_launcher.mjs
+            recovered/army/integration/test_isolated_launcher.mjs
+          if-no-files-found: error
