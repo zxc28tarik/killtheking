@@ -33,6 +33,7 @@ jobs:
         run: |
           node --check recovered/army/integration/build_isolated_launcher.mjs
           node --test recovered/army/integration/test_isolated_launcher.mjs
+          node --test recovered/army/integration/test_mode_router_runtime.mjs
       - name: Package ONE standalone dual-mode HTML with pinned provenance
         run: |
           node recovered/army/integration/build_isolated_launcher.mjs \
@@ -60,4 +61,5 @@ jobs:
             recovered/army/integration/README_ISOLATED_MODES_TR.md
             recovered/army/integration/build_isolated_launcher.mjs
             recovered/army/integration/test_isolated_launcher.mjs
+            recovered/army/integration/test_mode_router_runtime.mjs
           if-no-files-found: error
