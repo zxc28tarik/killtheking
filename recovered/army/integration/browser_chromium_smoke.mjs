@@ -233,6 +233,39 @@ try{
  notes.checks.push('Army -> FFA removed old iframe and loaded clean original menu');
  await enterFFA('meadow'); // Same-mode launcher click must not reset the new FFA menu.
  assert.equal(await page.locator('#stage iframe').count(),1);
+ // PASSIVE real-map observation BEFORE any test fixtures reposition an actor.
+ // There is no simulation or actor mutation in this read-only diagnostic.
+ // Do not call chooseArenaTarget here: that would change live AI targets.
+ const naturalFFA=await page.frameLocator('#stage iframe')
+   .locator('body').evaluate(()=>{
+     const p=window.eval('player'),bots=window.eval('bots');
+     const st=window.krunkerArenaStatus();
+     return {mode:st.mode,map:st.map,matchPhase:st.matchPhase,
+       elapsed:st.matchDurationSeconds-st.matchRemaining,
+       player:{x:p.pos.x,z:p.pos.z,hp:p.hp},
+       actors:bots.map(b=>({
+         id:b.id,role:b.role,dead:b.dead,targetType:b.arenaTargetType,
+         targetId:b.arenaTargetId,
+         distanceToPlayer:Math.hypot(b.mesh.position.x-p.pos.x,
+           b.mesh.position.z-p.pos.z),
+         position:{x:b.mesh.position.x,z:b.mesh.position.z}
+       }))};
+   });
+ notes.checks.push('PASSIVE natural Meadow FFA after launch (no bot teleports): '+
+   JSON.stringify(naturalFFA));
+ assert.equal(naturalFFA.actors.length,6,
+   'Natural live FFA bot roster is not the configured six fighters');
+ assert(naturalFFA.actors.every(a=>a.targetType!=='player'||
+    Number.isFinite(a.distanceToPlayer)),
+   'A hunter has an invalid player distance');
+ assert(naturalFFA.actors.filter(a=>a.targetType==='player').length<=2,
+   'FFA natural-map player targeting violates two-hunter safety cap');
+ assert(naturalFFA.actors.every(a=>
+   a.targetType!=='bot'||(a.targetId!==a.id&&
+     naturalFFA.actors.some(other=>other.id===a.targetId))),
+   'FFA natural-map bot tried to hunt itself or a missing target');
+ notes.checks.push('PASS_NATURAL_MAP_READ_ONLY_ROSTER_AND_TARGET_SAFETY; '+
+   'natural pursuit/kill rate NOT proven by this short software-WebGL sample');
  // Controlled *browser-only* close-contact encounter. The published game and
  // its rules are not patched; a genuine running FFA knight AI is repositioned
  // in the live Chromium page so test throughput does not depend on random
@@ -327,6 +360,97 @@ try{
  assert.equal(damageSample.matchPhase,'playing','FFA stopped after player damage');
  notes.checks.push('PASS_FIXTURE_ASSISTED_PLAYER_DAMAGE_REAL_BROWSER_LOOP: '+
    'normal AI frames and native damage lowered human HP and updated HUD');
+ // Second controlled melee role: real FFA pikeman aims, winds up and hits
+ // human on the live browser's normal requestAnimationFrame update path.
+ // Keep the pike's original 0.40s telegraph, 35 body damage, defense and
+ // world collision; no direct arenaBotAttack or damage call is allowed.
+ const pikemanFixture=await ffaCombat.locator('body').evaluate(()=>{
+   const p=window.eval('player'),bots=window.eval('bots');
+   const choose=window.eval('chooseArenaTarget');
+   const canSee=window.eval('arenaLineOfSight');
+   const b=bots.find(x=>x.role==='pikeman'&&!x.dead);
+   if(!b||!p||typeof choose!=='function')
+     throw Error('Pikeman bot missing from real FFA arena');
+   const ground=p.pos.y-p.currentHeight;
+   for(const other of bots){
+     if(other===b)continue;
+     // TEST ONLY: isolate which fighter inflicted the measured damage.
+     other.mesh.position.set(p.pos.x+365+other.id*13,ground,
+       p.pos.z+355+other.id*11);
+     other.attackTimer=9999;other.meleeWindup=0;other.rangedWindup=0;
+     other.arenaTargetType=null;other.arenaTargetId=null;
+     other.arenaLockTime=0;other.arenaAggroType=null;other.arenaAggroUntil=0;
+   }
+   const options=[[3.4,0],[-3.4,0],[0,3.4],[0,-3.4],
+     [2.4,2.4],[-2.4,2.4],[2.4,-2.4],[-2.4,-2.4]];
+   let offset=null;
+   for(const [dx,dz] of options){
+     b.mesh.position.set(p.pos.x+dx,ground,p.pos.z+dz);
+     if(canSee(b,p.pos,true)){offset=[dx,dz];break;}
+   }
+   if(!offset)throw Error('No clear native pikeman engagement position');
+   b.arenaTargetType=null;b.arenaTargetId=null;b.arenaLockTime=0;
+   b.arenaAggroType=null;b.arenaAggroUntil=0;
+   b.staggerTime=0;b.attackTimer=0;
+   b.meleeWindup=0;b.rangedWindup=0;b.windupTargetKey=null;
+   b.navPath.length=0;b.navGoal=null;b.navRefresh=0;
+   b.navRecovery=window.ArenaBotRecovery.create();
+   b.tacticMode='hold';b.tacticGoal=null;b.tacticRefresh=10000;
+   b.mesh.rotation.y=Math.atan2(p.pos.x-b.mesh.position.x,
+     p.pos.z-b.mesh.position.z);
+   p.hp=p.maxHp;p.isShielding=false;p.shieldParryTime=0;
+   window.eval('updateHUD()');
+   const target=choose(b);
+   return {botId:b.id,role:b.role,offset,
+     playerHp:p.hp,deaths:p.deaths,matchClock:window.eval('arenaClock'),
+     target:target?.type,lockedTarget:b.arenaTargetType,
+     lineOfSight:canSee(b,p.pos,true),
+     windupSeconds:window.ArenaBotOffense.windup('pikeman'),
+     expectedBodyDamage:window.ArenaWeaponBalance.damage('spear','body')};
+ });
+ notes.checks.push('PIKEMAN close-encounter TEST ONLY: '+
+   JSON.stringify(pikemanFixture));
+ assert.equal(pikemanFixture.role,'pikeman');
+ assert.equal(pikemanFixture.windupSeconds,.40);
+ assert.equal(pikemanFixture.expectedBodyDamage,35);
+ assert.equal(pikemanFixture.target,'player');
+ assert.equal(pikemanFixture.lockedTarget,'player');
+ assert.equal(pikemanFixture.lineOfSight,true);
+ const pikemanSamples=[];
+ let pikemanDamaged=false;
+ for(let i=0;i<9;i++){
+   await page.waitForTimeout(5000);
+   const s=await ffaCombat.locator('body').evaluate((_body,botId)=>{
+     const p=window.eval('player');
+     const b=window.eval('bots').find(bot=>bot.id===botId);
+     const st=window.krunkerArenaStatus();
+     return {hp:p.hp,deaths:p.deaths,
+       hud:document.querySelector('#hud-hp-text')?.textContent,
+       meleeWindup:b?.meleeWindup,attackTimer:b?.attackTimer,
+       targetType:b?.arenaTargetType,phase:st.matchPhase,
+       clock:window.eval('arenaClock')};
+   },pikemanFixture.botId);
+   pikemanSamples.push(s);
+   if(s.hp<pikemanFixture.playerHp||s.deaths>pikemanFixture.deaths){
+     pikemanDamaged=true;break;
+   }
+ }
+ notes.checks.push('PIKEMAN actual Chromium AI windup and health snapshots: '+
+   JSON.stringify(pikemanSamples));
+ await page.screenshot({path:resolve(reportDir,'ffa-pikeman-player-hit.png'),
+   fullPage:true});
+ assert(pikemanDamaged,'Real FFA pikeman did not land genuine melee damage: '+
+   JSON.stringify(pikemanSamples));
+ const pikeFinal=pikemanSamples[pikemanSamples.length-1];
+ assert.equal(pikeFinal.phase,'playing');
+ assert.match(pikeFinal.hud,/^\d+\s*\/\s*\d+$/);
+ assert.equal(Number(pikeFinal.hud.split('/')[0].trim()),
+   Math.ceil(pikeFinal.hp),'Pikeman hit not reflected on HUD');
+ const pikeDamage=pikemanFixture.playerHp-pikeFinal.hp;
+ assert.equal(pikeDamage,35,'Actual pike damage changed from approved body 35');
+ notes.checks.push('PASS_FIXTURE_ASSISTED_REAL_BROWSER_PIKEMAN_HIT: '+
+   'player HP '+pikemanFixture.playerHp+' -> '+pikeFinal.hp+
+   ', pike 0.40s windup and 35 body damage intact');
  // Ranged tests use a browser-session-only controlled close encounter. Keep
  // unmodified weapon spread, 3s bow draw, 15s musket cadence, hitscan/Box3
  // collision, AI windup and HUD update in the native requestAnimationFrame loop.
