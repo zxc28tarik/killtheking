@@ -14,6 +14,7 @@
  const captureAI=globalThis.KTKSiegeCaptureAI||null;
  const defenderAI=globalThis.KTKSiegeDefenderAI||null;
  const rampartAI=globalThis.KTKSiegeRampartAI||null;
+ const sharedArmyCommands=globalThis.KTKSharedG54ArmyCommands||null;
  if(rampartAI&&!defenderAI)throw Error('S4B1 rampart counterfire requires native S4A defense');
  if(defenderAI&&!captureAI)throw Error('S4 blue role defender requires S3C3 real capture');
  if(captureAI&&!ladderAI)throw Error('S3C3 objective assault requires actual S3C2 ladder bridge');
@@ -81,7 +82,7 @@
  const roleVisuals=globalThis.KTKSiegeCharacterVisuals?.create({
    THREE,scene:preview.scene,groups
  })||null;
- let bridge=null;
+ let bridge=null,sharedCommand=null,lastArmyCommandNotice='';
  let nativeHumanCombatListener=null,nativePreStep=null,nativePostStep=null;
  let frames=0,lastSourceDeaths=0;
  function createRealArmy(team,scenario){
@@ -101,6 +102,12 @@
    if(bridge.state.soldiers.length!==140||
       bridge.state.squads.length!==8)
      throw Error('Actual G5.4 units missing from siege S3 candidate');
+   // Same native G5.4 commands as the open-field Army Battle, rather
+   // than a second invented castle squad controller.
+   sharedCommand=sharedArmyCommands?.create({
+     engine:source,bridge,map
+   })||null;
+   lastArmyCommandNotice='';
    for(const g of groups){
      if(g.inst.count!==g.count)throw Error('Instanced troop count changed');
      g.inst.userData.visualOnly=false;
@@ -142,6 +149,23 @@
  }
  function drawMetrics(){
    const view=bridgeApi.snapshot(bridge);
+   if(sharedCommand){
+     const c=sharedArmyCommands.snapshot(sharedCommand);
+     const line=document.getElementById('s3-shared-army-command-line');
+     if(line)line.textContent='G5.4 bölüğü: '+c.commandedRole+
+       ' ('+c.aliveInSquad+' canlı) • emir '+c.order+
+       ' • düzen '+c.formation+' • ateş '+(c.fireMode||'yakın dövüş')+
+       ' • komut '+(c.nativeCommandStatus||'bekliyor')+
+       ' • hedef '+(Number.isFinite(c.targetX)?c.targetX.toFixed(0):'–')+
+       '/'+(Number.isFinite(c.targetZ)?c.targetZ.toFixed(0):'–');
+     const note=document.getElementById('s3-shared-army-command-notice');
+     if(note)note.textContent=lastArmyCommandNotice||'Taktik haritada tıkla: hedef • Shift+tıkla: ara nokta';
+     const ranged=c.commandedRole==='bow'||c.commandedRole==='musket';
+     for(const b of panel.querySelectorAll('[data-g54-fire]'))
+       b.disabled=!ranged||c.aliveInSquad<=0;
+     for(const b of panel.querySelectorAll('[data-g54-action]'))
+       b.disabled=c.aliveInSquad<=0;
+   }
    const ladderCaption=ladderAI
      ?' • Merdivenler: batı '+(view.scenario.lanes.west?'HAZIR':view.scenario.ladders.west.progress.toFixed(1)+'%')+
        ', doğu '+(view.scenario.lanes.east?'HAZIR':view.scenario.ladders.east.progress.toFixed(1)+'%')+
@@ -204,11 +228,86 @@
  createRealArmy(preview.getTeam(),preview.getScenario());
  preview.register({onFrame,onReset,onTeamChange,
    realStructureCombat:!!siegeCombat,realLadderAI:!!ladderAI});
+ // Army (G5.4) is the ONLY order/formation/fire authority in both
+ // field and castle; siege-specific structure orders are a future layer.
+ function sendArmy(action,value,x,z){
+   if(!sharedCommand){
+     if(action!=='order')return;
+     const yes=bridgeApi.command(bridge,value);
+     if(!yes)throw Error('Native G5.4 player squad rejected '+value);
+     drawMetrics();return;
+   }
+   const result=sharedArmyCommands.execute(sharedCommand,{
+     action,value,x,z
+   });
+   lastArmyCommandNotice=result.ok
+     ?'G5.4 komutu kabul etti: '+action+' '+(value??'')+
+       (Number.isFinite(x)?' ('+x.toFixed(0)+', '+z.toFixed(0)+')':'')
+     :'G5.4 reddetti: '+result.reason;
+   drawMetrics();
+ }
  for(const order of ['hold','advance','charge','retreat']){
-   document.getElementById('s3-order-'+order).addEventListener('click',()=>{
-     const okay=bridgeApi.command(bridge,order);
-     if(!okay)throw Error('Native G5.4 player squad rejected legal order: '+order);
-     drawMetrics();
+   document.getElementById('s3-order-'+order).addEventListener('click',
+     ()=>sendArmy('order',order));
+ }
+ if(sharedArmyCommands){
+   const section=document.createElement('section');
+   section.id='s3-shared-army-commands';
+   section.style.cssText='padding:11px;background:#1b3434;border:1px solid #58ad92;color:#f2f0de';
+   section.innerHTML=[
+     '<h3>G5.4 ORTAK ORDU KOMUTLARI • MEYDAN + KALE</h3>',
+     '<p class="help">Komutlar yeni bir kuşatma motoruna değil,',
+     ' doğrudan Meydan Savaşı ile aynı G5.4 komut fonksiyonlarına gider.',
+     ' Sadece kendi gerçek bölüğünü yönetirsin.</p>',
+     '<div id="s3-shared-army-command-line" class="help"></div>',
+     '<h3 style="margin-top:10px">Bölük emirleri</h3>',
+     '<div class="controls">',
+     '<button data-g54-action="follow">Takip et</button>',
+     '<button data-g54-action="flank">Kanattan saldır</button>',
+     '<button data-g54-action="skirmish">Taciz et</button>',
+     '</div>',
+     '<h3 style="margin-top:10px">Formasyonlar</h3>',
+     '<div class="controls">',
+     '<button data-g54-formation="line">Saf</button>',
+     '<button data-g54-formation="column">Yürüyüş kolu</button>',
+     '<button data-g54-formation="square">Kare</button>',
+     '<button data-g54-formation="wedge">Kama</button>',
+     '<button data-g54-formation="loose">Dağınık</button>',
+     '<button data-g54-formation="shield">Kalkan duvarı</button>',
+     '</div>',
+     '<h3 style="margin-top:10px">Menzilli bölük atışları</h3>',
+     '<div class="controls">',
+     '<button data-g54-fire="free">Serbest ateş</button>',
+     '<button data-g54-fire="volley">Toplu ateş</button>',
+     '<button data-g54-fire="hold">Ateşi kes</button>',
+     '</div>',
+     '<h3 style="margin-top:10px">Taktik harita</h3>',
+     '<p class="help">Yukarıdaki kale taktik haritasına tıklayarak',
+     ' bölüğüne hedef ver. Shift + tık ile ara nokta sırala.</p>',
+     '<div id="s3-shared-army-command-notice" role="status"',
+     ' class="help" style="margin-top:6px;color:#e9c68c"></div>'
+   ].join('');
+   panel.querySelector('#s3-army-state').insertAdjacentElement(
+     'beforebegin',section);
+   for(const b of section.querySelectorAll('[data-g54-action]'))
+     b.addEventListener('click',()=>sendArmy('order',b.dataset.g54Action));
+   for(const b of section.querySelectorAll('[data-g54-formation]'))
+     b.addEventListener('click',()=>sendArmy('formation',b.dataset.g54Formation));
+   for(const b of section.querySelectorAll('[data-g54-fire]'))
+     b.addEventListener('click',()=>sendArmy('fire',b.dataset.g54Fire));
+   const tactical=document.getElementById('siege-mini-map');
+   if(!tactical)throw Error('Genuine S2 castle tactical map missing');
+   tactical.style.cursor='crosshair';
+   tactical.title='G5.4: hedefe tıkla • Shift + tık: ara nokta';
+   tactical.addEventListener('click',event=>{
+     const area=tactical.getBoundingClientRect();
+     if(area.width<=0||area.height<=0)return;
+     const bounds=map.spec.bounds;
+     const ux=Math.max(0,Math.min(1,(event.clientX-area.left)/area.width));
+     const uz=Math.max(0,Math.min(1,(event.clientY-area.top)/area.height));
+     const x=bounds.minX+ux*(bounds.maxX-bounds.minX);
+     const z=bounds.maxZ-uz*(bounds.maxZ-bounds.minZ);
+     sendArmy(event.shiftKey?'waypoint':'position',undefined,x,z);
    });
  }
  drawMetrics();
@@ -226,6 +325,8 @@
      onCreate(bridge);
    }
  });
+ globalThis.ktkSiegeArmyCommandStatus=()=>sharedCommand?
+   sharedArmyCommands.snapshot(sharedCommand):null;
  globalThis.ktkSiegeArmyStatus=()=>({
    ...bridgeApi.snapshot(bridge),
    renderedRealSoldierCount:groups.reduce((a,g)=>a+g.units.length,0),
@@ -238,6 +339,10 @@
    sourceEngine:'PINNED_G5_4_TRUE_SIDE_SWAP_SHA_30798785',
    fullSiegeBattleReady:false,
    playerControlsRealArmySquad:true,
+   sharedNativeG54ArmyCommandContract:!!sharedCommand,
+   sharedNativeG54ArmyCommands:sharedCommand?
+     sharedArmyCommands.snapshot(sharedCommand):null,
+   exactOriginalFieldArmyHUDReused:false,
    authenticGateDamageSupported:!!siegeCombat,
    genuineGateStrikes:bridge.structureCombat?
      bridge.structureCombatEngine.snapshot(bridge.structureCombat):null,
