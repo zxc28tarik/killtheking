@@ -117,7 +117,19 @@ try{
  assert.equal(siege.army.sharedNativeG54ArmyCommandContract,true);
  assert.equal(siege.army.sharedG54ArmyHudOverlayActive,true);
  assert.equal(siege.army.sharedG54OriginalFieldShortcutsEnabled,true);
- assert.equal(siege.army.sharedG54NativeShortcutBindings.length,7);
+ assert.equal(siege.army.sharedG54NativeShortcutBindings.length,18);
+ assert.equal(siege.army.fieldG54HudBottomLeftNativeStyle,true);
+ assert.equal(siege.army.fieldG54RealEightSquadRosterRendered,true);
+ assert.equal(siege.army.fieldG54PMapConnected,true);
+ assert.equal(siege.army.fieldSquareUsesVToPreserveCastleSlideC,true);
+ assert.equal(await child().locator('[data-army-roster] > div').count(),8);
+ const hudPos=await child().locator('#ak02-g54-commander-hud').evaluate(el=>{
+   const rect=el.getBoundingClientRect();
+   return {left:rect.left,right:rect.right,bottom:rect.bottom,
+     parentWidth:el.parentElement.getBoundingClientRect().width};
+ });
+ assert(hudPos.left>=0&&hudPos.bottom>0&&hudPos.right<=hudPos.parentWidth+40);
+ report.checks.push('PASS_AK02B_G54_BOTTOM_LEFT_EIGHT_SQUAD_HUD_FIELD_SHORTCUTS');
  assert.equal(await child().locator('#ak02-g54-commander-hud').count(),1);
  assert.match(await child().locator('[data-army-status]').textContent(),/ASKER/);
  report.checks.push('PASS_AK02A_SHARED_FIELD_HOTKEYS_AND_IN_WORLD_ARMY_HUD');

@@ -48,10 +48,16 @@ try{
  assert.equal(a.sharedG54ArmyHudOverlayActive,true);
  assert.equal(a.sharedG54OriginalFieldShortcutsEnabled,true);
  assert.deepEqual(a.sharedG54NativeShortcutBindings,
-   ['KeyJ','KeyK','KeyZ','KeyX','Digit7','Digit8','Digit9']);
+   ['KeyG','KeyJ','KeyK','KeyL','KeyU','KeyY','KeyN',
+    'KeyZ','KeyX','KeyV','KeyB','KeyM','KeyI',
+    'Digit7','Digit8','Digit9','BracketLeft','BracketRight']);
+ assert.equal(a.fieldG54HudBottomLeftNativeStyle,true);
+ assert.equal(a.fieldG54RealEightSquadRosterRendered,true);
+ assert.equal(a.fieldG54PMapConnected,true);
+ assert.equal(a.fieldSquareUsesVToPreserveCastleSlideC,true);
  const hud=page.locator('#ak02-g54-commander-hud');
  assert.equal(await hud.count(),1);
- assert.match(await hud.locator('[data-army-heading]').textContent(),/G5\.4 BÖLÜK/);
+ assert.match(await hud.locator('[data-army-heading]').textContent(),/G5\.4 MEYDAN/);
  const liveCmd=()=>page.evaluate(()=>window.ktkSiegeArmyCommandStatus?.());
  await page.keyboard.press('KeyK');
  assert.equal((await liveCmd()).order,'advance');
@@ -64,6 +70,49 @@ try{
  const keyboardBefore=await army();
  assert.equal(keyboardBefore.sharedG54KeyboardCommandsAccepted>=4,true);
  assert.equal((await hud.locator('[data-army-shortcut-notice]').textContent()).includes('Komut kabul edildi'),true);
+ assert.equal(await hud.locator('[data-army-roster] > div').count(),8);
+ await page.keyboard.press('KeyG');
+ assert.equal((await liveCmd()).order,'follow');
+ await page.keyboard.press('KeyL');
+ assert.equal((await liveCmd()).order,'charge');
+ await page.keyboard.press('KeyU');
+ assert.equal((await liveCmd()).order,'retreat');
+ await page.keyboard.press('KeyY');
+ assert.equal((await liveCmd()).order,'flank');
+ await page.keyboard.press('KeyN');
+ assert.equal((await liveCmd()).order,'skirmish');
+ for(const [key,val] of [['KeyB','wedge'],['KeyM','loose'],['KeyI','shield'],
+   ['KeyV','square']]){
+   await page.keyboard.press(key);
+   assert.equal((await liveCmd()).formation,val);
+ }
+ const spacingBefore=(await liveCmd()).spacingScale;
+ await page.keyboard.press('BracketRight');
+ assert((await liveCmd()).spacingScale>spacingBefore);
+ report.checks.push('PASS_AK02B_FULL_NATIVE_G54_ORDERS_FORMATIONS_BRACKET_SPACING_WITHOUT_C_SLIDE_COLLISION');
+ await page.keyboard.press('KeyP');
+ assert.equal((await army()).fieldG54PMapOpen,true);
+ assert.equal(await page.locator('#ak02-g54-tactical-overlay').isVisible(),true);
+ assert.equal(await page.locator('#ak02-g54-map-canvas').count(),1);
+ const orderBeforeModal=(await liveCmd()).order;
+ await page.keyboard.press('KeyK');
+ assert.equal((await liveCmd()).order,orderBeforeModal,
+   'Fullscreen G5.4 map must isolate FPS/game order keys');
+ const actualCanvas=page.locator('#ak02-g54-map-canvas');
+ const pnt=await page.evaluate(()=>{
+   const c=document.getElementById('ak02-g54-map-canvas');
+   const b=globalThis.KTKSiegemap.spec.bounds;
+   const r=c.getBoundingClientRect();
+   return {x:(-18-b.minX)/(b.maxX-b.minX)*r.width,
+     y:(b.maxZ-(-93))/(b.maxZ-b.minZ)*r.height};
+ });
+ await actualCanvas.click({position:pnt});
+ assert.equal((await liveCmd()).lastResult?.action,'position');
+ assert((await army()).fieldG54NativeMapClicks>=1);
+ await page.keyboard.press('Escape');
+ assert.equal((await army()).fieldG54PMapOpen,false);
+ assert.equal((await army()).fieldG54MapOpens,1);
+ report.checks.push('PASS_AK02B_REAL_P_MAP_G54_SOLDIERS_AND_ACTUAL_NATIVE_DESTINATION_ESC_CLOSE');
  report.checks.push('PASS_AK02A_ORIGINAL_G54_ARMY_KEYBOARD_J_K_X_Z_AND_PERSISTENT_COMBAT_HUD');
  assert.equal(a.sharedNativeG54ArmyCommands.originalG54ArmyCommandFunctions,true);
  assert.equal(a.sharedNativeG54ArmyCommands.visualLayoutFullyShared,false);
