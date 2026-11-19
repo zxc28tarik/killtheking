@@ -108,7 +108,7 @@
  }
  function create({armyEngine,map,objectives,traversal,
      seed=1600,playerType='sword',playerTeam='red',
-     scenario:existingScenario=null}={}){
+     scenario:existingScenario=null,structureCombatEngine=null}={}){
    required(armyEngine,['create','step','snapshot','setWorldObstacles',
      'setPlayerPosition','drainCombatEvents','drainPlayerHits',
      'issueOrder','setDestination'],'G5.4');
@@ -134,11 +134,20 @@
      combatEvents:[],playerHits:[],
      steps:0,positionsChanged:0,clockSeconds:0,
      combatEventsConsumed:0,worldObstacleUpdates:0,
+     structureCombat:null,structureCombatEngine,
+     terrainBlockedMoves:0,
      lastGateOpen:false,logs:[],ended:false
    };
    refreshObstacles(bridge);
    // Zone occupancy is read from real soldiers, NEVER from S1 debug buttons.
    deriveObjectiveEvents(bridge);
+   if(structureCombatEngine){
+     required(structureCombatEngine,['create','afterNativeTick','snapshot'],
+       'S3C1 siege-only structure interaction');
+     bridge.structureCombat=structureCombatEngine.create({
+       state,engine:armyEngine,scenario,map,objectives
+     });
+   }
    return bridge;
  }
  function refreshObstacles(bridge){
@@ -184,6 +193,29 @@
    const before=bridge.state.soldiers.map(u=>({id:u.id,x:u.x,z:u.z}));
    const elapsedBefore=bridge.state.elapsed;
    bridge.armyEngine.step(bridge.state,dt);
+   if(bridge.structureCombat){
+     // The original G5.4 AI is a ground-plane engine. On this separate
+     // S3C1 castle candidate, CLIP the real units' native movement against
+     // actual S1 castle walls; never let AI bodies tunnel through closed gate.
+     // Native source remains SHA-identical. Squad AI route is not yet A*.
+     for(let i=0;i<bridge.state.soldiers.length;i++){
+       const soldier=bridge.state.soldiers[i],old=before[i];
+       if(!soldier.alive)continue;
+       const nativeX=soldier.x,nativeZ=soldier.z;
+       const motion=bridge.traversal.move(
+         {x:old.x,y:0,z:old.z},
+         {x:(nativeX-old.x)/dt,z:(nativeZ-old.z)/dt},
+         dt,bridge.map.spec,bridge.scenario,.65,2.6);
+       if(motion.blockedX||motion.blockedZ)bridge.terrainBlockedMoves++;
+       soldier.x=motion.x;soldier.z=motion.z;
+       if(bridge.traversal.overlaps({x:soldier.x,y:0,z:soldier.z},
+         bridge.map.spec,bridge.scenario,.65,2.6))
+         throw Error('Native G5.4 siege soldier embedded into castle stone');
+     }
+     const gateEvent=bridge.structureCombatEngine.afterNativeTick(
+       bridge.structureCombat);
+     if(gateEvent.opened)refreshObstacles(bridge);
+   }
    const elapsedDelta=bridge.state.elapsed-elapsedBefore;
    if(!validNumber(elapsedDelta)||elapsedDelta<0||elapsedDelta>dt+.081)
      throw Error('Native G5.4 elapsed time desynchronized');
@@ -250,7 +282,10 @@
      scenario:scene,
      worldObstacleCount:b.state.worldObstacles.length,
      armyWorldObstacleUpdates:b.worldObstacleUpdates,
-     realStructureDamageConnected:false,
+     realStructureDamageConnected:!!b.structureCombat,
+     genuineSoldierGateStrikes:b.structureCombat?
+       b.structureCombatEngine.snapshot(b.structureCombat):null,
+     terrainBlockedSoldierMoves:b.terrainBlockedMoves,
      realLadderClimbConnected:false,
      real3dPlayerCombatConnected:false,
      originalArmyAIModified:false,
