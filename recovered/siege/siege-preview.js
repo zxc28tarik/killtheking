@@ -619,6 +619,8 @@
      position:{...explorer.position}
    }),
    getCanvas:()=>renderer.domElement,
+   getCamera:()=>camera,
+   getLocomotion:()=>extensionMovement?extensionMovement.snapshot():null,
    registerMovement({step,reset,snapshot}={}){
      if(extensionMovement||typeof step!=='function'||
        typeof reset!=='function'||typeof snapshot!=='function')
