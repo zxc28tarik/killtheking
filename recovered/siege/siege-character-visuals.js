@@ -4,7 +4,7 @@
  */
 (function(root){
  'use strict';
- const ROLE_TYPES=['sword','spear','bow','musket'];
+ const ROLE_TYPES=['sword','pike','bow','musket'];
  const TONES={
    red:{cloth:0xa9443b,trim:0xdbba70},
    blue:{cloth:0x39769b,trim:0xe3ca83}
@@ -64,12 +64,12 @@
      for(const left of [true,false]){
        const sign=left?-1:1;
        add(left?'leg-left':'leg-right','cylinder',[.17,.135,.82,9],
-         role==='sword'||role==='spear'?'mail':'dark',
+         role==='sword'||role==='pike'?'mail':'dark',
          sign*.23,.56,0,1,1,1,0,0,0,left?'legL':'legR');
        add(left?'boot-left':'boot-right','box',[.30,.29,.48],
          'boot',sign*.23,.19,.12,1,1,1,0,0,0,left?'legL':'legR');
        add(left?'arm-left':'arm-right','cylinder',[.185,.14,.75,9],
-         role==='sword'||role==='spear'?'steel':'cloth',
+         role==='sword'||role==='pike'?'steel':'cloth',
          sign*.59,1.57,0,1,1,1,0,0,sign*.12,left?'armL':'armR');
        add(left?'hand-left':'hand-right','sphere',[.15,8,6],
          'skin',sign*.62,1.13,.06,1,1,1,0,0,0,left?'armL':'armR');
@@ -80,7 +80,7 @@
        add('sword-grip','cylinder',[.052,.052,.27,8],'leather',.72,1.10,.28,1,1,1,-.35,0,-.12);
        add('sword-blade','box',[.13,1.10,.045],'steel',.80,1.75,.43,1,1,1,-.28,0,-.12);
        add('shield','cylinder',[.39,.40,.12,10],'steel',-.80,1.30,.35,1,1,1,Math.PI/2);
-     }else if(role==='spear'){
+     }else if(role==='pike'){
        add('half-helm','cylinder',[.37,.33,.24,10],'steel',0,2.58,0);
        add('helm-band','cylinder',[.41,.41,.10,10],'trim',0,2.48,0);
        add('pike-shaft','cylinder',[.052,.052,3.38,9],'wood',.72,2.03,.25);
