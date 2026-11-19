@@ -110,23 +110,31 @@ test('QA closed castle gate prevents musket damage on REAL living G5.4 blue sold
  assert.equal(b.state.playerKills,0);
  assert.equal(b.state.worldObstacles.length,15);
 });
-test('QA opened gate allows real original soldier HP loss, kill, team/score reconciliation',()=>{
+test('QA opened gate: original G5.4 FIRST BODY is authoritative HP/kill target',()=>{
  const {b,human}=make();
- const target=blueAt(b);
+ blueAt(b);
  gateQA(b);
  player.sync(human,pose());
  player.setWeapon(human,'musket');
- const old=target.hp;
+ // The genuine G5.4 raycast may encounter a closer existing blue soldier
+ // than the soldier manually positioned for this QA scenario. Never fake
+ // a chosen victim or pretend bullets ignore the original first body.
+ const ray=G54.raycastSoldier(b.state,{x:0,y:1.85,z:-49},
+   {x:0,y:0,z:1},100,'red',{firstBody:true,returnFriendly:true});
+ assert(ray&&ray.soldier.team==='blue','No genuine enemy body on open gate shot');
+ const target=ray.soldier;
+ const beforeSquad=b.state.squads[target.squadId].alive;
+ target.hp=40; // QA low-HP target to verify REAL source-authoritative kill event
  const result=player.trigger(human);
  assert.equal(result.status,'hit');
  assert.equal(result.targetId,target.id);
  assert.equal(result.zone,'body');
- assert.equal(result.damage,old);
+ assert.equal(result.damage,40);
  assert.equal(result.killed,true);
  assert.equal(target.hp,0);
  assert.equal(target.alive,false);
  assert.equal(b.state.playerKills,1);
- assert.equal(b.state.squads[target.squadId].alive,14);
+ assert.equal(b.state.squads[target.squadId].alive,beforeSquad-1);
  assert.equal(player.snapshot(human).playerKills,1);
  assert.equal(bridge.snapshot(b).genuineAlive.blue,69);
  assert.equal(b.state.combatEvents.at(-1).source,'player');
