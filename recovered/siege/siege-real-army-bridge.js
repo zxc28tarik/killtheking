@@ -54,7 +54,10 @@
    roster(state);
    const spec=map.spec,summary={red:0,blue:0};
    for(const squad of state.squads){
-     const where=spec.spawns[squad.team]?.[squad.type];
+     // Authored siege map uses archer; authentic G5.4 engine names it bow.
+     // Translate only the placement key, never the native combat type.
+     const mapRole=squad.type==='bow'?'archer':squad.type;
+     const where=spec.spawns[squad.team]?.[mapRole];
      if(!where)throw Error('Missing siege map real G5.4 deployment');
      const members=state.soldiers.filter(u=>u.squadId===squad.id);
      if(members.length!==squad.startCount)
