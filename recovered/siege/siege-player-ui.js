@@ -19,7 +19,7 @@
  panel.style.cssText='padding:13px;background:#182e2c;border:2px solid #7cbdba;color:#e2f5ea';
  panel.innerHTML=[
   '<h3 style="color:#94e7ca;margin:0 0 8px">S3D1 • GERÇEK OYUNCU SAVAŞI (ADAY)</h3>',
-  '<p style="font-size:11px;line-height:1.55">FPS/TPS seç, WASD ile yürü, kamerayı sürükle.',
+  '<p style="font-size:11px;line-height:1.55">FPS/TPS seç, WASD ile yürü, Space ile zıpla, Shift/C ile kay, kamerayı sürükle.',
   ' Fareyle veya F ile vur; yay için basılı tutup bırak.',
   ' Silahlar ve hasar onaylı silah tablosundan, oyuncu HP ve gerçek asker',
   ' ölümleri orijinal G5.4 motorundan gelir. <b>Sur üstünde vuruş ve',
@@ -75,7 +75,7 @@
        weapons[result.weapon]+' • gerçek '+result.zone+' vuruşu • '+
        result.damage.toFixed(1)+' hasar'+(result.killed?' • HEDEF ÖLDÜ':''):
        'Son eylem: '+result.status;
-   }else status.textContent='Hazır • Sol tık/F: saldır • E: merdiven • WASD: yürü';
+   }else status.textContent='Hazır • Sol tık/F: saldır • E: merdiven • Space: zıpla • Shift/C: kay';
    for(const key of Object.keys(weapons)){
      const button=document.getElementById('s3d-'+key);
      button.style.borderColor=s.weapon===key?'#88ddba':'#ae8954';
