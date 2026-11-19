@@ -83,6 +83,7 @@
    THREE,scene:preview.scene,groups
  })||null;
  let bridge=null,sharedCommand=null,lastArmyCommandNotice='';
+ let commandHUD=null,shortcutsAccepted=0;
  let nativeHumanCombatListener=null,nativePreStep=null,nativePostStep=null;
  let frames=0,lastSourceDeaths=0;
  function createRealArmy(team,scenario){
@@ -108,6 +109,7 @@
      engine:source,bridge,map
    })||null;
    lastArmyCommandNotice='';
+   if(commandHUD)drawSharedCommandHUD();
    for(const g of groups){
      if(g.inst.count!==g.count)throw Error('Instanced troop count changed');
      g.inst.userData.visualOnly=false;
@@ -151,6 +153,7 @@
    const view=bridgeApi.snapshot(bridge);
    if(sharedCommand){
      const c=sharedArmyCommands.snapshot(sharedCommand);
+     drawSharedCommandHUD(c);
      const line=document.getElementById('s3-shared-army-command-line');
      if(line)line.textContent='G5.4 bölüğü: '+c.commandedRole+
        ' ('+c.aliveInSquad+' canlı) • emir '+c.order+
@@ -161,8 +164,14 @@
      const note=document.getElementById('s3-shared-army-command-notice');
      if(note)note.textContent=lastArmyCommandNotice||'Taktik haritada tıkla: hedef • Shift+tıkla: ara nokta';
      const ranged=c.commandedRole==='bow'||c.commandedRole==='musket';
-     for(const b of panel.querySelectorAll('[data-g54-fire]'))
+     for(const b of panel.querySelectorAll('[data-g54-fire]')){
        b.disabled=!ranged||c.aliveInSquad<=0;
+       b.setAttribute('aria-pressed',String(c.fireMode===b.dataset.g54Fire));
+     }
+     for(const b of panel.querySelectorAll('[data-g54-formation]'))
+       b.setAttribute('aria-pressed',String(c.formation===b.dataset.g54Formation));
+     for(const b of panel.querySelectorAll('[data-g54-action]'))
+       b.setAttribute('aria-pressed',String(c.order===b.dataset.g54Action));
      for(const b of panel.querySelectorAll('[data-g54-action]'))
        b.disabled=c.aliveInSquad<=0;
    }
@@ -230,6 +239,37 @@
    realStructureCombat:!!siegeCombat,realLadderAI:!!ladderAI});
  // Army (G5.4) is the ONLY order/formation/fire authority in both
  // field and castle; siege-specific structure orders are a future layer.
+ function drawSharedCommandHUD(state=null){
+   if(!commandHUD||!sharedCommand)return;
+   const c=state||sharedArmyCommands.snapshot(sharedCommand);
+   const roles={bow:'OKÇU',musket:'TÜFEKÇİ',pike:'MIZRAKÇI',sword:'KILIÇLI'};
+   const status=commandHUD.querySelector('[data-army-status]');
+   const header=commandHUD.querySelector('[data-army-heading]');
+   const notice=commandHUD.querySelector('[data-army-shortcut-notice]');
+   header.textContent='G5.4 BÖLÜK KOMUTANI • '+bridge.playerTeam.toUpperCase();
+   status.textContent=(roles[c.commandedRole]||c.commandedRole)+
+     ' · '+c.aliveInSquad+' ASKER · '+(source.ORDERS[c.order]||c.order)+
+     ' · '+(source.FORMATIONS[c.formation]?.name||c.formation)+
+     (c.fireMode?' · '+(source.FIRE_MODES[c.fireMode]||c.fireMode):'');
+   const latest=c.lastResult;
+   notice.textContent=latest
+     ?(latest.ok?'✓ ':'× ')+
+       (latest.ok?'Komut kabul edildi':'Komut reddedildi')+
+       ' · '+latest.action+
+       (latest.reason?' · '+latest.reason:'')
+     :'J: mevzi · K: ileri · Z: saf · X: kol · 7/8/9: ateş';
+   for(const [key,expected]of [
+     ['KeyJ','hold'],['KeyK','advance'],['KeyZ','line'],
+     ['KeyX','column'],['Digit7','free'],['Digit8','volley'],
+     ['Digit9','hold']]){
+     const el=commandHUD.querySelector('[data-army-hotkey="'+key+'"]');
+     if(!el)continue;
+     const current=['KeyJ','KeyK'].includes(key)?c.order:
+       ['KeyZ','KeyX'].includes(key)?c.formation:c.fireMode;
+     el.style.color=current===expected?'#ffe2a0':'#dbd8c8';
+     el.style.borderColor=current===expected?'#e9b657':'#52676a';
+   }
+ }
  function sendArmy(action,value,x,z){
    if(!sharedCommand){
      if(action!=='order')return;
@@ -251,6 +291,33 @@
      ()=>sendArmy('order',order));
  }
  if(sharedArmyCommands){
+   const scene=document.getElementById('scene');
+   if(!scene)throw Error('AK-02a shared commander HUD requires active castle canvas');
+   commandHUD=document.createElement('section');
+   commandHUD.id='ak02-g54-commander-hud';
+   commandHUD.setAttribute('aria-label','Ordu Savaşı ile ortak G5.4 komuta HUD');
+   commandHUD.style.cssText='position:absolute;right:12px;top:10px;max-width:min(390px,58vw);z-index:4;background:#111e24e8;border:1px solid #af8951;border-radius:8px;padding:9px 12px;box-shadow:0 6px 24px #000a;pointer-events:none;color:#f2ebd5;font:600 12px/1.45 system-ui';
+   commandHUD.innerHTML=[
+     '<div data-army-heading style="color:#f6ca82;font-size:12px;letter-spacing:.06em"></div>',
+     '<div data-army-status style="font-size:11px;margin:5px 0"></div>',
+     '<div style="display:flex;gap:4px;flex-wrap:wrap">',
+     ...[
+       ['J','KeyJ','Mevzi'],['K','KeyK','İleri'],
+       ['Z','KeyZ','Saf'],['X','KeyX','Kol'],
+       ['7','Digit7','Serbest'],['8','Digit8','Toplu'],
+       ['9','Digit9','Dur']
+     ].map(x=>'<span data-army-hotkey="'+x[1]+'" style="border:1px solid #52676a;border-radius:4px;padding:2px 5px;font-size:10px">'+x[0]+' '+x[2]+'</span>'),
+     '</div>',
+     '<div data-army-shortcut-notice role="status" style="font-size:10px;color:#e1ceaa;margin-top:5px"></div>'
+   ].join('');
+   scene.appendChild(commandHUD);
+   globalThis.addEventListener('keydown',event=>{
+     const command=sharedArmyCommands.shortcut(event);
+     if(!command||!sharedCommand)return;
+     event.preventDefault();
+     shortcutsAccepted++;
+     sendArmy(command.action,command.value);
+   });
    const section=document.createElement('section');
    section.id='s3-shared-army-commands';
    section.style.cssText='padding:11px;background:#1b3434;border:1px solid #58ad92;color:#f2f0de';
@@ -295,6 +362,28 @@
      b.addEventListener('click',()=>sendArmy('formation',b.dataset.g54Formation));
    for(const b of section.querySelectorAll('[data-g54-fire]'))
      b.addEventListener('click',()=>sendArmy('fire',b.dataset.g54Fire));
+   // Compact game HUD and panel are simultaneous views of the
+   // EXACT SAME original native player squad and command revision.
+   const fieldKeys={hold:'J',advance:'K',line:'Z',
+     column:'X',free:'7',volley:'8'};
+   for(const b of section.querySelectorAll('[data-g54-action]')){
+     const key=fieldKeys[b.dataset.g54Action];
+     if(key)b.textContent+=' ['+key+']';
+   }
+   for(const b of section.querySelectorAll('[data-g54-formation]')){
+     const key=fieldKeys[b.dataset.g54Formation];
+     if(key)b.textContent+=' ['+key+']';
+   }
+   for(const b of section.querySelectorAll('[data-g54-fire]')){
+     const key=fieldKeys[b.dataset.g54Fire]||
+       (b.dataset.g54Fire==='hold'?'9':null);
+     if(key)b.textContent+=' ['+key+']';
+   }
+   const oldHold=document.getElementById('s3-order-hold');
+   const oldAdvance=document.getElementById('s3-order-advance');
+   if(oldHold)oldHold.textContent='Bölüğüm: mevzi tut [J]';
+   if(oldAdvance)oldAdvance.textContent='Bölüğüm: ilerle [K]';
+   drawSharedCommandHUD();
    const tactical=document.getElementById('siege-mini-map');
    if(!tactical)throw Error('Genuine S2 castle tactical map missing');
    tactical.style.cursor='crosshair';
@@ -343,6 +432,11 @@
    sharedNativeG54ArmyCommands:sharedCommand?
      sharedArmyCommands.snapshot(sharedCommand):null,
    exactOriginalFieldArmyHUDReused:false,
+   sharedG54ArmyHudOverlayActive:!!commandHUD,
+   sharedG54OriginalFieldShortcutsEnabled:!!sharedCommand,
+   sharedG54NativeShortcutBindings:sharedCommand?
+     Object.keys(sharedArmyCommands.FIELD_KEYS):[],
+   sharedG54KeyboardCommandsAccepted:shortcutsAccepted,
    authenticGateDamageSupported:!!siegeCombat,
    genuineGateStrikes:bridge.structureCombat?
      bridge.structureCombatEngine.snapshot(bridge.structureCombat):null,
