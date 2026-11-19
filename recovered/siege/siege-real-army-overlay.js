@@ -10,6 +10,8 @@
  const bridgeApi=globalThis.KTKSiegeRealArmyBridge;
  const siegeCombat=globalThis.KTKSiegeStructureCombat||null;
  const assaultNav=globalThis.KTKSiegeAssaultNavigation||null;
+ const ladderAI=globalThis.KTKSiegeLadderAI||null;
+ if(ladderAI&&!siegeCombat)throw Error('S3C2 actual ladders require real gate combat');
  if(siegeCombat&&!assaultNav)throw Error('S3C siege assault path adapter missing');
  const map=globalThis.KTKSiegemap;
  const objectives=globalThis.KTKSiegeObjectives;
@@ -47,7 +49,11 @@
    panel.querySelector('h3').textContent='S3C1 • GERÇEK ASKER KAPI SALDIRISI';
    panel.querySelector('p').textContent='140 gerçek G5.4 asker. Yalnız kapının dış yüzüne ulaşan kırmızı kılıçlı ve mızraklılar, özgün menzil/hasar/yeniden saldırma süreleriyle kapıya vurur. Kapı hasarı için DEBUG tuşları kapalı. Kırmızı otomatik yakın dövüş birlikleri, yeni kuşatma AI yolu ile kapı önüne kendi yürüyüş hızında gelir. Gerçek asker merdiven AI ve tam kuşatma zaferi HENÜZ YOK.';
  }
- el.insertBefore(panel,el.firstChild);
+ if(ladderAI){
+   panel.querySelector('h3').textContent='S3C2 • GERÇEK ASKER MERDİVENLERİ';
+   panel.querySelector('p').textContent='Kırmızı G5.4 AI mızraklıları iki yan merdivene gerçek hızlarıyla ulaşır, orada gerçek asker varlığından inşa ilerlemesi üretir, suru 3B yükselip aşar ve iç avluya iner. Asker kimlikleri, HP ve özgün motor korunur; G5.4 gerçek 3B atış fiziği ve bütün kuşatma kazanma döngüsü henüz tamamlanmadı. Sahte merdiven/kapı/zafer düğmeleri devre dışı.';
+ }
+  el.insertBefore(panel,el.firstChild);
  const dummy=new THREE.Object3D();
  const groups=preview.tokens.map(inst=>({
    inst,team:inst.userData.team,
@@ -61,7 +67,8 @@
      armyEngine:source,map,objectives,traversal,
      scenario,playerTeam:team,playerType:'sword',seed:1600,
      structureCombatEngine:siegeCombat,
-     assaultNavigationEngine:siegeCombat?assaultNav:null
+     assaultNavigationEngine:siegeCombat?assaultNav:null,
+     ladderAIEngine:ladderAI
    });
    if(bridge.state.soldiers.length!==140||
       bridge.state.squads.length!==8)
@@ -87,7 +94,7 @@
        if(!Number.isFinite(u.x)||!Number.isFinite(u.z)||
           !Number.isFinite(u.facing))
          throw Error('Nonfinite native G5.4 soldier pose: '+u.id);
-       dummy.position.set(u.x,u.alive?1.2:-3,u.z);
+       dummy.position.set(u.x,u.alive?1.2+(u.siegeY||0):-3,u.z);
        dummy.rotation.set(0,u.facing,0);
        dummy.scale.set(u.alive?1:.001,u.alive?1:.001,u.alive?1:.001);
        dummy.updateMatrix();
@@ -100,6 +107,12 @@
  }
  function drawMetrics(){
    const view=bridgeApi.snapshot(bridge);
+   const ladderCaption=ladderAI
+     ?' • Merdivenler: batı '+(view.scenario.lanes.west?'HAZIR':view.scenario.ladders.west.progress.toFixed(1)+'%')+
+       ', doğu '+(view.scenario.lanes.east?'HAZIR':view.scenario.ladders.east.progress.toFixed(1)+'%')+
+       ' • Tamamlanan gerçek 3B tırmanış: '+
+       view.genuineSoldierLadders.distinctNativeSoldiersFinished
+     :'';
    const gateCaption=siegeCombat
      ?' • Gerçek asker kapı vuruşları: '+view.genuineSoldierGateStrikes.strikes+
        ' / kalan kapı HP: '+view.scenario.gate.hp
@@ -112,7 +125,7 @@
      'Oyuncu: '+bridge.playerTeam.toUpperCase()+' / Kılıçlı • '+
      'G5.4 süre: '+view.realArmySeconds.toFixed(1)+'s • '+
      'Yer değiştiren gerçek asker-tikleri: '+view.genuinelyMovedSoldierTicks+
-     gateCaption;
+     gateCaption+ladderCaption;
  }
  function onFrame(dt){
    // Native G5.4 0.08s substeps are used, no handcrafted soldiers/damage.
@@ -131,7 +144,7 @@
  }
  createRealArmy(preview.getTeam(),preview.getScenario());
  preview.register({onFrame,onReset,onTeamChange,
-   realStructureCombat:!!siegeCombat});
+   realStructureCombat:!!siegeCombat,realLadderAI:!!ladderAI});
  for(const order of ['hold','advance','charge','retreat']){
    document.getElementById('s3-order-'+order).addEventListener('click',()=>{
      const okay=bridgeApi.command(bridge,order);
@@ -155,6 +168,7 @@
    genuineGateStrikes:bridge.structureCombat?
      bridge.structureCombatEngine.snapshot(bridge.structureCombat):null,
    nativeCastleTerrainCollisionActive:!!siegeCombat,
+   real3DLadderSoldierPositions:!!ladderAI,
    siegeRealSoldierAssaultRouting:bridge.assaultNavigation?
      bridge.assaultNavigationEngine.snapshot(bridge.assaultNavigation):null,
    independentFFAUnmodified:true
