@@ -1,6 +1,6 @@
-# Kill the King — Kuşatma Kalesi S1/S2/S3
+# Kill the King — Kuşatma Kalesi S1/S2/S3/S3C1
 
-**Durum: S1 senaryo motoru, S2 FPS/TPS dolaşılabilirlik önizlemesi ve S3 G5.4'ün gerçek 140 askeriyle 3B kale hareket/komuta entegrasyon adayı var. Tam gerçek kuşatma AI'sı, kapı saldırısı, merdiven, asıl oyun oyuncu silahları ve yayına hazır sürüm HENÜZ TAMAMLANMADI.** Bu klasör yeni **tek bir kuşatma senaryosu** için ayrılmıştır. FFA/TDM, özgün kale, çimenlik meydan ve G5.4 ordu modları bu aşamada değiştirilmedi.
+**Durum: S1 hedef motoru, S2 dolaşılabilirlik, S3 gerçek G5.4 140 asker ve S3C1 doğal gerçek asker kapı saldırısı var. **Kapı gerçek askerlerle yıkılabiliyor**, fakat merdiven AI, avlu/iç kale kazanma döngüsü, ana FPS oyuncu silahları ve yayın hâlâ AÇIK.** Bu klasör yeni **tek bir kuşatma senaryosu** için ayrılmıştır. FFA/TDM, özgün kale, çimenlik meydan ve G5.4 ordu modları bu aşamada değiştirilmedi.
 
 ## Tasarım ve plan
 
@@ -56,6 +56,23 @@ node recovered/siege/build_siege_real_army_candidate.mjs recovered/siege/dist/Ki
 node --test recovered/siege/test_siege_real_army_bridge.mjs
 ```
 
+## S3C1 — Gerçek doğal 140 askerle kapı kırma (ayrı HTML adayı)
+
+- `siege-structure-combat.js`: yalnız **yaşayan kırmızı kılıçlı ve mızraklı asker**, kaynak G5.4 menzil/hasar/reload doğrulandığında kapının **dış yüzüne** vuruş yapar. Özgün G5.4'ün bina saldırı API'si yoktur; bu yeni kuşatma adapter'ıdır.
+- `siege-assault-navigation.js`: kırmızı yapay zekâ yakın dövüş birliklerini **gerçek asker yürüme hızında** kapının önündeki gruplu mevzilere götürür; kullanıcının yönettiği bölüğün emirlerini değiştirmez.
+- `siege-real-army-bridge.js`: askerleri gerçek kale taş engellerinden geçirilmeyecek şekilde sınırlar, **kapı kırılınca orijinal G5.4 engel 15→14** olur. Fake kapı hasarı ve fake avlu zaferi düğmeleri bu modda kapalıdır.
+- [**S3C1 #44504343310 — SUCCESS**](https://github.com/zxc28tarik/killtheking/actions/runs/44504343310): 15 yeni + 13 S3 + 39 S1/S2 = **67/67 PASS**. Native gerçek G5.4 **32 saniye yardımsız** simülasyonda **35 gerçek asker vuruşu** ile kapı **600→0 HP** oldu. Chromium/SwiftShader gerçek 3B açılış/engelleme de PASS; 32 saniyelik tam kuşatma, browser testinde değil Node gerçek motor testindedir.
+- [**S3C1 indirilebilir ayrı 3B HTML — artifact #14518232667**](https://github.com/zxc28tarik/killtheking/actions/runs/44504343310/artifacts/14518232667).
+- [S3C1 Chromium ekran görüntüleri ve JSON — artifact #14518473421](https://github.com/zxc28tarik/killtheking/actions/runs/44504343310/artifacts/14518473421).
+- [**S3C1 teknik ve kanıt dokümanı**](../../docs/SIEGE_CASTLE_S3C1_GATE_ASSAULT_TR.md).
+
+```bash
+node recovered/siege/build_siege_structure_candidate.mjs recovered/siege/dist/KillTheKing_Kusatma_S3C1_Gercek_Kapi_Saldirisi_Aday.html
+node --test recovered/siege/test_siege_structure_combat.mjs
+```
+
+**Hâlâ açık:** doğal asker merdiveni/sur üstü çıkışı, gerçek avlu/iç kale zaferi, ana oyunun silahlı FPS oyuncusu, 30 dk stres ve fiziksel GPU kabulü. `main` değiştirilmedi; [PR #50](https://github.com/zxc28tarik/killtheking/pull/50) taslak.
+
 ## Geliştirici komutları
 
 ```bash
@@ -65,6 +82,6 @@ node recovered/siege/build_siege_preview.mjs recovered/siege/dist/KillTheKing_Ku
 
 Üretilen tek HTML'yi Chrome/Edge'de yerel aç. Harita kamerasında sürükleyip yakınlaştır; **FPS/TPS seçerek WASD ile yürü, E ile açık merdivene çık**, saldıran/savunan tarafı seç. Sağdaki **QA konumu** düğmeleri yalnız çarpışma denemesi için oyuncuyu yerleştirir. “Test olayları” düğmeleri S1 senaryo kurallarını sınar; gerçek savaş AI'sını gözlemlemek için kullanılmaz.
 
-## Sıradaki adım: S2 üretim tamamlama ve S3
+## Sıradaki adım: S3C2 merdiven ve gerçek asker sur geçişi
 
-Önizlemedeki gerçek kapı/merdiven fizik sözleşmesini **ana oyun FPS/TPS karakterine**, sur üstü platform/ayak basma animasyonuna ve asker A* navigasyonuna taşı. Ardından **S3'te** gerçek G5.4 `ArenaArmyBattle` olay/asker/komuta bağlantısını yap; **gerçek asker hasarını** kapıya ve gerçek asker işgalini avlu/iç kale hedefine bağla. Kullanıcı onayı olmadan yeni denge veya `main` değişimi yok.
+Artık S3C1 doğal asker kapı kırma testi PASS. Bundan sonra gerçek canlı askerlerin iki yan **merdiveni kurup tırmandığı**, surdan iç avluya indiği, gerçek işgal ve savunma sonucu ürettiği **S3C2/S3C3** aşamalarını kodla. Daha sonra S3D'de ana oyun FPS silahlı oyuncusunu bağla. Önizleme FPS avatarını tam oyun oyuncusu sayma. Kullanıcı onayı olmadan yeni denge veya `main` değişimi yok.
