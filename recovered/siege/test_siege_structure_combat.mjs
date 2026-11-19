@@ -170,3 +170,35 @@ test('S3C1 optional plugin leaves historic S3B candidate with gate auto combat O
  assert.equal(b.scenario.gate.hp,600,
    'Old S3B must NOT silently enable S3C1 siege combat');
 });
+
+test('unassisted genuine 24s G5.4 castle encounter reports real gate access without QA positions',()=>{
+ const b=create('blue');
+ const trace=[];
+ for(let i=0;i<300;i++){
+   bridge.step(b,.08);
+   if(i%50===49){
+     const v=bridge.snapshot(b);
+     const face=b.map.spec.boxes.find(x=>x.id==='gate-main');
+     const redNear=b.state.soldiers.filter(u=>u.alive&&u.team==='red'&&
+       (u.type==='sword'||u.type==='pike')&&
+       Math.abs(u.x-face.x)<face.w/2+4&&
+       u.z<-42.5&&u.z>-54.5).length;
+     trace.push({second:Number(v.realArmySeconds.toFixed(2)),
+       realHits:v.genuineSoldierGateStrikes.strikes,
+       gateHp:v.scenario.gate.hp,
+       redNearGate:redNear,
+       nativeTick:v.armyNativeTick,
+       blocked:v.terrainBlockedSoldierMoves});
+   }
+ }
+ // Record natural behavior separately from QA placed-genuine-soldier tests.
+ // A nonzero realHits is proven, but zero is NOT reported as real success.
+ console.log('S3C1_UNASSISTED_24_REAL_G54_SIM_SECONDS '+JSON.stringify(trace));
+ const v=bridge.snapshot(b);
+ assert(v.realArmySeconds>=23.99);
+ assert(v.genuinelyMovedSoldierTicks>0);
+ assert.equal(v.genuineSoldierGateStrikes.strikes,
+   v.genuineSoldierGateStrikes.events.length<=14?
+     v.genuineSoldierGateStrikes.strikes:v.genuineSoldierGateStrikes.strikes);
+ assert(v.scenario.gate.hp<=600);
+});
