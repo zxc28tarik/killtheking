@@ -46,11 +46,14 @@
      throw Error('Refuse incompatible, unapproved weapon cadence');
  }
  function create({bridge,engine,balance,ballistics=null,session=null,
+     inputContract=null,
      sessionAPI=null}={}){
    if(ballistics&&['musket','launch','advance','status'].some(
      k=>typeof ballistics[k]!=='function'))
      throw Error('S3D2c requires a complete native-source 3D siege solver');
    validateBridge(bridge,engine,balance);
+   if(inputContract&&typeof inputContract.aimedDirection!=='function')
+     throw Error('AK-03b shared G5.4 camera/weapon aim invalid');
    if(session&&(!sessionAPI?.sync||!sessionAPI?.canMove||
        !sessionAPI?.snapshot||session.state!==bridge.state||
        session.engine!==engine||session.playerTeam!==bridge.playerTeam||
@@ -58,7 +61,7 @@
      throw Error('AK-03a player combat session does not own genuine G5.4 soldier state');
    return {
      kind:'S3D1_G54_PLAYER_HP_AND_GROUNDED_WEAPONS',
-     bridge,engine,balance,ballistics,session,sessionAPI,weapon:'sword',
+     bridge,engine,balance,ballistics,session,sessionAPI,inputContract,weapon:'sword',
      projectileEvents:[],lastProjectileTick:bridge.state.elapsed,
      lastAttack:{sword:-Infinity,spear:-Infinity,bow:-Infinity,musket:-Infinity},
      drawStarted:null,
@@ -145,7 +148,12 @@
    c.drawStarted=now;
    return pushEvent(c,{status:'drawing',weapon:'bow',hit:false});
  }
- function direction(p,weapon){
+ function direction(p,weapon,inputContract=null){
+   if(inputContract)
+     return inputContract.aimedDirection({
+       yaw:p.yaw,pitch:p.pitch,
+       melee:weapon==='sword'||weapon==='spear'
+     });
    const y=weapon==='sword'||weapon==='spear'?0:
      Math.tan(clamp(p.pitch,-.7,.7)*.58);
    const length=Math.hypot(1,y);
@@ -179,7 +187,7 @@
      y:c.ballistics?pose.position.y+(pose.sliding?1.5:2.35):1.85,
      z:pose.position.z
    };
-   const aim=direction(pose,weapon);
+   const aim=direction(pose,weapon,c.inputContract);
    const range=TACTICAL_RANGES[weapon];
    if(c.ballistics&&weapon==='bow'){
      const existingArrows=c.ballistics.status().activePlayerArrows;
@@ -352,6 +360,8 @@
      shooterAtElevatedWallSupported:false,
      authenticNativeSoldierDamageOnly:true,
      sharedFieldSiegeSessionContract:!!c.session,
+     sharedFieldSiegePlayerInputContract:!!c.inputContract,
+     playerCameraAndWeaponAimUseSameDirection:!!c.inputContract,
      nativeBattleSession:c.session?
        c.sessionAPI.snapshot(c.session):null,
      playerCanMove:canMove(c),
