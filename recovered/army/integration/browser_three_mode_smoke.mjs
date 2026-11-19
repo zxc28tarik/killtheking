@@ -113,6 +113,14 @@ try{
  });
  assert.equal(siege.army.authentic140Soldiers,140);
  assert.equal(siege.army.realSquads.length,8);
+ // S3V1: native G5.4 soldier IDs must drive the visible, role-specific
+ // 1600s meshes. Static S1 cylinders must not be the rendered army.
+ assert.equal(siege.army.roleCharacterVisuals?.renderedActorSlots,140);
+ assert.equal(siege.army.roleCharacterVisuals?.roleModels,4);
+ assert(siege.army.roleCharacterVisuals.instancedPartDrawCalls>=100);
+ assert.equal(siege.army.roleCharacterVisuals.nativePhysicsOrDamageChanged,false);
+ report.checks.push('PASS_THIRD_SIEGE_140_NATIVE_ROLE_MESHES_INSTANCED: '+
+  JSON.stringify(siege.army.roleCharacterVisuals));
  assert.equal(siege.player.playerHealth,100);
  assert.equal(siege.army.realObjectiveCaptureConnected,true);
  assert.equal(siege.player.actualG54NativeDamageAndPlayerHealth,true);
