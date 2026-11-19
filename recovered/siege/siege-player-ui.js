@@ -47,6 +47,15 @@
  if(!canvas||typeof canvas.addEventListener!=='function')
    throw Error('Native S3D1 cannot access actual Three.js scene controls');
  const weapons={sword:'Kılıç',spear:'Mızrak',bow:'Yay',musket:'Tüfek'};
+ const feedbackApi=globalThis.KTKSiegeWeaponFeedback;
+ const feedback=feedbackApi?.create({
+   THREE:globalThis.THREE,scene:preview.scene,
+   camera:preview.getCamera(),sceneRoot:document.getElementById('scene')
+ })||null;
+ let visualTime=performance.now();
+ function nativeFeedback(result){
+   if(feedback&&result?.status)feedback.consume(result);
+ }
  let holdingBow=false,lastVisible=null;
  function draw(){
    if(!combat)return;
@@ -87,6 +96,7 @@
  function selected(name){
    if(!combat)return;
    api.setWeapon(combat,name);
+   if(feedback)feedback.select(name);
    holdingBow=false;lastVisible=null;
    draw();
  }
@@ -105,12 +115,14 @@
      lastVisible=api.trigger(combat);
      holdingBow=false;
    }
+   nativeFeedback(lastVisible);
    draw();
  }
  function end(){
    if(!combat||!holdingBow)return;
    api.sync(combat,preview.getPlayerPose());
    lastVisible=api.releaseBow(combat);
+   nativeFeedback(lastVisible);
    holdingBow=false;draw();
  }
  canvas.addEventListener('pointerdown',e=>{
@@ -155,6 +167,7 @@
  function onCreate(b){
    combat=api.create({bridge:b,engine:G54,balance:W});
    holdingBow=false;lastVisible=null;
+   if(feedback)feedback.reset('sword');
    api.sync(combat,preview.getPlayerPose());
    draw();
  }
@@ -165,11 +178,17 @@
  function onAfterFrame(){
    if(!combat)return;
    api.receive(combat);
-   cross.style.display=api.snapshot(combat).view==='orbit'?'none':'block';
+   const genuine=api.snapshot(combat);
+   const clock=performance.now();
+   if(feedback)feedback.update(Math.min(.05,Math.max(0,(clock-visualTime)/1000)),
+     genuine,{locomotion:preview.getLocomotion()});
+   visualTime=clock;
+   cross.style.display=genuine.view==='orbit'?'none':'block';
    if(frames++%6===0)draw();
  }
  native.registerPlayerCombat({onCreate,onBeforeFrame,onAfterFrame});
  preview.registerCombat({canMove:()=>!!combat&&api.canMove(combat)});
  draw();
  globalThis.ktkSiegePlayerCombatStatus=()=>api.snapshot(combat);
+ globalThis.ktkSiegeWeaponVisualStatus=()=>feedback?.status()||null;
 })();
