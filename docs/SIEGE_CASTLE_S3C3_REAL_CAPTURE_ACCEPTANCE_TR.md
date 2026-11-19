@@ -15,7 +15,7 @@
 
 ## KANIT: 140 gerçek askerle doğal S3C3 saldırgan zaferi
 
-Kaynak: [GitHub Actions S3C3 #44511218460 — SUCCESS](https://github.com/zxc28tarik/killtheking/actions/runs/44511218460); bu koşudaki doğal kuşatma izi `S3C3_NATURAL_240_G54_REAL_MATCH`.
+Kaynak: [GitHub Actions S3C3 #44511500074 — SUCCESS](https://github.com/zxc28tarik/killtheking/actions/runs/44511500074); bu koşudaki doğal kuşatma izi `S3C3_NATURAL_240_G54_REAL_MATCH`.
 
 - **Başlangıç:** 70 kırmızı saldırgan, 70 mavi savunan; gerçek G5.4 `ArenaArmyBattle.create`, gerçek `step(.08)`, `seed=1600`, komuta edilen taraf mavi. Bütün askerler özgün kuşatma başlangıç konumlarından doğar. Hiçbir askere QA ışınlaması, `GATE_HIT` DEBUG tuşu, sahte birim öldürme veya `ZONE_PRESENCE` müdahalesi yapılmadı.
 - İlk 24 saniyede avlu **22 kırmızı / 18 mavi** ile gerçek çekişmede kaldı. **Ele geçirme ilerlemesi 0:** savunucu varlığına rağmen haksız zafer verilmedi.
@@ -29,9 +29,9 @@ Kaynak: [GitHub Actions S3C3 #44511218460 — SUCCESS](https://github.com/zxc28t
 ### Test ve gerçek Chromium 3B kanıtı
 
 - **97/97 otomatik test PASS** = 15 S3C3 (gerçek eşik, rota, çekişme, doğal saldırgan zaferi ve kısa süreli savunma) + 15 S3C2 + 15 S3C1 + 13 S3A + 39 S1/S2.
-- [**Başarılı gerçek Chromium/SwiftShader #44511218460**](https://github.com/zxc28tarik/killtheking/actions/runs/44511218460): 140 özgün asker/8 bölük ve üç boyutlu sahne, canlı HUD faz ve gerçek varlık sayaçları, 8 sahte DEBUG tuşunun kilitli olması ve gerçek mavi/kırmızı oyuncu komuta seçimi doğrulandı. Native dört tikte 216 hareketli asker adımı. `pageErrors=[]`, `consoleErrors=[]`. **Bu Chromium smoke test 109,36 saniyelik tüm maçı render ederek izlemiyor.**
-- [**İndirilebilir çevrim dışı S3C3 3B HTML — artifact #14522437522**](https://github.com/zxc28tarik/killtheking/actions/runs/44511218460/artifacts/14522437522) (kaynak doğruluğu için manifest dâhil); ilk onaylı S3C3 build SHA-256 **`981015df44c9a03db5f46857a23629be95b14dd0060831df11737e1c21627b05`**, **870.294 byte**.
-- [**Chromium gerçek screenshot ve JSON — artifact #14523521430**](https://github.com/zxc28tarik/killtheking/actions/runs/44511218460/artifacts/14523521430).
+- [**Başarılı gerçek Chromium/SwiftShader #44511500074**](https://github.com/zxc28tarik/killtheking/actions/runs/44511500074): 140 özgün asker/8 bölük ve üç boyutlu sahne, canlı HUD faz ve gerçek varlık sayaçları, 8 sahte DEBUG tuşunun kilitli olması ve gerçek mavi/kırmızı oyuncu komuta seçimi doğrulandı. Native dört tikte 216 hareketli asker adımı. `pageErrors=[]`, `consoleErrors=[]`. **Bu Chromium smoke test 109,36 saniyelik tüm maçı render ederek izlemiyor.**
+- [**İndirilebilir çevrim dışı S3C3 3B HTML — artifact #14524061374**](https://github.com/zxc28tarik/killtheking/actions/runs/44511500074/artifacts/14524061374) (kaynak doğruluğu için manifest dâhil); ilk onaylı S3C3 build SHA-256 **`981015df44c9a03db5f46857a23629be95b14dd0060831df11737e1c21627b05`**, **870.794 byte**.
+- [**Chromium gerçek screenshot ve JSON — artifact #14522583034**](https://github.com/zxc28tarik/killtheking/actions/runs/44511500074/artifacts/14522583034).
 - Özgün G5.4 motoru SHA-256 **`307987855abc0973ea9177fdd659c39d1d02673c8381c0501be8b63c04ddf841`** doğrulanıyor.
 
 ## Üretim ve oyun tasarımı açısından AÇIK KONULAR
