@@ -189,6 +189,7 @@
  let extensionFrame=null,extensionReset=null,extensionTeam=null;
  let extensionRealGateCombat=false,extensionRealLadderAI=false;
  let extensionCombatCanMove=null;
+ let extensionMovement=null;
  const explorer={view:'orbit',team:'red',
    position:{x:0,y:0,z:-110},yaw:0,pitch:0,
    keys:Object.create(null),climb:null,walkTicks:0,
@@ -222,6 +223,7 @@
      rules.snapshot(siege));
    explorer.yaw=team==='red'?0:Math.PI;
    explorer.climb=null;explorer.status='Güvenli takım doğuşu';
+   if(extensionMovement)extensionMovement.reset(explorer.position);
    updatePlayerGlyph();
    if(changingArmy){
      // On authentic S3 team switch start a fresh 140-man army and scenario;
@@ -242,6 +244,7 @@
      rules.snapshot(siege));
    explorer.yaw=where==='gate'?0:where==='west'?Math.PI/2:-Math.PI/2;
    explorer.climb=null;
+   if(extensionMovement)extensionMovement.reset(explorer.position);
    explorer.qaPositionChanges++;
    explorer.status='QA konumu (askerler taşınmadı)';
    updatePlayerGlyph();
@@ -249,6 +252,10 @@
  function setView(view){
    if(!['orbit','fps','tps'].includes(view))throw Error('Unsupported S2 preview camera');
    explorer.view=view;
+   if(extensionMovement&&view==='orbit'){
+     extensionMovement.reset(explorer.position);
+     for(const key of Object.keys(explorer.keys))explorer.keys[key]=false;
+   }
    explorer.status=view==='orbit'?'Harita incelemesi':'WASD ile özgür keşif';
    document.getElementById('view-mode-banner').textContent=
      view==='orbit'?'S2 • Harita kamerası':
@@ -261,10 +268,12 @@
    if((extensionCombatCanMove&&!extensionCombatCanMove())||
       explorer.view==='orbit'||explorer.climb)return;
    const state=rules.snapshot(siege);
+   if(extensionMovement&&!extensionMovement.snapshot().grounded)return;
    for(const side of ['west','east']){
      const climb=traversal.beginClimb(explorer.position,side,spec,state);
      if(climb){
        explorer.climb=climb;
+       if(extensionMovement)extensionMovement.reset(explorer.position);
        explorer.status=(side==='west'?'Batı':'Doğu')+' merdivenine çıkıyor';
        return;
      }
@@ -286,7 +295,8 @@
    button.addEventListener('click',()=>{try{fn();}catch(e){fail(e);}});
  }
  globalThis.addEventListener('keydown',e=>{
-   if(['KeyW','KeyA','KeyS','KeyD','KeyE'].includes(e.code)&&
+   if((['KeyW','KeyA','KeyS','KeyD','KeyE'].includes(e.code)||
+      (extensionMovement&&['Space','ShiftLeft','ShiftRight','KeyC'].includes(e.code)))&&
      explorer.view!=='orbit'){
      explorer.keys[e.code]=true;
      if(e.code==='KeyE'&&!e.repeat)tryClimb();
@@ -294,7 +304,7 @@
    }
  });
  globalThis.addEventListener('keyup',e=>{
-   if(['KeyW','KeyA','KeyS','KeyD','KeyE'].includes(e.code))
+   if(['KeyW','KeyA','KeyS','KeyD','KeyE','Space','ShiftLeft','ShiftRight','KeyC'].includes(e.code))
      explorer.keys[e.code]=false;
  });
  globalThis.addEventListener('blur',()=>{
@@ -303,6 +313,7 @@
  function stepExplorer(dt){
    if(explorer.view==='orbit')return;
    if(extensionCombatCanMove&&!extensionCombatCanMove()){
+     if(extensionMovement)extensionMovement.reset(explorer.position);
      explorer.status='G5.4 oyuncu öldü veya maç bitti • yeniden başlat';
      return;
    }
@@ -312,8 +323,16 @@
      explorer.position=step.position;
      if(step.done){
        explorer.climb=null;
+       if(extensionMovement)extensionMovement.reset(explorer.position);
        explorer.status='Sur geçişi tamamlandı • iç avlu';
      }
+   }else if(extensionMovement){
+     const moved=extensionMovement.step({position:explorer.position,
+       yaw:explorer.yaw,keys:explorer.keys,dt,spec,scenario:state,traversal});
+     explorer.position=moved.position;
+     explorer.blockedX=moved.blockedX;
+     explorer.blockedZ=moved.blockedZ;
+     explorer.status=moved.status;
    }else{
      const yaw=explorer.yaw,
        fwd=(explorer.keys.KeyW?1:0)-(explorer.keys.KeyS?1:0),
@@ -388,12 +407,13 @@
    }else{
      const p=explorer.position,yaw=explorer.yaw,pitch=explorer.pitch,
        dx=Math.sin(yaw),dz=Math.cos(yaw);
+     const cameraHeight=extensionMovement?.snapshot().sliding?1.85:2.7;
      if(explorer.view==='fps'){
-       camera.position.set(p.x,p.y+2.7,p.z);
-       camera.lookAt(p.x+dx*19,p.y+2.7+pitch*12,p.z+dz*19);
+       camera.position.set(p.x,p.y+cameraHeight,p.z);
+       camera.lookAt(p.x+dx*19,p.y+cameraHeight+pitch*12,p.z+dz*19);
      }else{
        camera.position.set(p.x-dx*12,p.y+8.6,p.z-dz*12);
-       camera.lookAt(p.x+dx*4,p.y+2.6+pitch*5,p.z+dz*4);
+       camera.lookAt(p.x+dx*4,p.y+cameraHeight+pitch*5,p.z+dz*4);
      }
    }
  }
@@ -594,9 +614,18 @@
      view:explorer.view,team:explorer.team,
      yaw:explorer.yaw,pitch:explorer.pitch,
      climbing:!!explorer.climb,
+     airborne:!!extensionMovement?.snapshot().airborne,
+     sliding:!!extensionMovement?.snapshot().sliding,
      position:{...explorer.position}
    }),
    getCanvas:()=>renderer.domElement,
+   registerMovement({step,reset,snapshot}={}){
+     if(extensionMovement||typeof step!=='function'||
+       typeof reset!=='function'||typeof snapshot!=='function')
+       throw Error('Invalid/duplicate S3D2 castle movement controller');
+     extensionMovement={step,reset,snapshot};
+     extensionMovement.reset(explorer.position);
+   },
    registerCombat({canMove}={}){
      if(extensionCombatCanMove||typeof canMove!=='function')
        throw Error('Invalid/duplicate native G5.4 player-combat view bridge');
@@ -639,6 +668,7 @@
      climb:explorer.climb?.side||null,
      walkTicks:explorer.walkTicks,
      qaPositionChanges:explorer.qaPositionChanges,
+     locomotion:extensionMovement?extensionMovement.snapshot():null,
      blockedX:explorer.blockedX,blockedZ:explorer.blockedZ,
      status:explorer.status,
      embedded:traversal.overlaps(explorer.position,spec,
