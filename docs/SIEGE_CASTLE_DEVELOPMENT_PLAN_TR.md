@@ -5,7 +5,7 @@
 **Geliştirme dalı:** `codex/s1-siege-castle-phase1` (temel: `codex/g54-ffa-army-isolated-launcher`).  
 **Önemli:** Ana dalı, FFA/TDM'yi, G5.4 ordu adayını, tarihî HTML'yi veya mevcut silah sürelerini değiştirme.
 
-**S1 ilk teslim (18 Kasım):** 21/21 Node test + gerçek Chromium/SwiftShader 3B harita ve test arayüzü PASS. [İlk S1 raporu ve indirme bağlantıları](../recovered/siege/README.md). **Bu sadece senaryo mantığı ve 3B önizleme; gerçek FPS/TPS 140 asker savaşı değildir. S2–S6 hâlâ YAPILMADI.** Bu proje tek kuşatma senaryosudur; üçüncü FFA haritası değildir.
+**S1 ilk teslim (18 Kasım):** 21/21 Node test + gerçek Chromium/SwiftShader 3B harita ve test arayüzü PASS. [İlk S1 raporu ve indirme bağlantıları](../recovered/siege/README.md). **S1 tamamlandı; S2 dolaşılabilirlik önizlemesi tamamlandı; S3 gerçek 140 askerli G5.4 motoru ve 3B asker hareketi adayı kısmen uygulandı. Gerçek yapı saldırısı/asker merdiven AI/FPS savaş ve S4–S6 hâlâ AÇIK.** Bu proje tek kuşatma senaryosudur; üçüncü FFA haritası değildir.
 
 ## 0. Kesin kabul edilen kapsam
 
@@ -62,6 +62,16 @@
 **Kabul:** gerçek WebGL ve fiziksel oyuncuyla kapı, iki yan rota, sur, avlu ve iç kale erişimi.
 
 ### S3 — Gerçek 70v70 G5.4 savaş motoruyla ilk bütünleşme [P0]
+
+**19 Kasım — S3A/S3B ilk gerçek ordu köprüsü ve 3B asker sahnesi BAŞARILI; TAM OYNANABİLİR KUŞATMA DEĞİL.** [S3 kaynak ve Chromium kanıt raporu](SIEGE_CASTLE_S3_REAL_ARMY_INTEGRATION_TR.md). Değişmemiş G5.4 gerçek `ArenaArmyBattle.create/step/snapshot` motoru ile 8 bölük ve 140 özgün asker kuşatma kalesinde doğuyor; 3B modeller artık gerçek askerlerin pozisyonlarından ilerliyor, yalnız statik işaret değil. **13/13 yeni gerçek motor + 39/39 mevcut S1/S2 test PASS.** Kapı/merdiven asker AI'sı, gerçek oyuncu silahı ve tam kuşatma zaferi bu sonuçla onaylanmış değil.
+
+- [x] **S3A gerçek motor:** 70 kırmızı / 70 mavi, sekiz özgün bölük, iki taraf komuta ve gerçek `step/snapshot/drainCombatEvents` API'si.
+- [x] **S3A gerçek harita:** S1 taş engelleri orijinal G5.4 `setWorldObstacles({x,y,z,w,h,d,solid})` motoruna bağlandı. Kapı açıldığında G5.4 görüş engeli 15→14 güncellenir.
+- [x] **S3A işgal okuyucu:** yaşayan gerçek asker koordinatlarından avlu/iç kale varlığı hesaplanır; 70'er asker sayısı engine/squad üzerinden doğrulanır; DEBUG elle zafer kontrolü gerçek modda engellenir.
+- [x] **S3B 3B görsel aday:** gerçek 140 asker `InstancedMesh` pozisyonlarına aktarılır, oyuncu kendi gerçek bölüğüne emir verebilir, kırmızı/mavi gerçek komutan seçimi çalışır.
+- [ ] **S3C gerçek yapı etkileşimi:** gerçek asker saldırısı kaynaklı kapı HP azalması ve AI merdiven kullanımının savaş yoluna dönüşmesi.
+- [ ] **S3C gerçek kuşatma:** askerlerin sur/merdiven/avluda özgün geometriyle doğru 3B yürümesi, gerçek zayiat/işgal ve tam maç bitişi.
+- [ ] **S3D FPS/TPS ana oyun oyuncusu:** asıl karakterin silah/HP/hareket modülü ile gerçek 140 askerin aynı kuşatma savaşını oynaması.
 - [ ] G5.4`ArenaArmyBattle.create/step/snapshot` sözleşmesiyle 8 bölük ve 140 gerçek asker üret.
 - [ ] Kale engellerini **gerçek** `setWorldObstacles({x,y,z,w,h,d,solid})` üzerinden bağla.
 - [ ] Asker ölümü, mevzi durumu, gerçek kapı saldırısı ve gerçek bölge işgali kaynak doğruluğuyla senaryo motoruna aksın; sahte debug olayları yasak.
