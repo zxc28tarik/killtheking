@@ -12,6 +12,18 @@
  const ORDER=Object.freeze(['follow','hold','advance','charge','retreat','flank','skirmish']);
  const FORMATION=Object.freeze(['line','column','square','wedge','loose','shield']);
  const FIRE=Object.freeze(['free','volley','hold']);
+ // G5.4 open-field keyboard parity. K/J and X/Z verified by the
+ // original G5.4 real-Chromium army-browser acceptance. Fire modes use
+ // original Digit7/8/9 direct native fireMode commands.
+ const FIELD_KEYS=Object.freeze({
+   KeyJ:Object.freeze({action:'order',value:'hold'}),
+   KeyK:Object.freeze({action:'order',value:'advance'}),
+   KeyZ:Object.freeze({action:'formation',value:'line'}),
+   KeyX:Object.freeze({action:'formation',value:'column'}),
+   Digit7:Object.freeze({action:'fire',value:'free'}),
+   Digit8:Object.freeze({action:'fire',value:'volley'}),
+   Digit9:Object.freeze({action:'fire',value:'hold'})
+ });
  const valid=x=>typeof x==='number'&&Number.isFinite(x);
  const hasOwn=(o,k)=>Object.prototype.hasOwnProperty.call(o,k);
  function create({engine,bridge,map=null}={}){
@@ -70,6 +82,17 @@
      noSyntheticSoldierDamageOrWin:true,
      nativeG54SourceUnchanged:true
    });
+ }
+ function shortcut(input){
+   if(!input||typeof input.code!=='string'||
+      input.repeat||input.ctrlKey||input.altKey||
+      input.metaKey||input.isComposing||input.defaultPrevented)
+     return null;
+   const target=input.target||null;
+   if(target?.isContentEditable||['INPUT','TEXTAREA','SELECT'].includes(
+     String(target?.tagName||'').toUpperCase()))return null;
+   const cmd=FIELD_KEYS[input.code];
+   return cmd?{action:cmd.action,value:cmd.value}:null;
  }
  function pointValid(c,x,z){
    if(!valid(x)||!valid(z))return false;
@@ -136,5 +159,6 @@
    c.lastResult=response;
    return {...response};
  }
- return Object.freeze({create,snapshot,execute,ORDER,FORMATION,FIRE});
+ return Object.freeze({create,snapshot,execute,shortcut,
+   FIELD_KEYS,ORDER,FORMATION,FIRE});
 });
