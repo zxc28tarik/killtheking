@@ -90,6 +90,10 @@ test('genuine S3C2 completed climber is eligible for S3C3 courtyard route',()=>{
  const b=create();
  const u=[...b.ladderAI.records.values()].map(rec=>b.state.soldiers[rec.id])[0];
  const rec=b.ladderAI.records.get(u.id);
+ // QA scenario must have a real S1 open lane; simply editing an AI
+ // record never establishes a physically opened siege entry.
+ for(let i=0;i<4;i++)objectives.applyEvent(b.scenario,{
+  type:'LADDER_BUILD',team:'red',lane:'west',effort:25});
  rec.completed=true;rec.stage='inside';
  u.x=-44;u.z=-9;u.siegeY=0;
  const proposed=capture.suggest(b.captureAI,u,{x:u.x,z:u.z},.08);
@@ -101,8 +105,8 @@ test('genuine S3C2 completed climber is eligible for S3C3 courtyard route',()=>{
 });
 test('no forced victory if a real living defender is inside contested courtyard',()=>{
  const s=objectives.createScenario();
- objectives.applyEvent(s,{type:'GATE_HIT',team:'red',
-  weapon:'ram',damage:150});
+ for(let i=0;i<4;i++)objectives.applyEvent(s,{
+  type:'GATE_HIT',team:'red',weapon:'ram',damage:150});
  for(let i=0;i<4;i++)objectives.applyEvent(s,{type:'LADDER_BUILD',
   team:'red',lane:'west',effort:25});
  assert.equal(s.phase,'BREACH');
@@ -128,7 +132,8 @@ test('courtyard capture resets after a living blue defender contests again',()=>
 });
 test('S1 capture FSM requires full genuine uncontested 12s courtyard and 20s keep',()=>{
  const s=objectives.createScenario();
- objectives.applyEvent(s,{type:'GATE_HIT',team:'red',weapon:'ram',damage:150});
+ for(let i=0;i<4;i++)objectives.applyEvent(s,{
+  type:'GATE_HIT',team:'red',weapon:'ram',damage:150});
  objectives.applyEvent(s,{type:'ZONE_PRESENCE',zone:'courtyard',red:1,blue:0});
  for(let i=0;i<149;i++)objectives.step(s,.08);
  assert.equal(s.winner,null);
@@ -201,7 +206,15 @@ test('natural native 140 G5.4 soldier match: trace authentic captured zones and 
    nav:s.realObjectiveCaptureNavigation,
    court:s.scenario.occupancy.courtyard,
    keep:s.scenario.occupancy.keep,
-   clock:s.scenario.clock}}));
+   clock:s.scenario.clock,
+   liveBySquad:b.state.squads.map(squad=>({
+     team:squad.team,type:squad.type,alive:squad.alive,
+     meanX:Number((b.state.soldiers.filter(u=>u.alive&&u.squadId===squad.id)
+       .reduce((n,u)=>n+u.x,0)/Math.max(1,squad.alive)).toFixed(1)),
+     meanZ:Number((b.state.soldiers.filter(u=>u.alive&&u.squadId===squad.id)
+       .reduce((n,u)=>n+u.z,0)/Math.max(1,squad.alive)).toFixed(1))
+   }))
+ }}));
  assert(s.realArmySeconds>=20);
  assert(s.realObjectiveCaptureNavigation.genuineSoldierGuideSteps>0);
  assert(s.realObjectiveCaptureNavigation.enteredCourtyardSoldierIds>0);
