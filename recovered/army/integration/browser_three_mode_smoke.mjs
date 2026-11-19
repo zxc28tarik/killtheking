@@ -140,6 +140,29 @@ try{
   .contentWindow.ktkSiegePlayerCombatStatus());
  assert.equal(activePlayer.view,'fps');
  assert.equal(activePlayer.playerHealth,100);
+ // S3D2a real keyboard events travel into the third-mode iframe.
+ await page.keyboard.down('Space');
+ await page.waitForFunction(()=>{
+  const s=document.querySelector('#stage iframe')?.contentWindow
+   ?.ktkSiegePreviewStatus?.();
+  return s?.explorer?.locomotion?.jumpCount>=1&&s.explorer.pos.y>.15;
+ },{timeout:85000});
+ await page.keyboard.up('Space');
+ await page.waitForFunction(()=>document.querySelector('#stage iframe')
+  ?.contentWindow?.ktkSiegePreviewStatus?.()?.explorer?.locomotion?.grounded,
+  {timeout:85000});
+ await page.keyboard.down('ShiftLeft');
+ await page.waitForFunction(()=>document.querySelector('#stage iframe')
+  ?.contentWindow?.ktkSiegePreviewStatus?.()?.explorer?.locomotion?.sliding,
+  {timeout:85000});
+ await page.keyboard.up('ShiftLeft');
+ const movement=await page.evaluate(()=>document.querySelector('#stage iframe')
+  ?.contentWindow?.ktkSiegePreviewStatus?.()?.explorer?.locomotion);
+ assert.equal(movement.jumpCount,1);
+ assert.equal(movement.realCastleSweptCollider,true);
+ assert.equal(movement.fullArenaPhysicsShared,false);
+ report.checks.push('PASS_S3D2A_KEYBOARD_JUMP_SLIDE_REAL_CHROMIUM: '+
+  JSON.stringify(movement));
  report.checks.push('PASS_THIRD_MODE_ACTUAL_FPS_HUMAN_AND_NO_FAKE_VICTORY_BUTTONS');
  await page.screenshot({path:resolve(dir,'three-main-mode-3-siege.png'),fullPage:true});
  await switchMode('ffa');
