@@ -112,7 +112,9 @@
      seed=1600,playerType='sword',playerTeam='red',
      scenario:existingScenario=null,structureCombatEngine=null,
      assaultNavigationEngine=null,ladderAIEngine=null,
-     captureAIEngine=null,defenderAIEngine=null}={}){
+     captureAIEngine=null,defenderAIEngine=null,
+     rampartAIEngine=null,ballisticsAPI=null,
+     weaponBalance=null,defenderRender=null}={}){
    required(armyEngine,['create','step','snapshot','setWorldObstacles',
      'setPlayerPosition','drainCombatEvents','drainPlayerHits',
      'issueOrder','setDestination'],'G5.4');
@@ -143,6 +145,7 @@
      ladderAI:null,ladderAIEngine,
      captureAI:null,captureAIEngine,
      defenderAI:null,defenderAIEngine,
+     rampartAI:null,rampartAIEngine,
      terrainBlockedMoves:0,
      lastGateOpen:false,logs:[],ended:false
    };
@@ -185,6 +188,18 @@
        'S4 genuine role-based defender AI');
      bridge.defenderAI=defenderAIEngine.create({
        engine:armyEngine,state,map,scenario,traversal
+     });
+   }
+   if(rampartAIEngine){
+     if(!defenderAIEngine||!ballisticsAPI||!weaponBalance)
+       throw Error('S4B1 requires authentic S4A and G5.4 3D ballistics');
+     required(rampartAIEngine,
+       ['create','prepareNativeStep','preservePhysicalPost',
+         'afterNativeStep','snapshot'],
+       'S4B1 genuine blue wall-top counterfire');
+     bridge.rampartAI=rampartAIEngine.create({
+       engine:armyEngine,state,map,scenario,traversal,
+       balance:weaponBalance,ballisticsAPI,render:defenderRender
      });
    }
    if(structureCombatEngine){
@@ -237,6 +252,8 @@
    if(bridge.lastGateOpen!==bridge.scenario.gate.open)
      refreshObstacles(bridge);
    const before=bridge.state.soldiers.map(u=>({id:u.id,x:u.x,z:u.z}));
+   if(bridge.rampartAI)
+     bridge.rampartAIEngine.prepareNativeStep(bridge.rampartAI,dt);
    const elapsedBefore=bridge.state.elapsed;
    if(bridge.ladderAI){
      // Native G5.4 has only 2D ballistics; avoid a 2D melee attack from
@@ -259,6 +276,9 @@
      for(let i=0;i<bridge.state.soldiers.length;i++){
        const soldier=bridge.state.soldiers[i],old=before[i];
        if(!soldier.alive)continue;
+       // G5.4 cannot walk/shoot at height; guard its original t=0 post.
+       if(bridge.rampartAI&&bridge.rampartAIEngine.preservePhysicalPost(
+           bridge.rampartAI,soldier))continue;
        let nativeX=soldier.x,nativeZ=soldier.z;
        let vertical=null;
        if(bridge.ladderAI&&elapsedDelta>0)
@@ -310,6 +330,9 @@
      if(bridge.ladderAI&&elapsedDelta>0)
        bridge.ladderAIEngine.afterNativeTick(
          bridge.ladderAI,elapsedDelta);
+     if(bridge.rampartAI&&elapsedDelta>0)
+       bridge.rampartAIEngine.afterNativeStep(
+         bridge.rampartAI,elapsedDelta);
    }
    bridge.steps++;
    bridge.clockSeconds+=dt;
@@ -389,6 +412,9 @@
      realDefenderRoleCoordinationConnected:!!b.defenderAI,
      realDefenderRoleCoordination:b.defenderAI?
        b.defenderAIEngine.snapshot(b.defenderAI):null,
+     realRampart3DDefenderAIConnected:!!b.rampartAI,
+     realRampart3DDefenderAI:b.rampartAI?
+       b.rampartAIEngine.snapshot(b.rampartAI):null,
      real3dPlayerCombatConnected:false,
      originalArmyAIModified:false,
      mainGameModified:false
