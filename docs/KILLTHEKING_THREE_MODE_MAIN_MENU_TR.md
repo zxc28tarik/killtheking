@@ -55,3 +55,7 @@ Bu güncelleme **tek ürünün üçüncü seçilebilir savaş modu** koşulunu g
 ### S3V1 görsel yakınlaştırma adayı (19 Kasım)
 
 Kuşatma S3D1'in 140 gerçek asker görüntüsü, Arena'nın sınıf/zırh/silah siluetine benzer **sınıfa özgü parçalı InstancedMesh** katmanına taşınıyor. Bu, Arena'daki özgün yüksek detaylı modelin birebir taşınması veya FPS ortak motoru **değil**. Üç mod aynı menüyle açılmaya devam eder; eski Arena ve G5.4 ordu kaynaklarına dokunulmaz. Gerçek Chromium ve oyuncu kabulü tamamlanmadan görsel parite onayı verilmez.
+
+### S3D2a — Arena tarzı kale hareketi (19 Kasım 2026)
+
+Yalnız üçüncü modda Space zıplama, Shift/C kayma ve sınırlı slide-hop eklendi. Bu özgün FFA fizik/renderer kaynaklarını değiştirmez ve aynı motorun birebir paylaşımı anlamına gelmez. Oyun motorları izole kalır. Kuşatmanın fiziksel kale kapısı/duvarları ile 140 gerçek G5.4 askeri ve zemin savaş dengesi korunur. Havada ve sur yüksekliğinde gerçek 3B ok/kurşun balistiği halen yapılmadı; S3D2'nin sonraki alt aşamasına aittir. Kullanıcı kabulü sonrası birleştirme yapılacaktır.
