@@ -12,6 +12,14 @@
 5. **Ayrı S3B 3B HTML adayı:** Kaynağı değiştirilmemiş G5.4 motoru ve Three.js ile 140 gerçek askerin canlı pozisyonları aynı kalenin 3B `InstancedMesh` karakterlerine aktarılıyor. Oyuncu kendi gerçek bölüğüne **mevzi tut / ilerle / hücum / geri çekil** emri verebiliyor. Kırmızı/mavi komutan değişimi gerçek 140 askerli senaryo başlangıcıyla uygulanıyor. Bu mod, mevcut S2 önizleme HTML'sinin yerine geçmez; ayrı çıktıdır.
 6. **Gerçekliği koruyan sınırlar:** Kapıya gerçek asker hasarı, gerçek askerlerin merdiven çıkışı, kalenin aşamalı otomatik ele geçirilmesi, ana oyundaki FPS silah/HP/ölüm döngüsü ve tam kuşatma zaferi **henüz yapılmadı**. S1 test amaçlı kapı/merdiven düğmeleri **DEBUG** olarak etiketli. Bu testte 140 gerçek askerin hareket etmesi savaşın bütün fazlarının tamamlandığını göstermez.
 
+## Son kanıt: S3B güncel güvenli 3B HTML
+
+- [**Güncel S3B CI #44500646656 — SUCCESS**](https://github.com/zxc28tarik/killtheking/actions/runs/44500646656): 13/13 gerçek G5.4 test + 39/39 S1/S2 regresyon, toplam 52/52 PASS; gerçek Chromium/SwiftShader 3B entegrasyonu ve **sahte zafer kontrollerinin kapalı olması** doğrulandı; `pageErrors=[]`, `consoleErrors=[]`.
+- [**İndirilebilir güncel S3B 3B HTML** artifact #14517570833](https://github.com/zxc28tarik/killtheking/actions/runs/44500646656/artifacts/14517570833). **833.677 byte**; SHA-256 `256f33b3851c0a08a5e5e8ef44e24dfd0e6e1369a85f268a563d5b149d2f7f15` (yalnız aday).
+- [Gerçek Chromium ekran görüntüleri ve test JSON'u, artifact #14517276278](https://github.com/zxc28tarik/killtheking/actions/runs/44500646656/artifacts/14517276278).
+- Chrome/Edge'de açıldığında ayrı bir S3 gerçek motor paneli görüntülenir: gerçek G5.4 iki tarafın yaşayan askerleri, AI tikleri, savaş olayları ve mevcut insan bölüğüne emirler. S2 harita/FPS-TPS keşif kontrolü ayrı önizleme avatarıdır; **ana oyunun gerçek silah/HP karakteri değildir**.
+- **Kritik düzeltme:** `court/court-contest/keep/keep-contest/wipe` sahte debug tuşları gerçek S3 ordu adayı açıkken devre dışı kalır, `step` gerçek askerlerden varlık okur. Kapı ve merdiven testi hâlâ S1 açıkça DEBUG olaylarıyla yapılır; bunlar asker saldırısı değildir.
+
 ## CI ve gerçek tarayıcı kanıtı
 
 - [S3A gerçek G5.4 köprü testi #44499040723 — PASS](https://github.com/zxc28tarik/killtheking/actions/runs/44499040723): **13/13** gerçek motor/yerleşim/engel/komuta/doğruluk testi PASS; **39/39** S1/S2 regresyon PASS, toplam **52/52**.
