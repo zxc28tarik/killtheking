@@ -214,13 +214,19 @@
  function selectSide(team){
    if(!['red','blue'].includes(team))throw Error('Unknown player army side');
    const [x,z]=spec.spawns[team].commander;
+   const changingArmy=extensionTeam&&explorer.team!==team;
    explorer.team=team;
    explorer.position=traversal.spawn({x,y:0,z},spec,
      rules.snapshot(siege));
    explorer.yaw=team==='red'?0:Math.PI;
    explorer.climb=null;explorer.status='Güvenli takım doğuşu';
    updatePlayerGlyph();
-   if(extensionTeam)extensionTeam(team);
+   if(changingArmy){
+     // On authentic S3 team switch start a fresh 140-man army and scenario;
+     // changing the S2 viewer alone never changes historic army combat.
+     siege=rules.createScenario();oldEvents=-1;oldPhase='';
+     extensionTeam(team,siege);
+   }
  }
  function qaLocate(where){
    const points={
