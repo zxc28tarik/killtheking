@@ -55,7 +55,7 @@ test('field and castle share the exact same native player active/HP/ownership au
  for(const q of [f,live]){
   const s=session.snapshot(q);
   assert.equal(s.authenticPlayerTeam,'blue');
-  assert.equal(s.combatAllowed,true); // field starts active, siege session initially native active until orbit synced
+  assert.equal(s.combatAllowed,q.mode==='field'); // siege spectator view must never be AI target
   assert.equal(s.commandsAllowed,true);
   assert.equal(s.movementAllowed,true);
   assert.equal(s.nativeSquadCount,8);
