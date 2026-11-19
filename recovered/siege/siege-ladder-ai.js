@@ -33,14 +33,18 @@
    if(!SIDES.every(side=>map.spec.lanes[side]&&scenario.ladders[side]))
      throw Error('Both native siege ladder entrances required');
    const soldierIds=new Map();
-   for(const soldier of state.soldiers){
-     const squad=state.squads[soldier.squadId];
-     if(soldier.alive&&soldier.team==='red'&&soldier.type==='pike'&&
-        squad&&!squad.playerControlled)
-       soldierIds.set(soldier.id,sideOf(map,soldier));
-   }
+   // Prefer native G5.4 pike builders. If the red HUMAN commands the
+   // complete pike squad, use the red AI sword squad instead: never hijack
+   // a real player-owned order or reject legitimate player class selection.
+   const aiPikes=state.soldiers.filter(u=>u.alive&&u.team==='red'&&
+     u.type==='pike'&&!state.squads[u.squadId]?.playerControlled);
+   const eligible=aiPikes.length?aiPikes:state.soldiers.filter(u=>
+     u.alive&&u.team==='red'&&u.type==='sword'&&
+     !state.squads[u.squadId]?.playerControlled);
+   for(const soldier of eligible)
+     soldierIds.set(soldier.id,sideOf(map,soldier));
    if(!soldierIds.size)
-     throw Error('No eligible AI pike builders (user may command pike)');
+     throw Error('No eligible authentic AI melee ladder builders');
    const sides={west:[],east:[]};
    for(const [id,side] of soldierIds)sides[side].push(id);
    if(!sides.west.length||!sides.east.length)
