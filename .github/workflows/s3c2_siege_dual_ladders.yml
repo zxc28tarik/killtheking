@@ -1,0 +1,105 @@
+name: Kill the King - S3C2 Real 140-Soldier Dual Siege Ladders
+on:
+  push:
+    branches:
+      - codex/s1-siege-castle-phase1
+    paths:
+      - 'recovered/siege/siege-ladder-ai.js'
+      - 'recovered/siege/siege-real-army-bridge.js'
+      - 'recovered/siege/siege-real-army-overlay.js'
+      - 'recovered/siege/siege-preview.js'
+      - 'recovered/siege/build_siege_ladder_candidate.mjs'
+      - 'recovered/siege/test_siege_ladder_ai.mjs'
+      - 'recovered/siege/browser_siege_ladder_smoke.mjs'
+      - '.github/workflows/s3c2_siege_dual_ladders.yml'
+  workflow_dispatch:
+jobs:
+  native-dual-ladder:
+    name: Real G5.4 workers, 3D wall climbs, old siege/arena isolation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Parse isolated siege ladder sources
+        run: |
+          node --check recovered/siege/siege-ladder-ai.js
+          node --check recovered/siege/siege-real-army-bridge.js
+          node --check recovered/siege/siege-real-army-overlay.js
+          node --check recovered/siege/siege-preview.js
+          node --check recovered/siege/build_siege_ladder_candidate.mjs
+          node --check recovered/siege/test_siege_ladder_ai.mjs
+          node --check recovered/siege/browser_siege_ladder_smoke.mjs
+      - name: Run original 140 G5.4 soldiers with real ladder build and elevation
+        run: node --test recovered/siege/test_siege_ladder_ai.mjs
+      - name: S3C1 gate attack and historic S3A, S1/S2 regression
+        run: |
+          node --test recovered/siege/test_siege_structure_combat.mjs
+          node --test recovered/siege/test_siege_real_army_bridge.mjs
+          node --test recovered/siege/test_siege_phase1.mjs recovered/siege/test_siege_traversal.mjs
+      - name: Pin old real G5.4 engine source SHA
+        run: |
+          printf '307987855abc0973ea9177fdd659c39d1d02673c8381c0501be8b63c04ddf841  recovered/army/mirror/arena-army-battle-true-side-swap.js\n' | sha256sum --check -
+      - name: Build S3C2 standalone real 140-soldier 3D siege HTML
+        run: |
+          node recovered/siege/build_siege_ladder_candidate.mjs \
+            recovered/siege/dist/KillTheKing_Kusatma_S3C2_140_Asker_Cift_Merdiven_Aday.html
+          node --input-type=module -e "
+          import {readFileSync} from 'node:fs';
+          const p='recovered/siege/dist/KillTheKing_Kusatma_S3C2_140_Asker_Cift_Merdiven_Aday.html';
+          const m=JSON.parse(readFileSync(p+'.build.json','utf8'));
+          if(m.ladderClimbByRealSoldierAI!==true ||
+             m.ladderConstructionFromGenuineG54SoldierPresence!==true ||
+             m.gateStructureAttackFromActualSoldiers!==true ||
+             m.actualG54Native3DBallistics!==false ||
+             m.nativeG54HasBuildingEvents!==false ||
+             m.realFPSPlayerWeaponConnected!==false ||
+             m.productionSiegeApproved!==false)
+            throw Error('S3C2 HTML cannot claim completed siege or 3D weapon physics');
+          console.log('PASS S3C2 real 140 3D dual-ladder candidate, original source pinned');
+          "
+      - name: Upload offline S3C2 HTML candidate, not publish
+        uses: actions/upload-artifact@v4
+        with:
+          name: KillTheKing-S3C2-Real-140-Dual-3D-Ladders-NOT-Final-Siege
+          path: |
+            recovered/siege/dist/KillTheKing_Kusatma_S3C2_140_Asker_Cift_Merdiven_Aday.html
+            recovered/siege/dist/KillTheKing_Kusatma_S3C2_140_Asker_Cift_Merdiven_Aday.html.build.json
+          if-no-files-found: error
+  chromium:
+    name: Actual Chromium software WebGL S3C2 real AI units and locked debug ladder UI
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    needs: native-dual-ladder
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Build exact isolated S3C2 HTML
+        run: node recovered/siege/build_siege_ladder_candidate.mjs recovered/siege/dist/KillTheKing_Kusatma_S3C2_140_Asker_Cift_Merdiven_Aday.html
+      - name: Set up pinned Chromium
+        run: |
+          npm install --no-save --no-package-lock playwright@1.58.2
+          if command -v google-chrome >/dev/null 2>&1; then
+            echo "KTK_CHROME_EXECUTABLE=$(command -v google-chrome)" >> "$GITHUB_ENV"
+          elif command -v google-chrome-stable >/dev/null 2>&1; then
+            echo "KTK_CHROME_EXECUTABLE=$(command -v google-chrome-stable)" >> "$GITHUB_ENV"
+          else
+            npx playwright install chromium
+          fi
+      - name: Headless actual WebGL native soldiers and two real ladders
+        env:
+          KTK_S3C2_REPORT_DIR: recovered/siege/browser-evidence-s3c2
+        run: |
+          node recovered/siege/browser_siege_ladder_smoke.mjs \
+            recovered/siege/dist/KillTheKing_Kusatma_S3C2_140_Asker_Cift_Merdiven_Aday.html
+      - name: Preserve truthful screenshots and runtime JSON on failure too
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: KillTheKing-S3C2-Chromium-Dual-Ladder-SOFTWARE-WebGL-Evidence
+          path: recovered/siege/browser-evidence-s3c2/
+          if-no-files-found: warn
