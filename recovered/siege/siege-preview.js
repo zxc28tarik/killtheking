@@ -187,6 +187,7 @@
  // Army soldier markers remain NONCOMBAT and no S1 siege events are forged.
  // Optional S3 genuine-army adapter. With no adapter, S2 preview is unchanged.
  let extensionFrame=null,extensionReset=null,extensionTeam=null;
+ let extensionRealGateCombat=false;
  const explorer={view:'orbit',team:'red',
    position:{x:0,y:0,z:-110},yaw:0,pitch:0,
    keys:Object.create(null),climb:null,walkTicks:0,
@@ -497,6 +498,11 @@
        b.title='S3: gerçek asker sonucu kullanılır; elle işgal/ölüm yasak';
        continue;
      }
+     if(extensionRealGateCombat&&key==='gate'){
+       b.disabled=true;
+       b.title='S3C: yalnız gerçek yaşayan asker kapıya hasar verebilir';
+       continue;
+     }
      b.disabled=s.phase==='RESULT'&&key!=='reset';
      if(key==='gate'&&s.gate.open)b.disabled=true;
      if((key==='west'||key==='east')&&s.ladders[key].open)b.disabled=true;
@@ -513,6 +519,8 @@
    }
  }
  function action(which){
+   if(extensionRealGateCombat&&which==='gate')
+     throw Error('S3C kapı darbesi yalnız gerçek asker eyleminden gelir');
    if(extensionFrame&&['court','court-contest','keep',
      'keep-contest','wipe'].includes(which))
      throw Error('S3 gerçek asker işgal ve ölümünü DEBUG düğmeleriyle değiştirme');
@@ -568,12 +576,13 @@
    getScenario:()=>siege,
    getTeam:()=>explorer.team,
    getPlayerPosition:()=>({...explorer.position}),
-   register({onFrame,onReset,onTeamChange}={}){
+   register({onFrame,onReset,onTeamChange,realStructureCombat=false}={}){
      if(extensionFrame)throw Error('S3 army adapter is already registered');
      if(typeof onFrame!=='function'||typeof onReset!=='function')
        throw Error('Incomplete S3 authentic army integration adapter');
      extensionFrame=onFrame;extensionReset=onReset;
      extensionTeam=typeof onTeamChange==='function'?onTeamChange:null;
+     extensionRealGateCombat=realStructureCombat===true;
      // Immediately remove S1 forged-win controls before a real player can click.
      // Do not rely on a later low-FPS SwiftShader RAF UI refresh.
      updateUI();
