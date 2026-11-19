@@ -15,6 +15,7 @@
  const defenderAI=globalThis.KTKSiegeDefenderAI||null;
  const rampartAI=globalThis.KTKSiegeRampartAI||null;
  const sharedArmyCommands=globalThis.KTKSharedG54ArmyCommands||null;
+ const sharedBattleSession=globalThis.KTKSharedG54BattleSession||null;
  if(rampartAI&&!defenderAI)throw Error('S4B1 rampart counterfire requires native S4A defense');
  if(defenderAI&&!captureAI)throw Error('S4 blue role defender requires S3C3 real capture');
  if(captureAI&&!ladderAI)throw Error('S3C3 objective assault requires actual S3C2 ladder bridge');
@@ -82,7 +83,7 @@
  const roleVisuals=globalThis.KTKSiegeCharacterVisuals?.create({
    THREE,scene:preview.scene,groups
  })||null;
- let bridge=null,sharedCommand=null,lastArmyCommandNotice='';
+ let bridge=null,sharedCommand=null,liveSession=null,lastArmyCommandNotice='';
  let commandHUD=null,shortcutsAccepted=0;
  let fieldTactical=null,fieldMapOpen=false,fieldMapAction='position';
  let fieldMapOpens=0,fieldMapCloses=0,fieldMapClicks=0,fieldMapAccepted=0;
@@ -110,6 +111,11 @@
    sharedCommand=sharedArmyCommands?.create({
      engine:source,bridge,map
    })||null;
+   liveSession=sharedBattleSession?.create({
+     engine:source,state:bridge.state,scenario:bridge.scenario,
+     mode:'siege',playerTeam:team
+   })||null;
+   if(!liveSession)throw Error('AK-03a missing native shared battle session');
    lastArmyCommandNotice='';
    if(commandHUD)drawSharedCommandHUD();
    for(const g of groups){
@@ -632,6 +638,7 @@
  // register no player-combat module and retain byte-identical G5.4 AI.
  globalThis.ktkSiegeNativeBattleAdapter=Object.freeze({
    getBridge:()=>bridge,
+   getSession:()=>liveSession,
    registerPlayerCombat({onCreate,onBeforeFrame,onAfterFrame}={}){
      if(nativeHumanCombatListener||typeof onCreate!=='function'||
         typeof onBeforeFrame!=='function'||typeof onAfterFrame!=='function')
@@ -642,6 +649,8 @@
      onCreate(bridge);
    }
  });
+ globalThis.ktkSiegeSharedBattleSessionStatus=()=>liveSession?
+   sharedBattleSession.snapshot(liveSession):null;
  globalThis.ktkSiegeArmyCommandStatus=()=>sharedCommand?
    sharedArmyCommands.snapshot(sharedCommand):null;
  globalThis.ktkSiegeArmyStatus=()=>({
@@ -657,6 +666,9 @@
    fullSiegeBattleReady:false,
    playerControlsRealArmySquad:true,
    sharedNativeG54ArmyCommandContract:!!sharedCommand,
+   sharedNativeG54BattleSessionConnected:!!liveSession,
+   sharedNativeG54BattleSession:liveSession?
+     sharedBattleSession.snapshot(liveSession):null,
    sharedNativeG54ArmyCommands:sharedCommand?
      sharedArmyCommands.snapshot(sharedCommand):null,
    exactOriginalFieldArmyHUDReused:false,

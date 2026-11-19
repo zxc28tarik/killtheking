@@ -10,7 +10,8 @@
  const G54=globalThis.ArenaArmyBattle;
  const W=globalThis.ArenaWeaponBalance;
  const Ballistics=globalThis.KTKSiege3DBallistics;
- if(!api||!native||!preview||!G54||!W||!Ballistics)
+ const sharedBattleSession=globalThis.KTKSharedG54BattleSession;
+ if(!api||!native||!preview||!G54||!W||!Ballistics||!sharedBattleSession)
    throw Error('Native S3D1 140 soldier + live player UI dependencies missing');
  let combat=null;
  let frames=0;
@@ -175,7 +176,8 @@
      preview.registerBallistics();
      threeDConfigured=true;
    }
-   combat=api.create({bridge:b,engine:G54,balance:W,ballistics:threeD});
+   combat=api.create({bridge:b,engine:G54,balance:W,ballistics:threeD,
+     session:native.getSession(),sessionAPI:sharedBattleSession});
    holdingBow=false;lastVisible=null;
    if(feedback)feedback.reset('sword');
    api.sync(combat,preview.getPlayerPose());

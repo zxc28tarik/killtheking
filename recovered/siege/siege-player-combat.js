@@ -45,14 +45,20 @@
       balance.BOW_DRAW_SECONDS!==3)
      throw Error('Refuse incompatible, unapproved weapon cadence');
  }
- function create({bridge,engine,balance,ballistics=null}={}){
+ function create({bridge,engine,balance,ballistics=null,session=null,
+     sessionAPI=null}={}){
    if(ballistics&&['musket','launch','advance','status'].some(
      k=>typeof ballistics[k]!=='function'))
      throw Error('S3D2c requires a complete native-source 3D siege solver');
    validateBridge(bridge,engine,balance);
+   if(session&&(!sessionAPI?.sync||!sessionAPI?.canMove||
+       !sessionAPI?.snapshot||session.state!==bridge.state||
+       session.engine!==engine||session.playerTeam!==bridge.playerTeam||
+       session.scenario!==bridge.scenario))
+     throw Error('AK-03a player combat session does not own genuine G5.4 soldier state');
    return {
      kind:'S3D1_G54_PLAYER_HP_AND_GROUNDED_WEAPONS',
-     bridge,engine,balance,ballistics,weapon:'sword',
+     bridge,engine,balance,ballistics,session,sessionAPI,weapon:'sword',
      projectileEvents:[],lastProjectileTick:bridge.state.elapsed,
      lastAttack:{sword:-Infinity,spear:-Infinity,bow:-Infinity,musket:-Infinity},
      drawStarted:null,
@@ -85,18 +91,20 @@
      position:{...pose.position}};
    c.activeView=pose.view;
    const s=c.bridge.state;
-   c.engine.setPlayerPosition(s,pose.position.x,pose.position.z);
+   if(c.session)c.sessionAPI.sync(c.session,pose);
+   else c.engine.setPlayerPosition(s,pose.position.x,pose.position.z);
    if(Math.abs(s.playerPosition.x-pose.position.x)>.01||
       Math.abs(s.playerPosition.z-pose.position.z)>.01)
      throw Error('G5.4 player position rejected physical siege avatar');
    // Spectator/orbit has no ghost target for AI. Dead player may look,
    // but cannot rejoin the match by changing view.
-   s.playerActive=s.playerHealth>0&&pose.view!=='orbit';
+   if(!c.session)s.playerActive=s.playerHealth>0&&pose.view!=='orbit';
    return snapshot(c);
  }
  function canMove(c){
    requireCombat(c);
-   return c.bridge.state.playerHealth>0&&
+   return c.session?c.sessionAPI.canMove(c.session):
+     c.bridge.state.playerHealth>0&&
      c.bridge.scenario.phase!=='RESULT';
  }
  function setWeapon(c,weapon){
@@ -343,6 +351,9 @@
      playerArrowPhysics:c.ballistics?c.ballistics.status():null,
      shooterAtElevatedWallSupported:false,
      authenticNativeSoldierDamageOnly:true,
+     sharedFieldSiegeSessionContract:!!c.session,
+     nativeBattleSession:c.session?
+       c.sessionAPI.snapshot(c.session):null,
      playerCanMove:canMove(c),
      liveNativeSoldierCount:s.soldiers.filter(u=>u.alive).length
    };
