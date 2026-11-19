@@ -68,12 +68,18 @@ test('both real ladder builder groups have disjoint real red pike identities',()
   b.state.soldiers[id].alive&&b.state.soldiers[id].team==='red'&&
   b.state.soldiers[id].type==='pike'));
 });
-test('red HUMAN pike squad cannot be commandeered to build a ladder',()=>{
+test('red HUMAN pike squad remains fully player-controlled, AI sword squad builds instead',()=>{
  const b=create('red','pike');
- assert.equal(b.state.squads.find(s=>s.playerControlled).type,'pike');
- assert.throws(()=>ladder.create({
-  engine:A,state:b.state,map,scenario:b.scenario,objectives,traversal
- }),/No eligible AI pike/);
+ const owned=b.state.squads.find(s=>s.playerControlled);
+ assert.equal(owned.type,'pike');
+ assert.equal(b.ladderAI.records.size,20);
+ for(const rec of b.ladderAI.records.values()){
+  const u=b.state.soldiers[rec.id];
+  assert.equal(u.type,'sword');
+  assert.equal(b.state.squads[u.squadId].playerControlled,false);
+ }
+ assert.equal(owned.playerControlled,true);
+ assert.equal(b.ladderAI.records.size>0,true);
 });
 test('one genuine builder at one authentic entrance advances only its own side',()=>{
  const b=create(),u=fixtureAtEntry(b,'west');
