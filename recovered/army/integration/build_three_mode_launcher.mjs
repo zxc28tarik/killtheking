@@ -46,7 +46,8 @@ export function addCastleThirdMode(twoModeHtml, siegeHtml){
  if(!siegeHtml.startsWith('<!')||!siegeHtml.includes('S3D1 GERÇEK OYUNCU SAVAŞ ADAYI')||
    !siegeHtml.includes('ktkSiegePlayerCombatStatus')||
    !siegeHtml.includes('ktkSiegeArmyStatus')||
-   sourceScripts(siegeHtml).length!==15)
+   sourceScripts(siegeHtml).length!==16||
+   !siegeHtml.includes('KTKSiegeCharacterVisuals'))
    throw Error('Required real S3D1 140-man FPS castle candidate missing or mislabeled');
  for(const text of [oldTitle,oldIntro,oldNav,oldControllerGuard,oldTitleExpr,oldInfoExpr,oldPayloadIntro,oldPayloadEnd])one(twoModeHtml,text);
  if(twoModeHtml.includes('data-ktk-launch="siege"')||twoModeHtml.includes('ktk-source-siege'))
@@ -66,7 +67,7 @@ export function addCastleThirdMode(twoModeHtml, siegeHtml){
  result=result.replace(twoEnd,twoEnd.replace('</div>',
    '<section><strong>🏰 Kale Kuşatması — Üçüncü Mod</strong><span>'+
    '140 gerçek G5.4 askerle saldır veya savun. Kale kapısı kırılır; iki yan merdiven kurulur, avlu ve iç kale ele geçirilir. '+
-   'FPS/TPS, 100 HP, kılıç/mızrak/yay/tüfek. Ayrı S3D1 3B sahnesi: mevcut FFA görselleri, tam zıplama/kayma ve gerçek 3B mermi/ok fiziği henüz buraya aktarılmadı.'+
+   'FPS/TPS, 100 HP, kılıç/mızrak/yay/tüfek. Ayrı S3D1 3B sahnesi: sınıf bazlı kuşatma görsellerinin Arena ile birebir eşitliği, tam zıplama/kayma ve gerçek 3B mermi/ok fiziği henüz buraya aktarılmadı.'+
    '</span></section></div>'));
  replace('<p>Bu aday, Ekim 2026 tarihli kabul edilmiş FFA oyununun özgün sürümünü arşivler; FFA hedef seçimine sınırlı düzeltme uygular. G5.4 ordu savaşı ayrı bir oyun penceresinde açılır; geçişte önceki oyun kapatılır. Her iki oyun aynı çevrimdışı HTML içindedir.</p>',
    '<p>Üç oyun modu artık aynı ana menüden açılır. Serbest Arena/TDM ve Ordu Savaşı özgün kaynaklarını korur. Kale Kuşatması üçüncü oynanabilir seçimdir; mod geçişinde önceki oyun kapatılır, yeni mod açılır. Üçü de bu tek çevrimdışı HTML dosyasındadır.</p>');
