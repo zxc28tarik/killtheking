@@ -11,7 +11,10 @@
  const GRAVITY=30,JUMP_SPEED=12.6,HOP_MAX=6.5,CROUCH_HEIGHT=2.1;
  const valid=n=>typeof n==='number'&&Number.isFinite(n);
  const clamp=(x,lo,hi)=>Math.max(lo,Math.min(hi,x));
- function create(){
+ function create({inputContract=null}={}){
+  if(inputContract&&['movementAxes','wantsSlide','wantsJump'].some(
+     k=>typeof inputContract[k]!=='function'))
+    throw Error('AK-03b requires valid G5.4 player intent contract');
   let s;
   function reset(p={x:0,y:0,z:0}){
    if(!p||!['x','y','z'].every(k=>valid(p[k])))throw Error('Invalid locomotion spawn');
@@ -25,7 +28,8 @@
      sliding:s.sliding,jumpCount:s.jumps,hop:s.hop,
      vx:s.vx,vy:s.vy,vz:s.vz,collisionX:s.blockedX,
      collisionZ:s.blockedZ,realCastleSweptCollider:true,
-     fullArenaPhysicsShared:false});
+     fullArenaPhysicsShared:false,
+     sharedNativeFieldCastleInputIntent:!!inputContract});
   }
   function step({position,yaw,keys={},dt,spec,scenario,traversal,enabled=true}={}){
    if(!s||!position||!['x','y','z'].every(k=>valid(position[k]))||
@@ -42,14 +46,20 @@
    const f=Number(!!keys.KeyW)-Number(!!keys.KeyS);
    const r=Number(!!keys.KeyD)-Number(!!keys.KeyA);
    const magnitude=Math.hypot(f,r);
-   const forward=magnitude?f/magnitude:0,side=magnitude?r/magnitude:0;
-   const wantsSlide=!!(keys.ShiftLeft||keys.ShiftRight||keys.KeyC);
+   const axes=inputContract?inputContract.movementAxes(keys):{
+     forward:magnitude?f/magnitude:0,side:magnitude?r/magnitude:0,
+     active:magnitude>0
+   };
+   const forward=axes.forward,side=axes.side;
+   const wantsSlide=inputContract?inputContract.wantsSlide(keys):
+     !!(keys.ShiftLeft||keys.ShiftRight||keys.KeyC);
    const cannotStand=s.sliding&&!wantsSlide&&traversal.overlaps(
      position,spec,scenario,traversal.RADIUS,traversal.HEIGHT);
    s.sliding=wantsSlide||cannotStand;
    const height=s.sliding?CROUCH_HEIGHT:traversal.HEIGHT;
-   const jump=!!keys.Space&&!s.jumpHeld&&s.grounded;
-   s.jumpHeld=!!keys.Space;
+   const jumpHeld=inputContract?inputContract.wantsJump(keys):!!keys.Space;
+   const jump=jumpHeld&&!s.jumpHeld&&s.grounded;
+   s.jumpHeld=jumpHeld;
    if(jump){
      s.vy=JUMP_SPEED;s.grounded=false;s.jumps++;
      if(magnitude)s.hop=clamp(s.hop+(s.sliding?1.45:.85),0,HOP_MAX);
@@ -101,7 +111,7 @@ if(typeof window!=='undefined'){
   const preview=globalThis.ktkSiegePreviewAdapter;
   const physics=globalThis.KTKSiegePlayerLocomotion;
   if(!preview||!physics)throw Error('Missing S3D2 preview/player bridge');
-  const motion=physics.create();
+  const motion=physics.create({inputContract:globalThis.KTKSharedG54PlayerInput});
   preview.registerMovement({step:v=>motion.step(v),
     reset:p=>motion.reset(p),snapshot:()=>motion.snapshot()});
   globalThis.ktkSiegeMovementStatus=()=>motion.snapshot();
