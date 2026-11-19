@@ -7,13 +7,14 @@
  const THREE=globalThis.THREE;
  const layout=globalThis.KTKSiegemap;
  const rules=globalThis.KTKSiegeObjectives;
+ const traversal=globalThis.KTKSiegeTraversal;
  const error=document.getElementById('status-error');
  function fail(err){
    error.style.display='block';
    error.textContent='S1 kuşatma önizleme hatası: '+String(err?.stack||err);
    console.error(err);
  }
- if(!THREE||!layout||!rules){
+ if(!THREE||!layout||!rules||!traversal){
    fail('Three.js veya S1 kuşatma modülleri eksik');return;
  }
  const validation=layout.validate();
@@ -181,28 +182,223 @@
  label('İÇ KALE',0,37);
  label('BATI ÇIKIŞI',-55,-13);
  label('DOĞU ÇIKIŞI',55,-13);
- // Simple orbit interaction; no FPS or pointer lock claimed in S1.
+ // S2 EXPLORATION: one physical player avatar with *actual* swept world
+ // collision, keyboard movement, gate collider removal and guided climbs.
+ // Army soldier markers remain NONCOMBAT and no S1 siege events are forged.
+ const explorer={view:'orbit',team:'red',
+   position:{x:0,y:0,z:-110},yaw:0,pitch:0,
+   keys:Object.create(null),climb:null,walkTicks:0,
+   blockedX:false,blockedZ:false,status:'Başlangıç',
+   qaPositionChanges:0};
+ const playerGlyph=new THREE.Group();
+ const body=new THREE.Mesh(new THREE.CylinderGeometry(.65,.8,2.0,7),
+   material(0xdfb679));
+ body.position.y=1.45;playerGlyph.add(body);
+ const helm=new THREE.Mesh(new THREE.SphereGeometry(.61,9,6),
+   material(0xece9d9));helm.position.y=2.8;playerGlyph.add(helm);
+ const arrow=new THREE.Mesh(new THREE.ConeGeometry(.75,2,5),
+   material(0xf3d06b));
+ arrow.rotation.x=Math.PI/2;arrow.position.set(0,2.0,1.1);
+ playerGlyph.add(arrow);scene.add(playerGlyph);
+ const mini=document.getElementById('siege-mini-map');
+ const mini2d=mini.getContext('2d');
+ function updatePlayerGlyph(){
+   playerGlyph.position.set(explorer.position.x,explorer.position.y,
+     explorer.position.z);
+   playerGlyph.rotation.y=explorer.yaw;
+   playerGlyph.visible=explorer.view!=='fps';
+   body.material.color.setHex(explorer.team==='red'?0xd96648:0x5ab4cb);
+ }
+ function selectSide(team){
+   if(!['red','blue'].includes(team))throw Error('Unknown player army side');
+   const [x,z]=spec.spawns[team].commander;
+   explorer.team=team;
+   explorer.position=traversal.spawn({x,y:0,z},spec,
+     rules.snapshot(siege));
+   explorer.yaw=team==='red'?0:Math.PI;
+   explorer.climb=null;explorer.status='Güvenli takım doğuşu';
+   updatePlayerGlyph();
+ }
+ function qaLocate(where){
+   const points={
+     gate:{x:0,y:0,z:-49},
+     west:{x:-59,y:0,z:-9},
+     east:{x:59,y:0,z:-9}
+   };
+   if(!points[where])throw Error('Invalid QA player-placement marker');
+   explorer.position=traversal.spawn(points[where],spec,
+     rules.snapshot(siege));
+   explorer.yaw=where==='gate'?0:where==='west'?Math.PI/2:-Math.PI/2;
+   explorer.climb=null;
+   explorer.qaPositionChanges++;
+   explorer.status='QA konumu (askerler taşınmadı)';
+   updatePlayerGlyph();
+ }
+ function setView(view){
+   if(!['orbit','fps','tps'].includes(view))throw Error('Unsupported S2 preview camera');
+   explorer.view=view;
+   explorer.status=view==='orbit'?'Harita incelemesi':'WASD ile özgür keşif';
+   document.getElementById('view-mode-banner').textContent=
+     view==='orbit'?'S2 • Harita kamerası':
+     view==='fps'?'S2 • Birinci şahıs • fizik önizlemesi':
+       'S2 • Üçüncü şahıs • fizik önizlemesi';
+   updatePlayerGlyph();
+   updateCamera();
+ }
+ function tryClimb(){
+   if(explorer.view==='orbit'||explorer.climb)return;
+   const state=rules.snapshot(siege);
+   for(const side of ['west','east']){
+     const climb=traversal.beginClimb(explorer.position,side,spec,state);
+     if(climb){
+       explorer.climb=climb;
+       explorer.status=(side==='west'?'Batı':'Doğu')+' merdivenine çıkıyor';
+       return;
+     }
+   }
+   explorer.status='Merdiven kapalı veya girişe yeterince yakın değilsin';
+ }
+ for(const [id,fn] of [
+   ['siege-orbit',()=>setView('orbit')],
+   ['siege-fps',()=>setView('fps')],
+   ['siege-tps',()=>setView('tps')],
+   ['siege-team-red',()=>selectSide('red')],
+   ['siege-team-blue',()=>selectSide('blue')],
+   ['siege-fixture-gate',()=>qaLocate('gate')],
+   ['siege-fixture-west',()=>qaLocate('west')],
+   ['siege-fixture-east',()=>qaLocate('east')]
+ ]){
+   const button=document.getElementById(id);
+   if(!button)throw Error('S2 exploration UI missing: '+id);
+   button.addEventListener('click',()=>{try{fn();}catch(e){fail(e);}});
+ }
+ globalThis.addEventListener('keydown',e=>{
+   if(['KeyW','KeyA','KeyS','KeyD','KeyE'].includes(e.code)&&
+     explorer.view!=='orbit'){
+     explorer.keys[e.code]=true;
+     if(e.code==='KeyE'&&!e.repeat)tryClimb();
+     e.preventDefault();
+   }
+ });
+ globalThis.addEventListener('keyup',e=>{
+   if(['KeyW','KeyA','KeyS','KeyD','KeyE'].includes(e.code))
+     explorer.keys[e.code]=false;
+ });
+ globalThis.addEventListener('blur',()=>{
+   for(const key of Object.keys(explorer.keys))explorer.keys[key]=false;
+ });
+ function stepExplorer(dt){
+   if(explorer.view==='orbit')return;
+   const state=rules.snapshot(siege);
+   if(explorer.climb){
+     const step=traversal.stepClimb(explorer.climb,dt,spec,state);
+     explorer.position=step.position;
+     if(step.done){
+       explorer.climb=null;
+       explorer.status='Sur geçişi tamamlandı • iç avlu';
+     }
+   }else{
+     const yaw=explorer.yaw,
+       fwd=(explorer.keys.KeyW?1:0)-(explorer.keys.KeyS?1:0),
+       str=(explorer.keys.KeyD?1:0)-(explorer.keys.KeyA?1:0);
+     const magnitude=Math.hypot(fwd,str);
+     const speed=magnitude?traversal.SPEED/magnitude:0;
+     const move=traversal.move(explorer.position,{
+       x:(Math.sin(yaw)*fwd+Math.cos(yaw)*str)*speed,
+       z:(Math.cos(yaw)*fwd-Math.sin(yaw)*str)*speed
+     },dt,spec,state);
+     explorer.position={x:move.x,y:move.y,z:move.z};
+     explorer.blockedX=move.blockedX;explorer.blockedZ=move.blockedZ;
+     if((move.blockedX||move.blockedZ)&&magnitude)
+       explorer.status='Çarpışma: kale engeli / kapalı kapı';
+     else if(magnitude)explorer.status='Yürüyor';
+   }
+   explorer.walkTicks++;
+   updatePlayerGlyph();
+ }
+ function drawMini(){
+   const w=mini.width,h=mini.height,ctx=mini2d,b=spec.bounds;
+   const sx=x=>(x-b.minX)/(b.maxX-b.minX)*w;
+   const sz=z=>h-(z-b.minZ)/(b.maxZ-b.minZ)*h;
+   ctx.clearRect(0,0,w,h);
+   ctx.fillStyle='#182c25';ctx.fillRect(0,0,w,h);
+   ctx.strokeStyle='#445d47';ctx.lineWidth=1;
+   ctx.strokeRect(sx(spec.castle.minX),sz(spec.castle.maxZ),
+     sx(spec.castle.maxX)-sx(spec.castle.minX),
+     sz(spec.castle.minZ)-sz(spec.castle.maxZ));
+   const snapshot=rules.snapshot(siege);
+   for(const block of spec.boxes){
+     if(block.id==='gate-main'&&snapshot.gate.open)continue;
+     ctx.fillStyle=block.type==='gate'?'#e5aa5d':
+       block.solid?'#8b8979':'#587369';
+     if(!block.solid&&block.type!=='battlement')continue;
+     ctx.fillRect(sx(block.x-block.w/2),sz(block.z+block.d/2),
+       (block.w/(b.maxX-b.minX))*w,
+       (block.d/(b.maxZ-b.minZ))*h);
+   }
+   for(const lane of ['west','east'])
+     if(snapshot.lanes[lane]){
+       const p=spec.lanes[lane].entry;
+       ctx.fillStyle='#f7d481';ctx.beginPath();
+       ctx.arc(sx(p[0]),sz(p[1]),4,0,Math.PI*2);ctx.fill();
+     }
+   for(const [side,member] of Object.entries(spec.spawns)){
+     const p=member.commander;
+     ctx.fillStyle=side==='red'?'#db6553':'#56b5df';
+     ctx.beginPath();ctx.arc(sx(p[0]),sz(p[1]),3,0,Math.PI*2);ctx.fill();
+   }
+   const p=explorer.position;
+   ctx.fillStyle='#fff2b0';ctx.strokeStyle='#252525';ctx.lineWidth=1.5;
+   ctx.beginPath();ctx.arc(sx(p.x),sz(p.z),5,0,Math.PI*2);
+   ctx.fill();ctx.stroke();
+   ctx.beginPath();ctx.moveTo(sx(p.x),sz(p.z));
+   ctx.lineTo(sx(p.x+Math.sin(explorer.yaw)*9),
+     sz(p.z+Math.cos(explorer.yaw)*9));ctx.stroke();
+ }
+ selectSide('red');
+ // Existing original S1 orbit view retains its free preview camera.
  const orbit={yaw:.45,pitch:.67,distance:250,panZ:-17};
  let drag=null;
  function updateCamera(){
-   const cos=Math.cos(orbit.pitch);
-   camera.position.set(
-     Math.sin(orbit.yaw)*cos*orbit.distance,
-     Math.sin(orbit.pitch)*orbit.distance,
-     orbit.panZ+Math.cos(orbit.yaw)*cos*orbit.distance
-   );
-   camera.lookAt(0,1,orbit.panZ);
+   if(explorer.view==='orbit'){
+     const cos=Math.cos(orbit.pitch);
+     camera.position.set(
+       Math.sin(orbit.yaw)*cos*orbit.distance,
+       Math.sin(orbit.pitch)*orbit.distance,
+       orbit.panZ+Math.cos(orbit.yaw)*cos*orbit.distance
+     );
+     camera.lookAt(0,1,orbit.panZ);
+   }else{
+     const p=explorer.position,yaw=explorer.yaw,pitch=explorer.pitch,
+       dx=Math.sin(yaw),dz=Math.cos(yaw);
+     if(explorer.view==='fps'){
+       camera.position.set(p.x,p.y+2.7,p.z);
+       camera.lookAt(p.x+dx*19,p.y+2.7+pitch*12,p.z+dz*19);
+     }else{
+       camera.position.set(p.x-dx*12,p.y+8.6,p.z-dz*12);
+       camera.lookAt(p.x+dx*4,p.y+2.6+pitch*5,p.z+dz*4);
+     }
+   }
  }
  updateCamera();
  renderer.domElement.addEventListener('pointerdown',ev=>{
-   drag={x:ev.clientX,y:ev.clientY,yaw:orbit.yaw,pitch:orbit.pitch};
+   drag={x:ev.clientX,y:ev.clientY,
+     yaw:explorer.view==='orbit'?orbit.yaw:explorer.yaw,
+     pitch:explorer.view==='orbit'?orbit.pitch:explorer.pitch};
    renderer.domElement.setPointerCapture(ev.pointerId);
  });
  renderer.domElement.addEventListener('pointermove',ev=>{
    if(!drag)return;
-   orbit.yaw=drag.yaw+(ev.clientX-drag.x)*.006;
-   orbit.pitch=Math.max(.21,Math.min(1.40,
-     drag.pitch+(ev.clientY-drag.y)*.005));
+   if(explorer.view==='orbit'){
+     orbit.yaw=drag.yaw+(ev.clientX-drag.x)*.006;
+     orbit.pitch=Math.max(.21,Math.min(1.40,
+       drag.pitch+(ev.clientY-drag.y)*.005));
+   }else{
+     explorer.yaw=drag.yaw+(ev.clientX-drag.x)*.006;
+     explorer.pitch=Math.max(-.7,Math.min(.7,
+       drag.pitch-(ev.clientY-drag.y)*.004));
+     updatePlayerGlyph();
+   }
    updateCamera();
  });
  function releaseDrag(){drag=null;}
@@ -257,6 +453,14 @@
    nodes.gate.textContent=s.gate.hp+' HP';
    nodes.gateBar.style.width=(100*(1-s.gate.hp/s.gate.maxHp))+'%';
    nodes.route.textContent=Object.values(s.lanes).filter(Boolean).length+' / 3';
+   const p=explorer.position;
+   document.getElementById('explorer-location').textContent=
+     p.x.toFixed(0)+' / '+p.z.toFixed(0)+
+     (p.y>2?' ↑'+p.y.toFixed(0):'');
+   document.getElementById('explorer-collision').textContent=
+     explorer.climb?'Tırmanıyor':
+       explorer.blockedX||explorer.blockedZ?'Duvar bloke':
+         'Serbest • '+explorer.team.toUpperCase();
    nodes.court.textContent=s.capture.courtyard.toFixed(1)+' / '+
      s.rules.courtyardHoldSeconds+' s';
    nodes.keep.textContent=s.capture.keep.toFixed(1)+' / '+
@@ -294,7 +498,8 @@
  function action(which){
    if(which==='reset'){
      siege=rules.createScenario();oldEvents=-1;oldPhase='';
-     updateUI();return;
+     selectSide(explorer.team);
+     updateUI();drawMini();return;
    }
    const event={
      gate:{type:'GATE_HIT',team:'red',weapon:'ram',damage:75},
@@ -319,8 +524,13 @@
        const dt=Math.min(.05,Math.max(0,(now-last)/1000));
        if(dt>0)rules.step(siege,dt);
      }
+     const dt=Math.min(.05,Math.max(0,(now-last)/1000));
+     stepExplorer(dt);
+     updateCamera();
      last=now;
-     if(frames++%8===0)updateUI();
+     if(frames++%8===0){
+       updateUI();drawMini();
+     }
      renderer.render(scene,camera);
      requestAnimationFrame(loop);
    }catch(e){running=false;fail(e);}
@@ -335,6 +545,22 @@
    gateVisible:gate.visible,
    ladderWestVisible:ladderMeshes.west.visible,
    ladderEastVisible:ladderMeshes.east.visible,
+   explorer:{
+     view:explorer.view,team:explorer.team,
+     pos:{...explorer.position},
+     yaw:explorer.yaw,pitch:explorer.pitch,
+     climb:explorer.climb?.side||null,
+     walkTicks:explorer.walkTicks,
+     qaPositionChanges:explorer.qaPositionChanges,
+     blockedX:explorer.blockedX,blockedZ:explorer.blockedZ,
+     status:explorer.status,
+     embedded:traversal.overlaps(explorer.position,spec,
+       rules.snapshot(siege)),
+     availableRoute:traversal.route('outer','keep',spec,
+       rules.snapshot(siege))?.map(n=>n.id)||null
+   },
+   activeColliders:traversal.activeColliders(spec,
+     rules.snapshot(siege)).length,
    ...rules.snapshot(siege)
  });
  requestAnimationFrame(loop);
