@@ -45,6 +45,26 @@ try{
  assert.equal(a.realDefenderRoleCoordinationConnected,true);
  assert.equal(a.realRampart3DDefenderAIConnected,true);
  assert.equal(a.sharedNativeG54ArmyCommandContract,true);
+ assert.equal(a.sharedG54ArmyHudOverlayActive,true);
+ assert.equal(a.sharedG54OriginalFieldShortcutsEnabled,true);
+ assert.deepEqual(a.sharedG54NativeShortcutBindings,
+   ['KeyJ','KeyK','KeyZ','KeyX','Digit7','Digit8','Digit9']);
+ const hud=page.locator('#ak02-g54-commander-hud');
+ assert.equal(await hud.count(),1);
+ assert.match(await hud.locator('[data-army-heading]').textContent(),/G5\.4 BÖLÜK/);
+ const liveCmd=()=>page.evaluate(()=>window.ktkSiegeArmyCommandStatus?.());
+ await page.keyboard.press('KeyK');
+ assert.equal((await liveCmd()).order,'advance');
+ await page.keyboard.press('KeyJ');
+ assert.equal((await liveCmd()).order,'hold');
+ await page.keyboard.press('KeyX');
+ assert.equal((await liveCmd()).formation,'column');
+ await page.keyboard.press('KeyZ');
+ assert.equal((await liveCmd()).formation,'line');
+ const keyboardBefore=await army();
+ assert.equal(keyboardBefore.sharedG54KeyboardCommandsAccepted>=4,true);
+ assert.equal((await hud.locator('[data-army-shortcut-notice]').textContent()).includes('Komut kabul edildi'),true);
+ report.checks.push('PASS_AK02A_ORIGINAL_G54_ARMY_KEYBOARD_J_K_X_Z_AND_PERSISTENT_COMBAT_HUD');
  assert.equal(a.sharedNativeG54ArmyCommands.originalG54ArmyCommandFunctions,true);
  assert.equal(a.sharedNativeG54ArmyCommands.visualLayoutFullyShared,false);
  const cm=()=>page.evaluate(()=>window.ktkSiegeArmyCommandStatus?.());

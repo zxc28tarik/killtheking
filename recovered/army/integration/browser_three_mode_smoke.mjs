@@ -115,6 +115,12 @@ try{
  assert.equal(siege.army.realDefenderRoleCoordinationConnected,true);
  assert.equal(siege.army.realRampart3DDefenderAIConnected,true);
  assert.equal(siege.army.sharedNativeG54ArmyCommandContract,true);
+ assert.equal(siege.army.sharedG54ArmyHudOverlayActive,true);
+ assert.equal(siege.army.sharedG54OriginalFieldShortcutsEnabled,true);
+ assert.equal(siege.army.sharedG54NativeShortcutBindings.length,7);
+ assert.equal(await child().locator('#ak02-g54-commander-hud').count(),1);
+ assert.match(await child().locator('[data-army-status]').textContent(),/ASKER/);
+ report.checks.push('PASS_AK02A_SHARED_FIELD_HOTKEYS_AND_IN_WORLD_ARMY_HUD');
  assert.equal(siege.army.sharedNativeG54ArmyCommands.originalG54ArmyCommandFunctions,true);
  assert.equal(siege.army.exactOriginalFieldArmyHUDReused,false);
  report.checks.push('PASS_AK01_SIEGE_AND_FIELD_NATIVE_G54_COMMANDS_SHARED');
