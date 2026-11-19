@@ -489,6 +489,14 @@
    }
    for(const b of document.querySelectorAll('[data-siege]')){
      const key=b.dataset.siege;
+     // In genuine S3 army mode, ONLY true soldier occupancy may govern the
+     // objective. Disable S1 debug capture/death buttons to prevent fake wins.
+     if(extensionFrame&&['court','court-contest','keep',
+       'keep-contest','wipe'].includes(key)){
+       b.disabled=true;
+       b.title='S3: gerçek asker sonucu kullanılır; elle işgal/ölüm yasak';
+       continue;
+     }
      b.disabled=s.phase==='RESULT'&&key!=='reset';
      if(key==='gate'&&s.gate.open)b.disabled=true;
      if((key==='west'||key==='east')&&s.ladders[key].open)b.disabled=true;
@@ -505,6 +513,9 @@
    }
  }
  function action(which){
+   if(extensionFrame&&['court','court-contest','keep',
+     'keep-contest','wipe'].includes(which))
+     throw Error('S3 gerçek asker işgal ve ölümünü DEBUG düğmeleriyle değiştirme');
    if(which==='reset'){
      siege=rules.createScenario();oldEvents=-1;oldPhase='';
      if(extensionReset)extensionReset(siege);
