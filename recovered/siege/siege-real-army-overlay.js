@@ -8,6 +8,7 @@
  const source=globalThis.ArenaArmyBattle;
  const bal=globalThis.ArenaWeaponBalance;
  const bridgeApi=globalThis.KTKSiegeRealArmyBridge;
+ const siegeCombat=globalThis.KTKSiegeStructureCombat||null;
  const map=globalThis.KTKSiegemap;
  const objectives=globalThis.KTKSiegeObjectives;
  const traversal=globalThis.KTKSiegeTraversal;
@@ -40,6 +41,10 @@
    '</div>',
    '<div id="s3-army-state" style="font-size:11px;margin-top:9px"></div>'
  ].join('');
+ if(siegeCombat){
+   panel.querySelector('h3').textContent='S3C1 • GERÇEK ASKER KAPI SALDIRISI';
+   panel.querySelector('p').textContent='140 gerçek G5.4 asker. Yalnız kapının dış yüzüne ulaşan kırmızı kılıçlı ve mızraklılar, özgün menzil/hasar/yeniden saldırma süreleriyle kapıya vurur. Kapı hasarı için DEBUG tuşları kapalı. Gerçek asker merdiven AI ve tam kuşatma zaferi HENÜZ YOK.';
+ }
  el.insertBefore(panel,el.firstChild);
  const dummy=new THREE.Object3D();
  const groups=preview.tokens.map(inst=>({
@@ -52,7 +57,8 @@
  function createRealArmy(team,scenario){
    bridge=bridgeApi.create({
      armyEngine:source,map,objectives,traversal,
-     scenario,playerTeam:team,playerType:'sword',seed:1600
+     scenario,playerTeam:team,playerType:'sword',seed:1600,
+     structureCombatEngine:siegeCombat
    });
    if(bridge.state.soldiers.length!==140||
       bridge.state.squads.length!==8)
@@ -91,6 +97,10 @@
  }
  function drawMetrics(){
    const view=bridgeApi.snapshot(bridge);
+   const gateCaption=siegeCombat
+     ?' • Gerçek asker kapı vuruşları: '+view.genuineSoldierGateStrikes.strikes+
+       ' / kalan kapı HP: '+view.scenario.gate.hp
+     :' • Kapı AI hasarı: henüz bağlı değil';
    document.getElementById('s3-red-count').textContent=view.genuineAlive.red;
    document.getElementById('s3-blue-count').textContent=view.genuineAlive.blue;
    document.getElementById('s3-real-ticks').textContent=view.armyNativeTick;
@@ -99,7 +109,7 @@
      'Oyuncu: '+bridge.playerTeam.toUpperCase()+' / Kılıçlı • '+
      'G5.4 süre: '+view.realArmySeconds.toFixed(1)+'s • '+
      'Yer değiştiren gerçek asker-tikleri: '+view.genuinelyMovedSoldierTicks+
-     ' • Kapı AI hasarı: henüz bağlı değil';
+     gateCaption;
  }
  function onFrame(dt){
    // Native G5.4 0.08s substeps are used, no handcrafted soldiers/damage.
@@ -117,7 +127,8 @@
    drawMetrics();
  }
  createRealArmy(preview.getTeam(),preview.getScenario());
- preview.register({onFrame,onReset,onTeamChange});
+ preview.register({onFrame,onReset,onTeamChange,
+   realStructureCombat:!!siegeCombat});
  for(const order of ['hold','advance','charge','retreat']){
    document.getElementById('s3-order-'+order).addEventListener('click',()=>{
      const okay=bridgeApi.command(bridge,order);
@@ -137,7 +148,10 @@
    sourceEngine:'PINNED_G5_4_TRUE_SIDE_SWAP_SHA_30798785',
    fullSiegeBattleReady:false,
    playerControlsRealArmySquad:true,
-   authenticGateDamageSupported:false,
+   authenticGateDamageSupported:!!siegeCombat,
+   genuineGateStrikes:bridge.structureCombat?
+     bridge.structureCombatEngine.snapshot(bridge.structureCombat):null,
+   nativeCastleTerrainCollisionActive:!!siegeCombat,
    independentFFAUnmodified:true
  });
 })();
