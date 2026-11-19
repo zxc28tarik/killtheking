@@ -185,6 +185,8 @@
  // S2 EXPLORATION: one physical player avatar with *actual* swept world
  // collision, keyboard movement, gate collider removal and guided climbs.
  // Army soldier markers remain NONCOMBAT and no S1 siege events are forged.
+ // Optional S3 genuine-army adapter. With no adapter, S2 preview is unchanged.
+ let extensionFrame=null,extensionReset=null,extensionTeam=null;
  const explorer={view:'orbit',team:'red',
    position:{x:0,y:0,z:-110},yaw:0,pitch:0,
    keys:Object.create(null),climb:null,walkTicks:0,
@@ -218,6 +220,7 @@
    explorer.yaw=team==='red'?0:Math.PI;
    explorer.climb=null;explorer.status='Güvenli takım doğuşu';
    updatePlayerGlyph();
+   if(extensionTeam)extensionTeam(team);
  }
  function qaLocate(where){
    const points={
@@ -498,6 +501,7 @@
  function action(which){
    if(which==='reset'){
      siege=rules.createScenario();oldEvents=-1;oldPhase='';
+     if(extensionReset)extensionReset(siege);
      selectSide(explorer.team);
      updateUI();drawMini();return;
    }
@@ -522,7 +526,10 @@
    try{
      if(siege.phase!=='RESULT'){
        const dt=Math.min(.05,Math.max(0,(now-last)/1000));
-       if(dt>0)rules.step(siege,dt);
+       if(dt>0){
+         if(extensionFrame)extensionFrame(dt);
+         else rules.step(siege,dt);
+       }
      }
      const dt=Math.min(.05,Math.max(0,(now-last)/1000));
      stepExplorer(dt);
@@ -536,7 +543,23 @@
    }catch(e){running=false;fail(e);}
  }
  updateUI();
- // Read-only browser acceptance status: never exposes mutable engine state.
+ // S3 add-on receives the same authentic S1 scenario and the existing
+ // Three.js instanced troop meshes; no additional fake army copies.
+ // This optional local-preview adapter DOES NOT expose main FFA/army engine.
+ globalThis.ktkSiegePreviewAdapter=Object.freeze({
+   scene,tokens:armyTokens,
+   getScenario:()=>siege,
+   getTeam:()=>explorer.team,
+   getPlayerPosition:()=>({...explorer.position}),
+   register({onFrame,onReset,onTeamChange}={}){
+     if(extensionFrame)throw Error('S3 army adapter is already registered');
+     if(typeof onFrame!=='function'||typeof onReset!=='function')
+       throw Error('Incomplete S3 authentic army integration adapter');
+     extensionFrame=onFrame;extensionReset=onReset;
+     extensionTeam=typeof onTeamChange==='function'?onTeamChange:null;
+   }
+ });
+  // Read-only browser acceptance status: never exposes mutable engine state.
  globalThis.ktkSiegePreviewStatus=()=>({
    ready:running,
    sceneWebGL:!!renderer.getContext()&&!renderer.getContext().isContextLost(),
