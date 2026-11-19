@@ -13,6 +13,8 @@
  const ladderAI=globalThis.KTKSiegeLadderAI||null;
  const captureAI=globalThis.KTKSiegeCaptureAI||null;
  const defenderAI=globalThis.KTKSiegeDefenderAI||null;
+ const rampartAI=globalThis.KTKSiegeRampartAI||null;
+ if(rampartAI&&!defenderAI)throw Error('S4B1 rampart counterfire requires native S4A defense');
  if(defenderAI&&!captureAI)throw Error('S4 blue role defender requires S3C3 real capture');
  if(captureAI&&!ladderAI)throw Error('S3C3 objective assault requires actual S3C2 ladder bridge');
  if(ladderAI&&!siegeCombat)throw Error('S3C2 actual ladders require real gate combat');
@@ -65,6 +67,10 @@
    panel.querySelector('h3').textContent='S4A • GERÇEK MAVİ KALE SAVUNMASI';
    panel.querySelector('p').textContent='Mavi kılıçlı/mızraklılar kapı ve avlu ön hattını, okçu/tüfekçiler arka destek mevzilerini korur. Yaşayan kırmızı askerler kapıdan veya merdivenden girince savunma avluya; iç kale fazında son hatta çekilir. Askerler gerçek G5.4 yürüyüş hızlarıyla ilerler. 3B sur üstü BOT atışı S4B için açık.';
  }
+ if(rampartAI){
+   panel.querySelector('h3').textContent='S4B1 • GERÇEK 3B SUR SAVUNUCULARI';
+   panel.querySelector('p').textContent='Gerçek G5.4 mavi okçu/tüfekçilerden 8 asker oyunun başlangıcında sur üstünde mevzilenir. Oklar 3B gerçek uçuş, tüfekler 3B ilk temas ile kırmızı askerlere karşılık verir; zarar ve kadans gerçek G5.4 kaynağından gelir. Mavi kara savunması S4A devam eder. Oyuncuya 3B karşı ateş ve tam karşılıklı bot fizik S4B2 için açık.';
+ }
   el.insertBefore(panel,el.firstChild);
  const dummy=new THREE.Object3D();
  const groups=preview.tokens.map(inst=>({
@@ -86,7 +92,11 @@
      assaultNavigationEngine:siegeCombat?assaultNav:null,
      ladderAIEngine:ladderAI,
      captureAIEngine:captureAI,
-     defenderAIEngine:defenderAI
+     defenderAIEngine:defenderAI,
+     rampartAIEngine:rampartAI,
+     ballisticsAPI:rampartAI?globalThis.KTKSiege3DBallistics:null,
+     weaponBalance:rampartAI?bal:null,
+     defenderRender:rampartAI?{THREE,scene:preview.scene}:null
    });
    if(bridge.state.soldiers.length!==140||
       bridge.state.squads.length!==8)
@@ -148,6 +158,13 @@
           :' • Avlu '+view.scenario.capture.courtyard.toFixed(1)+'s'+
             ' • İç kale '+view.scenario.capture.keep.toFixed(1)+'s')
      :'';
+   const rampartCaption=rampartAI&&view.realRampart3DDefenderAI
+     ?' • Sur: '+view.realRampart3DDefenderAI.survivingRampartDefenders+
+       '/'+view.realRampart3DDefenderAI.initialGenuineDefendersOnRamparts+
+       ' • 3B tüfek/ok: '+view.realRampart3DDefenderAI.musket3DShots+
+       '/'+view.realRampart3DDefenderAI.bow3DShots+
+       ' • Gerçek isabet: '+view.realRampart3DDefenderAI.successfulAuthenticSoldierHits
+     :'';
    const defenderCaption=defenderAI&&view.realDefenderRoleCoordination
      ?' • Savunma: '+view.realDefenderRoleCoordination.activeDefensivePhase+
        ' • Gerçek mavi asker adımları: '+
@@ -165,7 +182,7 @@
      'Oyuncu: '+bridge.playerTeam.toUpperCase()+' / Kılıçlı • '+
      'G5.4 süre: '+view.realArmySeconds.toFixed(1)+'s • '+
      'Yer değiştiren gerçek asker-tikleri: '+view.genuinelyMovedSoldierTicks+
-     gateCaption+ladderCaption+captureCaption+defenderCaption;
+     gateCaption+ladderCaption+captureCaption+defenderCaption+rampartCaption;
  }
  function onFrame(dt){
    if(nativePreStep)nativePreStep(dt);
