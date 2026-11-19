@@ -1,6 +1,6 @@
-# Kill the King — Kuşatma Kalesi S1
+# Kill the King — Kuşatma Kalesi S1/S2
 
-**Durum: S1 oyun mantığı ve 3B harita önizlemesi kodlandı; gerçek 140 asker savaş motoru entegre DEĞİL.** Bu klasör yeni **tek bir kuşatma senaryosu** için ayrılmıştır. FFA/TDM, özgün kale, çimenlik meydan ve G5.4 ordu modları bu aşamada değiştirilmedi.
+**Durum: S1 hedef sistemi ve S2 dolaşılabilir kale önizlemesi kodlandı; gerçek 140 asker savaş motoru henüz entegre DEĞİL.** Bu klasör yeni **tek bir kuşatma senaryosu** için ayrılmıştır. FFA/TDM, özgün kale, çimenlik meydan ve G5.4 ordu modları bu aşamada değiştirilmedi.
 
 ## Tasarım ve plan
 
@@ -26,15 +26,27 @@
 
 **UYARI:** HTML **kale/hedef önizlemesidir**, henüz gerçek FPS/TPS savaşı değildir. 140 asker simüle edilmedi. Gerçek GPU Windows kabulü, G5.4 gerçek 140 asker entegrasyonu, kale kapısının gerçek asker hasarı, A* merdiven, animasyon ve kazanma dengesi S2–S6 kapsamındadır.
 
+## S2 — FPS/TPS kale keşfi, gerçek klavye ve dinamik çarpışma
+
+- Yeni `siege-traversal.js`: gerçek kale collider'larını kullanan süpürmeli oyuncu hareketi; kapı açık/kapalı durumunda doğru çarpışma; kapı ve iki yan çıkış için bağımsız hedef rotaları. Surun üzerinden kademeli **E** tırmanışı, duvarın içinden kesme yok.
+- `siege-preview.js` artık **ayrı önizleme avatarına** ait FPS/TPS kamera, WASD ve E girişi, takım seçimi, taktik mini harita ve QA için açıkça etiketli konum testleri sunuyor. Ana oyundaki FPS/TPS/silah/gerçek bot motoru henüz bağlanmadı.
+- [Ayrıntılı S2 test raporu](S2_CASTLE_TRAVERSAL_ACCEPTANCE_TR.md).
+- [**S2 CI #44495376208 — SUCCESS**, **39/39 Node** + gerçek Chromium klavye W/E](https://github.com/zxc28tarik/killtheking/actions/runs/44495376208).
+- [**İndirilebilir S2 3B keşif önizlemesi**, artifact #14514018373](https://github.com/zxc28tarik/killtheking/actions/runs/44495376208/artifacts/14514018373).
+- [S2 Chromium ekran görüntüsü ve JSON, artifact #14514063331](https://github.com/zxc28tarik/killtheking/actions/runs/44495376208/artifacts/14514063331).
+- S2 tek HTML SHA-256: `d9c6a614a344bb5377837be5640071fa379e50920b42d6bac1cd37a9be06cdd5`. Bu sadece önizleme sürümüdür.
+
+**S2'nin sınırı:** Gerçek G5.4 `ArenaArmyBattle` 140 asker AI, kapı hasarı, NPC merdiven navigasyonu, ana oyun FPS/TPS motoru ve gerçek GPU kabulü açık. Kalenin fizik ve yollarını önizleme içinde doğrulamak bunların bittiği anlamına gelmez.
+
 ## Geliştirici komutları
 
 ```bash
-node --test recovered/siege/test_siege_phase1.mjs
-node recovered/siege/build_siege_preview.mjs recovered/siege/dist/KillTheKing_Kusatma_Kalesi_S1_Onizleme.html
+node --test recovered/siege/test_siege_phase1.mjs recovered/siege/test_siege_traversal.mjs
+node recovered/siege/build_siege_preview.mjs recovered/siege/dist/KillTheKing_Kusatma_Kalesi_S2_Kesif_Onizleme.html
 ```
 
-Üretilen tek HTML'yi Chrome/Edge'de yerel aç; kaleyi sürükleyerek çevir, fare tekeriyle yakınlaştır. Sağdaki "test olayları" düğmeleri mevcut tek kuşatma senaryosunun fazlarını sınar. Gerçek savaş AI'sını gözlemlemek için kullanılmaz.
+Üretilen tek HTML'yi Chrome/Edge'de yerel aç. Harita kamerasında sürükleyip yakınlaştır; **FPS/TPS seçerek WASD ile yürü, E ile açık merdivene çık**, saldıran/savunan tarafı seç. Sağdaki **QA konumu** düğmeleri yalnız çarpışma denemesi için oyuncuyu yerleştirir. “Test olayları” düğmeleri S1 senaryo kurallarını sınar; gerçek savaş AI'sını gözlemlemek için kullanılmaz.
 
-## Sıradaki adım S2
+## Sıradaki adım: S2 üretim tamamlama ve S3
 
-Bu doğrulanmış harita sözleşmesini mevcut 3B oyun stilindeki gerçek duvar/collider/merdiven/kapı geometrisine taşı; kapı yıkılınca yol ve collision güncellemesi, oyuncunun dış alan→sur→avlu→iç kale erişimi, kale içi spawn güvenliği, taktik harita. Ardından **S3'te** gerçek G5.4 `ArenaArmyBattle` olay/asker ve komuta bağlantısını yap. Oyuncu onayı olmadan yeni denge veya `main` değişimi yok.
+Önizlemedeki gerçek kapı/merdiven fizik sözleşmesini **ana oyun FPS/TPS karakterine**, sur üstü platform/ayak basma animasyonuna ve asker A* navigasyonuna taşı. Ardından **S3'te** gerçek G5.4 `ArenaArmyBattle` olay/asker/komuta bağlantısını yap; **gerçek asker hasarını** kapıya ve gerçek asker işgalini avlu/iç kale hedefine bağla. Kullanıcı onayı olmadan yeni denge veya `main` değişimi yok.
