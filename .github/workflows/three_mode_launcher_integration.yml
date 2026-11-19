@@ -14,6 +14,8 @@ on:
       - 'recovered/siege/siege-character-visuals.js'
       - 'recovered/siege/siege-real-army-overlay.js'
       - 'recovered/siege/test_siege_character_visuals.mjs'
+      - 'recovered/siege/siege-weapon-feedback.js'
+      - 'recovered/siege/test_siege_weapon_feedback.mjs'
       - 'recovered/siege/siege-player-ui.js'
       - 'recovered/siege/siege-player-combat.js'
       - '.github/workflows/three_mode_launcher_integration.yml'
@@ -71,6 +73,7 @@ jobs:
           node --test recovered/siege/test_siege_player_combat.mjs
           node --test recovered/siege/test_siege_character_visuals.mjs
           node --test recovered/siege/test_siege_player_locomotion.mjs
+          node --test recovered/siege/test_siege_weapon_feedback.mjs
       - name: Verify exactly three modes with explicit non-final-engine boundaries
         run: |
           node --input-type=module -e "
