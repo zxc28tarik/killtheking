@@ -63,18 +63,19 @@
 
 ### S3 — Gerçek 70v70 G5.4 savaş motoruyla ilk bütünleşme [P0]
 
-**19 Kasım — S3A/S3B ilk gerçek ordu köprüsü ve 3B asker sahnesi BAŞARILI; TAM OYNANABİLİR KUŞATMA DEĞİL.** [S3 kaynak ve Chromium kanıt raporu](SIEGE_CASTLE_S3_REAL_ARMY_INTEGRATION_TR.md). Değişmemiş G5.4 gerçek `ArenaArmyBattle.create/step/snapshot` motoru ile 8 bölük ve 140 özgün asker kuşatma kalesinde doğuyor; 3B modeller artık gerçek askerlerin pozisyonlarından ilerliyor, yalnız statik işaret değil. **13/13 yeni gerçek motor + 39/39 mevcut S1/S2 test PASS.** Kapı/merdiven asker AI'sı, gerçek oyuncu silahı ve tam kuşatma zaferi bu sonuçla onaylanmış değil.
+**19 Kasım — S3A/S3B gerçek ordu ve 3B asker sahnesi + S3C1 doğal asker kapı saldırısı PASS; TAM OYNANABİLİR KUŞATMA DEĞİL.** [S3 kaynak ve Chromium kanıt raporu](SIEGE_CASTLE_S3_REAL_ARMY_INTEGRATION_TR.md). Değişmemiş G5.4 gerçek `ArenaArmyBattle.create/step/snapshot` motoru ile 8 bölük ve 140 özgün asker kuşatma kalesinde doğuyor; 3B modeller artık gerçek askerlerin pozisyonlarından ilerliyor, yalnız statik işaret değil. **15/15 S3C1 + 13/13 S3A + 39/39 S1/S2 = 67/67 test PASS.** [32 saniyelik doğal asker kapı kırma kanıtı](SIEGE_CASTLE_S3C1_GATE_ASSAULT_TR.md): 35 gerçek kaynaklı saldırı ve 15→14 G5.4 engel güncellemesi. **Merdiven AI, gerçek oyuncu silahı ve tam kuşatma zaferi hâlâ AÇIK.**
 
 - [x] **S3A gerçek motor:** 70 kırmızı / 70 mavi, sekiz özgün bölük, iki taraf komuta ve gerçek `step/snapshot/drainCombatEvents` API'si.
 - [x] **S3A gerçek harita:** S1 taş engelleri orijinal G5.4 `setWorldObstacles({x,y,z,w,h,d,solid})` motoruna bağlandı. Kapı açıldığında G5.4 görüş engeli 15→14 güncellenir.
 - [x] **S3A işgal okuyucu:** yaşayan gerçek asker koordinatlarından avlu/iç kale varlığı hesaplanır; 70'er asker sayısı engine/squad üzerinden doğrulanır; DEBUG elle zafer kontrolü gerçek modda engellenir.
 - [x] **S3B 3B görsel aday:** gerçek 140 asker `InstancedMesh` pozisyonlarına aktarılır, oyuncu kendi gerçek bölüğüne emir verebilir, kırmızı/mavi gerçek komutan seçimi çalışır.
-- [ ] **S3C gerçek yapı etkileşimi:** gerçek asker saldırısı kaynaklı kapı HP azalması ve AI merdiven kullanımının savaş yoluna dönüşmesi.
+- [x] **S3C1 gerçek asker kapı hücumu:** yaşayan gerçek G5.4 yakın dövüş askeri, orijinal hasar/menzil/yeniden saldırma süresi ve yeni kuşatma rotasıyla **normal doğuştan** taş kapıyı kırıyor. 32 saniye gerçek engine zamanı, 35 vuruş, 600→0 HP ve gerçek collider 15→14; [CI #44504343310](https://github.com/zxc28tarik/killtheking/actions/runs/44504343310).
+- [ ] **S3C2 gerçek merdiven ve sur AI:** iki yan çıkış için yaşayan gerçek askerlerin merdiven yapması, üzerinde yükselmesi/inişi ve avluya güvenli inmesi. Kapı testinde kullanılan askerler için otomatik merdiven **henüz yok**.
 - [ ] **S3C gerçek kuşatma:** askerlerin sur/merdiven/avluda özgün geometriyle doğru 3B yürümesi, gerçek zayiat/işgal ve tam maç bitişi.
 - [ ] **S3D FPS/TPS ana oyun oyuncusu:** asıl karakterin silah/HP/hareket modülü ile gerçek 140 askerin aynı kuşatma savaşını oynaması.
-- [ ] G5.4`ArenaArmyBattle.create/step/snapshot` sözleşmesiyle 8 bölük ve 140 gerçek asker üret.
-- [ ] Kale engellerini **gerçek** `setWorldObstacles({x,y,z,w,h,d,solid})` üzerinden bağla.
-- [ ] Asker ölümü, mevzi durumu, gerçek kapı saldırısı ve gerçek bölge işgali kaynak doğruluğuyla senaryo motoruna aksın; sahte debug olayları yasak.
+- [x] Gerçek G5.4 `ArenaArmyBattle.create/step/snapshot` sözleşmesiyle 8 bölük ve 140 asker üret (S3A/B).
+- [x] Kale engellerini **gerçek** `setWorldObstacles({x,y,z,w,h,d,solid})` üzerinden bağla (S3A ve S3C1).
+- [ ] **KISMEN:** gerçek asker HP/ölüm ve konumları okunuyor, kapı darbeleri S3C1'de gerçek asker/mesafe/ritimden geliyor ve sahte kazanma düğmeleri kapalı. **Eksik:** gerçek asker merdiven, avlu ve iç kale üzerinde nihai zafer kanıtı.
 - [ ] Oyuncu iki taraftan birine gerçek komuta versin; sıfır dost ateşi hatası.
 - [ ] Birleşik başlatıcıya **üçüncü bağımsız kuşatma modu** ekle; FFA ve ordu modlarını koru.
 **Kabul:** gerçek asker/HP/kapı/nav/sonuç tutarlılığı, komuta ve iki taraf testi; ordu kaynak SHA bütünlüğü.
@@ -104,6 +105,6 @@
 
 Her adımda GitHub commit, uygulanan dosyalar, CI test özeti, **YAPILDI / KISMEN / YAPILMADI** ve açık riskler belirtilir. Bir test geçmesi gerçek oyuncu/real GPU kabulü sayılmaz.
 
-## 4. Bu sefer yapılacak ilk iş
+## 4. Sıradaki kesin geliştirme
 
-**Önce S1'i kodlayıp doğrula.** Ayrı `recovered/siege/` altında kuşatma harita sözleşmesi, senaryo motoru, kullanıcı tarafından incelenebilir ilk bağımsız önizleme ve CI. Sonra S2/S3. Başka oyun modlarının iç kodlarına dokunma.
+**S3C2:** iki yan merdivenin gerçek asker/squad eylemiyle kurulması, gerçek 3B asker çıkış/inişi ve çevresel çarpışma; sonra avlu + iç kale ele geçirme, S3D FPS oyuncu entegrasyonu ve S4–S6. Başka oyun modlarının iç kodlarına dokunma, önemli denge sözleşmelerini kullanıcı onayı olmadan kilitleme.
