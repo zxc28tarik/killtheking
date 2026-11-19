@@ -12,10 +12,10 @@ const globalThis={THREE};
 vm.runInNewContext(source,{globalThis,THREE});
 const create=globalThis.KTKSiegeCharacterVisuals.create;
 function fixture(){
- const scene=new THREE.Scene(),groups=[],unitTypes=['sword','spear','bow','musket'];
+ const scene=new THREE.Scene(),groups=[],unitTypes=['sword','pike','bow','musket'];
  for(const team of ['red','blue']){
    for(const role of unitTypes){
-     const n={sword:20,spear:25,bow:15,musket:10}[role];
+     const n={sword:20,pike:25,bow:15,musket:10}[role];
      const inst=new THREE.InstancedMesh(new THREE.CylinderGeometry(.55,.67,2.4,6),
        new THREE.MeshBasicMaterial({color:0xff0000}),n);
      inst.userData={team,role:role==='bow'?'archer':role,count:n};
