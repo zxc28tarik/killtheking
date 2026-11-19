@@ -114,6 +114,19 @@ test('after real gate breach, genuine soldier at staging must advance INSIDE (ne
  assert(movement.z>u.z,'G5.4 assault soldier stuck at open-gate rally');
  assert(movement.z-u.z<=A.TYPES[u.type].speed*u.pace*.08+1e-8);
  assert.equal(movement.goal,'THROUGH_AUTHENTIC_OPEN_GATE');
+ // A real native-speed movement sequence must NEVER reverse its completed
+ // staging waypoint and must physically cross the opened gate.
+ let prev=u.z;
+ for(let i=0;i<65;i++){
+  const p=capture.suggest(b.captureAI,u,{x:u.x,z:u.z},.08);
+  if(!p)break;
+  u.x=p.x;u.z=p.z;
+  assert(u.z>=prev-1e-8,'Original gate staging waypoint oscillation returned');
+  prev=u.z;
+ }
+ assert(u.z>-38,'Living native soldier still stalled outside open gate');
+ assert(view(b).realObjectiveCaptureNavigation.stagingWaypointSoldierIds>=1);
+ assert(view(b).realObjectiveCaptureNavigation.naturallyCrossedOpenGateSoldierIds>=1);
 });
 test('no forced victory if a real living defender is inside contested courtyard',()=>{
  const s=objectives.createScenario();
@@ -206,6 +219,7 @@ test('natural native 140 G5.4 soldier match: trace authentic captured zones and 
     gate:s.scenario.gate.hp,
     red:s.genuineAlive.red,blue:s.genuineAlive.blue,
     nav:s.realObjectiveCaptureNavigation.enteredCourtyardSoldierIds,
+    gatePass:s.realObjectiveCaptureNavigation.naturallyCrossedOpenGateSoldierIds,
     keepNav:s.realObjectiveCaptureNavigation.enteredKeepSoldierIds,
     winner:s.scenario.winner
    });
