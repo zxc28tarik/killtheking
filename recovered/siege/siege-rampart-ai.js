@@ -133,9 +133,10 @@
      from,base,h,v,3.2);
    if(!roll.point)return false;
    const distance=at(u,base);
-   const flightTime=distance/ai.ballistics.constructor.ARROW_SPEED||distance/70;
+   const flightTime=distance/ai.ballistics.status().playerArrowFlightSpeed;
    // Native 70m/s, 22m/s² rise correction on a moving discrete trajectory.
-   const compensatedY=roll.point.y+(weapon==='bow'?.5*22*
+   const compensatedY=roll.point.y+(weapon==='bow'?.5*
+     ai.ballistics.status().playerArrowGravity*
      flightTime*flightTime:0);
    const aim={x:roll.point.x-from.x,
      y:compensatedY-from.y,z:roll.point.z-from.z};
