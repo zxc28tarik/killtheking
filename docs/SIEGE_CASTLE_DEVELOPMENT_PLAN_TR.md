@@ -63,14 +63,14 @@
 
 ### S3 — Gerçek 70v70 G5.4 savaş motoruyla ilk bütünleşme [P0]
 
-**19 Kasım — S3A/S3B gerçek ordu ve 3B asker sahnesi + S3C1 doğal asker kapı saldırısı PASS; TAM OYNANABİLİR KUŞATMA DEĞİL.** [S3 kaynak ve Chromium kanıt raporu](SIEGE_CASTLE_S3_REAL_ARMY_INTEGRATION_TR.md). Değişmemiş G5.4 gerçek `ArenaArmyBattle.create/step/snapshot` motoru ile 8 bölük ve 140 özgün asker kuşatma kalesinde doğuyor; 3B modeller artık gerçek askerlerin pozisyonlarından ilerliyor, yalnız statik işaret değil. **15/15 S3C1 + 13/13 S3A + 39/39 S1/S2 = 67/67 test PASS.** [32 saniyelik doğal asker kapı kırma kanıtı](SIEGE_CASTLE_S3C1_GATE_ASSAULT_TR.md): 35 gerçek kaynaklı saldırı ve 15→14 G5.4 engel güncellemesi. **Merdiven AI, gerçek oyuncu silahı ve tam kuşatma zaferi hâlâ AÇIK.**
+**19 Kasım — S3A/B gerçek 140 asker, S3C1 gerçek doğal kapı kırma ve S3C2 çift gerçek asker merdiveni/3B geçiş PASS; TAM OYNANABİLİR KUŞATMA DEĞİL.** [S3 kaynak ve Chromium kanıt raporu](SIEGE_CASTLE_S3_REAL_ARMY_INTEGRATION_TR.md). Değişmemiş G5.4 gerçek `ArenaArmyBattle.create/step/snapshot` motoru ile 8 bölük ve 140 özgün asker kuşatma kalesinde doğuyor; 3B modeller artık gerçek askerlerin pozisyonlarından ilerliyor, yalnız statik işaret değil. **15/15 S3C2 + 15/15 S3C1 + 13/13 S3A + 39/39 S1/S2 = 82/82 test PASS.** [32 saniyelik doğal asker kapı kırma kanıtı](SIEGE_CASTLE_S3C1_GATE_ASSAULT_TR.md): 35 gerçek kaynaklı saldırı ve 15→14 G5.4 engel güncellemesi. **Merdiven AI, gerçek oyuncu silahı ve tam kuşatma zaferi hâlâ AÇIK.**
 
 - [x] **S3A gerçek motor:** 70 kırmızı / 70 mavi, sekiz özgün bölük, iki taraf komuta ve gerçek `step/snapshot/drainCombatEvents` API'si.
 - [x] **S3A gerçek harita:** S1 taş engelleri orijinal G5.4 `setWorldObstacles({x,y,z,w,h,d,solid})` motoruna bağlandı. Kapı açıldığında G5.4 görüş engeli 15→14 güncellenir.
 - [x] **S3A işgal okuyucu:** yaşayan gerçek asker koordinatlarından avlu/iç kale varlığı hesaplanır; 70'er asker sayısı engine/squad üzerinden doğrulanır; DEBUG elle zafer kontrolü gerçek modda engellenir.
 - [x] **S3B 3B görsel aday:** gerçek 140 asker `InstancedMesh` pozisyonlarına aktarılır, oyuncu kendi gerçek bölüğüne emir verebilir, kırmızı/mavi gerçek komutan seçimi çalışır.
 - [x] **S3C1 gerçek asker kapı hücumu:** yaşayan gerçek G5.4 yakın dövüş askeri, orijinal hasar/menzil/yeniden saldırma süresi ve yeni kuşatma rotasıyla **normal doğuştan** taş kapıyı kırıyor. 32 saniye gerçek engine zamanı, 35 vuruş, 600→0 HP ve gerçek collider 15→14; [CI #44504343310](https://github.com/zxc28tarik/killtheking/actions/runs/44504343310).
-- [ ] **S3C2 gerçek merdiven ve sur AI:** iki yan çıkış için yaşayan gerçek askerlerin merdiven yapması, üzerinde yükselmesi/inişi ve avluya güvenli inmesi. Kapı testinde kullanılan askerler için otomatik merdiven **henüz yok**.
+- [x] **S3C2 gerçek çift merdiven AI:** normal doğuşlu 140 kişilik G5.4 savaşında yaşayan AI askerleri iki çıkışı kendi hızlarında kuruyor; **batı 12 + doğu 12** gerçek asker, 15,2 m sur üstünü aşıp y=0'a indi. Doğal 60 s test, 82/82 regresyon ve Chromium PASS ([ayrıntılı S3C2 raporu](SIEGE_CASTLE_S3C2_DUAL_LADDER_TR.md), [CI #44507678256](https://github.com/zxc28tarik/killtheking/actions/runs/44507678256)). **2B yerleşik G5.4 balistiği ve tam avlu/iç kale zaferi açık.**
 - [ ] **S3C gerçek kuşatma:** askerlerin sur/merdiven/avluda özgün geometriyle doğru 3B yürümesi, gerçek zayiat/işgal ve tam maç bitişi.
 - [ ] **S3D FPS/TPS ana oyun oyuncusu:** asıl karakterin silah/HP/hareket modülü ile gerçek 140 askerin aynı kuşatma savaşını oynaması.
 - [x] Gerçek G5.4 `ArenaArmyBattle.create/step/snapshot` sözleşmesiyle 8 bölük ve 140 asker üret (S3A/B).
@@ -107,4 +107,4 @@ Her adımda GitHub commit, uygulanan dosyalar, CI test özeti, **YAPILDI / KISME
 
 ## 4. Sıradaki kesin geliştirme
 
-**S3C2:** iki yan merdivenin gerçek asker/squad eylemiyle kurulması, gerçek 3B asker çıkış/inişi ve çevresel çarpışma; sonra avlu + iç kale ele geçirme, S3D FPS oyuncu entegrasyonu ve S4–S6. Başka oyun modlarının iç kodlarına dokunma, önemli denge sözleşmelerini kullanıcı onayı olmadan kilitleme.
+**S3C2 tamamlandı (öngörülen kapsam):** gerçek iki merdiven ve 3B asker geçişi. **Sırada S3C3:** doğal asker hareketinden avlu ve iç kale ele geçirme; gerçek savunma ve sonuç ekranı. Sonra S3D tam FPS oyuncusu ve S4–S6. Başka oyun modlarının iç kodlarına dokunma, önemli denge sözleşmelerini kullanıcı onayı olmadan kilitleme.
