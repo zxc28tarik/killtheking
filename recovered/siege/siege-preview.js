@@ -8,13 +8,14 @@
  const layout=globalThis.KTKSiegemap;
  const rules=globalThis.KTKSiegeObjectives;
  const traversal=globalThis.KTKSiegeTraversal;
+ const controls=globalThis.KTKSharedG54PlayerInput;
  const error=document.getElementById('status-error');
  function fail(err){
    error.style.display='block';
    error.textContent='S1 kuşatma önizleme hatası: '+String(err?.stack||err);
    console.error(err);
  }
- if(!THREE||!layout||!rules||!traversal){
+ if(!THREE||!layout||!rules||!traversal||!controls){
    fail('Three.js veya S1 kuşatma modülleri eksik');return;
  }
  const validation=layout.validate();
@@ -253,6 +254,8 @@
  function setView(view){
    if(!['orbit','fps','tps'].includes(view))throw Error('Unsupported S2 preview camera');
    explorer.view=view;
+   if(view==='orbit'&&document.pointerLockElement===renderer.domElement)
+     document.exitPointerLock?.();
    if(extensionMovement&&view==='orbit'){
      extensionMovement.reset(explorer.position);
      for(const key of Object.keys(explorer.keys))explorer.keys[key]=false;
@@ -424,37 +427,75 @@
        (extensionMovement?.snapshot().sliding?1.85:2.7);
      if(explorer.view==='fps'){
        camera.position.set(p.x,p.y+cameraHeight,p.z);
-       camera.lookAt(p.x+dx*19,p.y+cameraHeight+pitch*12,p.z+dz*19);
+       camera.lookAt(p.x+dx*19,p.y+cameraHeight+controls.aimSlope(pitch)*19,p.z+dz*19);
      }else{
        camera.position.set(p.x-dx*12,p.y+8.6,p.z-dz*12);
-       camera.lookAt(p.x+dx*4,p.y+cameraHeight+pitch*5,p.z+dz*4);
+       camera.lookAt(p.x+dx*14,p.y+cameraHeight+controls.aimSlope(pitch)*14,p.z+dz*14);
      }
    }
  }
  updateCamera();
- renderer.domElement.addEventListener('pointerdown',ev=>{
-   drag={x:ev.clientX,y:ev.clientY,
-     yaw:explorer.view==='orbit'?orbit.yaw:explorer.yaw,
-     pitch:explorer.view==='orbit'?orbit.pitch:explorer.pitch};
-   renderer.domElement.setPointerCapture(ev.pointerId);
+ // AK-03b: field-style free FPS/TPS mouse look with Pointer Lock.
+ const pointer=renderer.domElement;
+ let lockRequests=0,lockFailures=0,lockLookTicks=0,dragLookTicks=0;
+ let lockEverAcquired=false;
+ const locked=()=>document.pointerLockElement===pointer;
+ const lookAllowed=()=>controls.canLook({
+   view:explorer.view,
+   playerCanMove:!extensionCombatCanMove||extensionCombatCanMove(),
+   modal:document.getElementById('ak02-g54-tactical-overlay')
+     ?.dataset.open==='true'
  });
- renderer.domElement.addEventListener('pointermove',ev=>{
-   if(!drag)return;
+ pointer.addEventListener('contextmenu',ev=>{
+   if(explorer.view!=='orbit')ev.preventDefault();
+ });
+ pointer.addEventListener('pointerdown',ev=>{
+   if(ev.button!==0&&ev.button!==2)return;
+   if(explorer.view==='orbit'){
+     drag={x:ev.clientX,y:ev.clientY,yaw:orbit.yaw,pitch:orbit.pitch};
+     try{pointer.setPointerCapture(ev.pointerId);}catch{}
+     return;
+   }
+   if(!lookAllowed())return;
+   if(!locked()&&typeof pointer.requestPointerLock==='function'){
+     lockRequests++;
+     try{
+       const requested=pointer.requestPointerLock();
+       if(requested?.catch)requested.catch(()=>{lockFailures++;});
+     }catch{lockFailures++;}
+   }
+   // Drag remains a graceful fallback if Pointer Lock is denied.
+   drag={x:ev.clientX,y:ev.clientY,yaw:explorer.yaw,pitch:explorer.pitch};
+ });
+ document.addEventListener('pointerlockchange',()=>{
+   if(locked()){lockEverAcquired=true;drag=null;}
+ });
+ document.addEventListener('mousemove',ev=>{
+   if(!locked()||!lookAllowed())return;
+   if(!Number.isFinite(ev.movementX)||!Number.isFinite(ev.movementY))return;
+   const next=controls.turn({yaw:explorer.yaw,pitch:explorer.pitch,
+     dx:ev.movementX,dy:ev.movementY});
+   explorer.yaw=next.yaw;explorer.pitch=next.pitch;
+   lockLookTicks++;
+   updatePlayerGlyph();updateCamera();
+ });
+ pointer.addEventListener('pointermove',ev=>{
+   if(!drag||locked())return;
    if(explorer.view==='orbit'){
      orbit.yaw=drag.yaw+(ev.clientX-drag.x)*.006;
      orbit.pitch=Math.max(.21,Math.min(1.40,
        drag.pitch+(ev.clientY-drag.y)*.005));
-   }else{
-     explorer.yaw=drag.yaw+(ev.clientX-drag.x)*.006;
-     explorer.pitch=Math.max(-.7,Math.min(.7,
-       drag.pitch-(ev.clientY-drag.y)*.004));
+   }else if(lookAllowed()){
+     const next=controls.turn({yaw:drag.yaw,pitch:drag.pitch,
+       dx:ev.clientX-drag.x,dy:ev.clientY-drag.y});
+     explorer.yaw=next.yaw;explorer.pitch=next.pitch;
      updatePlayerGlyph();
    }
-   updateCamera();
+   dragLookTicks++;updateCamera();
  });
  function releaseDrag(){drag=null;}
- renderer.domElement.addEventListener('pointerup',releaseDrag);
- renderer.domElement.addEventListener('pointercancel',releaseDrag);
+ pointer.addEventListener('pointerup',releaseDrag);
+ pointer.addEventListener('pointercancel',releaseDrag);
  renderer.domElement.addEventListener('wheel',ev=>{
    ev.preventDefault();
    orbit.distance=Math.max(92,Math.min(410,
@@ -690,6 +731,14 @@
      qaPositionChanges:explorer.qaPositionChanges,
      locomotion:extensionMovement?extensionMovement.snapshot():null,
      real3DPlayerRangedCastle:extensionBallistics,
+     sharedG54InputContract:!!controls,
+     pointerLocked:locked(),
+     pointerLockRequests:lockRequests,
+     pointerLockFailures:lockFailures,
+     pointerLockAcquiredAtLeastOnce:lockEverAcquired,
+     pointerLockLookTicks:lockLookTicks,
+     dragLookTicks,
+     cameraWeaponAimSlope:controls.aimSlope(explorer.pitch),
      blockedX:explorer.blockedX,blockedZ:explorer.blockedZ,
      status:explorer.status,
      embedded:traversal.overlaps(explorer.position,spec,
