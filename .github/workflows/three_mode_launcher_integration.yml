@@ -15,6 +15,8 @@ on:
       - 'recovered/siege/siege-character-visuals.js'
       - 'recovered/siege/siege-real-army-overlay.js'
       - 'recovered/siege/test_siege_character_visuals.mjs'
+      - 'recovered/army/modules/shared-g54-battle-session.js'
+      - 'recovered/siege/test_shared_g54_battle_session.mjs'
       - 'recovered/army/modules/shared-g54-army-commands.js'
       - 'recovered/siege/test_shared_g54_army_commands.mjs'
       - 'recovered/siege/siege-rampart-ai.js'
@@ -90,6 +92,7 @@ jobs:
           node --test recovered/siege/test_siege_defender_ai.mjs
           node --test recovered/siege/test_siege_rampart_ai.mjs
           node --test recovered/siege/test_shared_g54_army_commands.mjs
+          node --test recovered/siege/test_shared_g54_battle_session.mjs
       - name: Verify exactly three modes with explicit non-final-engine boundaries
         run: |
           node --input-type=module -e "
@@ -113,6 +116,8 @@ jobs:
              m.siegeS4B1EightBlueRampartPostSoldiers!==true||
              m.siegeS4B1Real3DBotVsSoldierFire!==true||
              m.siegeSameNativeG54ArmyCommanderCommands!==true||
+             m.siegeAK03SharedNativeG54BattleSession!==true||
+             m.siegeNativeFieldMovementPhysicsCopied!==false||
              m.siegeExactOriginalArmyControlHUDShared!==false||
              m.siegeBot3DPlayerCounterfire!==false||
              m.siegeFullNativeBotRampart3DCombat!==false||

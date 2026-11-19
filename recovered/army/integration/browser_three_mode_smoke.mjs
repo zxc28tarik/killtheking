@@ -115,6 +115,13 @@ try{
  assert.equal(siege.army.realDefenderRoleCoordinationConnected,true);
  assert.equal(siege.army.realRampart3DDefenderAIConnected,true);
  assert.equal(siege.army.sharedNativeG54ArmyCommandContract,true);
+ assert.equal(siege.army.sharedNativeG54BattleSessionConnected,true);
+ assert.equal(siege.army.sharedNativeG54BattleSession.mode,'siege');
+ assert.equal(siege.army.sharedNativeG54BattleSession.nativeSoldierCount,140);
+ assert.equal(siege.army.sharedNativeG54BattleSession.nativeSquadCount,8);
+ assert.equal(siege.army.sharedNativeG54BattleSession.view,'orbit');
+ assert.equal(siege.player.sharedFieldSiegeSessionContract,true);
+ report.checks.push('PASS_AK03A_SHARED_NATIVE_G54_BATTLE_SESSION_HUMAN_HP_CAMERA_TEAM');
  assert.equal(siege.army.sharedG54ArmyHudOverlayActive,true);
  assert.equal(siege.army.sharedG54OriginalFieldShortcutsEnabled,true);
  assert.equal(siege.army.sharedG54NativeShortcutBindings.length,18);
@@ -179,6 +186,9 @@ try{
  const activePlayer=await page.evaluate(()=>document.querySelector('#stage iframe')
   .contentWindow.ktkSiegePlayerCombatStatus());
  assert.equal(activePlayer.view,'fps');
+ assert.equal(activePlayer.nativeBattleSession.view,'fps');
+ assert.equal(activePlayer.nativeBattleSession.playerActive,true);
+ assert.equal(activePlayer.nativeBattleSession.combatAllowed,true);
  assert.equal(activePlayer.playerHealth,100);
  const firstVisual=await page.evaluate(()=>document.querySelector('#stage iframe')
   .contentWindow.ktkSiegeWeaponVisualStatus());

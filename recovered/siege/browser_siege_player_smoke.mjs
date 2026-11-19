@@ -39,6 +39,18 @@ try{
  const scene=()=>page.evaluate(()=>window.ktkSiegePreviewStatus());
  const initial=await player(),a=await army(),view=await scene();
  assert.equal(a.authentic140Soldiers,140);
+ assert.equal(a.sharedNativeG54BattleSessionConnected,true);
+ const session0=await page.evaluate(()=>window.ktkSiegeSharedBattleSessionStatus?.());
+ assert.equal(session0.nativeSoldierCount,140);
+ assert.equal(session0.nativeSquadCount,8);
+ assert.equal(session0.authenticPlayerTeam,'red');
+ assert.equal(session0.view,'orbit');
+ assert.equal(session0.playerActive,false);
+ assert.equal(session0.combatAllowed,false);
+ assert.equal(session0.movementAllowed,true);
+ assert.equal(initial.sharedFieldSiegeSessionContract,true);
+ assert.equal(initial.nativeBattleSession.nativeSoldierCount,140);
+ report.checks.push('PASS_AK03A_SHARED_FIELD_SIEGE_NATIVE_140_BATTLE_SESSION_ORBIT_NO_GHOST');
  assert.equal(a.renderedRealSoldierCount,140);
  assert.equal(a.realSquads.length,8);
  assert.equal(a.realObjectiveCaptureConnected,true);
@@ -161,6 +173,9 @@ try{
  const playerBefore=await player();
  const before=await scene();
  assert.equal(playerBefore.view,'fps');
+ assert.equal(playerBefore.nativeBattleSession.view,'fps');
+ assert.equal(playerBefore.nativeBattleSession.playerActive,true);
+ assert.equal(playerBefore.nativeBattleSession.combatAllowed,true);
  assert.equal(playerBefore.playerHealth,100);
  const fpsWeapon=await page.evaluate(()=>window.ktkSiegeWeaponVisualStatus?.());
  assert.equal(fpsWeapon?.actualThreeJSViewmodels,true);
