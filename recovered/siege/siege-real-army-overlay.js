@@ -61,19 +61,14 @@
  }
   el.insertBefore(panel,el.firstChild);
  const dummy=new THREE.Object3D();
- const roleVisuals=globalThis.KTKSiegeCharacterVisuals?.create({
-   THREE,scene:preview.scene,
-   groups:preview.tokens.map(inst=>({
-     inst,team:inst.userData.team,
-     role:inst.userData.role==='archer'?'bow':inst.userData.role,
-     count:inst.userData.count
-   }))
- })||null;
  const groups=preview.tokens.map(inst=>({
    inst,team:inst.userData.team,
    role:inst.userData.role==='archer'?'bow':inst.userData.role,
    count:inst.userData.count
  }));
+ const roleVisuals=globalThis.KTKSiegeCharacterVisuals?.create({
+   THREE,scene:preview.scene,groups
+ })||null;
  let bridge=null;
  let nativeHumanCombatListener=null,nativePreStep=null,nativePostStep=null;
  let frames=0,lastSourceDeaths=0;
@@ -125,7 +120,7 @@
    if(roleVisuals){
      // Role-model pointers are resolved from the same native IDs as QA tokens.
      // Rebind groups after a genuine army reset/team switch (no dummy AI).
-     roleVisuals.render(groups);
+     roleVisuals.render();
    }
  }
  function drawMetrics(){
