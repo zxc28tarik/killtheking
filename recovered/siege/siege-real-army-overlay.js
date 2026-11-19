@@ -84,6 +84,8 @@
  })||null;
  let bridge=null,sharedCommand=null,lastArmyCommandNotice='';
  let commandHUD=null,shortcutsAccepted=0;
+ let fieldTactical=null,fieldMapOpen=false,fieldMapAction='position';
+ let fieldMapOpens=0,fieldMapCloses=0,fieldMapClicks=0,fieldMapAccepted=0;
  let nativeHumanCombatListener=null,nativePreStep=null,nativePostStep=null;
  let frames=0,lastSourceDeaths=0;
  function createRealArmy(team,scenario){
@@ -246,7 +248,9 @@
    const status=commandHUD.querySelector('[data-army-status]');
    const header=commandHUD.querySelector('[data-army-heading]');
    const notice=commandHUD.querySelector('[data-army-shortcut-notice]');
-   header.textContent='G5.4 BÖLÜK KOMUTANI • '+bridge.playerTeam.toUpperCase();
+   header.textContent='⚔ KALE KUŞATMASI • G5.4 MEYDAN KOMUTASI • '+bridge.playerTeam.toUpperCase();
+   commandHUD.querySelector('[data-army-blue]').textContent='MAVİ '+bridge.state.soldiers.filter(x=>x.alive&&x.team==='blue').length;
+   commandHUD.querySelector('[data-army-red]').textContent='KIRMIZI '+bridge.state.soldiers.filter(x=>x.alive&&x.team==='red').length;
    status.textContent=(roles[c.commandedRole]||c.commandedRole)+
      ' · '+c.aliveInSquad+' ASKER · '+(source.ORDERS[c.order]||c.order)+
      ' · '+(source.FORMATIONS[c.formation]?.name||c.formation)+
@@ -258,17 +262,32 @@
        ' · '+latest.action+
        (latest.reason?' · '+latest.reason:'')
      :'J: mevzi · K: ileri · Z: saf · X: kol · 7/8/9: ateş';
-   for(const [key,expected]of [
-     ['KeyJ','hold'],['KeyK','advance'],['KeyZ','line'],
-     ['KeyX','column'],['Digit7','free'],['Digit8','volley'],
-     ['Digit9','hold']]){
-     const el=commandHUD.querySelector('[data-army-hotkey="'+key+'"]');
-     if(!el)continue;
-     const current=['KeyJ','KeyK'].includes(key)?c.order:
-       ['KeyZ','KeyX'].includes(key)?c.formation:c.fireMode;
-     el.style.color=current===expected?'#ffe2a0':'#dbd8c8';
-     el.style.borderColor=current===expected?'#e9b657':'#52676a';
+   for(const el of commandHUD.querySelectorAll('[data-field-kind]')){
+     const kind=el.dataset.fieldKind,selected=el.dataset.fieldCommand;
+     const actual=kind==='order'?c.order:
+       kind==='formation'?c.formation:c.fireMode;
+     const isActive=actual===selected;
+     el.setAttribute('aria-pressed',String(isActive));
+     el.style.color=isActive?'#ffe2a0':'#e2e8f0';
+     el.style.borderColor=isActive?'#e9b657':'#52676a';
+     el.style.background=isActive?'#854d0e':'#1e293b';
+     el.disabled=(kind==='fire'&&!c.fireMode)||c.aliveInSquad<=0;
    }
+   const ro=commandHUD.querySelector('[data-army-roster]');
+   if(ro){
+     ro.replaceChildren();
+     for(const squad of bridge.state.squads){
+       const item=document.createElement('div');
+       item.textContent=(squad.team==='blue'?'Mavi ':'Kırmızı ')+
+         (roles[squad.type]||squad.type)+' '+squad.alive+'/'+squad.startCount+
+         ' · '+(source.ORDERS[squad.order]||squad.order)+
+         (squad.playerControlled?' ★':'');
+       item.style.color=squad.playerControlled?'#ffe2a0':
+         squad.team==='blue'?'#9dd5f9':'#f2aa9e';
+       ro.appendChild(item);
+     }
+   }
+   if(fieldMapOpen)drawFieldMap();
  }
  function sendArmy(action,value,x,z){
    if(!sharedCommand){
@@ -280,11 +299,13 @@
    const result=sharedArmyCommands.execute(sharedCommand,{
      action,value,x,z
    });
+   if(fieldMapOpen)drawFieldMap();
    lastArmyCommandNotice=result.ok
      ?'G5.4 komutu kabul etti: '+action+' '+(value??'')+
        (Number.isFinite(x)?' ('+x.toFixed(0)+', '+z.toFixed(0)+')':'')
      :'G5.4 reddetti: '+result.reason;
    drawMetrics();
+   return result;
  }
  for(const order of ['hold','advance','charge','retreat']){
    document.getElementById('s3-order-'+order).addEventListener('click',
@@ -296,21 +317,92 @@
    commandHUD=document.createElement('section');
    commandHUD.id='ak02-g54-commander-hud';
    commandHUD.setAttribute('aria-label','Ordu Savaşı ile ortak G5.4 komuta HUD');
-   commandHUD.style.cssText='position:absolute;right:12px;top:10px;max-width:min(390px,58vw);z-index:4;background:#111e24e8;border:1px solid #af8951;border-radius:8px;padding:9px 12px;box-shadow:0 6px 24px #000a;pointer-events:none;color:#f2ebd5;font:600 12px/1.45 system-ui';
+   commandHUD.style.cssText='position:absolute;left:12px;bottom:46px;width:min(530px,calc(100% - 24px));max-height:min(70vh,690px);overflow:auto;z-index:6;background:#101b2ff2;border:1px solid #d3ab57;border-radius:8px;padding:10px 12px;box-shadow:0 6px 24px #000a;pointer-events:auto;color:#f2ebd5;font:600 11px/1.45 system-ui';
+   const fieldOrderKeys=[
+     ['G','KeyG','follow','Takip et'],
+     ['J','KeyJ','hold','Mevzi tut'],
+     ['K','KeyK','advance','İlerle'],
+     ['L','KeyL','charge','Hücum'],
+     ['U','KeyU','retreat','Geri çekil'],
+     ['Y','KeyY','flank','Kanat saldırısı'],
+     ['N','KeyN','skirmish','Taciz']
+   ];
+   const fieldFormationKeys=[
+     ['Z','KeyZ','line','Saf'],
+     ['X','KeyX','column','Yürüyüş kolu'],
+     // Meydan C=kare, fakat Kale C=oyuncu kayması; bu tuşu koru.
+     ['V','KeyV','square','Kare (C kayma)'],
+     ['B','KeyB','wedge','Kama'],
+     ['M','KeyM','loose','Dağınık'],
+     ['I','KeyI','shield','Kalkan duvarı']
+   ];
+   const fieldFireKeys=[
+     ['7','Digit7','free','Serbest ateş'],
+     ['8','Digit8','volley','Toplu ateş'],
+     ['9','Digit9','hold','Ateşi kes']
+   ];
+   const fieldButtons=(entries,kind)=>entries.map(([key,code,value,label])=>
+     '<button type="button" data-army-hotkey="'+code+'" data-field-kind="'+kind+
+     '" data-field-command="'+value+'" aria-pressed="false"'+
+     ' style="border:1px solid #52676a;border-radius:5px;padding:4px 6px;'+
+     'background:#1e293b;color:#e2e8f0;font:700 11px system-ui;cursor:pointer">'+
+     '<b>'+key+'</b> · '+label+'</button>').join('');
+   const fieldRow='<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:3px">';
+   const fieldLabel=x=>'<div style="margin-top:8px;color:#e9bf79;font-weight:800">'+x+'</div>';
    commandHUD.innerHTML=[
-     '<div data-army-heading style="color:#f6ca82;font-size:12px;letter-spacing:.06em"></div>',
+     '<div data-army-heading style="color:#f6ca82;font-weight:900;letter-spacing:.04em"></div>',
+     '<div style="margin-top:3px;font-weight:800"><span data-army-blue style="color:#91d0ff">MAVİ 70</span>',
+     ' / <span data-army-red style="color:#f19a8c">KIRMIZI 70</span></div>',
      '<div data-army-status style="font-size:11px;margin:5px 0"></div>',
-     '<div style="display:flex;gap:4px;flex-wrap:wrap">',
-     ...[
-       ['J','KeyJ','Mevzi'],['K','KeyK','İleri'],
-       ['Z','KeyZ','Saf'],['X','KeyX','Kol'],
-       ['7','Digit7','Serbest'],['8','Digit8','Toplu'],
-       ['9','Digit9','Dur']
-     ].map(x=>'<span data-army-hotkey="'+x[1]+'" style="border:1px solid #52676a;border-radius:4px;padding:2px 5px;font-size:10px">'+x[0]+' '+x[2]+'</span>'),
+     fieldLabel('Bölük emirleri'),fieldRow,fieldButtons(fieldOrderKeys,'order'),'</div>',
+     fieldLabel('Formasyonlar'),fieldRow,fieldButtons(fieldFormationKeys,'formation'),'</div>',
+     fieldLabel('Menzilli birlik ateşi'),fieldRow,fieldButtons(fieldFireKeys,'fire'),'</div>',
+     fieldLabel('Taktik komuta'),fieldRow,
+     '<button type="button" data-field-map-open>P · Taktik harita</button>',
+     '<button type="button" data-field-spacing="-0.1">[ · Safı daralt</button>',
+     '<button type="button" data-field-spacing="0.1">] · Safı aç</button>',
      '</div>',
-     '<div data-army-shortcut-notice role="status" style="font-size:10px;color:#e1ceaa;margin-top:5px"></div>'
+     '<div data-army-shortcut-notice role="status" style="font-size:10px;color:#e1ceaa;margin-top:6px"></div>',
+     '<details style="margin-top:8px;border-top:1px solid #445566;padding-top:4px">',
+     '<summary style="cursor:pointer;color:#f7d58d">8 bölük durumu</summary>',
+     '<div data-army-roster style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;margin-top:5px;font-size:10px"></div>',
+     '</details>'
    ].join('');
+   for(const b of commandHUD.querySelectorAll('button')){
+     b.style.border='1px solid #52676a';b.style.borderRadius='5px';
+     b.style.background='#1e293b';b.style.color='#e2e8f0';
+     b.style.padding='4px 6px';b.style.cursor='pointer';
+     b.style.font='700 11px system-ui';
+   }
+   commandHUD.addEventListener('pointerdown',event=>event.stopPropagation());
+   commandHUD.addEventListener('click',event=>event.stopPropagation());
    scene.appendChild(commandHUD);
+   for(const b of commandHUD.querySelectorAll('[data-field-kind]'))
+     b.addEventListener('click',()=>sendArmy(b.dataset.fieldKind,b.dataset.fieldCommand));
+   for(const b of commandHUD.querySelectorAll('[data-field-spacing]'))
+     b.addEventListener('click',()=>sendArmy('spacing-delta',Number(b.dataset.fieldSpacing)));
+   commandHUD.querySelector('[data-field-map-open]')
+     .addEventListener('click',()=>setFieldMap(true));
+   // Same native G5.4 P key opens a real full-screen command map.
+   globalThis.addEventListener('keydown',event=>{
+     const focused=String(event.target?.tagName||'').toUpperCase();
+     if(!fieldMapOpen&&event.code==='KeyP'&&!event.repeat&&
+        !event.ctrlKey&&!event.altKey&&!event.metaKey&&
+        !['INPUT','TEXTAREA','SELECT'].includes(focused)&&
+        !event.target?.isContentEditable){
+       event.preventDefault();event.stopImmediatePropagation();
+       setFieldMap(true);return;
+     }
+     if(!fieldMapOpen)return;
+     if(event.code==='KeyP'||event.code==='Escape'){
+       event.preventDefault();event.stopImmediatePropagation();
+       if(!event.repeat)setFieldMap(false);return;
+     }
+     // No soldier movement/weapon actions behind an open modal map.
+     if(!['INPUT','TEXTAREA','SELECT'].includes(focused)){
+       event.preventDefault();event.stopImmediatePropagation();
+     }
+   },true);
    globalThis.addEventListener('keydown',event=>{
      const command=sharedArmyCommands.shortcut(event);
      if(!command||!sharedCommand)return;
