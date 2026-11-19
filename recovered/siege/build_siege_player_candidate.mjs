@@ -21,6 +21,7 @@ const files={
  KTK_SIEGE_ASSAULT_NAV_JS:resolve(dir,'siege-assault-navigation.js'),
  KTK_SIEGE_LADDER_AI_JS:resolve(dir,'siege-ladder-ai.js'),
  KTK_SIEGE_CAPTURE_AI_JS:resolve(dir,'siege-capture-ai.js'),
+ KTK_SIEGE_PLAYER_BALLISTICS_3D_JS:resolve(dir,'siege-player-ballistics-3d.js'),
  KTK_SIEGE_PLAYER_COMBAT_JS:resolve(dir,'siege-player-combat.js'),
  KTK_SIEGE_PREVIEW_JS:resolve(dir,'siege-preview.js'),
  KTK_SIEGE_PLAYER_LOCOMOTION_JS:resolve(dir,'siege-player-locomotion.js'),
@@ -43,6 +44,7 @@ html=html.replace(
  '<!-- KTK_SIEGE_ASSAULT_NAV_JS -->',
  '<!-- KTK_SIEGE_LADDER_AI_JS -->',
  '<!-- KTK_SIEGE_CAPTURE_AI_JS -->',
+ '<!-- KTK_SIEGE_PLAYER_BALLISTICS_3D_JS -->',
  '<!-- KTK_SIEGE_PLAYER_COMBAT_JS -->',
  '<!-- KTK_SIEGE_PREVIEW_JS -->',
  '<!-- KTK_SIEGE_PLAYER_LOCOMOTION_JS -->',
@@ -53,7 +55,7 @@ html=html.replace(
  ].join('\n')
 );
 const originalWarning='<b>Geliştirici önizlemesi:</b> Kale yerleşimi ve kuşatma hedef kuralları çalışır. Görünen askerler <b>yerleşim işaretleri</b>, gerçek 140 asker savaş AI\'sı değil.';
-const realWarning='<b>S3D1 GERÇEK OYUNCU SAVAŞ ADAYI:</b> Gerçek G5.4 ordusunda 140 asker ve 100 HP\'li insan komutan. <b>FPS/TPS kamera ve WASD ile kılıç, mızrak, yay ve tüfek hasarı G5.4 orijinal asker HP\'sine bağlı.</b> Space zıplama ve Shift/C kayma kaleye uyarlandı; tam FFA hareket motoru ve 3B balistik henüz taşınmadı; sur üstünde silah hasarı kapalı. DEBUG ışınlama/zafer kilitli.';
+const realWarning='<b>S3D1 GERÇEK OYUNCU SAVAŞ ADAYI:</b> Gerçek G5.4 ordusunda 140 asker ve 100 HP\'li insan komutan. <b>FPS/TPS kamera ve WASD ile kılıç, mızrak, yay ve tüfek hasarı G5.4 orijinal asker HP\'sine bağlı.</b> Space zıplama/Shift/C kayma ve oyuncu ok/tüfek 3B kale balistiği eklendi; özgün FFA hareket motoru ve G5.4 botlarının 3B atışları henüz ortak değil; sur üstünde silah hasarı kapalı. DEBUG ışınlama/zafer kilitli.';
 if(!html.includes(originalWarning))throw Error('Expected original S2 disclaimer missing');
 html=html.replace(originalWarning,realWarning);
 html=html.replace('Kuşatma Kalesi S1 Harita ve Hedef Önizlemesi',
@@ -86,6 +88,9 @@ const manifest={
  realFPSPlayerWeaponConnected:true,
  fullOriginalFFAPlayerMovementConnected:false,
  genuineEventOnlyFirstPersonWeaponModels:true,
+ genuineG54SourceBackedPlayer3DHitscan:true,
+ physicalPlayerBowArrowGravityAndCollision:true,
+ player3DBallisticsOnlyNotNativeBotAI:true,
  cosmeticRecoilAndNativeHitFeedback:true,
  actualArenaWeaponMeshesReused:false,
  arenaStyleJumpSlideCastleAdapter:true,
@@ -105,7 +110,7 @@ for(const [id,path] of Object.entries(files)){
 const original='307987855abc0973ea9177fdd659c39d1d02673c8381c0501be8b63c04ddf841';
 if(manifest.sourceSha256.KTK_G54_ARMY_REAL_JS!==original)
  throw Error('Original G5.4 true-side engine changed! No unsafe substitution.');
-if((html.match(/<script\b/giu)||[]).length!==18||
+if((html.match(/<script\b/giu)||[]).length!==19||
    html.includes('<!-- KTK_')||
    !html.includes('GERÇEK OYUNCU SAVAŞ ADAYI')||
    !html.includes('Gerçek G5.4 ordusunda 140 asker'))
