@@ -124,6 +124,11 @@ try{
  assert.equal(siege.player.playerHealth,100);
  assert.equal(siege.army.realObjectiveCaptureConnected,true);
  assert.equal(siege.player.actualG54NativeDamageAndPlayerHealth,true);
+ assert.equal(siege.player.real3dBulletAndArrowBallistics,true);
+ assert.equal(siege.player.full3DNativeBotBallistics,false);
+ assert.equal(siege.player.playerArrowPhysics?.musket3DHitscan,true);
+ assert.equal(siege.player.playerArrowPhysics?.bowPhysicalFlight3D,true);
+ report.checks.push('PASS_S3D2C_REAL_3D_PLAYER_BALLISTICS_ONLY_NATIVE_G54_DAMAGE');
  assert.equal(siege.scene.liveCombatViewConnected,true);
  const initialWeapon=await page.evaluate(()=>document.querySelector('#stage iframe')
   .contentWindow.ktkSiegeWeaponVisualStatus?.());
