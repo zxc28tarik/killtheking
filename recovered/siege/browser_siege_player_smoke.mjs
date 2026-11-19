@@ -49,7 +49,10 @@ try{
  assert.equal(initial.playerActive,false);
  assert.equal(initial.actualG54NativeDamageAndPlayerHealth,true);
  assert.equal(initial.realFFAOriginalMovementPorted,false);
- assert.equal(initial.real3dBulletAndArrowBallistics,false);
+ assert.equal(initial.real3dBulletAndArrowBallistics,true);
+ assert.equal(initial.full3DNativeBotBallistics,false);
+ assert.equal(initial.playerArrowPhysics?.musket3DHitscan,true);
+ assert.equal(initial.playerArrowPhysics?.bowPhysicalFlight3D,true);
  report.checks.push('PASS_TRUE_140_G54_ARMY_AND_100_HP_HUMAN_COMBAT_MODULE');
  for(const id of ['siege-fixture-gate','siege-fixture-west','siege-fixture-east'])
   assert.equal(await page.locator('#'+id).isDisabled(),true);
@@ -72,6 +75,9 @@ try{
  assert.equal(fpsWeapon?.visibleFPS,true);
  assert.equal(fpsWeapon?.fakeProjectilesCreated,0);
  assert.equal(playerBefore.nativePosition.z,before.explorer.pos.z);
+ const physical3D=await page.evaluate(()=>window.ktkSiegeBallisticsStatus?.());
+ assert.equal(physical3D?.nativeG54DamageAuthorityPreserved,true);
+ assert.equal(physical3D?.nativeG54Bot3DTargetingIntegrated,false);
  await page.keyboard.down('w');
  await page.waitForTimeout(800);
  await page.keyboard.up('w');
