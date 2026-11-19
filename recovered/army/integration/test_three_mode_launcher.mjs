@@ -109,7 +109,7 @@ test('each of THREE main menu buttons launches its EXACT actual game HTML',()=>{
  for(const [i,id] of ['ffa','army','siege'].entries()){
    b.buttons[i].click();
    assert.equal(b.current.srcdoc,extract(combined,id));
-   assert.equal(b.current.attrs.fullscreen,'');
+   assert.equal(b.current.attrs.allowfullscreen,'');
    assert.equal(b.buttons[i].attrs['aria-pressed'],'true');
    assert.equal(b.elements.get('stage').children.length,1);
  }
