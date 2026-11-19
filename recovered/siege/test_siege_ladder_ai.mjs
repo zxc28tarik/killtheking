@@ -141,35 +141,37 @@ test('4 real builders cannot create 100-point ladder progress in one native tick
  assert(n>0&&n<=4*5*.08+.001);
  assert.equal(b.scenario.lanes.east,false);
 });
-test('S2 exact-wall geometry safely verifies full west and east REAL-ID climb with altitude',()=>{
+test('QA direct S2 exact-wall traversal: authentic soldier identity crosses both 3D ladders safely',()=>{
+ // This is a GEOMETRY fixture, not a claimed real combat/native AI trial.
+ // Full G5.4 actual AI native-tick ladder finish is asserted separately
+ // in the natural, unassisted 60s scenario below.
  const b=create();
  for(const side of ['west','east']){
   const u=fixtureAtEntry(b,side);
-  // S2 rule allows test-only manually-constructed ladders. QA does not
-  // count as natural construction, which is separately tested below.
   for(let i=0;i<4;i++)objectives.applyEvent(b.scenario,{
     type:'LADDER_BUILD',team:'red',lane:side,effort:25});
+  const active=traversal.beginClimb({
+    x:u.x,y:0,z:u.z},side,map.spec,b.scenario);
+  assert(active,side+' fixture must touch built ladder');
+  const originalId=u.id;
   let peak=0;
-  let finished=false;
-  for(let i=0;i<90;i++){
-   bridge.step(b,.08);
-   peak=Math.max(peak,u.siegeY||0);
-   assert.equal(traversal.overlaps({
-    x:u.x,y:u.siegeY||0,z:u.z},map.spec,b.scenario,.65,2.6),
-     false,'Real-id soldier embedded a wall at '+side+' tick '+i);
-   const rec=b.ladderAI.records.get(u.id);
-   if(rec.completed){finished=true;break;}
+  for(let i=0;i<100&&!active.done;i++){
+    const movement=traversal.stepClimb(active,.08,map.spec,b.scenario);
+    u.x=movement.position.x;
+    u.z=movement.position.z;
+    u.siegeY=movement.position.y;
+    peak=Math.max(peak,u.siegeY);
+    assert.equal(traversal.overlaps({
+      x:u.x,y:u.siegeY,z:u.z},map.spec,b.scenario,.65,2.6),
+      false,'Original S1 stone wall collision at '+side+' frame '+i);
   }
-  assert.equal(finished,true,side+' real-id soldier did not complete climb');
-  assert(peak>13,side+' soldier never rose above 13m wall');
+  assert.equal(active.done,true,side+' S2 geometry path did not complete');
+  assert(peak>13,side+' S2 geometry never reached over the stone wall');
   assert.equal(u.siegeY,0);
+  assert.equal(u.id,originalId);
   assert(side==='west'?u.x>-49.5:u.x<49.5);
   assert.equal(u.alive,true);
  }
- const s=read(b);
- assert(s.genuineSoldierLadders.physicallyFinishedClimbs.west>=1);
- assert(s.genuineSoldierLadders.physicallyFinishedClimbs.east>=1);
- assert.equal(s.genuineSoldierLadders.lastCompleted.y,0);
 });
 test('no elevated soldier can count as ground courtyard occupant',()=>{
  const b=create();
@@ -218,8 +220,27 @@ test('natural native G5.4 70v70 siege soldiers attempt both ladders without QA s
   'No alive normal-spawn soldier reached either ladder');
  assert.equal(v.genuineSoldierLadders.raw2DBypassOfStoneAllowed,false);
  assert.equal(v.genuineSoldierLadders.playerControlledSquadReassigned,false);
- // Strong west/east completion assertions will be added once CI confirms
- // natural pathing; do not report artificial QA climb as natural success.
+ // All the following are SOURCE-native, no debug repositioning or buttons.
+ assert.equal(v.scenario.lanes.west,true,'Real AI failed west construction');
+ assert.equal(v.scenario.lanes.east,true,'Real AI failed east construction');
+ assert.equal(v.scenario.ladders.west.progress,100);
+ assert.equal(v.scenario.ladders.east.progress,100);
+ assert(v.genuineSoldierLadders.physicallyFinishedClimbs.west>=1,
+   'No authentic G5.4 soldier climbed the west 3D wall');
+ assert(v.genuineSoldierLadders.physicallyFinishedClimbs.east>=1,
+   'No authentic G5.4 soldier climbed the east 3D wall');
+ assert(v.genuineSoldierLadders.maxAuthenticSoldier3DHeight>=15,
+   'Natural native G5.4 soldiers never reached the 15m parapet');
+ assert(v.genuineSoldierLadders.distinctNativeSoldiersFinished>=2);
+ assert(b.scenario.events.some(e=>e.type==='LADDER_READY'&&e.detail.lane==='west'));
+ assert(b.scenario.events.some(e=>e.type==='LADDER_READY'&&e.detail.lane==='east'));
+ assert.equal(v.genuineSoldierLadders.originalG54LadderEventsExist,false);
+ console.log('S3C2_NATURAL_BOTH_LADDERS_COMPLETED '+JSON.stringify({
+   west:v.genuineSoldierLadders.physicallyFinishedClimbs.west,
+   east:v.genuineSoldierLadders.physicallyFinishedClimbs.east,
+   height:v.genuineSoldierLadders.maxAuthenticSoldier3DHeight,
+   totalAuthenticSoldiers:v.authentic140Soldiers,sourceTime:v.realArmySeconds
+ }));
 });
 test('S3C2 isolated extension rejects invalid contract and missing native clock',()=>{
  assert.throws(()=>ladder.create({}),/contracts missing/);
