@@ -148,3 +148,52 @@ test('independent native G5.4 field engine accepts exact same 6 formations and o
  assert.equal(field.squads[field.playerSquadId].formation,'shield');
  assert.equal(core.snapshot(c).originalG54ArmyCommandFunctions,true);
 });
+
+
+test('AK-02a reuses exact historic field combat shortcuts for orders and formations',()=>{
+ const expected={
+   KeyJ:['order','hold'],KeyK:['order','advance'],
+   KeyZ:['formation','line'],KeyX:['formation','column'],
+   Digit7:['fire','free'],Digit8:['fire','volley'],
+   Digit9:['fire','hold']
+ };
+ assert.deepEqual(Object.keys(core.FIELD_KEYS),Object.keys(expected));
+ const {b,c}=make();
+ for(const [code,[action,value]]of Object.entries(expected)){
+   const cmd=core.shortcut({code});
+   assert.equal(cmd.action,action,code);
+   assert.equal(cmd.value,value,code);
+   // Melee intentionally rejects ranged fire, original native semantics.
+   const r=core.execute(c,cmd);
+   assert.equal(r.ok,action!=='fire',code);
+ }
+ assert.equal(b.state.squads[b.state.playerSquadId].formation,'column');
+ assert.equal(core.snapshot(c).order,'advance');
+});
+test('AK-02a shortcuts never seize WASD, weapon F/1..4, Space, Escape or chat inputs',()=>{
+ for(const code of ['KeyW','KeyA','KeyS','KeyD','KeyE','KeyF',
+   'Space','Escape','Digit1','Digit2','Digit3','Digit4','KeyC']){
+   assert.equal(core.shortcut({code}),null,code);
+ }
+ const flags=['repeat','ctrlKey','altKey','metaKey',
+   'isComposing','defaultPrevented'];
+ for(const key of flags)
+   assert.equal(core.shortcut({code:'KeyJ',[key]:true}),null,key);
+ for(const tagName of ['input','TEXTAREA','select'])
+   assert.equal(core.shortcut({
+     code:'KeyJ',target:{tagName}}),null,tagName);
+ assert.equal(core.shortcut({
+   code:'KeyJ',target:{isContentEditable:true}}),null);
+});
+test('AK-02a real keyboard fire shortcuts accept same original live archer squad',()=>{
+ const {b,c}=make('red','bow');
+ for(const [key,value]of [
+   ['Digit9','hold'],['Digit8','volley'],['Digit7','free']
+ ]){
+   const cmd=core.shortcut({code:key});
+   assert.equal(core.execute(c,cmd).ok,true,key);
+   assert.equal(b.state.squads[b.state.playerSquadId].fireMode,value);
+ }
+ assert.equal(core.snapshot(c).accepted,3);
+ assert.equal(core.snapshot(c).nonPlayerSquadsNeverAuthorized,true);
+});
