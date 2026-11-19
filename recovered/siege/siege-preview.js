@@ -190,6 +190,7 @@
  let extensionRealGateCombat=false,extensionRealLadderAI=false;
  let extensionCombatCanMove=null;
  let extensionMovement=null;
+ let extensionBallistics=false;
  const explorer={view:'orbit',team:'red',
    position:{x:0,y:0,z:-110},yaw:0,pitch:0,
    keys:Object.create(null),climb:null,walkTicks:0,
@@ -319,9 +320,20 @@
    }
    const state=rules.snapshot(siege);
    if(explorer.climb){
+     const side=explorer.climb.side;
      const step=traversal.stepClimb(explorer.climb,dt,spec,state);
      explorer.position=step.position;
-     if(step.done){
+     // Candidate S3D2c: stop at the actual stone-wall top once the
+     // player physically ascended the built ladder. G5.4 soldier
+     // ladder AI and original S2 standalone climb path are unchanged.
+     if(extensionBallistics&&step.position.y>=15.19&&
+       explorer.climb.index>=1){
+       const perch={x:side==='west'?-52:52,y:13.025,z:-9};
+       explorer.position=traversal.spawn(perch,spec,state);
+       explorer.climb=null;
+       if(extensionMovement)extensionMovement.reset(explorer.position);
+       explorer.status='Sur üstüne ulaşıldı • 3B nişan kullanılabilir';
+     }else if(step.done){
        explorer.climb=null;
        if(extensionMovement)extensionMovement.reset(explorer.position);
        explorer.status='Sur geçişi tamamlandı • iç avlu';
@@ -407,7 +419,9 @@
    }else{
      const p=explorer.position,yaw=explorer.yaw,pitch=explorer.pitch,
        dx=Math.sin(yaw),dz=Math.cos(yaw);
-     const cameraHeight=extensionMovement?.snapshot().sliding?1.85:2.7;
+     const cameraHeight=extensionBallistics?
+       (extensionMovement?.snapshot().sliding?1.5:2.35):
+       (extensionMovement?.snapshot().sliding?1.85:2.7);
      if(explorer.view==='fps'){
        camera.position.set(p.x,p.y+cameraHeight,p.z);
        camera.lookAt(p.x+dx*19,p.y+cameraHeight+pitch*12,p.z+dz*19);
@@ -621,6 +635,10 @@
    getCanvas:()=>renderer.domElement,
    getCamera:()=>camera,
    getLocomotion:()=>extensionMovement?extensionMovement.snapshot():null,
+   registerBallistics(){
+     if(extensionBallistics)throw Error('Duplicate S3D2c ballistic view');
+     extensionBallistics=true;updateCamera();
+   },
    registerMovement({step,reset,snapshot}={}){
      if(extensionMovement||typeof step!=='function'||
        typeof reset!=='function'||typeof snapshot!=='function')
@@ -671,6 +689,7 @@
      walkTicks:explorer.walkTicks,
      qaPositionChanges:explorer.qaPositionChanges,
      locomotion:extensionMovement?extensionMovement.snapshot():null,
+     real3DPlayerRangedCastle:extensionBallistics,
      blockedX:explorer.blockedX,blockedZ:explorer.blockedZ,
      status:explorer.status,
      embedded:traversal.overlaps(explorer.position,spec,
