@@ -9,6 +9,7 @@ on:
       - 'recovered/siege/siege-player-combat.js'
       - 'recovered/army/modules/shared-g54-player-input.js'
       - 'recovered/siege/test_shared_g54_player_input.mjs'
+      - 'recovered/siege/test_siege_collision_recovery.mjs'
       - 'recovered/army/modules/shared-g54-battle-session.js'
       - 'recovered/siege/test_shared_g54_battle_session.mjs'
       - 'recovered/army/modules/shared-g54-army-commands.js'
@@ -60,6 +61,7 @@ jobs:
           node --check recovered/army/modules/shared-g54-battle-session.js
           node --check recovered/army/modules/shared-g54-player-input.js
           node --check recovered/siege/test_shared_g54_player_input.mjs
+          node --check recovered/siege/test_siege_collision_recovery.mjs
           node --check recovered/siege/test_shared_g54_battle_session.mjs
           node --check recovered/siege/test_shared_g54_army_commands.mjs
           node --check recovered/siege/build_siege_player_candidate.mjs
@@ -76,6 +78,7 @@ jobs:
           node --test recovered/siege/test_shared_g54_army_commands.mjs
           node --test recovered/siege/test_shared_g54_battle_session.mjs
           node --test recovered/siege/test_shared_g54_player_input.mjs
+          node --test recovered/siege/test_siege_collision_recovery.mjs
       - name: Unmodified natural S3C3, dual ladders, gate, 140 soldier and S1/S2 regression
         run: |
           node --test recovered/siege/test_siege_capture_ai.mjs
