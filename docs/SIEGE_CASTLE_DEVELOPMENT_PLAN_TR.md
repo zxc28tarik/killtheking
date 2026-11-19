@@ -140,3 +140,13 @@ Her adımda GitHub commit, uygulanan dosyalar, CI test özeti, **YAPILDI / KISME
 
 
 **S3D2a doğrulaması (19 Kasım):** [Üç modlu CI #44532599418](https://github.com/zxc28tarik/killtheking/actions/runs/44532599418) iki iş **SUCCESS**: üç modlu paket + gerçek Chromium/SwiftShader 140 asker, Space zıplama (1 gerçek keydown, havalanma, iniş), Shift kayma ve Arena'ya dönüş. `pageErrors=[]`, `consoleErrors=[]`. 7 yeni/eski menü + 7 eski iki-mod + 5 runtime + 15 canlı HP + 3 sınıf görsel + **8/8 yeni hareket testi** = **45/45 test PASS**. [Birleşik HTML artifact #14533937466](https://github.com/zxc28tarik/killtheking/actions/runs/44532599418/artifacts/14533937466); ekran görüntüleri [#14533443427](https://github.com/zxc28tarik/killtheking/actions/runs/44532599418/artifacts/14533443427). Fiziksel Windows GPU/manuel FPS hissi kabulü açık; orijinal FFA tam hareket motoru ve 3B balistik paylaşılmıyor.
+
+
+
+### S3D2b — Birinci şahıs silah ve gerçek hit/recoil görselleri (19 Kasım 2026)
+
+- [x] Üçüncü oyun modu Kale Kuşatması için dört gerçek Three.js birinci şahıs kamera modeli oluşturuldu: kılıç (koruma/kabza/namlu yerine bıçak), mızrak, yay (ok/ip), tüfek (namlu/çakmak mekanizması). Bunlar Arena silahlarıyla aynı sınıflardan yeni hafif kozmetik modellerdir; birebir aktarım değildir.
+- [x] Yalnız orijinal G5.4 oyuncu savaş modülünün gerçek atış sonuçları model geri tepmesini, yalnız pozitif gerçek hasarlı isabet hit marker'ı ve yalnız gerçek G5.4 can kaybı ekranın kenar hasar uyarısını besler.
+- [x] G5.4 bekleme süresi reddi, zayıf yay bırakma ve yükseklik reddi sahte atış/hit animasyonu oluşturmaz. Yay görsel gerilmesi gerçek G5.4 hesaplanan draw süresine bağlıdır. Kamera/oyuncu aim yönü ve hasar/HP değeri değiştirilmez.
+- [x] S3D1 ve üç modlu HTML'ye yeni opsiyonel silah modülü bağlandı; 140 G5.4 gerçek asker, Arena ve Ordu kaynağı korunur.
+- [ ] Bu kozmetik entegrasyon tam özgün Arena FPS/TPS varlık paylaşımı, gerçek ok/kurşun 3B balistiği, ADS, TPS animasyonu veya kullanıcı onaylı son sürüm değildir. Tarayıcı CI ve fiziksel GPU kabulü ayrıca izlenir.
