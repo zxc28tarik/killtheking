@@ -221,7 +221,7 @@
  }
  function qaLocate(where){
    const points={
-     gate:{x:0,y:0,z:-49},
+     gate:{x:0,y:0,z:-44.65},
      west:{x:-59,y:0,z:-9},
      east:{x:59,y:0,z:-9}
    };
