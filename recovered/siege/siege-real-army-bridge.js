@@ -108,7 +108,8 @@
  }
  function create({armyEngine,map,objectives,traversal,
      seed=1600,playerType='sword',playerTeam='red',
-     scenario:existingScenario=null,structureCombatEngine=null}={}){
+     scenario:existingScenario=null,structureCombatEngine=null,
+     assaultNavigationEngine=null}={}){
    required(armyEngine,['create','step','snapshot','setWorldObstacles',
      'setPlayerPosition','drainCombatEvents','drainPlayerHits',
      'issueOrder','setDestination'],'G5.4');
@@ -135,12 +136,22 @@
      steps:0,positionsChanged:0,clockSeconds:0,
      combatEventsConsumed:0,worldObstacleUpdates:0,
      structureCombat:null,structureCombatEngine,
+     assaultNavigation:null,assaultNavigationEngine,
      terrainBlockedMoves:0,
      lastGateOpen:false,logs:[],ended:false
    };
    refreshObstacles(bridge);
    // Zone occupancy is read from real soldiers, NEVER from S1 debug buttons.
    deriveObjectiveEvents(bridge);
+   if(assaultNavigationEngine){
+     if(!structureCombatEngine)
+       throw Error('Siege gate assault AI requires explicit S3C siege combat');
+     required(assaultNavigationEngine,['create','suggest','snapshot'],
+       'S3C1 siege-specific assault navigation');
+     bridge.assaultNavigation=assaultNavigationEngine.create({
+       engine:armyEngine,map,state,scenario
+     });
+   }
    if(structureCombatEngine){
      required(structureCombatEngine,['create','afterNativeTick','snapshot'],
        'S3C1 siege-only structure interaction');
@@ -193,6 +204,9 @@
    const before=bridge.state.soldiers.map(u=>({id:u.id,x:u.x,z:u.z}));
    const elapsedBefore=bridge.state.elapsed;
    bridge.armyEngine.step(bridge.state,dt);
+   const elapsedDelta=bridge.state.elapsed-elapsedBefore;
+   if(!validNumber(elapsedDelta)||elapsedDelta<0||elapsedDelta>dt+.081)
+     throw Error('Native G5.4 elapsed time desynchronized');
    if(bridge.structureCombat){
      // The original G5.4 AI is a ground-plane engine. On this separate
      // S3C1 castle candidate, CLIP the real units' native movement against
@@ -201,7 +215,12 @@
      for(let i=0;i<bridge.state.soldiers.length;i++){
        const soldier=bridge.state.soldiers[i],old=before[i];
        if(!soldier.alive)continue;
-       const nativeX=soldier.x,nativeZ=soldier.z;
+       let nativeX=soldier.x,nativeZ=soldier.z;
+       if(bridge.assaultNavigation&&elapsedDelta>0){
+         const suggested=bridge.assaultNavigationEngine.suggest(
+           bridge.assaultNavigation,soldier,old,elapsedDelta);
+         if(suggested){nativeX=suggested.x;nativeZ=suggested.z;}
+       }
        const motion=bridge.traversal.move(
          {x:old.x,y:0,z:old.z},
          {x:(nativeX-old.x)/dt,z:(nativeZ-old.z)/dt},
@@ -216,9 +235,6 @@
        bridge.structureCombat);
      if(gateEvent.opened)refreshObstacles(bridge);
    }
-   const elapsedDelta=bridge.state.elapsed-elapsedBefore;
-   if(!validNumber(elapsedDelta)||elapsedDelta<0||elapsedDelta>dt+.081)
-     throw Error('Native G5.4 elapsed time desynchronized');
    bridge.steps++;
    bridge.clockSeconds+=dt;
    bridge.positionsChanged+=bridge.state.soldiers.reduce((count,u,i)=>
@@ -286,6 +302,8 @@
      genuineSoldierGateStrikes:b.structureCombat?
        b.structureCombatEngine.snapshot(b.structureCombat):null,
      terrainBlockedSoldierMoves:b.terrainBlockedMoves,
+     siegeSpecificRealSoldierNavigation:b.assaultNavigation?
+       b.assaultNavigationEngine.snapshot(b.assaultNavigation):null,
      realLadderClimbConnected:false,
      real3dPlayerCombatConnected:false,
      originalArmyAIModified:false,
