@@ -48,7 +48,10 @@
    if(!['BREACH','COURTYARD','KEEP'].includes(phase))return null;
    if(!isInside){
      // Outside: only an ACTUALLY destroyed gate grants the ground route.
-     if(Math.abs(p.x)>9||p.z<-48)return {x:0,z:-53,step:'APPROACH_OPEN_GATE'};
+     // Avoid the former permanent staging trap at (0,-53): use distance
+     // to the waypoint, NOT a blanket z<-48 check, to select next segment.
+     if(Math.hypot(p.x,p.z+53)>1.8)
+       return {x:0,z:-53,step:'APPROACH_OPEN_GATE'};
      return {x:0,z:-25,step:'THROUGH_AUTHENTIC_OPEN_GATE'};
    }
    if(Math.abs(p.x)>31){
