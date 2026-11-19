@@ -174,6 +174,7 @@
    const aim=direction(pose,weapon);
    const range=TACTICAL_RANGES[weapon];
    if(c.ballistics&&weapon==='bow'){
+     const existingArrows=c.ballistics.status().activePlayerArrows;
      const charge=clamp(drawElapsed/3,0,1);
      const arrow=c.ballistics.launch({
        state:s,scenario:c.bridge.scenario,
@@ -183,6 +184,7 @@
        return pushEvent(c,{status:'arrow-pool-full',weapon,hit:false});
      c.attempts++;
      c.lastAttack[weapon]=now;
+     if(existingArrows===0)c.lastProjectileTick=now;
      return pushEvent(c,{status:'arrow-launched',weapon,hit:false,
        projectileId:arrow.id});
    }
