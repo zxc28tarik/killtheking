@@ -170,7 +170,7 @@ try{
  report.checks.push('PASS_S2_TPS_BLUE_SAFE_SPAWN_WITH_140_STATIONARY_MARKERS');
  assert.equal(report.pageErrors.length,0,'Actual browser uncaught errors');
  assert.equal(report.consoleErrors.length,0,'Actual browser console errors');
- report.result='PASS_S1_SWIFTSHADER_VISUAL_AND_DEBUG_UI_ONLY';
+ report.result='PASS_S2_SWIFTSHADER_CASTLE_EXPLORATION_AND_DEBUG_UI_ONLY';
 }catch(e){
  report.result='FAIL';report.failure=String(e?.stack||e);throw e;
 }finally{
