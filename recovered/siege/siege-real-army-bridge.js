@@ -103,13 +103,15 @@
    if(!box)throw Error('Invalid real zone '+zone);
    const count={red:0,blue:0};
    for(const soldier of state.soldiers)
-     if(soldier.alive&&inside(soldier,box))count[soldier.team]++;
+     // An elevated wall-climber cannot count as a ground courtyard occupier.
+     if(soldier.alive&&(soldier.siegeY??0)<1&&inside(soldier,box))
+       count[soldier.team]++;
    return count;
  }
  function create({armyEngine,map,objectives,traversal,
      seed=1600,playerType='sword',playerTeam='red',
      scenario:existingScenario=null,structureCombatEngine=null,
-     assaultNavigationEngine=null}={}){
+     assaultNavigationEngine=null,ladderAIEngine=null}={}){
    required(armyEngine,['create','step','snapshot','setWorldObstacles',
      'setPlayerPosition','drainCombatEvents','drainPlayerHits',
      'issueOrder','setDestination'],'G5.4');
@@ -137,6 +139,7 @@
      combatEventsConsumed:0,worldObstacleUpdates:0,
      structureCombat:null,structureCombatEngine,
      assaultNavigation:null,assaultNavigationEngine,
+     ladderAI:null,ladderAIEngine,
      terrainBlockedMoves:0,
      lastGateOpen:false,logs:[],ended:false
    };
@@ -150,6 +153,16 @@
        'S3C1 siege-specific assault navigation');
      bridge.assaultNavigation=assaultNavigationEngine.create({
        engine:armyEngine,map,state,scenario
+     });
+   }
+   if(ladderAIEngine){
+     if(!structureCombatEngine||!assaultNavigationEngine)
+       throw Error('S3C2 requires opt-in real siege combat and assault movement');
+     required(ladderAIEngine,
+       ['create','suggest','afterNativeTick','snapshot'],
+       'genuine S3C2 two-flank ladder AI');
+     bridge.ladderAI=ladderAIEngine.create({
+       engine:armyEngine,state,map,scenario,objectives,traversal
      });
    }
    if(structureCombatEngine){
@@ -203,6 +216,15 @@
      refreshObstacles(bridge);
    const before=bridge.state.soldiers.map(u=>({id:u.id,x:u.x,z:u.z}));
    const elapsedBefore=bridge.state.elapsed;
+   if(bridge.ladderAI){
+     // Native G5.4 has only 2D ballistics; avoid a 2D melee attack from
+     // any authentically elevated climbing soldier during this native step.
+     for(const rec of bridge.ladderAI.records.values())
+       if(rec.stage==='climb'){
+         const u=bridge.state.soldiers[rec.id];
+         if(u?.alive)u.reload=Math.max(u.reload,dt+.09);
+       }
+   }
    bridge.armyEngine.step(bridge.state,dt);
    const elapsedDelta=bridge.state.elapsed-elapsedBefore;
    if(!validNumber(elapsedDelta)||elapsedDelta<0||elapsedDelta>dt+.081)
@@ -216,7 +238,24 @@
        const soldier=bridge.state.soldiers[i],old=before[i];
        if(!soldier.alive)continue;
        let nativeX=soldier.x,nativeZ=soldier.z;
-       if(bridge.assaultNavigation&&elapsedDelta>0){
+       let vertical=null;
+       if(bridge.ladderAI&&elapsedDelta>0)
+         vertical=bridge.ladderAIEngine.suggest(
+           bridge.ladderAI,soldier,old,elapsedDelta);
+       if(vertical?.kind==='ladder'){
+         // The S2 3D traversal module already validated every step at the
+         // soldier's true altitude. Do not project the ascent to y=0.
+         soldier.x=vertical.x;soldier.z=vertical.z;
+         soldier.siegeY=vertical.y;
+         if(bridge.traversal.overlaps({
+           x:soldier.x,y:soldier.siegeY,z:soldier.z
+         },bridge.map.spec,bridge.scenario,.65,2.6))
+           throw Error('REAL soldier's 3D ladder position embeds castle stone');
+         continue;
+       }
+       if(vertical){
+         nativeX=vertical.x;nativeZ=vertical.z;
+       }else if(bridge.assaultNavigation&&elapsedDelta>0){
          const suggested=bridge.assaultNavigationEngine.suggest(
            bridge.assaultNavigation,soldier,old,elapsedDelta);
          if(suggested){nativeX=suggested.x;nativeZ=suggested.z;}
@@ -227,6 +266,7 @@
          dt,bridge.map.spec,bridge.scenario,.65,2.6);
        if(motion.blockedX||motion.blockedZ)bridge.terrainBlockedMoves++;
        soldier.x=motion.x;soldier.z=motion.z;
+       if(bridge.ladderAI&&vertical)soldier.siegeY=0;
        if(bridge.traversal.overlaps({x:soldier.x,y:0,z:soldier.z},
          bridge.map.spec,bridge.scenario,.65,2.6))
          throw Error('Native G5.4 siege soldier embedded into castle stone');
@@ -234,6 +274,9 @@
      const gateEvent=bridge.structureCombatEngine.afterNativeTick(
        bridge.structureCombat);
      if(gateEvent.opened)refreshObstacles(bridge);
+     if(bridge.ladderAI&&elapsedDelta>0)
+       bridge.ladderAIEngine.afterNativeTick(
+         bridge.ladderAI,elapsedDelta);
    }
    bridge.steps++;
    bridge.clockSeconds+=dt;
@@ -304,7 +347,9 @@
      terrainBlockedSoldierMoves:b.terrainBlockedMoves,
      siegeSpecificRealSoldierNavigation:b.assaultNavigation?
        b.assaultNavigationEngine.snapshot(b.assaultNavigation):null,
-     realLadderClimbConnected:false,
+     realLadderClimbConnected:!!b.ladderAI,
+     genuineSoldierLadders:b.ladderAI?
+       b.ladderAIEngine.snapshot(b.ladderAI):null,
      real3dPlayerCombatConnected:false,
      originalArmyAIModified:false,
      mainGameModified:false
