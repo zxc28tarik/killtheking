@@ -49,6 +49,12 @@
 **Kabul:** deterministik senaryo motoru doğru fazlara geçer; 2 farklı ihlal rotası denenir; gerçek oynanabilir 140 asker/grafik iddiası YOK.
 
 ### S2 — 3B kuşatma haritası, fizik, asker yerleşimi [P0/P1]
+
+**19 Kasım — S2 dolaşılabilirlik önizlemesi PASS, üretim sürümüne bütünleşme AÇIK.** [Gerçek test bulguları ve indirilebilir HTML](../recovered/siege/S2_CASTLE_TRAVERSAL_ACCEPTANCE_TR.md). Yeni izolasyonlu `siege-traversal.js` ile 3B önizlemede FPS/TPS keşif, gerçek W/A/S/D hareketi, kapıda dinamik collider, batı/doğu E-tırmanışı, takım seçimi ve taktik mini harita kodlandı. **21 S1 + 18 S2 = 39/39 Node test PASS**, gerçek Chromium/SwiftShader W/E kontrolü PASS ([CI #44495376208](https://github.com/zxc28tarik/killtheking/actions/runs/44495376208)). Kapı ve sur test konumları QA ışınlamasıdır; oyuncunun doğal başlangıçtan bütün 3B rotayı yürümesi veya gerçek G5.4 askerlerin kale kuşatması **henüz kanıtlanmadı**.
+
+- [x] **S2 bağımsız önizleme:** eski FFA ve orduyu değiştirmeden, gerçek kale geometrisine bağlı kapı/duvar çarpışması ve yönlendirilmiş iki merdiven yolu.
+- [x] **S2 bağımsız önizleme:** FPS/TPS kamera ve gerçek WASD/E olayları; mini harita, kırılan kapıda collider ve rota yenilemesi.
+- [ ] **S2 üretim entegrasyonu:** gerçek ana oyun FPS/TPS oyuncusu, tam sur üstü platform/fizik, kale NPC/asker doğuşu ve 3B rota kabulü.
 - [ ] Özgün grafik dilinde kale, sur, ana kapı, yan merdiven noktaları, dış siperler, avlu, iç kale.
 - [ ] Görünür/katı nesnelerin collider ve raycast eşleşmesi; kapı yıkılınca collision ve nav geçişi güncellemesi.
 - [ ] Mavi savunma sur/spawn; kırmızı dış saldırı/kuşatma spawn; merdiven çıkış/iniş güvenliği.
