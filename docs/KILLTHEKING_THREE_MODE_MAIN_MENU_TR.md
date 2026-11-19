@@ -62,3 +62,9 @@ Yalnız üçüncü modda Space zıplama, Shift/C kayma ve sınırlı slide-hop e
 
 
 **S3D2a doğrulaması (19 Kasım):** [Üç modlu CI #44532599418](https://github.com/zxc28tarik/killtheking/actions/runs/44532599418) iki iş **SUCCESS**: üç modlu paket + gerçek Chromium/SwiftShader 140 asker, Space zıplama (1 gerçek keydown, havalanma, iniş), Shift kayma ve Arena'ya dönüş. `pageErrors=[]`, `consoleErrors=[]`. 7 yeni/eski menü + 7 eski iki-mod + 5 runtime + 15 canlı HP + 3 sınıf görsel + **8/8 yeni hareket testi** = **45/45 test PASS**. [Birleşik HTML artifact #14533937466](https://github.com/zxc28tarik/killtheking/actions/runs/44532599418/artifacts/14533937466); ekran görüntüleri [#14533443427](https://github.com/zxc28tarik/killtheking/actions/runs/44532599418/artifacts/14533443427). Fiziksel Windows GPU/manuel FPS hissi kabulü açık; orijinal FFA tam hareket motoru ve 3B balistik paylaşılmıyor.
+
+
+
+### S3D2b — Üçüncü mod FPS silahları ve gerçek savaş geri bildirimi
+
+Kuşatmada kılıç/mızrak/yay/tüfek için kameraya bağlı ilk şahıs Three.js modelleri, gerçek G5.4 atış olayına göre kozmetik geri tepme, **pozitif gerçek hasar** halinde isabet işareti ve **gerçek HP düşüşü** halinde hasar uyarısı eklendi. Orijinal Arena'nın mesh'i aynen taşınmadı; bu yeni çizimler görsel entegrasyona ilk adımdır. Üç modlu çevrimdışı tek HTML korunur, FFA ve Ordu gerçek motoru değiştirilmez; 3B balistik ve tam FPS/TPS uyumu henüz tamamlanmamıştır.
