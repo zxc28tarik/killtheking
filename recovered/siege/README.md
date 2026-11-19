@@ -1,6 +1,6 @@
-# Kill the King — Kuşatma Kalesi S1/S2/S3/S3C1/S3C2/S3C3
+# Kill the King — Kuşatma Kalesi S1/S2/S3/S3C1/S3C2/S3C3/S3D1
 
-**Durum:** S1 hedef motoru, S2 dolaşılabilirlik, S3 gerçek G5.4 140 asker, S3C1 doğal kapı kırma, S3C2 iki canlı asker merdiveni ve **S3C3 gerçek avlu/iç kale zafer mantığı** kodlandı. Normal 70v70 gerçek motor doğuşundan saldıranlar **109,36 oyun saniyesinde keep'i ele geçirdi**. Ancak **mavi AI'nın kale savunması, asıl FPS/TPS silahlı oyuncu, üç boyutlu silah balistiği ve yayın/GPU kabulü hâlâ AÇIK.** Bu klasör yeni **tek bir kuşatma senaryosu** için ayrılmıştır. FFA/TDM, özgün kale, çimenlik meydan ve G5.4 ordu modları bu aşamada değiştirilmedi.
+**Durum:** S1 hedef motoru, S2 dolaşılabilirlik, S3 gerçek G5.4 140 asker, S3C1 doğal kapı kırma, S3C2 iki canlı asker merdiveni ve **S3C3 gerçek avlu/iç kale zafer mantığı** kodlandı. Normal 70v70 gerçek motor doğuşundan saldıranlar **109,36 oyun saniyesinde keep'i ele geçirdi**. S3D1'de kuşatmaya **gerçek G5.4 100 HP oyuncusu ve dört zemin silahı** da eklendi. Ancak **mavi AI kale savunması, asıl FFA hareket/kayma/zıplama motorunun taşınması, üç boyutlu silah balistiği ve yayın/GPU kabulü hâlâ AÇIK.** Bu klasör yeni **tek bir kuşatma senaryosu** için ayrılmıştır. FFA/TDM, özgün kale, çimenlik meydan ve G5.4 ordu modları bu aşamada değiştirilmedi.
 
 ## Tasarım ve plan
 
@@ -88,7 +88,7 @@ node recovered/siege/build_siege_ladder_candidate.mjs recovered/siege/dist/KillT
 node --test recovered/siege/test_siege_ladder_ai.mjs
 ```
 
-**S3C3 doğal saldırgan zaferi artık PASS.** Sıradaki S3D asıl FPS oyuncu/silah entegrasyonu; S4 mavi savunma AI, ardından S5–S6 son kabul. Özgün G5.4 2B saldırı simülatörüdür: gerçek 3B mermi/ok fiziği hâlâ yoktur.
+**S3C3 doğal saldırgan zaferi ve S3D1 dört silahlı/100 HP gerçek insan komutan köprüsü artık PASS.** Sıradaki S3D2 tam asıl FFA hareket + 3B balistik; S4 mavi savunma AI, ardından S5–S6 son kabul. Özgün G5.4 2B saldırı simülatörüdür: gerçek 3B mermi/ok fiziği hâlâ yoktur.
 
 ## S3C3 — Gerçek Askerler İç Avlu / Keep Ele Geçirme
 
@@ -104,6 +104,22 @@ node --test recovered/siege/test_siege_capture_ai.mjs
 node recovered/siege/build_siege_capture_candidate.mjs recovered/siege/dist/KillTheKing_Kusatma_S3C3_Gercek_140_Asker_Kale_Ele_Gecirme_Aday.html
 ```
 
+## S3D1 — Gerçek G5.4 Oyuncu HP'si ve Dört Silah (FPS/TPS)
+
+- **`siege-player-combat.js`**: gerçek 140 askerli savaşın `playerHealth/playerActive/setPlayerPosition/raycastSoldier/damageSoldier({source:'player'})` API'lerini kullanır. Yalnız ilk gerçek düşman bedeni vurulur; **dost asker vurulmaz ve mermiyi keser**, duvar/kapı orijinal G5.4 collider'ı ile engeller.
+- **`siege-player-ui.js`**: 1 kılıç, 2 mızrak, 3 yay (2 sn min, 3 sn tam, 4 sn aralık), 4 tüfek (15 sn aralık), F veya sol tık, FPS/TPS, WASD, HP ve öldürme HUD. Tarihî `ArenaWeaponBalance` hasarı korunur; silah değiştirerek reload aşılmaz.
+- S3D1 canlı maçta üç **QA ışınlama tuşu devre dışı**; harita spectator iken hayalet oyuncu yok, HP sıfır olursa yürüyüş/ateş durur. Orijinal FFA/TDM ve bağımsız ordu motorlarına dokunulmadı.
+- [**S3D1 Actions #44521305319 iki job SUCCESS**](https://github.com/zxc28tarik/killtheking/actions/runs/44521305319): **15 yeni S3D1 + 97 eski S1–S3C3 = 112/112 test PASS**, Chromium gerçek W/F/1–4/yay/mavi komutan/HP/yerleşim PASS; `pageErrors=[]` ve `consoleErrors=[]`.
+- [**S3D1 890.819 byte tek çevrim dışı 3B HTML artifact #14527868070**](https://github.com/zxc28tarik/killtheking/actions/runs/44521305319/artifacts/14527868070); [gerçek Chromium screenshot/JSON #14526714351](https://github.com/zxc28tarik/killtheking/actions/runs/44521305319/artifacts/14526714351).
+- [**S3D1 kaynak, sınırlama ve test raporu**](../../docs/SIEGE_CASTLE_S3D1_PLAYER_COMBAT_ACCEPTANCE_TR.md).
+
+```bash
+node --test recovered/siege/test_siege_player_combat.mjs
+node recovered/siege/build_siege_player_candidate.mjs recovered/siege/dist/KillTheKing_Kusatma_S3D1_FPS_140_Gercek_Asker_Savas_Aday.html
+```
+
+**Bu tam asıl FFA karakteri değil:** özgün FPS motoru, zıplama/kayma, ses/animasyon, gerçek 3B ok/mermi ve sur üstünde atış S3D2 için açık. Gerçek 140 asker ve S3C3 maç sonucu korunur. Donanım GPU/oyuncu kabulü yapılmadı.
+
 ## Geliştirici komutları
 
 ```bash
@@ -113,6 +129,6 @@ node recovered/siege/build_siege_preview.mjs recovered/siege/dist/KillTheKing_Ku
 
 Üretilen tek HTML'yi Chrome/Edge'de yerel aç. Harita kamerasında sürükleyip yakınlaştır; **FPS/TPS seçerek WASD ile yürü, E ile açık merdivene çık**, saldıran/savunan tarafı seç. Sağdaki **QA konumu** düğmeleri yalnız çarpışma denemesi için oyuncuyu yerleştirir. “Test olayları” düğmeleri S1 senaryo kurallarını sınar; gerçek savaş AI'sını gözlemlemek için kullanılmaz.
 
-## Sıradaki adım: S3D ana FPS/TPS oyuncu ve S4 mavi kale savunması
+## Sıradaki adım: S3D2 asıl FPS hareketi ve S4 mavi kale savunması
 
-S3C1 doğal kapı, S3C2 iki merdiven, S3C3 109,36 oyun saniyelik saldırgan keep zaferi ve kısa test süresinde savunucu zaman zaferi kaynak testlerinde PASS. **S3D:** asıl silahlı FPS/TPS oyuncuyu savaş ve HP sistemine bağla; **S4:** mavi 48 canlı askerin iç kaleyi koruyamayıp başka bölgede kalmasını iyileştir. S2 keşif avatarını gerçek silahlı oyuncu sayma; kullanıcı onayı olmadan dengeyi nihai hale getirme veya `main`e merge yapma.
+S3C1 doğal kapı, S3C2 iki merdiven, S3C3 109,36 oyun saniyelik saldırgan keep zaferi ve kısa test süresinde savunucu zaman zaferi kaynak testlerinde PASS. **S3D1:** gerçek HP, konum, 4 zemin silahı ve G5.4 asker hasarı PASS; **S3D2:** asıl FFA hareket/animasyon ve 3B balistik/yaşanan tam maç entegrasyonu AÇIK; **S4:** mavi 48 canlı askerin iç kaleyi koruyamayıp başka bölgede kalmasını iyileştir. S2 keşif avatarı artık S3D1'de gerçek G5.4 silah/HP kullanır fakat asıl FFA hareket motoru değildir; kullanıcı onayı olmadan dengeyi nihai hale getirme veya `main`e merge yapma.
