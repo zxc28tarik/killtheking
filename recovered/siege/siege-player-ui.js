@@ -9,7 +9,8 @@
  const preview=globalThis.ktkSiegePreviewAdapter;
  const G54=globalThis.ArenaArmyBattle;
  const W=globalThis.ArenaWeaponBalance;
- if(!api||!native||!preview||!G54||!W)
+ const Ballistics=globalThis.KTKSiege3DBallistics;
+ if(!api||!native||!preview||!G54||!W||!Ballistics)
    throw Error('Native S3D1 140 soldier + live player UI dependencies missing');
  let combat=null;
  let frames=0;
@@ -22,8 +23,8 @@
   '<p style="font-size:11px;line-height:1.55">FPS/TPS seç, WASD ile yürü, Space ile zıpla, Shift/C ile kay, kamerayı sürükle.',
   ' Fareyle veya F ile vur; yay için basılı tutup bırak.',
   ' Silahlar ve hasar onaylı silah tablosundan, oyuncu HP ve gerçek asker',
-  ' ölümleri orijinal G5.4 motorundan gelir. <b>Sur üstünde vuruş ve',
-  ' 3B ok/kurşun balistiği henüz yok.</b></p>',
+  ' ölümleri orijinal G5.4 motorundan gelir. <b>Tüfek 3B engel ışını,',
+  ' yay gerçek uçuş ve düşüşle, sur üstü atışlar 3B hedef yüksekliğiyle işler.</b></p>',
   '<div class="grid">',
   '<div class="stat"><strong id="s3d-hp">100 / 100 HP</strong><span>GERÇEK G5.4 oyuncu canı</span></div>',
   '<div class="stat"><strong id="s3d-score">0 / 0</strong><span>Vuruş / Ölüm (oyuncu)</span></div>',
@@ -39,8 +40,8 @@
   '</div>',
   '<div id="s3d-player-feedback" role="status" style="font-size:11px;margin-top:9px;color:#cce6d9">FPS/TPS moduna geç ve hedef al.</div>',
   '<p style="font-size:11px;color:#eac18a;margin-top:9px">Dost ateşi kapalı, dost asker atışı durdurur.',
-  ' 3B yükseklik desteklenmediği için surun üzerindeyken ve sur üstündeki askere',
-  ' ateş devre dışı. Ölürsen senaryoyu yeniden başlat.</p>'
+  ' E ile açık yan merdivene çıkıp sur üstünden ateş edebilirsin.',
+  ' Sadece oyuncu menzilli atışı 3B; G5.4 asker AI 3B değil. Ölürsen senaryoyu yeniden başlat.</p>'
  ].join('');
  el.insertBefore(panel,el.firstChild);
  const canvas=preview.getCanvas();
@@ -57,6 +58,7 @@
    if(feedback&&result?.status)feedback.consume(result);
  }
  let holdingBow=false,lastVisible=null;
+ let threeD=null,threeDConfigured=false;
  function draw(){
    if(!combat)return;
    const s=api.snapshot(combat);
@@ -165,7 +167,15 @@
  cross.style.cssText='position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font:bold 31px monospace;color:#f8efd2;text-shadow:0 1px 4px #000;pointer-events:none;z-index:3;display:none';
  scene.appendChild(cross);
  function onCreate(b){
-   combat=api.create({bridge:b,engine:G54,balance:W});
+   if(threeD)threeD.reset();
+   threeD=Ballistics.create({
+     map:globalThis.KTKSiegemap,scene:preview.scene,THREE:globalThis.THREE
+   });
+   if(!threeDConfigured){
+     preview.registerBallistics();
+     threeDConfigured=true;
+   }
+   combat=api.create({bridge:b,engine:G54,balance:W,ballistics:threeD});
    holdingBow=false;lastVisible=null;
    if(feedback)feedback.reset('sword');
    api.sync(combat,preview.getPlayerPose());
@@ -178,6 +188,11 @@
  function onAfterFrame(){
    if(!combat)return;
    api.receive(combat);
+   // Native 3D arrow flight resolves only on a genuine G5.4 clock tick;
+   // impact cannot masquerade as an immediate firing-time hit marker.
+   for(const actual of api.drainProjectileEvents(combat)){
+     lastVisible=actual;nativeFeedback(actual);
+   }
    const genuine=api.snapshot(combat);
    const clock=performance.now();
    if(feedback)feedback.update(Math.min(.05,Math.max(0,(clock-visualTime)/1000)),
@@ -191,4 +206,5 @@
  draw();
  globalThis.ktkSiegePlayerCombatStatus=()=>api.snapshot(combat);
  globalThis.ktkSiegeWeaponVisualStatus=()=>feedback?.status()||null;
+ globalThis.ktkSiegeBallisticsStatus=()=>threeD?.status()||null;
 })();
