@@ -12,7 +12,8 @@
  'use strict';
  const TYPES=Object.freeze(['sword','spear','bow','musket']);
  const ACTUAL_FIRE=Object.freeze(['miss','hit','friendly-block',
-   'shield-blocked','no-authorized-target']);
+   'shield-blocked','no-authorized-target','castle-blocked',
+   'arrow-launched']);
  const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
  const finite=n=>typeof n==='number'&&Number.isFinite(n);
  function create({THREE,scene,camera,sceneRoot=null}={}){
@@ -128,7 +129,8 @@
      if(!result||typeof result.status!=='string')
        throw Error('Only native player-combat results may drive feedback');
      if(!TYPES.includes(result.weapon))return;
-     if(ACTUAL_FIRE.includes(result.status)){
+     if(ACTUAL_FIRE.includes(result.status)&&
+        !result.sourceProjectileImpact){
        combatShots++;recoil=1;
      }
      if(result.status==='hit'&&result.hit===true&&
