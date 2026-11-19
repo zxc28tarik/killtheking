@@ -116,6 +116,10 @@ try{
  assert.equal(siege.army.realRampart3DDefenderAIConnected,true);
  assert.equal(siege.army.sharedNativeG54ArmyCommandContract,true);
  assert.equal(siege.army.sharedNativeG54BattleSessionConnected,true);
+ assert.equal(siege.scene.explorer.sharedG54InputContract,true);
+ assert.equal(siege.player.sharedFieldSiegePlayerInputContract,true);
+ assert.equal(siege.player.playerCameraAndWeaponAimUseSameDirection,true);
+ report.checks.push('PASS_AK03B_CASTLE_G54_FIELD_INPUT_AND_CAMERA_PROJECTILE_AIM');
  assert.equal(siege.army.sharedNativeG54BattleSession.mode,'siege');
  assert.equal(siege.army.sharedNativeG54BattleSession.nativeSoldierCount,140);
  assert.equal(siege.army.sharedNativeG54BattleSession.nativeSquadCount,8);

@@ -40,6 +40,11 @@ try{
  const initial=await player(),a=await army(),view=await scene();
  assert.equal(a.authentic140Soldiers,140);
  assert.equal(a.sharedNativeG54BattleSessionConnected,true);
+ assert.equal(view.explorer.sharedG54InputContract,true);
+ assert.equal(initial.sharedFieldSiegePlayerInputContract,true);
+ assert.equal(initial.playerCameraAndWeaponAimUseSameDirection,true);
+ assert.equal(view.explorer.pointerLocked,false);
+ report.checks.push('PASS_AK03B_REAL_G54_INPUT_AND_PLAYER_BALLISTIC_AIM_CONTRACT');
  const session0=await page.evaluate(()=>window.ktkSiegeSharedBattleSessionStatus?.());
  assert.equal(session0.nativeSoldierCount,140);
  assert.equal(session0.nativeSquadCount,8);
@@ -234,6 +239,32 @@ try{
  assert.equal((await page.evaluate(()=>window.ktkSiegeWeaponVisualStatus())).nativeHitMarkers,0,
   'Weak bow release must not produce a fake hit');
  report.checks.push('PASS_PLAYER_BOW_REJECTS_WEAK_DRAW_UNDER_2_NATIVE_SECONDS');
+ // Actual human browser pointer lock, not synthetic mouse delta state mutation.
+ const aimingCanvas=page.locator('#scene canvas').first();
+ const sightBefore=await scene();
+ const box=await aimingCanvas.boundingBox();
+ assert(box?.width>100&&box?.height>100);
+ await aimingCanvas.click({button:'right',
+   position:{x:box.width*.48,y:box.height*.48}});
+ await page.waitForFunction(()=>window.ktkSiegePreviewStatus?.()?.explorer.pointerLocked,
+   {timeout:85000});
+ const lockedSight=await scene();
+ assert.equal(lockedSight.explorer.pointerLocked,true);
+ assert(lockedSight.explorer.pointerLockRequests>=1);
+ await page.mouse.move(box.x+box.width*.55,box.y+box.height*.44,{steps:7});
+ await page.waitForFunction((before)=>{
+   const p=window.ktkSiegePreviewStatus?.()?.explorer;
+   return p?.pointerLockLookTicks>0&&Math.abs(p.yaw-before)>0.0001;
+ },sightBefore.explorer.yaw,{timeout:85000});
+ const turned=await scene();
+ assert(turned.explorer.pointerLockLookTicks>0);
+ assert.equal(turned.explorer.pointerLocked,true);
+ await page.keyboard.press('KeyP');
+ assert.equal((await scene()).explorer.pointerLocked,false);
+ assert.equal((await army()).fieldG54PMapOpen,true);
+ await page.keyboard.press('Escape');
+ assert.equal((await army()).fieldG54PMapOpen,false);
+ report.checks.push('PASS_AK03B_REAL_CHROMIUM_FPS_POINTER_LOCK_FREE_LOOK_AND_P_MAP_RELEASE');
  await page.screenshot({path:resolve(dir,'s3d1-native-human-fps-140-real-army.png'),
   fullPage:true});
  await page.locator('#siege-team-blue').click();
