@@ -188,6 +188,7 @@
  // Optional S3 genuine-army adapter. With no adapter, S2 preview is unchanged.
  let extensionFrame=null,extensionReset=null,extensionTeam=null;
  let extensionRealGateCombat=false,extensionRealLadderAI=false;
+ let extensionCombatCanMove=null;
  const explorer={view:'orbit',team:'red',
    position:{x:0,y:0,z:-110},yaw:0,pitch:0,
    keys:Object.create(null),climb:null,walkTicks:0,
@@ -230,6 +231,7 @@
    }
  }
  function qaLocate(where){
+   if(extensionCombatCanMove)throw Error('S3D1 live player cannot use QA teleport in a genuine match');
    const points={
      gate:{x:0,y:0,z:-44.65},
      west:{x:-59,y:0,z:-9},
@@ -256,7 +258,8 @@
    updateCamera();
  }
  function tryClimb(){
-   if(explorer.view==='orbit'||explorer.climb)return;
+   if((extensionCombatCanMove&&!extensionCombatCanMove())||
+      explorer.view==='orbit'||explorer.climb)return;
    const state=rules.snapshot(siege);
    for(const side of ['west','east']){
      const climb=traversal.beginClimb(explorer.position,side,spec,state);
@@ -299,6 +302,10 @@
  });
  function stepExplorer(dt){
    if(explorer.view==='orbit')return;
+   if(extensionCombatCanMove&&!extensionCombatCanMove()){
+     explorer.status='G5.4 oyuncu öldü veya maç bitti • yeniden başlat';
+     return;
+   }
    const state=rules.snapshot(siege);
    if(explorer.climb){
      const step=traversal.stepClimb(explorer.climb,dt,spec,state);
@@ -583,6 +590,24 @@
    getScenario:()=>siege,
    getTeam:()=>explorer.team,
    getPlayerPosition:()=>({...explorer.position}),
+   getPlayerPose:()=>({
+     view:explorer.view,team:explorer.team,
+     yaw:explorer.yaw,pitch:explorer.pitch,
+     climbing:!!explorer.climb,
+     position:{...explorer.position}
+   }),
+   getCanvas:()=>renderer.domElement,
+   registerCombat({canMove}={}){
+     if(extensionCombatCanMove||typeof canMove!=='function')
+       throw Error('Invalid/duplicate native G5.4 player-combat view bridge');
+     extensionCombatCanMove=canMove;
+     for(const id of ['siege-fixture-gate','siege-fixture-west','siege-fixture-east']){
+       const btn=document.getElementById(id);
+       if(!btn)throw Error('Missing historic QA control: '+id);
+       btn.disabled=true;
+       btn.title='S3D1 canlı komutan maçında ışınlama yasak';
+     }
+   },
    register({onFrame,onReset,onTeamChange,
      realStructureCombat=false,realLadderAI=false}={}){
      if(extensionFrame)throw Error('S3 army adapter is already registered');
@@ -601,6 +626,7 @@
  globalThis.ktkSiegePreviewStatus=()=>({
    ready:running,
    sceneWebGL:!!renderer.getContext()&&!renderer.getContext().isContextLost(),
+   liveCombatViewConnected:!!extensionCombatCanMove,
    markers:armyTokens.reduce((a,b)=>a+b.count,0),
    geometryObjects:spec.boxes.length,
    gateVisible:gate.visible,
