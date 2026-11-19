@@ -42,10 +42,33 @@ footer{font-size:11px;color:#c9c0a7;background:#191b19;padding:8px 18px;border-t
 </header>
 <main>
   <section id="scene" aria-label="Üç boyutlu kuşatma kale haritası">
-    <div id="legend"><div><span class="dot red"></span>Kırmızı saldıran</div><div><span class="dot blue"></span>Mavi savunan</div><div>3 giriş: kapı + batı / doğu</div></div>
+    <div id="legend"><div><span class="dot red"></span>Kırmızı saldıran</div><div><span class="dot blue"></span>Mavi savunan</div><div>3 giriş: kapı + batı / doğu</div><div id="view-mode-banner">S2 • Harita kamerası</div></div>
     <div id="scene-label">Sürükle: kamerayı döndür • Tekerlek: yakınlaştır • Sahne Three.js • Ayrı S1 önizlemesi</div>
   </section>
   <aside>
+    <h2>Kuşatma Keşfi — S2</h2>
+    <p class="help">Oyuncu karakteriyle kale içinde gez. Bu, gerçek asker savaşından önceki <b>3B harita/fizik önizlemesidir</b>.</p>
+    <div class="controls">
+      <button id="siege-orbit" type="button">Harita kamerası</button>
+      <button id="siege-fps" type="button" class="success">Birinci şahıs (FPS)</button>
+      <button id="siege-tps" type="button" class="success">Üçüncü şahıs (TPS)</button>
+      <button id="siege-team-red" type="button">Kırmızı saldıran</button>
+      <button id="siege-team-blue" type="button">Mavi savunucu</button>
+    </div>
+    <p class="help">WASD: yürü • Fareyi sürükle: yön ver • E: açık yan merdivenden çık • Harita kamerası için fare tekeri. Silah/gerçek asker AI henüz bağlı değil.</p>
+    <div class="grid">
+      <div class="stat"><strong id="explorer-location">Dış hat</strong><span>Oyuncu konumu</span></div>
+      <div class="stat"><strong id="explorer-collision">Hazır</strong><span>Oyuncu fiziği</span></div>
+    </div>
+    <div><h3>Taktik harita (S2 oyuncu önizlemesi)</h3>
+      <canvas id="siege-mini-map" width="260" height="196" style="display:block;background:#1c2c29;border:1px solid #79684b;max-width:100%;width:100%;height:164px" aria-label="Kuşatma kalesi, oyuncu konumu ve açık geçitler"></canvas></div>
+    <div><h3>Test yerleşimi — yalnız QA / ışınlama</h3>
+      <div class="controls">
+        <button id="siege-fixture-gate" type="button">Kapı önünü dene</button>
+        <button id="siege-fixture-west" type="button">Batı surunu dene</button>
+        <button id="siege-fixture-east" type="button">Doğu surunu dene</button>
+      </div>
+    </div>
     <h2>Senaryo Kontrolü</h2>
     <div class="phase"><h3>Saldırı aşaması</h3><div id="phase-value">YAKLAŞMA</div><div class="help" id="phase-help">Kapıyı kır veya iki sur çıkışından birini hazırla.</div></div>
     <div id="result" role="status" aria-live="polite"></div>
@@ -83,6 +106,7 @@ footer{font-size:11px;color:#c9c0a7;background:#191b19;padding:8px 18px;border-t
 <!-- KTK_THREE_JS -->
 <!-- KTK_SIEGE_MAP_JS -->
 <!-- KTK_SIEGE_OBJECTIVES_JS -->
+<!-- KTK_SIEGE_TRAVERSAL_JS -->
 <!-- KTK_SIEGE_PREVIEW_JS -->
 </body>
 </html>
