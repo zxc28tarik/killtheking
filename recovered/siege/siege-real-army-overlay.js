@@ -11,6 +11,8 @@
  const siegeCombat=globalThis.KTKSiegeStructureCombat||null;
  const assaultNav=globalThis.KTKSiegeAssaultNavigation||null;
  const ladderAI=globalThis.KTKSiegeLadderAI||null;
+ const captureAI=globalThis.KTKSiegeCaptureAI||null;
+ if(captureAI&&!ladderAI)throw Error('S3C3 objective assault requires actual S3C2 ladder bridge');
  if(ladderAI&&!siegeCombat)throw Error('S3C2 actual ladders require real gate combat');
  if(siegeCombat&&!assaultNav)throw Error('S3C siege assault path adapter missing');
  const map=globalThis.KTKSiegemap;
@@ -49,9 +51,13 @@
    panel.querySelector('h3').textContent='S3C1 • GERÇEK ASKER KAPI SALDIRISI';
    panel.querySelector('p').textContent='140 gerçek G5.4 asker. Yalnız kapının dış yüzüne ulaşan kırmızı kılıçlı ve mızraklılar, özgün menzil/hasar/yeniden saldırma süreleriyle kapıya vurur. Kapı hasarı için DEBUG tuşları kapalı. Kırmızı otomatik yakın dövüş birlikleri, yeni kuşatma AI yolu ile kapı önüne kendi yürüyüş hızında gelir. Gerçek asker merdiven AI ve tam kuşatma zaferi HENÜZ YOK.';
  }
+ if(captureAI){
+   panel.querySelector('h3').textContent='S3C3 • GERÇEK AVLU VE İÇ KALE SAVAŞI';
+   panel.querySelector('p').textContent='Gerçek G5.4 savaş askerleri, doğal kapı veya merdiven girişinden sonra iç avlu ve iç kaleye yürür. Mavi savunucuların gerçekten yaşayan askerleri bölgeyi çekişmeli tutar. Yalnız gerçek asker konumları, ölümleri ve S1 bekleme süreleri sonucu belirler; sahte avlu/sonuç butonları kilitlidir. Bu oyun henüz ana FPS ve gerçek 3B balistik ile entegre değil.';
+ }
  if(ladderAI){
-   panel.querySelector('h3').textContent='S3C2 • GERÇEK ASKER MERDİVENLERİ';
-   panel.querySelector('p').textContent='Kırmızı G5.4 AI mızraklıları iki yan merdivene gerçek hızlarıyla ulaşır, orada gerçek asker varlığından inşa ilerlemesi üretir, suru 3B yükselip aşar ve iç avluya iner. Asker kimlikleri, HP ve özgün motor korunur; G5.4 gerçek 3B atış fiziği ve bütün kuşatma kazanma döngüsü henüz tamamlanmadı. Sahte merdiven/kapı/zafer düğmeleri devre dışı.';
+   if(!captureAI){panel.querySelector('h3').textContent='S3C2 • GERÇEK ASKER MERDİVENLERİ';
+   panel.querySelector('p').textContent='Kırmızı G5.4 AI mızraklıları iki yan merdivene gerçek hızlarıyla ulaşır, orada gerçek asker varlığından inşa ilerlemesi üretir, suru 3B yükselip aşar ve iç avluya iner. Asker kimlikleri, HP ve özgün motor korunur; G5.4 gerçek 3B atış fiziği ve bütün kuşatma kazanma döngüsü henüz tamamlanmadı. Sahte merdiven/kapı/zafer düğmeleri devre dışı.';}
  }
   el.insertBefore(panel,el.firstChild);
  const dummy=new THREE.Object3D();
@@ -68,7 +74,8 @@
      scenario,playerTeam:team,playerType:'sword',seed:1600,
      structureCombatEngine:siegeCombat,
      assaultNavigationEngine:siegeCombat?assaultNav:null,
-     ladderAIEngine:ladderAI
+     ladderAIEngine:ladderAI,
+     captureAIEngine:captureAI
    });
    if(bridge.state.soldiers.length!==140||
       bridge.state.squads.length!==8)
@@ -113,6 +120,16 @@
        ' • Tamamlanan gerçek 3B tırmanış: '+
        view.genuineSoldierLadders.distinctNativeSoldiersFinished
      :'';
+   const captureCaption=captureAI
+     ?' • Faz: '+view.scenario.phase+' • Avlu '+view.scenario.occupancy.courtyard.red+
+        ' K / '+view.scenario.occupancy.courtyard.blue+' M'+
+        ' • İç kale '+view.scenario.occupancy.keep.red+' K / '+
+        view.scenario.occupancy.keep.blue+' M'+
+        (view.scenario.phase==='RESULT'
+          ?' • SONUÇ: '+view.scenario.winner.toUpperCase()+' / '+view.scenario.resultReason
+          :' • Avlu '+view.scenario.capture.courtyard.toFixed(1)+'s'+
+            ' • İç kale '+view.scenario.capture.keep.toFixed(1)+'s')
+     :'';
    const gateCaption=siegeCombat
      ?' • Gerçek asker kapı vuruşları: '+view.genuineSoldierGateStrikes.strikes+
        ' / kalan kapı HP: '+view.scenario.gate.hp
@@ -125,7 +142,7 @@
      'Oyuncu: '+bridge.playerTeam.toUpperCase()+' / Kılıçlı • '+
      'G5.4 süre: '+view.realArmySeconds.toFixed(1)+'s • '+
      'Yer değiştiren gerçek asker-tikleri: '+view.genuinelyMovedSoldierTicks+
-     gateCaption+ladderCaption;
+     gateCaption+ladderCaption+captureCaption;
  }
  function onFrame(dt){
    // Native G5.4 0.08s substeps are used, no handcrafted soldiers/damage.
@@ -169,6 +186,7 @@
      bridge.structureCombatEngine.snapshot(bridge.structureCombat):null,
    nativeCastleTerrainCollisionActive:!!siegeCombat,
    real3DLadderSoldierPositions:!!ladderAI,
+   genuineCaptureAndMatchResultEnabled:!!captureAI,
    siegeRealSoldierAssaultRouting:bridge.assaultNavigation?
      bridge.assaultNavigationEngine.snapshot(bridge.assaultNavigation):null,
    independentFFAUnmodified:true
