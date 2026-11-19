@@ -45,11 +45,15 @@
       balance.BOW_DRAW_SECONDS!==3)
      throw Error('Refuse incompatible, unapproved weapon cadence');
  }
- function create({bridge,engine,balance}={}){
+ function create({bridge,engine,balance,ballistics=null}={}){
+   if(ballistics&&['musket','launch','advance','status'].some(
+     k=>typeof ballistics[k]!=='function'))
+     throw Error('S3D2c requires a complete native-source 3D siege solver');
    validateBridge(bridge,engine,balance);
    return {
      kind:'S3D1_G54_PLAYER_HP_AND_GROUNDED_WEAPONS',
-     bridge,engine,balance,weapon:'sword',
+     bridge,engine,balance,ballistics,weapon:'sword',
+     projectileEvents:[],lastProjectileTick:bridge.state.elapsed,
      lastAttack:{sword:-Infinity,spear:-Infinity,bow:-Infinity,musket:-Infinity},
      drawStarted:null,
      activeView:'orbit',pose:null,
@@ -112,7 +116,9 @@
    if(c.bridge.scenario.phase==='RESULT')return 'match-ended';
    if(s.playerHealth<=0)return 'player-dead';
    if(!c.pose||c.pose.view==='orbit')return 'choose-fps-tps';
-   if(c.pose.climbing||c.pose.airborne||c.pose.position.y>=1)
+   if(c.pose.climbing||c.pose.airborne||
+      ((!c.ballistics||c.weapon==='sword'||c.weapon==='spear')&&
+        c.pose.position.y>=1))
       return 'unsupported-height';
    if(!s.playerActive)return 'native-player-inactive';
    return null;
@@ -160,15 +166,41 @@
      c.cooldownDenied++;
      return pushEvent(c,{status:'cooldown',weapon,hit:false});
    }
-   const pose=c.pose,from={x:pose.position.x,y:1.85,z:pose.position.z};
+   const pose=c.pose,from={
+     x:pose.position.x,
+     y:c.ballistics?pose.position.y+(pose.sliding?1.5:2.35):1.85,
+     z:pose.position.z
+   };
    const aim=direction(pose,weapon);
    const range=TACTICAL_RANGES[weapon];
-   // Original G5.4 native geometry includes the first friendly body
-   // and all G5.4 world AABBs; neither can be shot through.
-   const hit=c.engine.raycastSoldier(s,from,aim,range,s.playerTeam,
-     {firstBody:true,returnFriendly:true});
+   if(c.ballistics&&weapon==='bow'){
+     const charge=clamp(drawElapsed/3,0,1);
+     const arrow=c.ballistics.launch({
+       state:s,scenario:c.bridge.scenario,
+       from,aim,team:s.playerTeam,charge,range
+     });
+     if(!arrow)
+       return pushEvent(c,{status:'arrow-pool-full',weapon,hit:false});
+     c.attempts++;
+     c.lastAttack[weapon]=now;
+     return pushEvent(c,{status:'arrow-launched',weapon,hit:false,
+       projectileId:arrow.id});
+   }
+   // Native ground-only G5.4 still owns damage. An S3D2c opt-in solver
+   // adds the REAL 3D height of S3C2 soldier ladder poses and S1 castle
+   // geometry, with no aim-assist or chosen-target bypass.
+   const hit=c.ballistics&&weapon==='musket'
+     ?c.ballistics.musket({state:s,scenario:c.bridge.scenario,
+       from,aim,team:s.playerTeam,range})
+     :c.engine.raycastSoldier(s,from,aim,range,s.playerTeam,
+       {firstBody:true,returnFriendly:true});
    c.attempts++;
    c.lastAttack[weapon]=now;
+   if(hit&&(hit.kind==='castle'||hit.kind==='ground')){
+     c.wallOrRangeMisses++;
+     return pushEvent(c,{status:'castle-blocked',weapon,hit:false,
+       colliderId:hit.colliderId??null});
+   }
    if(!hit){
      c.wallOrRangeMisses++;
      return pushEvent(c,{status:'miss',weapon,hit:false});
@@ -178,7 +210,7 @@
      return pushEvent(c,{status:'friendly-block',weapon,hit:false,
        targetId:hit.targetId});
    }
-   if((hit.soldier.siegeY??0)>=1){
+   if(!c.ballistics&&(hit.soldier.siegeY??0)>=1){
      c.heightsBlocked++;
      return pushEvent(c,{status:'elevated-target-unsupported',weapon,
        hit:false,targetId:hit.targetId});
@@ -213,6 +245,56 @@
  function receive(c){
    requireCombat(c);
    const s=c.bridge.state;
+   if(c.ballistics){
+     const delta=s.elapsed-c.lastProjectileTick;
+     if(!valid(delta)||delta<0)
+       throw Error('S3D2c native clock moved backwards');
+     // Native G5.4 frame is bounded, and projectile solver substeps
+     // to prevent tunnelling. Never invent a wall-clock projectile hit.
+     let remain=delta;
+     while(remain>1e-8){
+       const dt=Math.min(.25,remain);
+       const impacts=c.ballistics.advance({
+         state:s,scenario:c.bridge.scenario,dt
+       });
+       for(const impact of impacts){
+         let event={weapon:'bow',hit:false,projectileId:impact.id,
+           sourceProjectileImpact:true};
+         if(impact.kind==='soldier'&&impact.friendly){
+           c.friendliesBlocked++;
+           event={...event,status:'friendly-block',
+             targetId:impact.targetId};
+         }else if(impact.kind==='soldier'){
+           // Only the original G5.4 engine modifies soldier HP/kills.
+           const charge=clamp(impact.charge,0,1);
+           const raw=c.balance.damage('bow',impact.zone,charge);
+           const changed=c.engine.damageSoldier(s,impact.targetId,raw,
+             {source:'player',weapon:'bow',zone:impact.zone});
+           if(!changed){
+             event={...event,status:'no-authorized-target',
+               targetId:impact.targetId};
+           }else{
+             if(changed.damage>0)c.hits++;
+             if(changed.killed)c.kills++;
+             event={...event,status:changed.blocked?'shield-blocked':'hit',
+               hit:changed.damage>0,damage:changed.damage,
+               killed:changed.killed,targetId:impact.targetId,
+               zone:impact.zone};
+           }
+         }else{
+           event={...event,status:impact.kind==='castle'||
+             impact.kind==='ground'?'castle-blocked':'arrow-expired',
+             colliderId:impact.colliderId??null};
+           c.wallOrRangeMisses++;
+         }
+         c.projectileEvents.push(pushEvent(c,event));
+       }
+       remain-=dt;
+     }
+     if(c.projectileEvents.length>40)c.projectileEvents.splice(0,
+       c.projectileEvents.length-40);
+     c.lastProjectileTick=s.elapsed;
+   }
    if(!valid(s.playerHealth)||s.playerHealth<0)
      throw Error('Invalid native player HP after original G5.4 tick');
    const current=s.playerHealth;
@@ -223,6 +305,10 @@
    c.lastNativeHealth=current;
    if(current<=0)c.drawStarted=null;
    return snapshot(c);
+ }
+ function drainProjectileEvents(c){
+   requireCombat(c);
+   return c.projectileEvents.splice(0);
  }
  function snapshot(c){
    requireCombat(c);
@@ -249,7 +335,10 @@
      lastResult:c.lastResult?{...c.lastResult}:null,
      actualG54NativeDamageAndPlayerHealth:true,
      realFFAOriginalMovementPorted:false,
-     real3dBulletAndArrowBallistics:false,
+     real3dBulletAndArrowBallistics:!!c.ballistics,
+     full3DNativeBotBallistics:false,
+     real3dRangedPlayerCastle:!!c.ballistics,
+     playerArrowPhysics:c.ballistics?c.ballistics.status():null,
      shooterAtElevatedWallSupported:false,
      authenticNativeSoldierDamageOnly:true,
      playerCanMove:canMove(c),
@@ -257,6 +346,6 @@
    };
  }
  return Object.freeze({
-   create,sync,canMove,setWeapon,beginBow,trigger,fire,releaseBow,receive,snapshot
+   create,sync,canMove,setWeapon,beginBow,trigger,fire,releaseBow,receive,drainProjectileEvents,snapshot
  });
 });
