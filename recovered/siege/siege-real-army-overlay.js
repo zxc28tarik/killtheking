@@ -12,6 +12,8 @@
  const assaultNav=globalThis.KTKSiegeAssaultNavigation||null;
  const ladderAI=globalThis.KTKSiegeLadderAI||null;
  const captureAI=globalThis.KTKSiegeCaptureAI||null;
+ const defenderAI=globalThis.KTKSiegeDefenderAI||null;
+ if(defenderAI&&!captureAI)throw Error('S4 blue role defender requires S3C3 real capture');
  if(captureAI&&!ladderAI)throw Error('S3C3 objective assault requires actual S3C2 ladder bridge');
  if(ladderAI&&!siegeCombat)throw Error('S3C2 actual ladders require real gate combat');
  if(siegeCombat&&!assaultNav)throw Error('S3C siege assault path adapter missing');
@@ -79,7 +81,8 @@
      structureCombatEngine:siegeCombat,
      assaultNavigationEngine:siegeCombat?assaultNav:null,
      ladderAIEngine:ladderAI,
-     captureAIEngine:captureAI
+     captureAIEngine:captureAI,
+     defenderAIEngine:defenderAI
    });
    if(bridge.state.soldiers.length!==140||
       bridge.state.squads.length!==8)
@@ -141,6 +144,11 @@
           :' • Avlu '+view.scenario.capture.courtyard.toFixed(1)+'s'+
             ' • İç kale '+view.scenario.capture.keep.toFixed(1)+'s')
      :'';
+   const defenderCaption=defenderAI&&view.realDefenderRoleCoordination
+     ?' • Savunma: '+view.realDefenderRoleCoordination.activeDefensivePhase+
+       ' • Gerçek mavi asker adımları: '+
+       view.realDefenderRoleCoordination.actualGuidedDefenderSteps
+     :'';
    const gateCaption=siegeCombat
      ?' • Gerçek asker kapı vuruşları: '+view.genuineSoldierGateStrikes.strikes+
        ' / kalan kapı HP: '+view.scenario.gate.hp
@@ -153,7 +161,7 @@
      'Oyuncu: '+bridge.playerTeam.toUpperCase()+' / Kılıçlı • '+
      'G5.4 süre: '+view.realArmySeconds.toFixed(1)+'s • '+
      'Yer değiştiren gerçek asker-tikleri: '+view.genuinelyMovedSoldierTicks+
-     gateCaption+ladderCaption+captureCaption;
+     gateCaption+ladderCaption+captureCaption+defenderCaption;
  }
  function onFrame(dt){
    if(nativePreStep)nativePreStep(dt);
