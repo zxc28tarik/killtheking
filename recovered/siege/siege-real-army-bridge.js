@@ -147,6 +147,7 @@
      defenderAI:null,defenderAIEngine,
      rampartAI:null,rampartAIEngine,
      terrainBlockedMoves:0,
+     terrainRecoveredMoves:0,
      lastGateOpen:false,logs:[],ended:false
    };
    refreshObstacles(bridge);
@@ -251,7 +252,8 @@
    // This does NOT claim soldiers attacked a structure: S3A has no such source.
    if(bridge.lastGateOpen!==bridge.scenario.gate.open)
      refreshObstacles(bridge);
-   const before=bridge.state.soldiers.map(u=>({id:u.id,x:u.x,z:u.z}));
+   const before=bridge.state.soldiers.map(u=>({id:u.id,x:u.x,z:u.z,
+     siegeY:u.siegeY??0}));
    if(bridge.rampartAI)
      bridge.rampartAIEngine.prepareNativeStep(bridge.rampartAI,dt);
    const elapsedBefore=bridge.state.elapsed;
@@ -321,8 +323,17 @@
        soldier.x=motion.x;soldier.z=motion.z;
        if(bridge.ladderAI&&vertical)soldier.siegeY=0;
        if(bridge.traversal.overlaps({x:soldier.x,y:0,z:soldier.z},
-         bridge.map.spec,bridge.scenario,.65,2.6))
-         throw Error('Native G5.4 siege soldier embedded into castle stone');
+         bridge.map.spec,bridge.scenario,.65,2.6)){
+         // Native G5.4 motion can occasionally propose an unsafe castle
+         // pose during a long siege. Preserve the real soldier's last
+         // valid position, never invent another spawn or change native HP.
+         const oldPose={x:old.x,y:old.siegeY,z:old.z};
+         if(bridge.traversal.overlaps(oldPose,bridge.map.spec,
+           bridge.scenario,.65,2.6))
+           throw Error('Real G5.4 previous soldier pose already embeds stone');
+         soldier.x=old.x;soldier.z=old.z;soldier.siegeY=old.siegeY;
+         bridge.terrainBlockedMoves++;bridge.terrainRecoveredMoves++;
+       }
      }
      const gateEvent=bridge.structureCombatEngine.afterNativeTick(
        bridge.structureCombat);
@@ -401,6 +412,8 @@
      genuineSoldierGateStrikes:b.structureCombat?
        b.structureCombatEngine.snapshot(b.structureCombat):null,
      terrainBlockedSoldierMoves:b.terrainBlockedMoves,
+     terrainRecoveredSoldierMoves:b.terrainRecoveredMoves,
+     rejectsInvalidStonePenetrationWithoutTeleport:true,
      siegeSpecificRealSoldierNavigation:b.assaultNavigation?
        b.assaultNavigationEngine.snapshot(b.assaultNavigation):null,
      realLadderClimbConnected:!!b.ladderAI,
