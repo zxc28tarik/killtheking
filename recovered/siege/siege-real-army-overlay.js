@@ -67,6 +67,7 @@
    count:inst.userData.count
  }));
  let bridge=null;
+ let nativeHumanCombatListener=null,nativePreStep=null,nativePostStep=null;
  let frames=0,lastSourceDeaths=0;
  function createRealArmy(team,scenario){
    bridge=bridgeApi.create({
@@ -92,6 +93,7 @@
    }
    lastSourceDeaths=0;
    renderRealSoldiers();
+   if(nativeHumanCombatListener)nativeHumanCombatListener(bridge);
  }
  function renderRealSoldiers(){
    if(!bridge)return;
@@ -145,9 +147,11 @@
      gateCaption+ladderCaption+captureCaption;
  }
  function onFrame(dt){
+   if(nativePreStep)nativePreStep(dt);
    // Native G5.4 0.08s substeps are used, no handcrafted soldiers/damage.
    if(bridge.scenario.phase!=='RESULT')
      bridgeApi.step(bridge,dt);
+   if(nativePostStep)nativePostStep(dt);
    renderRealSoldiers();
    if(frames++%8===0)drawMetrics();
  }
@@ -170,6 +174,20 @@
    });
  }
  drawMetrics();
+ // S3D1 opt-in-only adapter. Existing S3B/S3C real 140 soldier games
+ // register no player-combat module and retain byte-identical G5.4 AI.
+ globalThis.ktkSiegeNativeBattleAdapter=Object.freeze({
+   getBridge:()=>bridge,
+   registerPlayerCombat({onCreate,onBeforeFrame,onAfterFrame}={}){
+     if(nativeHumanCombatListener||typeof onCreate!=='function'||
+        typeof onBeforeFrame!=='function'||typeof onAfterFrame!=='function')
+       throw Error('Duplicate/incomplete genuine S3D1 player integration');
+     nativeHumanCombatListener=onCreate;
+     nativePreStep=onBeforeFrame;
+     nativePostStep=onAfterFrame;
+     onCreate(bridge);
+   }
+ });
  globalThis.ktkSiegeArmyStatus=()=>({
    ...bridgeApi.snapshot(bridge),
    renderedRealSoldierCount:groups.reduce((a,g)=>a+g.units.length,0),
