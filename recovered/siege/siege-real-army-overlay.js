@@ -9,6 +9,8 @@
  const bal=globalThis.ArenaWeaponBalance;
  const bridgeApi=globalThis.KTKSiegeRealArmyBridge;
  const siegeCombat=globalThis.KTKSiegeStructureCombat||null;
+ const assaultNav=globalThis.KTKSiegeAssaultNavigation||null;
+ if(siegeCombat&&!assaultNav)throw Error('S3C siege assault path adapter missing');
  const map=globalThis.KTKSiegemap;
  const objectives=globalThis.KTKSiegeObjectives;
  const traversal=globalThis.KTKSiegeTraversal;
@@ -43,7 +45,7 @@
  ].join('');
  if(siegeCombat){
    panel.querySelector('h3').textContent='S3C1 • GERÇEK ASKER KAPI SALDIRISI';
-   panel.querySelector('p').textContent='140 gerçek G5.4 asker. Yalnız kapının dış yüzüne ulaşan kırmızı kılıçlı ve mızraklılar, özgün menzil/hasar/yeniden saldırma süreleriyle kapıya vurur. Kapı hasarı için DEBUG tuşları kapalı. Gerçek asker merdiven AI ve tam kuşatma zaferi HENÜZ YOK.';
+   panel.querySelector('p').textContent='140 gerçek G5.4 asker. Yalnız kapının dış yüzüne ulaşan kırmızı kılıçlı ve mızraklılar, özgün menzil/hasar/yeniden saldırma süreleriyle kapıya vurur. Kapı hasarı için DEBUG tuşları kapalı. Kırmızı otomatik yakın dövüş birlikleri, yeni kuşatma AI yolu ile kapı önüne kendi yürüyüş hızında gelir. Gerçek asker merdiven AI ve tam kuşatma zaferi HENÜZ YOK.';
  }
  el.insertBefore(panel,el.firstChild);
  const dummy=new THREE.Object3D();
@@ -58,7 +60,8 @@
    bridge=bridgeApi.create({
      armyEngine:source,map,objectives,traversal,
      scenario,playerTeam:team,playerType:'sword',seed:1600,
-     structureCombatEngine:siegeCombat
+     structureCombatEngine:siegeCombat,
+     assaultNavigationEngine:siegeCombat?assaultNav:null
    });
    if(bridge.state.soldiers.length!==140||
       bridge.state.squads.length!==8)
@@ -152,6 +155,8 @@
    genuineGateStrikes:bridge.structureCombat?
      bridge.structureCombatEngine.snapshot(bridge.structureCombat):null,
    nativeCastleTerrainCollisionActive:!!siegeCombat,
+   siegeRealSoldierAssaultRouting:bridge.assaultNavigation?
+     bridge.assaultNavigationEngine.snapshot(bridge.assaultNavigation):null,
    independentFFAUnmodified:true
  });
 })();
