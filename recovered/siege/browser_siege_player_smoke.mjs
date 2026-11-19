@@ -65,6 +65,12 @@ try{
  const before=await scene();
  assert.equal(playerBefore.view,'fps');
  assert.equal(playerBefore.playerHealth,100);
+ const fpsWeapon=await page.evaluate(()=>window.ktkSiegeWeaponVisualStatus?.());
+ assert.equal(fpsWeapon?.actualThreeJSViewmodels,true);
+ assert.equal(fpsWeapon?.modelCount,4);
+ assert.equal(fpsWeapon?.visibleWeapon,'sword');
+ assert.equal(fpsWeapon?.visibleFPS,true);
+ assert.equal(fpsWeapon?.fakeProjectilesCreated,0);
  assert.equal(playerBefore.nativePosition.z,before.explorer.pos.z);
  await page.keyboard.down('w');
  await page.waitForTimeout(800);
@@ -84,10 +90,13 @@ try{
    sourcePosition:moved.nativePosition}));
  await page.keyboard.press('f');
  const first=await player();
+ const swordVisual=await page.evaluate(()=>window.ktkSiegeWeaponVisualStatus());
+ assert.equal(swordVisual.nativeShotFeedbackEvents,1);
  assert.equal(first.attempts,1);
  assert.equal(first.weapon,'sword');
  await page.keyboard.press('Digit4');
  assert.equal((await player()).weapon,'musket');
+ assert.equal((await page.evaluate(()=>window.ktkSiegeWeaponVisualStatus())).visibleWeapon,'musket');
  await page.keyboard.press('f');
  const musket=await player();
  assert.equal(musket.attempts,2);
@@ -96,6 +105,8 @@ try{
  assert.equal(second.attempts,2,
   'Native musket cooldown bypassed with instant double shot');
  assert(second.cooldownDenied>=1);
+ assert.equal((await page.evaluate(()=>window.ktkSiegeWeaponVisualStatus())).nativeShotFeedbackEvents,2,
+  'Cooldown may not create cosmetic recoil or a fake shot');
  report.checks.push('PASS_NATIVE_PLAYER_WEAPON_SELECT_F_ATTACK_REAL_15S_MUSKET_COOLDOWN');
  await page.keyboard.press('Digit3');
  assert.equal((await player()).weapon,'bow');
@@ -105,6 +116,8 @@ try{
  assert.equal((await player()).attempts,2,
   'Sub-2-second bow did an illegal player projectile shot');
  assert((await player()).bowDrawDenied>=1);
+ assert.equal((await page.evaluate(()=>window.ktkSiegeWeaponVisualStatus())).nativeHitMarkers,0,
+  'Weak bow release must not produce a fake hit');
  report.checks.push('PASS_PLAYER_BOW_REJECTS_WEAK_DRAW_UNDER_2_NATIVE_SECONDS');
  await page.screenshot({path:resolve(dir,'s3d1-native-human-fps-140-real-army.png'),
   fullPage:true});
