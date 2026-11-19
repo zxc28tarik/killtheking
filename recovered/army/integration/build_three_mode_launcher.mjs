@@ -46,7 +46,8 @@ export function addCastleThirdMode(twoModeHtml, siegeHtml){
  if(!siegeHtml.startsWith('<!')||!siegeHtml.includes('S3D1 GERÇEK OYUNCU SAVAŞ ADAYI')||
    !siegeHtml.includes('ktkSiegePlayerCombatStatus')||
    !siegeHtml.includes('ktkSiegeArmyStatus')||
-   sourceScripts(siegeHtml).length!==17||
+   sourceScripts(siegeHtml).length!==18||
+   !siegeHtml.includes('KTKSiegeWeaponFeedback')||
    !siegeHtml.includes('KTKSiegePlayerLocomotion')||
    !siegeHtml.includes('KTKSiegeCharacterVisuals'))
    throw Error('Required real S3D1 140-man FPS castle candidate missing or mislabeled');
