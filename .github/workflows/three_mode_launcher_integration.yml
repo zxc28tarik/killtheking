@@ -14,6 +14,8 @@ on:
       - 'recovered/siege/siege-character-visuals.js'
       - 'recovered/siege/siege-real-army-overlay.js'
       - 'recovered/siege/test_siege_character_visuals.mjs'
+      - 'recovered/siege/siege-player-ballistics-3d.js'
+      - 'recovered/siege/test_siege_player_ballistics_3d.mjs'
       - 'recovered/siege/siege-weapon-feedback.js'
       - 'recovered/siege/test_siege_weapon_feedback.mjs'
       - 'recovered/siege/siege-player-ui.js'
@@ -74,6 +76,7 @@ jobs:
           node --test recovered/siege/test_siege_character_visuals.mjs
           node --test recovered/siege/test_siege_player_locomotion.mjs
           node --test recovered/siege/test_siege_weapon_feedback.mjs
+          node --test recovered/siege/test_siege_player_ballistics_3d.mjs
       - name: Verify exactly three modes with explicit non-final-engine boundaries
         run: |
           node --input-type=module -e "
@@ -91,6 +94,8 @@ jobs:
              m.siegeOriginalFFARendererShared!==false||
              m.siegeOriginalFFAMovementShared!==false||
              m.siegeReal3DBallisticsAvailable!==false||
+             m.siegePlayer3DMusketAndPhysicalBow!==true||
+             m.siegeNativeG54Soldier3DBallistics!==false||
              m.productionApproved!==false||
              m.mainBranchMerged!==false||
              m.bytes!==Buffer.byteLength(h)||
