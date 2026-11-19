@@ -103,6 +103,18 @@ test('genuine S3C2 completed climber is eligible for S3C3 courtyard route',()=>{
  assert(proposed.x-u.x<=A.TYPES[u.type].speed*u.pace*.08+1e-9);
  assert.equal(b.scenario.gate.open,false);
 });
+test('after real gate breach, genuine soldier at staging must advance INSIDE (never idle)',()=>{
+ const b=create();
+ for(let i=0;i<4;i++)objectives.applyEvent(b.scenario,{
+  type:'GATE_HIT',team:'red',weapon:'ram',damage:150});
+ const u=b.state.soldiers.find(u=>u.team==='red'&&u.type==='sword');
+ u.x=0;u.z=-53;u.siegeY=0;
+ const movement=capture.suggest(b.captureAI,u,{x:u.x,z:u.z},.08);
+ assert.equal(movement?.kind,'capture');
+ assert(movement.z>u.z,'G5.4 assault soldier stuck at open-gate rally');
+ assert(movement.z-u.z<=A.TYPES[u.type].speed*u.pace*.08+1e-8);
+ assert.equal(movement.goal,'THROUGH_AUTHENTIC_OPEN_GATE');
+});
 test('no forced victory if a real living defender is inside contested courtyard',()=>{
  const s=objectives.createScenario();
  for(let i=0;i<4;i++)objectives.applyEvent(s,{
@@ -118,8 +130,8 @@ test('no forced victory if a real living defender is inside contested courtyard'
 });
 test('courtyard capture resets after a living blue defender contests again',()=>{
  const s=objectives.createScenario();
- objectives.applyEvent(s,{type:'GATE_HIT',team:'red',
-  weapon:'ram',damage:150});
+ for(let i=0;i<4;i++)objectives.applyEvent(s,{
+  type:'GATE_HIT',team:'red',weapon:'ram',damage:150});
  for(let i=0;i<100;i++)objectives.step(s,.08);
  // Have one real red ground occupant, no blue: S1 FSM accrues real time.
  objectives.applyEvent(s,{type:'ZONE_PRESENCE',zone:'courtyard',red:1,blue:0});
