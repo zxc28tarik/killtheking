@@ -250,7 +250,7 @@
          if(bridge.traversal.overlaps({
            x:soldier.x,y:soldier.siegeY,z:soldier.z
          },bridge.map.spec,bridge.scenario,.65,2.6))
-           throw Error('REAL soldier's 3D ladder position embeds castle stone');
+           throw Error('Real soldier 3D ladder position embeds castle stone');
          continue;
        }
        if(vertical){
