@@ -70,12 +70,12 @@ export function addCastleThirdMode(twoModeHtml, siegeHtml){
  result=result.replace(twoEnd,twoEnd.replace('</div>',
    '<section><strong>🏰 Kale Kuşatması — Üçüncü Mod</strong><span>'+
    '140 gerçek G5.4 askerle saldır veya savun. Kale kapısı kırılır; iki yan merdiven kurulur, avlu ve iç kale ele geçirilir. '+
-   'FPS/TPS, 100 HP, kılıç/mızrak/yay/tüfek. Ayrı S3D1 3B sahnesi: sınıf bazlı kuşatma görsellerinin Arena ile birebir eşitliği, tam zıplama/kayma ve gerçek 3B mermi/ok fiziği henüz buraya aktarılmadı.'+
+   'FPS/TPS, 100 HP, kılıç/mızrak/yay/tüfek. Ayrı S3D1 3B sahnesi: sınıf bazlı kuşatma görsellerinin Arena ile birebir eşitliği ve tam özgün FPS motoru henüz sağlanmadı; oyuncu 3B ok/tüfek atışı mevcut, G5.4 botlarının 3B nişanı henüz yok.'+
    '</span></section></div>'));
  replace('<p>Bu aday, Ekim 2026 tarihli kabul edilmiş FFA oyununun özgün sürümünü arşivler; FFA hedef seçimine sınırlı düzeltme uygular. G5.4 ordu savaşı ayrı bir oyun penceresinde açılır; geçişte önceki oyun kapatılır. Her iki oyun aynı çevrimdışı HTML içindedir.</p>',
    '<p>Üç oyun modu artık aynı ana menüden açılır. Serbest Arena/TDM ve Ordu Savaşı özgün kaynaklarını korur. Kale Kuşatması üçüncü oynanabilir seçimdir; mod geçişinde önceki oyun kapatılır, yeni mod açılır. Üçü de bu tek çevrimdışı HTML dosyasındadır.</p>');
  replace('<p><strong>Bu henüz son birleşik oyun değildir.</strong> Modlar ayrı çalışır; paylaşılan ilerleme/kayıt sistemi, G8.4 senaryoları ve gerçek GPU kabulü daha sonra yapılacaktır. Moddan çıkmadan önce ESC ile fare kilidini bırak.</p>',
-   '<p><strong>3 mod tek menüde — oyun motorları hâlâ izole.</strong> Kuşatma görsellerinin ve ana FFA hareket/animasyonlarının birebir ortaklaştırılması, 3B balistik, paylaşılan kayıt, gerçek GPU ve nihai yayın kabulü açık. Mod değiştirmeden önce ESC ile fare kilidini bırak.</p>');
+   '<p><strong>3 mod tek menüde — oyun motorları hâlâ izole.</strong> Oyuncu ok/tüfek için 3B kale balistiği var; G5.4 botlarının tam 3B fiziği, özgün FFA grafik/animasyon ortaklaştırması, paylaşılan kayıt, gerçek GPU ve nihai yayın kabulü açık. Mod değiştirmeden önce ESC ile fare kilidini bırak.</p>');
  replace('<small>BOT HEDEFLEME DÜZELTMESİ • ADAY</small>',
    '<small>3 OYUN MODU • GELİŞTİRME ADAYI</small>');
  replace(oldControllerGuard,'if(!["ffa","army","siege"].includes(mode))return;');
