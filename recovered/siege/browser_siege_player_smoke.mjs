@@ -43,6 +43,10 @@ try{
  assert.equal(a.realSquads.length,8);
  assert.equal(a.realObjectiveCaptureConnected,true);
  assert.equal(a.realDefenderRoleCoordinationConnected,true);
+ assert.equal(a.realRampart3DDefenderAIConnected,true);
+ assert.equal(a.realRampart3DDefenderAI.initialGenuineDefendersOnRamparts,8);
+ assert.equal(a.realRampart3DDefenderAI.currentG54SoldierCount,140);
+ assert.equal(a.realRampart3DDefenderAI.botPlayer3DCounterfire,false);
  assert.equal(a.realDefenderRoleCoordination.authenticG54Bot3DShooting,false);
  assert.equal(a.realDefenderRoleCoordination.syntheticDamageOrZoneEvents,false);
  assert.equal(view.liveCombatViewConnected,true);

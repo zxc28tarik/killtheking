@@ -113,6 +113,11 @@ try{
  });
  assert.equal(siege.army.authentic140Soldiers,140);
  assert.equal(siege.army.realDefenderRoleCoordinationConnected,true);
+ assert.equal(siege.army.realRampart3DDefenderAIConnected,true);
+ assert.equal(siege.army.realRampart3DDefenderAI.initialGenuineDefendersOnRamparts,8);
+ assert.equal(siege.army.realRampart3DDefenderAI.real3DHeightLineOfFire,true);
+ assert.equal(siege.army.realRampart3DDefenderAI.botPlayer3DCounterfire,false);
+ report.checks.push('PASS_S4B1_EIGHT_NATIVE_BLUE_RAMPART_3D_SOLDIER_COUNTERFIRE');
  assert.equal(siege.army.realDefenderRoleCoordination.authenticG54Bot3DShooting,false);
  report.checks.push('PASS_S4A_AUTHENTIC_BLUE_GROUND_DEFENSE_ROLES_OPT_IN');
  assert.equal(siege.army.realSquads.length,8);
