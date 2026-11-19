@@ -111,7 +111,8 @@
  function create({armyEngine,map,objectives,traversal,
      seed=1600,playerType='sword',playerTeam='red',
      scenario:existingScenario=null,structureCombatEngine=null,
-     assaultNavigationEngine=null,ladderAIEngine=null}={}){
+     assaultNavigationEngine=null,ladderAIEngine=null,
+     captureAIEngine=null}={}){
    required(armyEngine,['create','step','snapshot','setWorldObstacles',
      'setPlayerPosition','drainCombatEvents','drainPlayerHits',
      'issueOrder','setDestination'],'G5.4');
@@ -140,6 +141,7 @@
      structureCombat:null,structureCombatEngine,
      assaultNavigation:null,assaultNavigationEngine,
      ladderAI:null,ladderAIEngine,
+     captureAI:null,captureAIEngine,
      terrainBlockedMoves:0,
      lastGateOpen:false,logs:[],ended:false
    };
@@ -163,6 +165,15 @@
        'genuine S3C2 two-flank ladder AI');
      bridge.ladderAI=ladderAIEngine.create({
        engine:armyEngine,state,map,scenario,objectives,traversal
+     });
+   }
+   if(captureAIEngine){
+     if(!ladderAIEngine)throw Error('S3C3 capture needs authentic S3C2 ladder AI');
+     required(captureAIEngine,['create','suggest','snapshot'],
+       'S3C3 genuine soldier objective navigation');
+     bridge.captureAI=captureAIEngine.create({
+       engine:armyEngine,state,map,scenario,traversal,
+       ladderAI:bridge.ladderAI
      });
    }
    if(structureCombatEngine){
@@ -252,6 +263,12 @@
          },bridge.map.spec,bridge.scenario,.65,2.6))
            throw Error('Real soldier 3D ladder position embeds castle stone');
          continue;
+       }
+       if(bridge.captureAI&&elapsedDelta>0&&
+          (!vertical||vertical.kind==='inside')){
+         const planned=bridge.captureAIEngine.suggest(
+           bridge.captureAI,soldier,old,elapsedDelta);
+         if(planned)vertical=planned;
        }
        if(vertical){
          nativeX=vertical.x;nativeZ=vertical.z;
@@ -350,6 +367,9 @@
      realLadderClimbConnected:!!b.ladderAI,
      genuineSoldierLadders:b.ladderAI?
        b.ladderAIEngine.snapshot(b.ladderAI):null,
+     realObjectiveCaptureConnected:!!b.captureAI,
+     realObjectiveCaptureNavigation:b.captureAI?
+       b.captureAIEngine.snapshot(b.captureAI):null,
      real3dPlayerCombatConnected:false,
      originalArmyAIModified:false,
      mainGameModified:false
