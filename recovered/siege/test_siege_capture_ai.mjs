@@ -248,4 +248,34 @@ test('natural native 140 G5.4 soldier match: trace authentic captured zones and 
  assert(s.genuineSoldierLadders.physicallyFinishedClimbs.east>0);
  assert.equal(s.realObjectiveCaptureNavigation.forgeVictoryOrCasualties,false);
  assert.equal(s.originalArmyAIModified,false);
+ // This is NOT a manually forced keep capture: genuine original 140-unit
+ // G5.4 AI, native deaths, realistic entry and S1 hold clocks must all
+ // produce this win before the 240 game-second deadline.
+ assert.equal(s.scenario.phase,'RESULT','Natural siege never reached results');
+ assert.equal(s.scenario.winner,'red','Unassisted authentic G5.4 attack failed');
+ assert.equal(s.scenario.resultReason,objectives.SUCCESS.ATTACKER_KEEP);
+ assert(s.scenario.clock>=32&&s.scenario.clock<240,
+  'Captured keep outside the actual gate+court+keep time interval');
+ assert.equal(s.scenario.gate.hp,0);
+ assert.equal(s.scenario.lanes.west,true);
+ assert.equal(s.scenario.lanes.east,true);
+ assert.equal(s.scenario.capture.courtyard,12);
+ assert.equal(s.scenario.capture.keep,20);
+ assert(s.scenario.occupancy.keep.red>=1);
+ assert.equal(s.scenario.occupancy.keep.blue,0);
+ assert(s.realObjectiveCaptureNavigation.naturallyCrossedOpenGateSoldierIds>=1);
+ assert(s.realObjectiveCaptureNavigation.enteredKeepSoldierIds>=1);
+ assert(s.genuineAlive.red>=1);
+ assert(s.genuineAlive.blue>=1,
+  'Unexpected army elimination; should be a genuine keep win');
+ assert(b.scenario.events.some(e=>e.type==='MATCH_FINISH'&&
+   e.detail?.winner==='red'));
+ console.log('S3C3_NATURAL_KEEP_VICTORY_CONFIRMED '+
+  JSON.stringify({winner:s.scenario.winner,
+   reason:s.scenario.resultReason,
+   atGameSecond:s.scenario.clock,
+   realAttackerKeepPresence:s.scenario.occupancy.keep.red,
+   realDefenderKeepPresence:s.scenario.occupancy.keep.blue,
+   nativeSurvivors:s.genuineAlive,
+   realGateCrossers:s.realObjectiveCaptureNavigation.naturallyCrossedOpenGateSoldierIds}));
 });
