@@ -112,6 +112,9 @@ try{
     scene:w.ktkSiegePreviewStatus()};
  });
  assert.equal(siege.army.authentic140Soldiers,140);
+ assert.equal(siege.army.realDefenderRoleCoordinationConnected,true);
+ assert.equal(siege.army.realDefenderRoleCoordination.authenticG54Bot3DShooting,false);
+ report.checks.push('PASS_S4A_AUTHENTIC_BLUE_GROUND_DEFENSE_ROLES_OPT_IN');
  assert.equal(siege.army.realSquads.length,8);
  // S3V1: native G5.4 soldier IDs must drive the visible, role-specific
  // 1600s meshes. Static S1 cylinders must not be the rendered army.

@@ -14,6 +14,9 @@ on:
       - 'recovered/siege/siege-character-visuals.js'
       - 'recovered/siege/siege-real-army-overlay.js'
       - 'recovered/siege/test_siege_character_visuals.mjs'
+      - 'recovered/siege/siege-defender-ai.js'
+      - 'recovered/siege/test_siege_defender_ai.mjs'
+      - 'recovered/siege/siege-real-army-bridge.js'
       - 'recovered/siege/siege-player-ballistics-3d.js'
       - 'recovered/siege/test_siege_player_ballistics_3d.mjs'
       - 'recovered/siege/siege-weapon-feedback.js'
@@ -77,6 +80,7 @@ jobs:
           node --test recovered/siege/test_siege_player_locomotion.mjs
           node --test recovered/siege/test_siege_weapon_feedback.mjs
           node --test recovered/siege/test_siege_player_ballistics_3d.mjs
+          node --test recovered/siege/test_siege_defender_ai.mjs
       - name: Verify exactly three modes with explicit non-final-engine boundaries
         run: |
           node --input-type=module -e "
@@ -96,6 +100,8 @@ jobs:
              m.siegeReal3DBallisticsAvailable!==false||
              m.siegePlayer3DMusketAndPhysicalBow!==true||
              m.siegeNativeG54Soldier3DBallistics!==false||
+             m.siegeG54BlueDefenderCoordinatedGroundRoles!==true||
+             m.siegeFullNativeBotRampart3DCombat!==false||
              m.productionApproved!==false||
              m.mainBranchMerged!==false||
              m.bytes!==Buffer.byteLength(h)||

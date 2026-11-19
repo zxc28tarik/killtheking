@@ -46,7 +46,8 @@ export function addCastleThirdMode(twoModeHtml, siegeHtml){
  if(!siegeHtml.startsWith('<!')||!siegeHtml.includes('S3D1 GERÇEK OYUNCU SAVAŞ ADAYI')||
    !siegeHtml.includes('ktkSiegePlayerCombatStatus')||
    !siegeHtml.includes('ktkSiegeArmyStatus')||
-   sourceScripts(siegeHtml).length!==19||
+   sourceScripts(siegeHtml).length!==20||
+   !siegeHtml.includes('KTKSiegeDefenderAI')||
    !siegeHtml.includes('KTKSiege3DBallistics')||
    !siegeHtml.includes('KTKSiegeWeaponFeedback')||
    !siegeHtml.includes('KTKSiegePlayerLocomotion')||
@@ -127,6 +128,8 @@ export function build({dualFile,siegeFile,outFile}={}){
   siegeReal3DBallisticsAvailable:false,
   siegePlayer3DMusketAndPhysicalBow:true,
   siegeNativeG54Soldier3DBallistics:false,
+  siegeG54BlueDefenderCoordinatedGroundRoles:true,
+  siegeFullNativeBotRampart3DCombat:false,
   originalFFAAIChanged:false,originalG54GameplayChanged:false,
   originalG84Recovered:false,mainBranchMerged:false,
   productionApproved:false

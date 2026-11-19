@@ -42,6 +42,9 @@ try{
  assert.equal(a.renderedRealSoldierCount,140);
  assert.equal(a.realSquads.length,8);
  assert.equal(a.realObjectiveCaptureConnected,true);
+ assert.equal(a.realDefenderRoleCoordinationConnected,true);
+ assert.equal(a.realDefenderRoleCoordination.authenticG54Bot3DShooting,false);
+ assert.equal(a.realDefenderRoleCoordination.syntheticDamageOrZoneEvents,false);
  assert.equal(view.liveCombatViewConnected,true);
  assert.equal(initial.playerHealth,100);
  assert.equal(initial.playerTeam,'red');
