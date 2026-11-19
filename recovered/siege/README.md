@@ -1,6 +1,6 @@
 # Kill the King — Kuşatma Kalesi S1/S2/S3/S3C1
 
-**Durum: S1 hedef motoru, S2 dolaşılabilirlik, S3 gerçek G5.4 140 asker ve S3C1 doğal gerçek asker kapı saldırısı var. **Kapı gerçek askerlerle yıkılabiliyor**, fakat merdiven AI, avlu/iç kale kazanma döngüsü, ana FPS oyuncu silahları ve yayın hâlâ AÇIK.** Bu klasör yeni **tek bir kuşatma senaryosu** için ayrılmıştır. FFA/TDM, özgün kale, çimenlik meydan ve G5.4 ordu modları bu aşamada değiştirilmedi.
+**Durum:** S1 hedef motoru, S2 dolaşılabilirlik, S3 gerçek G5.4 140 asker ve S3C1 doğal gerçek asker kapı saldırısı var. **Kapı gerçek askerlerle yıkılabiliyor**, fakat merdiven AI, avlu/iç kale kazanma döngüsü, ana FPS oyuncu silahları ve yayın hâlâ AÇIK. Bu klasör yeni **tek bir kuşatma senaryosu** için ayrılmıştır. FFA/TDM, özgün kale, çimenlik meydan ve G5.4 ordu modları bu aşamada değiştirilmedi.
 
 ## Tasarım ve plan
 
