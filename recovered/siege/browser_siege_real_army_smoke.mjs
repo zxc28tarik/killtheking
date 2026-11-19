@@ -52,6 +52,12 @@ try{
  assert.equal(first.worldObstacleCount,15);
  assert.equal(map.activeColliders,15);
  assert.equal(map.sceneWebGL,true);
+ // A real 140-soldier match must NEVER let S1 debug buttons fabricate
+ // defender casualties or courtyard/keep capture decisions.
+ for(const key of ['court','court-contest','keep','keep-contest','wipe'])
+   assert.equal(await page.locator('[data-siege="'+key+'"]').isDisabled(),
+     true,'Authentic siege still exposes fake win control '+key);
+ report.checks.push('PASS_GENUINE_ARMY_REJECTS_FAKE_DEBUG_CAPTURE_AND_WIPE_CONTROLS');
  report.checks.push('PASS_REAL_G54_140_SOLDIERS_IN_GENUINE_THREE_JS_INSTANCES: '+
   JSON.stringify({actors:first.authentic140Soldiers,
    movableMeshes:first.renderedRealSoldierCount,squads:first.realSquads.length,
