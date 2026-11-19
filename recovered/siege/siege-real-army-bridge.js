@@ -112,7 +112,7 @@
      seed=1600,playerType='sword',playerTeam='red',
      scenario:existingScenario=null,structureCombatEngine=null,
      assaultNavigationEngine=null,ladderAIEngine=null,
-     captureAIEngine=null}={}){
+     captureAIEngine=null,defenderAIEngine=null}={}){
    required(armyEngine,['create','step','snapshot','setWorldObstacles',
      'setPlayerPosition','drainCombatEvents','drainPlayerHits',
      'issueOrder','setDestination'],'G5.4');
@@ -142,6 +142,7 @@
      assaultNavigation:null,assaultNavigationEngine,
      ladderAI:null,ladderAIEngine,
      captureAI:null,captureAIEngine,
+     defenderAI:null,defenderAIEngine,
      terrainBlockedMoves:0,
      lastGateOpen:false,logs:[],ended:false
    };
@@ -174,6 +175,16 @@
      bridge.captureAI=captureAIEngine.create({
        engine:armyEngine,state,map,scenario,traversal,
        ladderAI:bridge.ladderAI
+     });
+   }
+   if(defenderAIEngine){
+     if(!structureCombatEngine||!assaultNavigationEngine||
+        !captureAIEngine)
+       throw Error('S4 defender AI requires real siege gate, ladder and capture');
+     required(defenderAIEngine,['create','suggest','snapshot'],
+       'S4 genuine role-based defender AI');
+     bridge.defenderAI=defenderAIEngine.create({
+       engine:armyEngine,state,map,scenario,traversal
      });
    }
    if(structureCombatEngine){
@@ -269,6 +280,11 @@
          const planned=bridge.captureAIEngine.suggest(
            bridge.captureAI,soldier,old,elapsedDelta);
          if(planned)vertical=planned;
+       }
+       if(!vertical&&bridge.defenderAI&&elapsedDelta>0&&
+          soldier.team==='blue'){
+         vertical=bridge.defenderAIEngine.suggest(
+           bridge.defenderAI,soldier,old,elapsedDelta);
        }
        if(vertical){
          nativeX=vertical.x;nativeZ=vertical.z;
@@ -370,6 +386,9 @@
      realObjectiveCaptureConnected:!!b.captureAI,
      realObjectiveCaptureNavigation:b.captureAI?
        b.captureAIEngine.snapshot(b.captureAI):null,
+     realDefenderRoleCoordinationConnected:!!b.defenderAI,
+     realDefenderRoleCoordination:b.defenderAI?
+       b.defenderAIEngine.snapshot(b.defenderAI):null,
      real3dPlayerCombatConnected:false,
      originalArmyAIModified:false,
      mainGameModified:false
