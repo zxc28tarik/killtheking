@@ -1,6 +1,6 @@
-# Kill the King — Kuşatma Kalesi S1/S2/S3/S3C1
+# Kill the King — Kuşatma Kalesi S1/S2/S3/S3C1/S3C2
 
-**Durum:** S1 hedef motoru, S2 dolaşılabilirlik, S3 gerçek G5.4 140 asker ve S3C1 doğal gerçek asker kapı saldırısı var. **Kapı gerçek askerlerle yıkılabiliyor**, fakat merdiven AI, avlu/iç kale kazanma döngüsü, ana FPS oyuncu silahları ve yayın hâlâ AÇIK. Bu klasör yeni **tek bir kuşatma senaryosu** için ayrılmıştır. FFA/TDM, özgün kale, çimenlik meydan ve G5.4 ordu modları bu aşamada değiştirilmedi.
+**Durum:** S1 hedef motoru, S2 dolaşılabilirlik, S3 gerçek G5.4 140 asker, S3C1 gerçek doğal kapı kırma ve **S3C2 iki canlı asker merdiveni** tamamlandı. **Normal doğuşta batıdan 12 ve doğudan 12 asker suru aşıp içeri indi.** Gerçek avlu/iç kale ele geçirme, üç boyutlu silah balistiği, ana FPS oyuncusu ve yayın kabulü **hâlâ AÇIK**. Bu klasör yeni **tek bir kuşatma senaryosu** için ayrılmıştır. FFA/TDM, özgün kale, çimenlik meydan ve G5.4 ordu modları bu aşamada değiştirilmedi.
 
 ## Tasarım ve plan
 
@@ -73,6 +73,23 @@ node --test recovered/siege/test_siege_structure_combat.mjs
 
 **Hâlâ açık:** doğal asker merdiveni/sur üstü çıkışı, gerçek avlu/iç kale zaferi, ana oyunun silahlı FPS oyuncusu, 30 dk stres ve fiziksel GPU kabulü. `main` değiştirilmedi; [PR #50](https://github.com/zxc28tarik/killtheking/pull/50) taslak.
 
+## S3C2 — İki Merdiven, Gerçek 3B Asker Geçişi
+
+- `siege-ladder-ai.js`: gerçek G5.4 kırmızı AI mızraklıları (oyuncu mızraklıysa AI kılıçlıları) iki gerçek kale çıkışına kendi özgün hızlarında ulaşır. Merdivenleri, **yalnız sahiden orada bulunan yaşayan askerlerin** inşa ilerlemesiyle açar.
+- `siege-real-army-bridge.js`: yaşayan gerçek askerler 3B S2 `stepClimb` ile 15,2 metreye çıkar; taş duvar collider'ından geçmeyip iç avluya iner, y=0 son noktasına geçer. Yüksekteki asker işgal sayılmaz ve tırmanışta 2B yakın dövüş ateşi önlenir.
+- `siege-real-army-overlay.js`: askerlerin görsel Y konumu canlı gerçek G5.4 ID'sinin `siegeY` bilgisini gösterir; merdiven ve komuta ilerlemesi HUD'a eklenir.
+- Gerçek S3C2 modunda **sahte merdiven/kapı/asker yok etme/ele geçirme DEBUG** butonları kapalı; önceki S1/S2 ve S3C1 bağımsız derlemeler korunur.
+- [**S3C2 CI #44507678256 SUCCESS**](https://github.com/zxc28tarik/killtheking/actions/runs/44507678256) — **15 yeni S3C2 + 67 önceki = 82/82 PASS**. Normal 60 s G5.4 gerçek asker testi: **12 batı + 12 doğu** 3B duvar geçişi, iki merdiven 100/100 ve kapı da kırıldı. Chromium 140 asker 3B render ilk tikleri PASS; gerçek 60 s kapı ve merdiven testleri Node kaynak simülasyonudur.
+- [**S3C2 tek çevrim dışı 3B HTML artifact #14520028553**](https://github.com/zxc28tarik/killtheking/actions/runs/44507678256/artifacts/14520028553); [gerçek Chromium kanıtı #14520940410](https://github.com/zxc28tarik/killtheking/actions/runs/44507678256/artifacts/14520940410).
+- [**Ayrıntılı S3C2 teknik rapor**](../../docs/SIEGE_CASTLE_S3C2_DUAL_LADDER_TR.md).
+
+```bash
+node recovered/siege/build_siege_ladder_candidate.mjs recovered/siege/dist/KillTheKing_Kusatma_S3C2_140_Asker_Cift_Merdiven_Aday.html
+node --test recovered/siege/test_siege_ladder_ai.mjs
+```
+
+**Sıradaki iş S3C3:** gerçek askerlerle avlu / iç kale hedefini savaşarak alma, savunma ve gerçek zafer yenilgi döngüsü; ardından S3D silahlı FPS oyuncu, S4 koordinasyon, S5–S6 son kabul. Özgün G5.4 yalnız 2B saldırı simülatörüdür: gerçek 3B mermi/ok fiziği hâlâ yoktur.
+
 ## Geliştirici komutları
 
 ```bash
@@ -82,6 +99,6 @@ node recovered/siege/build_siege_preview.mjs recovered/siege/dist/KillTheKing_Ku
 
 Üretilen tek HTML'yi Chrome/Edge'de yerel aç. Harita kamerasında sürükleyip yakınlaştır; **FPS/TPS seçerek WASD ile yürü, E ile açık merdivene çık**, saldıran/savunan tarafı seç. Sağdaki **QA konumu** düğmeleri yalnız çarpışma denemesi için oyuncuyu yerleştirir. “Test olayları” düğmeleri S1 senaryo kurallarını sınar; gerçek savaş AI'sını gözlemlemek için kullanılmaz.
 
-## Sıradaki adım: S3C2 merdiven ve gerçek asker sur geçişi
+## Sıradaki adım: S3C3 avlu ve iç kale zaferi
 
-Artık S3C1 doğal asker kapı kırma testi PASS. Bundan sonra gerçek canlı askerlerin iki yan **merdiveni kurup tırmandığı**, surdan iç avluya indiği, gerçek işgal ve savunma sonucu ürettiği **S3C2/S3C3** aşamalarını kodla. Daha sonra S3D'de ana oyun FPS silahlı oyuncusunu bağla. Önizleme FPS avatarını tam oyun oyuncusu sayma. Kullanıcı onayı olmadan yeni denge veya `main` değişimi yok.
+S3C1 doğal kapı kırma ve S3C2 iki yan gerçek asker merdiveni/sur geçişi kaynak testlerinde PASS. **S3C3:** yaşayan askerlerin avlu/keep hedeflerine doğru doğal olarak ilerlemesi; mavi savunmayla çatışan bölgelerde ele geçirme süresi, geçerli iki taraflı sonuç ve yanlış zafer engelleri. Sonra S3D ana oyun FPS oyuncusu/silahı. S2 keşif avatarını tam silahlı oyuncu sayma; kullanıcı onayı olmadan dengeyi nihai hale getirme veya `main`e merge yapma.
