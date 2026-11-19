@@ -5,6 +5,7 @@ on:
       - codex/s1-siege-castle-phase1
     paths:
       - 'recovered/siege/siege-structure-combat.js'
+      - 'recovered/siege/siege-assault-navigation.js'
       - 'recovered/siege/siege-real-army-bridge.js'
       - 'recovered/siege/siege-real-army-overlay.js'
       - 'recovered/siege/siege-preview.js'
@@ -26,6 +27,7 @@ jobs:
       - name: Parse isolated S3C JavaScript with native Node
         run: |
           node --check recovered/siege/siege-structure-combat.js
+          node --check recovered/siege/siege-assault-navigation.js
           node --check recovered/siege/siege-real-army-bridge.js
           node --check recovered/siege/siege-real-army-overlay.js
           node --check recovered/siege/siege-preview.js
@@ -51,6 +53,7 @@ jobs:
           if(!m.authenticSoldiersAndCombatEngine ||
              !m.gateStructureAttackFromActualSoldiers ||
              !m.gateDamageUsesNativeMeleeStats ||
+             !m.siegeAIRealSoldierGateApproachEnabled ||
              m.nativeG54HasBuildingEvents!==false ||
              m.ladderClimbByRealSoldierAI!==false ||
              m.realFPSPlayerWeaponConnected!==false ||
