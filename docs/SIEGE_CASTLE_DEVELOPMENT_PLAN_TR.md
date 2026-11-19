@@ -129,3 +129,11 @@ Her adımda GitHub commit, uygulanan dosyalar, CI test özeti, **YAPILDI / KISME
 - [x] Eski silindir askerler çizimde gizlenir ama gerçek G5.4 konumları, HP, hasar, bölüm/komuta ve QA matrisi korunur. Daha eski S1–S3C HTML yapıları etkilenmez.
 - [ ] Bu bir **Arena orijinal mesh'inin birebir paylaşımı değildir**: kıyafet ve silah siluetleri Arena'yı referans alır. Tam aynı mesh/animasyon, FPS karakter fiziği ve gerçek 3B balistik S3D2 ve sonraki kabul işlerinde AÇIK.
 - [ ] Yeni görsel katmanın gerçek GPU FPS/stres onayı bekleniyor; Node/Chromium CI kanıtı olmadan tamamlanmış sayılmamalı.
+
+### 19 Kasım 2026 — S3D2a: hareket katmanı (onay öncesi aday)
+
+- [x] Üç modlu HTML'deki **Kale Kuşatması'na** Space zıplama, Shift/C kayma, sınırlı slide-hop ve havada ivmelenme eklendi. Arena'nın yerçekimi (30) ve sıçrama başlangıcı (12.6) referans alınarak ayrı S3D2a adaptörü yapıldı; **Arena motoru birebir ortak değil**.
+- [x] Gerçek S1 kale collider/kapı kurallarından geçen yatay-dikey hareket; AI, 140 G5.4 asker, iki merdiven, kapı ve senaryo fazlarını değiştirmez. S1/S2 eski önizlemelerine modül enjekte edilmez.
+- [x] Kamera kayarken alçalır. Havada/merdivende ateş gerçek 3B balistik hazır olmadığından kapalıdır.
+- [ ] Arena'nın tam TPS animasyonları, tam fare kilidi, silah/hit geri bildirimleri ve sur üstü 3B balistik ayrı S3D2 işleri; bu hareket düzeltmesi tek başına tam eşitlik değildir.
+- [ ] Node regresyon, üç modlu Chromium kabulü ve Windows fiziksel GPU testi sonuçları tamamlanmadan nihai onay verilmez.
