@@ -1,11 +1,22 @@
 # KILL THE KING — KUŞATMA KALESİ SAVAŞI: UYGULAMA PLANI
 
 **Tarih:** 18 Kasım 2026  
-**Durum:** Kullanıcının onayladığı **1 adet ayrı kuşatma kalesi savaşı**; uygulama başlangıcı.  
+**Durum:** Kullanıcı kararı: **Kale Kuşatması, aynı Kill the King oyununun ÜÇÜNCÜ modudur** (Arena / Ordu / Kale Kuşatması). [Üç modlu gerçek HTML ve Chromium kanıtı](KILLTHEKING_THREE_MODE_MAIN_MENU_TR.md); aday ana menü entegrasyonu başarılı, ortak grafik/hareket paritesi açık.  
 **Geliştirme dalı:** `codex/s1-siege-castle-phase1` (temel: `codex/g54-ffa-army-isolated-launcher`).  
 **Önemli:** Ana dalı, FFA/TDM'yi, G5.4 ordu adayını, tarihî HTML'yi veya mevcut silah sürelerini değiştirme.
 
-**S1 ilk teslim (18 Kasım):** 21/21 Node test + gerçek Chromium/SwiftShader 3B harita ve test arayüzü PASS. [İlk S1 raporu ve indirme bağlantıları](../recovered/siege/README.md). **S1 tamamlandı; S2 dolaşılabilirlik önizlemesi tamamlandı; S3 gerçek 140 askerli G5.4 motoru ve 3B asker hareketi adayı kısmen uygulandı. Gerçek yapı saldırısı/asker merdiven AI/FPS savaş ve S4–S6 hâlâ AÇIK.** Bu proje tek kuşatma senaryosudur; üçüncü FFA haritası değildir.
+**S1 ilk teslim (18 Kasım):** 21/21 Node test + gerçek Chromium/SwiftShader 3B harita ve test arayüzü PASS. [İlk S1 raporu ve indirme bağlantıları](../recovered/siege/README.md). **S1 tamamlandı; S2 dolaşılabilirlik önizlemesi tamamlandı; S3 gerçek 140 askerli G5.4 motoru ve 3B asker hareketi adayı kısmen uygulandı. Gerçek yapı saldırısı/asker merdiven AI/FPS savaş ve S4–S6 hâlâ AÇIK.** Bu yalnız FFA'ya yeni bir harita değildir; Arena ve Ordu'nun yanında **üçüncü ayrı savaş modu**dur. Üç mod [tek menü/tek HTML](KILLTHEKING_THREE_MODE_MAIN_MENU_TR.md) içinde açılır; görsel ve ana FPS hareket motorları henüz tümüyle ortak değil.
+
+## ANA OYUNA 3. MOD ENTEGRASYONU — KULLANICI KARARI (19 KASIM)
+
+- [x] **Üç oyun modu ortak ana menü:** Serbest Arena/TDM, 140 Askerli Ordu Savaşı ve Kale Kuşatması; aynı çevrim dışı HTML'de birbirinden seçilebilir
+- [x] **Eski iki mod korunur:** Kaynak SHA ile aslına uygun arşivlenir, kuşatma üçüncü mod olarak eklenir, mod değişiminde eski maç temiz kapanır
+- [x] **Gerçek Chromium üçlü seçim:** FFA 6 bot, ordu 140 asker, kuşatma 140 asker + 100 HP gerçek FPS/TPS insan modunun açılması; sonrasında FFA'ya dönüş — [CI #44524696649 PASS](https://github.com/zxc28tarik/killtheking/actions/runs/44524696649)
+- [ ] **Aynı görsel ve karakter kimliği:** kuşatmanın stil, modeller, silah ve temel hareket animasyonlarını Arena/Ordu ile uyumlu hâle getirme; şu an ayrı WebGL sahneleri var
+- [ ] **Aynı gerçek FPS karakter fiziği:** S3D2 tam FFA hareket/nişan/zıplama/kayma ve sur üstü 3B balistik
+- [ ] **S4 savunma AI ve S5–S6 manuel GPU/stres/oyuncu kabulü; nihai main birleşmesi/yayın için kullanıcı onayı**
+
+**Hedef:** Kaynak izolasyonu içeride korunabilir ama oyuncu **tek oyun, tek menü ve üç tutarlı savaş modu** görmeli. Kalenin farklı oyun gibi görünmesi geçici teknik borçtur; kendi başına tamamlanmış entegrasyon sayılmaz. [Ayrıntılar](KILLTHEKING_THREE_MODE_MAIN_MENU_TR.md).
 
 ## 0. Kesin kabul edilen kapsam
 
@@ -109,4 +120,4 @@ Her adımda GitHub commit, uygulanan dosyalar, CI test özeti, **YAPILDI / KISME
 
 ## 4. Sıradaki kesin geliştirme
 
-**S3D1 100 HP ve 4 silahlı gerçek insan komutan köprüsü tamamlandı (yalnız zeminli FPS/TPS önizleme avatarı).** **Sırada S3D2** ana arena karakter hareketi ve 3B silah yüksekliği/fizik bağlantısı ile doğrulanmış doğal insan-vs-AI savaş testleri. **S4 kritik:** mavi savunucuların keep/sur/avlu rezervi ve anti-stuck. Sonra ana birleşik başlatıcı üçüncü kuşatma modu ve S5–S6 GPU/kalite/yayın kabulü. PR taslak, FFA/G5.4 ve `main` korunur; nihai denge ve merge için kullanıcı onayı gerekir.
+**S3D1 100 HP ve 4 silahlı gerçek insan komutan köprüsü tamamlandı (yalnız zeminli FPS/TPS önizleme avatarı).** **Sırada S3D2** ana arena karakter hareketi ve 3B silah yüksekliği/fizik bağlantısı ile doğrulanmış doğal insan-vs-AI savaş testleri. **S4 kritik:** mavi savunucuların keep/sur/avlu rezervi ve anti-stuck. Üç modlu ana menü/tek HTML **tamamlandı**; bundan sonra S3D2 ve görsel/karakter paritesi, S4 mavi savunma AI, S5–S6 GPU/kalite/yayın kabulü. PR taslak, FFA/G5.4 ve `main` korunur; nihai denge ve merge için kullanıcı onayı gerekir.
