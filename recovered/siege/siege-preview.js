@@ -187,7 +187,7 @@
  // Army soldier markers remain NONCOMBAT and no S1 siege events are forged.
  // Optional S3 genuine-army adapter. With no adapter, S2 preview is unchanged.
  let extensionFrame=null,extensionReset=null,extensionTeam=null;
- let extensionRealGateCombat=false;
+ let extensionRealGateCombat=false,extensionRealLadderAI=false;
  const explorer={view:'orbit',team:'red',
    position:{x:0,y:0,z:-110},yaw:0,pitch:0,
    keys:Object.create(null),climb:null,walkTicks:0,
@@ -498,6 +498,11 @@
        b.title='S3: gerçek asker sonucu kullanılır; elle işgal/ölüm yasak';
        continue;
      }
+     if(extensionRealLadderAI&&['west','east'].includes(key)){
+       b.disabled=true;
+       b.title='S3C2: merdiveni yalnız gerçek canlı askerler kurabilir';
+       continue;
+     }
      if(extensionRealGateCombat&&key==='gate'){
        b.disabled=true;
        b.title='S3C: yalnız gerçek yaşayan asker kapıya hasar verebilir';
@@ -519,6 +524,8 @@
    }
  }
  function action(which){
+   if(extensionRealLadderAI&&['west','east'].includes(which))
+     throw Error('S3C2 gerçek asker merdiven inşası DEBUG ile yapılamaz');
    if(extensionRealGateCombat&&which==='gate')
      throw Error('S3C kapı darbesi yalnız gerçek asker eyleminden gelir');
    if(extensionFrame&&['court','court-contest','keep',
@@ -576,13 +583,15 @@
    getScenario:()=>siege,
    getTeam:()=>explorer.team,
    getPlayerPosition:()=>({...explorer.position}),
-   register({onFrame,onReset,onTeamChange,realStructureCombat=false}={}){
+   register({onFrame,onReset,onTeamChange,
+     realStructureCombat=false,realLadderAI=false}={}){
      if(extensionFrame)throw Error('S3 army adapter is already registered');
      if(typeof onFrame!=='function'||typeof onReset!=='function')
        throw Error('Incomplete S3 authentic army integration adapter');
      extensionFrame=onFrame;extensionReset=onReset;
      extensionTeam=typeof onTeamChange==='function'?onTeamChange:null;
      extensionRealGateCombat=realStructureCombat===true;
+     extensionRealLadderAI=realLadderAI===true;
      // Immediately remove S1 forged-win controls before a real player can click.
      // Do not rely on a later low-FPS SwiftShader RAF UI refresh.
      updateUI();
