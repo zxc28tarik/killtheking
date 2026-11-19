@@ -11,7 +11,8 @@
  const W=globalThis.ArenaWeaponBalance;
  const Ballistics=globalThis.KTKSiege3DBallistics;
  const sharedBattleSession=globalThis.KTKSharedG54BattleSession;
- if(!api||!native||!preview||!G54||!W||!Ballistics||!sharedBattleSession)
+ const sharedInput=globalThis.KTKSharedG54PlayerInput;
+ if(!api||!native||!preview||!G54||!W||!Ballistics||!sharedBattleSession||!sharedInput)
    throw Error('Native S3D1 140 soldier + live player UI dependencies missing');
  let combat=null;
  let frames=0;
@@ -21,7 +22,7 @@
  panel.style.cssText='padding:13px;background:#182e2c;border:2px solid #7cbdba;color:#e2f5ea';
  panel.innerHTML=[
   '<h3 style="color:#94e7ca;margin:0 0 8px">S3D1 • GERÇEK OYUNCU SAVAŞI (ADAY)</h3>',
-  '<p style="font-size:11px;line-height:1.55">FPS/TPS seç, WASD ile yürü, Space ile zıpla, Shift/C ile kay, kamerayı sürükle.',
+  '<p style="font-size:11px;line-height:1.55">FPS/TPS seç, WASD ile yürü, Space ile zıpla, Shift/C ile kay; 3B kamera serbest bakış için oyun alanına tıkla (Esc serbest bırakır).',
   ' Fareyle veya F ile vur; yay için basılı tutup bırak.',
   ' Silahlar ve hasar onaylı silah tablosundan, oyuncu HP ve gerçek asker',
   ' ölümleri orijinal G5.4 motorundan gelir. <b>Tüfek 3B engel ışını,',
@@ -177,7 +178,8 @@
      threeDConfigured=true;
    }
    combat=api.create({bridge:b,engine:G54,balance:W,ballistics:threeD,
-     session:native.getSession(),sessionAPI:sharedBattleSession});
+     session:native.getSession(),sessionAPI:sharedBattleSession,
+     inputContract:sharedInput});
    holdingBow=false;lastVisible=null;
    if(feedback)feedback.reset('sword');
    api.sync(combat,preview.getPlayerPose());
