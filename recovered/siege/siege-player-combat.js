@@ -77,6 +77,7 @@
      throw Error('Preview/native commander side or position mismatch');
    c.pose={view:pose.view,team:pose.team,yaw:pose.yaw,
      pitch:pose.pitch,climbing:!!pose.climbing,
+      airborne:!!pose.airborne,sliding:!!pose.sliding,
      position:{...pose.position}};
    c.activeView=pose.view;
    const s=c.bridge.state;
@@ -111,7 +112,8 @@
    if(c.bridge.scenario.phase==='RESULT')return 'match-ended';
    if(s.playerHealth<=0)return 'player-dead';
    if(!c.pose||c.pose.view==='orbit')return 'choose-fps-tps';
-   if(c.pose.climbing||c.pose.position.y>=1)return 'unsupported-height';
+   if(c.pose.climbing||c.pose.airborne||c.pose.position.y>=1)
+      return 'unsupported-height';
    if(!s.playerActive)return 'native-player-inactive';
    return null;
  }
