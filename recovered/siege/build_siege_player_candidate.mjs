@@ -26,6 +26,7 @@ const files={
  KTK_SIEGE_PLAYER_LOCOMOTION_JS:resolve(dir,'siege-player-locomotion.js'),
  KTK_SIEGE_CHARACTER_VISUALS_JS:resolve(dir,'siege-character-visuals.js'),
  KTK_SIEGE_REAL_ARMY_OVERLAY_JS:resolve(dir,'siege-real-army-overlay.js'),
+ KTK_SIEGE_WEAPON_FEEDBACK_JS:resolve(dir,'siege-weapon-feedback.js'),
  KTK_SIEGE_PLAYER_UI_JS:resolve(dir,'siege-player-ui.js')
 };
 const sha=s=>createHash('sha256').update(s).digest('hex');
@@ -47,6 +48,7 @@ html=html.replace(
  '<!-- KTK_SIEGE_PLAYER_LOCOMOTION_JS -->',
  '<!-- KTK_SIEGE_CHARACTER_VISUALS_JS -->',
  '<!-- KTK_SIEGE_REAL_ARMY_OVERLAY_JS -->',
+ '<!-- KTK_SIEGE_WEAPON_FEEDBACK_JS -->',
  '<!-- KTK_SIEGE_PLAYER_UI_JS -->'
  ].join('\n')
 );
@@ -83,6 +85,9 @@ const manifest={
  actualG54Native3DBallistics:false,
  realFPSPlayerWeaponConnected:true,
  fullOriginalFFAPlayerMovementConnected:false,
+ genuineEventOnlyFirstPersonWeaponModels:true,
+ cosmeticRecoilAndNativeHitFeedback:true,
+ actualArenaWeaponMeshesReused:false,
  arenaStyleJumpSlideCastleAdapter:true,
  usesRealCastleSweptCollision:true,
  G84Restored:false,originalFFAChanged:false,mainChanged:false,
@@ -100,7 +105,7 @@ for(const [id,path] of Object.entries(files)){
 const original='307987855abc0973ea9177fdd659c39d1d02673c8381c0501be8b63c04ddf841';
 if(manifest.sourceSha256.KTK_G54_ARMY_REAL_JS!==original)
  throw Error('Original G5.4 true-side engine changed! No unsafe substitution.');
-if((html.match(/<script\b/giu)||[]).length!==17||
+if((html.match(/<script\b/giu)||[]).length!==18||
    html.includes('<!-- KTK_')||
    !html.includes('GERÇEK OYUNCU SAVAŞ ADAYI')||
    !html.includes('Gerçek G5.4 ordusunda 140 asker'))
