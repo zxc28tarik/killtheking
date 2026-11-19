@@ -1,0 +1,103 @@
+name: Kill the King - S3C1 Native G5.4 Soldier Gate Attack
+on:
+  push:
+    branches:
+      - codex/s1-siege-castle-phase1
+    paths:
+      - 'recovered/siege/siege-structure-combat.js'
+      - 'recovered/siege/siege-real-army-bridge.js'
+      - 'recovered/siege/siege-real-army-overlay.js'
+      - 'recovered/siege/siege-preview.js'
+      - 'recovered/siege/build_siege_structure_candidate.mjs'
+      - 'recovered/siege/test_siege_structure_combat.mjs'
+      - 'recovered/siege/browser_siege_structure_smoke.mjs'
+      - '.github/workflows/s3c_siege_real_gate_attack.yml'
+  workflow_dispatch:
+jobs:
+  source-backed:
+    name: Genuine G5.4 melee siege damage, terrain and S3B isolation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 16
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Parse isolated S3C JavaScript with native Node
+        run: |
+          node --check recovered/siege/siege-structure-combat.js
+          node --check recovered/siege/siege-real-army-bridge.js
+          node --check recovered/siege/siege-real-army-overlay.js
+          node --check recovered/siege/siege-preview.js
+          node --check recovered/siege/build_siege_structure_candidate.mjs
+          node --check recovered/siege/browser_siege_structure_smoke.mjs
+      - name: Real soldier-initiated G5.4 gate attack source tests
+        run: node --test recovered/siege/test_siege_structure_combat.mjs
+      - name: Previous exact 140 genuine soldier, S1 and S2 regression
+        run: |
+          node --test recovered/siege/test_siege_real_army_bridge.mjs
+          node --test recovered/siege/test_siege_phase1.mjs recovered/siege/test_siege_traversal.mjs
+      - name: Original 150573-byte G5.4 mirror must stay SHA-identical
+        run: |
+          printf '307987855abc0973ea9177fdd659c39d1d02673c8381c0501be8b63c04ddf841  recovered/army/mirror/arena-army-battle-true-side-swap.js\n' | sha256sum --check -
+      - name: Build independent offline S3C1 real soldier gate candidate
+        run: |
+          node recovered/siege/build_siege_structure_candidate.mjs \
+            recovered/siege/dist/KillTheKing_Kusatma_S3C1_Gercek_Kapi_Saldirisi_Aday.html
+          node --input-type=module -e "
+          import {readFileSync} from 'node:fs';
+          const p='recovered/siege/dist/KillTheKing_Kusatma_S3C1_Gercek_Kapi_Saldirisi_Aday.html';
+          const m=JSON.parse(readFileSync(p+'.build.json','utf8'));
+          if(!m.authenticSoldiersAndCombatEngine ||
+             !m.gateStructureAttackFromActualSoldiers ||
+             !m.gateDamageUsesNativeMeleeStats ||
+             m.nativeG54HasBuildingEvents!==false ||
+             m.ladderClimbByRealSoldierAI!==false ||
+             m.realFPSPlayerWeaponConnected!==false ||
+             m.productionSiegeApproved!==false)
+            throw Error('Misleading/unsupported S3C1 siege provenance');
+          console.log('PASS S3C1 true soldier gate candidate with explicit incomplete game gates');
+          "
+      - name: Preserve one-file playable S3C1 3D candidate, not a final siege release
+        uses: actions/upload-artifact@v4
+        with:
+          name: KillTheKing-S3C1-Real-G54-Soldier-Gate-Strikes-3D-Candidate-NOT-Final
+          path: |
+            recovered/siege/dist/KillTheKing_Kusatma_S3C1_Gercek_Kapi_Saldirisi_Aday.html
+            recovered/siege/dist/KillTheKing_Kusatma_S3C1_Gercek_Kapi_Saldirisi_Aday.html.build.json
+          if-no-files-found: error
+  chromium:
+    name: Actual Chromium S3C real 140 G5.4 actors and gate-interaction rules
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    needs: source-backed
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Rebuild exact S3C1 candidate
+        run: node recovered/siege/build_siege_structure_candidate.mjs recovered/siege/dist/KillTheKing_Kusatma_S3C1_Gercek_Kapi_Saldirisi_Aday.html
+      - name: Install pinned Chromium test driver
+        run: |
+          npm install --no-save --no-package-lock playwright@1.58.2
+          if command -v google-chrome >/dev/null 2>&1; then
+            echo "KTK_CHROME_EXECUTABLE=$(command -v google-chrome)" >> "$GITHUB_ENV"
+          elif command -v google-chrome-stable >/dev/null 2>&1; then
+            echo "KTK_CHROME_EXECUTABLE=$(command -v google-chrome-stable)" >> "$GITHUB_ENV"
+          else
+            npx playwright install chromium
+          fi
+      - name: Real Chromium software WebGL with no fake gate/zone clicks
+        env:
+          KTK_S3C_BROWSER_REPORT_DIR: recovered/siege/browser-evidence-s3c
+        run: |
+          node recovered/siege/browser_siege_structure_smoke.mjs \
+            recovered/siege/dist/KillTheKing_Kusatma_S3C1_Gercek_Kapi_Saldirisi_Aday.html
+      - name: Save screenshot and page-error evidence, including on fail
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: KillTheKing-S3C1-Chromium-SOFTWARE-WebGL-Gate-Evidence
+          path: recovered/siege/browser-evidence-s3c/
+          if-no-files-found: warn
