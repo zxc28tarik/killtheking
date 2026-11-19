@@ -2,6 +2,20 @@
 
 **Kill the King** is the GitHub development home of the recovered **Krunker 1600: Kuşatma** browser FPS arena project. The latest accepted gameplay baseline is **Serbest Arena v1** with the original stylized graphics (not the discarded replacement art), four combat classes, six fighting bots, bot-vs-bot free-for-all behavior and improved impact feedback.
 
+## November 2026 — Three modes of ONE Kill the King game (DRAFT candidate)
+
+**User decision:** Castle Siege is the **third playable game mode**, not a separate game or a replacement for the original arena. The integrated **single offline HTML** has a shared top-level mode menu:
+
+1. **Serbest Arena / TDM** — preserved original FFA graphics, bots and bow restrictions
+2. **140 Askerli Ordu Savaşı** — preserved genuine G5.4 70v70 army and commander gameplay
+3. **Kale Kuşatması** — 140 genuine G5.4 soldiers, natural gate break, two true soldier-built ladders, courtyard/keep capture, S3D1 100 HP FPS/TPS human and four weapons
+
+**[Download the one-file three-mode candidate from successful GitHub CI #44524696649](https://github.com/zxc28tarik/killtheking/actions/runs/44524696649/artifacts/14528493467)**. Extract `KillTheKing_3_Mod_Arena_Ordu_Kusatma_Oyna.html` and open in Chrome or Edge. It needs no server or Internet. SHA-256 `5fcd3f11076414cc23f2cc7201ef6cbe406c86149ccf9ccdd646c59735039685`, 4,258,277 bytes.
+
+**Actual Chromium software-WebGL acceptance:** all three modes launched in one document and switched back to FFA, zero JavaScript errors; original FFA six bots, native Army 140 soldiers, Siege 140 soldiers/100 HP. Source checks show the previous two games were not altered. Only the launcher menu is shared; each mode is safely isolated in its own iframe, so **Siege still needs visual/character/FPS-movement parity with the other two modes**. Native 3D projectile physics, blue siege defense AI, Windows hardware GPU/manual player QA and final release are OPEN.
+
+**[Third-mode design and verification report](docs/KILLTHEKING_THREE_MODE_MAIN_MENU_TR.md)** · [Siege roadmap](docs/SIEGE_CASTLE_DEVELOPMENT_PLAN_TR.md) · [Draft PR #50](https://github.com/zxc28tarik/killtheking/pull/50). Main has not been merged; this is not a published final release.
+
 ## Play locally
 1. Download the repository as ZIP and extract it.
 2. Open `index.html` in Chrome or Edge on a computer with WebGL enabled.
