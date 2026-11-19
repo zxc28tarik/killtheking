@@ -245,7 +245,7 @@ try{
  const box=await aimingCanvas.boundingBox();
  assert(box?.width>100&&box?.height>100);
  await aimingCanvas.click({button:'right',
-   position:{x:box.width*.48,y:box.height*.48}});
+   position:{x:box.width*.86,y:box.height*.43}});
  await page.waitForFunction(()=>window.ktkSiegePreviewStatus?.()?.explorer.pointerLocked,
    {timeout:85000});
  const lockedSight=await scene();
@@ -260,6 +260,8 @@ try{
  assert(turned.explorer.pointerLockLookTicks>0);
  assert.equal(turned.explorer.pointerLocked,true);
  await page.keyboard.press('KeyP');
+ await page.waitForFunction(()=>window.ktkSiegePreviewStatus?.()?.explorer.pointerLocked===false,
+   {timeout:85000});
  assert.equal((await scene()).explorer.pointerLocked,false);
  assert.equal((await army()).fieldG54PMapOpen,true);
  await page.keyboard.press('Escape');
