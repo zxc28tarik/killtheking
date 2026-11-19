@@ -16,6 +16,7 @@ const files={
  KTK_SIEGE_TRAVERSAL_JS:resolve(dir,'siege-traversal.js'),
  KTK_G54_WEAPON_REAL_JS:resolve(root,'recovered/army/modules/weapon-balance.js'),
  KTK_G54_ARMY_REAL_JS:resolve(root,'recovered/army/mirror/arena-army-battle-true-side-swap.js'),
+ KTK_SHARED_G54_ARMY_COMMANDS_JS:resolve(root,'recovered/army/modules/shared-g54-army-commands.js'),
  KTK_SIEGE_REAL_ARMY_BRIDGE_JS:resolve(dir,'siege-real-army-bridge.js'),
  KTK_SIEGE_STRUCTURE_COMBAT_JS:resolve(dir,'siege-structure-combat.js'),
  KTK_SIEGE_ASSAULT_NAV_JS:resolve(dir,'siege-assault-navigation.js'),
@@ -41,6 +42,7 @@ html=html.replace(
  [
  '<!-- KTK_G54_WEAPON_REAL_JS -->',
  '<!-- KTK_G54_ARMY_REAL_JS -->',
+ '<!-- KTK_SHARED_G54_ARMY_COMMANDS_JS -->',
  '<!-- KTK_SIEGE_REAL_ARMY_BRIDGE_JS -->',
  '<!-- KTK_SIEGE_STRUCTURE_COMBAT_JS -->',
  '<!-- KTK_SIEGE_ASSAULT_NAV_JS -->',
@@ -89,6 +91,10 @@ const manifest={
  genuineNativePlayerHealthAndHits:true,
  humanG54GroundWeaponDamage:true,
  originalWeaponBalancePreserved:true,
+ sharedG54ArmyCommandsUsedInSiege:true,
+ nativeG54OrderFormationFireWaypointCommands:true,
+ realArmyAndSiegeVisualHUDUnified:false,
+ allFourNativePlayerSquadsDirectlyCommandable:false,
  nativeRoleAwareInstancedSoldierVisuals:true,
  exactOriginalFFAMeshReuse:false,
  friendlyFireSuppression:true,
@@ -120,7 +126,7 @@ for(const [id,path] of Object.entries(files)){
 const original='307987855abc0973ea9177fdd659c39d1d02673c8381c0501be8b63c04ddf841';
 if(manifest.sourceSha256.KTK_G54_ARMY_REAL_JS!==original)
  throw Error('Original G5.4 true-side engine changed! No unsafe substitution.');
-if((html.match(/<script\b/giu)||[]).length!==21||
+if((html.match(/<script\b/giu)||[]).length!==22||
    html.includes('<!-- KTK_')||
    !html.includes('GERÇEK OYUNCU SAVAŞ ADAYI')||
    !html.includes('Gerçek G5.4 ordusunda 140 asker'))

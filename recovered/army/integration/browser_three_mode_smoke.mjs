@@ -114,6 +114,10 @@ try{
  assert.equal(siege.army.authentic140Soldiers,140);
  assert.equal(siege.army.realDefenderRoleCoordinationConnected,true);
  assert.equal(siege.army.realRampart3DDefenderAIConnected,true);
+ assert.equal(siege.army.sharedNativeG54ArmyCommandContract,true);
+ assert.equal(siege.army.sharedNativeG54ArmyCommands.originalG54ArmyCommandFunctions,true);
+ assert.equal(siege.army.exactOriginalFieldArmyHUDReused,false);
+ report.checks.push('PASS_AK01_SIEGE_AND_FIELD_NATIVE_G54_COMMANDS_SHARED');
  assert.equal(siege.army.realRampart3DDefenderAI.initialGenuineDefendersOnRamparts,8);
  assert.equal(siege.army.realRampart3DDefenderAI.real3DHeightLineOfFire,true);
  assert.equal(siege.army.realRampart3DDefenderAI.botPlayer3DCounterfire,false);

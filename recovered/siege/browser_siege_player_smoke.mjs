@@ -44,6 +44,24 @@ try{
  assert.equal(a.realObjectiveCaptureConnected,true);
  assert.equal(a.realDefenderRoleCoordinationConnected,true);
  assert.equal(a.realRampart3DDefenderAIConnected,true);
+ assert.equal(a.sharedNativeG54ArmyCommandContract,true);
+ assert.equal(a.sharedNativeG54ArmyCommands.originalG54ArmyCommandFunctions,true);
+ assert.equal(a.sharedNativeG54ArmyCommands.visualLayoutFullyShared,false);
+ const cm=()=>page.evaluate(()=>window.ktkSiegeArmyCommandStatus?.());
+ assert.equal((await cm()).commandTeam,'red');
+ await page.locator('[data-g54-formation="shield"]').click();
+ assert.equal((await cm()).formation,'shield');
+ await page.locator('[data-g54-action="flank"]').click();
+ assert.equal((await cm()).order,'flank');
+ await page.locator('#s3-order-hold').click();
+ assert.equal((await cm()).order,'hold');
+ const mini=await page.locator('#siege-mini-map').boundingBox();
+ assert(mini?.width>40&&mini?.height>40);
+ await page.locator('#siege-mini-map').click({position:{
+   x:mini.width*114/264,y:mini.height*177/216
+ }});
+ assert.equal((await cm()).lastResult?.action,'position');
+ report.checks.push('PASS_AK01_REAL_G54_FORMATION_FLANK_HOLD_AND_TACTICAL_MAP_COMMAND');
  assert.equal(a.realRampart3DDefenderAI.initialGenuineDefendersOnRamparts,8);
  assert.equal(a.realRampart3DDefenderAI.currentG54SoldierCount,140);
  assert.equal(a.realRampart3DDefenderAI.botPlayer3DCounterfire,false);

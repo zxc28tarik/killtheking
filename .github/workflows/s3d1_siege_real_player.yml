@@ -7,6 +7,8 @@ on:
       - 'recovered/siege/siege-player-locomotion.js'
       - 'recovered/siege/test_siege_player_locomotion.mjs'
       - 'recovered/siege/siege-player-combat.js'
+      - 'recovered/army/modules/shared-g54-army-commands.js'
+      - 'recovered/siege/test_shared_g54_army_commands.mjs'
       - 'recovered/siege/siege-rampart-ai.js'
       - 'recovered/siege/test_siege_rampart_ai.mjs'
       - 'recovered/siege/siege-defender-ai.js'
@@ -50,6 +52,8 @@ jobs:
           node --check recovered/siege/siege-player-locomotion.js
           node --check recovered/siege/test_siege_player_locomotion.mjs
           node --check recovered/siege/siege-real-army-overlay.js
+          node --check recovered/army/modules/shared-g54-army-commands.js
+          node --check recovered/siege/test_shared_g54_army_commands.mjs
           node --check recovered/siege/build_siege_player_candidate.mjs
           node --check recovered/siege/test_siege_player_combat.mjs
           node --check recovered/siege/browser_siege_player_smoke.mjs
@@ -61,6 +65,7 @@ jobs:
           node --test recovered/siege/test_siege_player_ballistics_3d.mjs
           node --test recovered/siege/test_siege_defender_ai.mjs
           node --test recovered/siege/test_siege_rampart_ai.mjs
+          node --test recovered/siege/test_shared_g54_army_commands.mjs
       - name: Unmodified natural S3C3, dual ladders, gate, 140 soldier and S1/S2 regression
         run: |
           node --test recovered/siege/test_siege_capture_ai.mjs
