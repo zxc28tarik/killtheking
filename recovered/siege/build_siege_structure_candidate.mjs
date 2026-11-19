@@ -18,6 +18,7 @@ const files={
  KTK_G54_ARMY_REAL_JS:resolve(root,'recovered/army/mirror/arena-army-battle-true-side-swap.js'),
  KTK_SIEGE_REAL_ARMY_BRIDGE_JS:resolve(dir,'siege-real-army-bridge.js'),
  KTK_SIEGE_STRUCTURE_COMBAT_JS:resolve(dir,'siege-structure-combat.js'),
+ KTK_SIEGE_ASSAULT_NAV_JS:resolve(dir,'siege-assault-navigation.js'),
  KTK_SIEGE_PREVIEW_JS:resolve(dir,'siege-preview.js'),
  KTK_SIEGE_REAL_ARMY_OVERLAY_JS:resolve(dir,'siege-real-army-overlay.js')
 };
@@ -32,6 +33,7 @@ html=html.replace(
  '<!-- KTK_G54_ARMY_REAL_JS -->',
  '<!-- KTK_SIEGE_REAL_ARMY_BRIDGE_JS -->',
  '<!-- KTK_SIEGE_STRUCTURE_COMBAT_JS -->',
+ '<!-- KTK_SIEGE_ASSAULT_NAV_JS -->',
  '<!-- KTK_SIEGE_PREVIEW_JS -->',
  '<!-- KTK_SIEGE_REAL_ARMY_OVERLAY_JS -->'
  ].join('\n')
@@ -51,6 +53,7 @@ const manifest={
  objectiveOccupancyDerivedFromActualSoldiers:true,
  gateStructureAttackFromActualSoldiers:true,
  gateDamageUsesNativeMeleeStats:true,
+ siegeAIRealSoldierGateApproachEnabled:true,
  nativeG54HasBuildingEvents:false,
  ladderClimbByRealSoldierAI:false,
  realFPSPlayerWeaponConnected:false,
@@ -69,7 +72,7 @@ for(const [id,path] of Object.entries(files)){
 const original='307987855abc0973ea9177fdd659c39d1d02673c8381c0501be8b63c04ddf841';
 if(manifest.sourceSha256.KTK_G54_ARMY_REAL_JS!==original)
  throw Error('Original G5.4 true-side engine changed! No unsafe substitution.');
-if((html.match(/<script\b/giu)||[]).length!==10||
+if((html.match(/<script\b/giu)||[]).length!==11||
    html.includes('<!-- KTK_')||
    !html.includes('GERÇEK KAPI SALDIRISI ADAYI')||
    !html.includes('Kapıya yalnız yaşayan'))
