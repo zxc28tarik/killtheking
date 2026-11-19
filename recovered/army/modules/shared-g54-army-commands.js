@@ -16,13 +16,27 @@
  // original G5.4 real-Chromium army-browser acceptance. Fire modes use
  // original Digit7/8/9 direct native fireMode commands.
  const FIELD_KEYS=Object.freeze({
+   KeyG:Object.freeze({action:'order',value:'follow'}),
    KeyJ:Object.freeze({action:'order',value:'hold'}),
    KeyK:Object.freeze({action:'order',value:'advance'}),
+   KeyL:Object.freeze({action:'order',value:'charge'}),
+   KeyU:Object.freeze({action:'order',value:'retreat'}),
+   KeyY:Object.freeze({action:'order',value:'flank'}),
+   KeyN:Object.freeze({action:'order',value:'skirmish'}),
    KeyZ:Object.freeze({action:'formation',value:'line'}),
    KeyX:Object.freeze({action:'formation',value:'column'}),
+   // Historical field C = square, but in the existing castle C = slide.
+   // Keeping C physically free for slide has precedence; V is explicit
+   // siege-only fallback. Do not silently disable an accepted movement key.
+   KeyV:Object.freeze({action:'formation',value:'square'}),
+   KeyB:Object.freeze({action:'formation',value:'wedge'}),
+   KeyM:Object.freeze({action:'formation',value:'loose'}),
+   KeyI:Object.freeze({action:'formation',value:'shield'}),
    Digit7:Object.freeze({action:'fire',value:'free'}),
    Digit8:Object.freeze({action:'fire',value:'volley'}),
-   Digit9:Object.freeze({action:'fire',value:'hold'})
+   Digit9:Object.freeze({action:'fire',value:'hold'}),
+   BracketLeft:Object.freeze({action:'spacing-delta',value:-.1}),
+   BracketRight:Object.freeze({action:'spacing-delta',value:.1})
  });
  const valid=x=>typeof x==='number'&&Number.isFinite(x);
  const hasOwn=(o,k)=>Object.prototype.hasOwnProperty.call(o,k);
@@ -109,7 +123,7 @@
  function execute(c,{action,value,x,z}={}){
    const sq=owned(c),state=c.bridge.state,api=c.engine,id=sq.id;
    if(typeof action!=='string')throw Error('Missing G5.4 army command action');
-   const legal=['order','formation','fire','position','waypoint',
+   const legal=['order','formation','fire','position','waypoint','spacing-delta',
      'face','clear-face','clear-waypoints','spacing','frontage','depth'];
    if(!legal.includes(action))
      throw Error('Unknown authentic G5.4 command: '+action);
@@ -142,6 +156,15 @@
      if(!valid(value)||value<.65||value>1.65)
        reason='Native G5.4 spacing must be 0.65–1.65';
      else ok=api.setSpacing(state,id,value,true);
+   }else if(action==='spacing-delta'){
+     if(value!==-.1&&value!==.1)
+       reason='Unsupported original field spacing step';
+     else {
+       const current=Number.isFinite(sq.spacingScale)?sq.spacingScale:1;
+       const next=Math.round(Math.max(.65,
+         Math.min(1.65,current+value))*100)/100;
+       ok=api.setSpacing(state,id,next,true);
+     }
    }else if(action==='frontage'){
      if(!Number.isInteger(value)||value<2||value>sq.startCount)
        reason='Native G5.4 frontage out of squad size';
