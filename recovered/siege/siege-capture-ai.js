@@ -28,6 +28,7 @@
      kind:'S3C3_G54_AUTHENTIC_COURTYARD_AND_KEEP_ASSAULT',
      engine,state,map,scenario,traversal,ladderAI,
      guidedSteps:0,guidedIds:new Set(),maxStep:0,
+     gateStageReached:new Set(),gateCrossed:new Set(),
      enteredCourtyard:new Set(),enteredKeep:new Set(),
      roleDistribution:Object.create(null),
      restrictedPlayerSteps:0,blockedByClosedGate:0,
@@ -50,8 +51,12 @@
      // Outside: only an ACTUALLY destroyed gate grants the ground route.
      // Avoid the former permanent staging trap at (0,-53): use distance
      // to the waypoint, NOT a blanket z<-48 check, to select next segment.
-     if(Math.hypot(p.x,p.z+53)>1.8)
+     if(Math.hypot(p.x,p.z+53)<=1.8||p.z>-52.0)
+       state.gateStageReached.add(role.id);
+     if(!state.gateStageReached.has(role.id))
        return {x:0,z:-53,step:'APPROACH_OPEN_GATE'};
+     // Persistent per-SOLDIER waypoint completion prevents oscillation:
+     // crossing one waypoint does NOT reactivate the old staging goal.
      return {x:0,z:-25,step:'THROUGH_AUTHENTIC_OPEN_GATE'};
    }
    if(Math.abs(p.x)>31){
@@ -85,6 +90,8 @@
       !finite(from?.x)||!finite(from?.z))
      throw Error('Invalid native G5.4 capture position');
    const goal=route(ai,from,u);
+   if(ai.gateStageReached.has(u.id)&&from.z>-38)
+     ai.gateCrossed.add(u.id);
    if(!goal)return null;
    const role=ai.engine.TYPES[u.type];
    if(!role||!finite(role.speed)||!finite(u.pace)||role.speed<=0)
@@ -114,6 +121,8 @@
      distinctNativeIdsGuided:ai.guidedIds.size,
      enteredCourtyardSoldierIds:ai.enteredCourtyard.size,
      enteredKeepSoldierIds:ai.enteredKeep.size,
+     stagingWaypointSoldierIds:ai.gateStageReached.size,
+     naturallyCrossedOpenGateSoldierIds:ai.gateCrossed.size,
      previouslyClimbedSoldierIdsGuided:ai.genuineClimberEntrants.size,
      playerSquadProtected:true,
      realHPAndCombatFromOriginalG54:true,
