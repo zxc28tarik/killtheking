@@ -125,6 +125,11 @@ try{
  assert.equal(siege.army.realObjectiveCaptureConnected,true);
  assert.equal(siege.player.actualG54NativeDamageAndPlayerHealth,true);
  assert.equal(siege.scene.liveCombatViewConnected,true);
+ const initialWeapon=await page.evaluate(()=>document.querySelector('#stage iframe')
+  .contentWindow.ktkSiegeWeaponVisualStatus?.());
+ assert.equal(initialWeapon?.modelCount,4);
+ assert.equal(initialWeapon?.fakeProjectilesCreated,0);
+ report.checks.push('PASS_S3D2B_FOUR_EVENT_ONLY_FPS_WEAPONS_READY');
  report.checks.push('PASS_THIRD_SIEGE_REAL_140_AI_GATE_LADDERS_KEEP_100HP_3D: '+
   JSON.stringify({actors:siege.army.authentic140Soldiers,
    playerHealth:siege.player.playerHealth,
@@ -140,6 +145,10 @@ try{
   .contentWindow.ktkSiegePlayerCombatStatus());
  assert.equal(activePlayer.view,'fps');
  assert.equal(activePlayer.playerHealth,100);
+ const firstVisual=await page.evaluate(()=>document.querySelector('#stage iframe')
+  .contentWindow.ktkSiegeWeaponVisualStatus());
+ assert.equal(firstVisual.visibleFPS,true);
+ assert.equal(firstVisual.visibleWeapon,'sword');
  // S3D2a real keyboard events travel into the third-mode iframe.
  await page.keyboard.down('Space');
  await page.waitForFunction(()=>{
@@ -163,6 +172,12 @@ try{
  assert.equal(movement.fullArenaPhysicsShared,false);
  report.checks.push('PASS_S3D2A_KEYBOARD_JUMP_SLIDE_REAL_CHROMIUM: '+
   JSON.stringify(movement));
+ await page.keyboard.press('Digit4');
+ const currentWeapon=await page.evaluate(()=>document.querySelector('#stage iframe')
+  .contentWindow.ktkSiegeWeaponVisualStatus());
+ assert.equal(currentWeapon.visibleWeapon,'musket');
+ assert.equal(currentWeapon.modelCount,4);
+ report.checks.push('PASS_S3D2B_MUSKET_VIEWMODEL_REAL_CHROMIUM');
  report.checks.push('PASS_THIRD_MODE_ACTUAL_FPS_HUMAN_AND_NO_FAKE_VICTORY_BUTTONS');
  await page.screenshot({path:resolve(dir,'three-main-mode-3-siege.png'),fullPage:true});
  await switchMode('ffa');
