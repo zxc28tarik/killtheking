@@ -289,6 +289,82 @@
    }
    if(fieldMapOpen)drawFieldMap();
  }
+ function setFieldMap(open){
+   if(!fieldTactical)return;
+   if(fieldMapOpen===!!open)return;
+   fieldMapOpen=!!open;
+   fieldTactical.style.display=fieldMapOpen?'flex':'none';
+   fieldTactical.dataset.open=String(fieldMapOpen);
+   if(fieldMapOpen){
+     fieldMapOpens++;
+     const unlock=document.exitPointerLock?.();
+     if(unlock?.catch)unlock.catch(()=>{});
+     drawFieldMap();
+   }else fieldMapCloses++;
+ }
+ function drawFieldMap(){
+   if(!fieldMapOpen||!fieldTactical||!bridge?.state)return;
+   const canvas=fieldTactical.querySelector('canvas');
+   const ctx=canvas.getContext('2d'),w=canvas.width,h=canvas.height;
+   if(!ctx)throw Error('G5.4 tactical map lost its real canvas');
+   const state=bridge.state,spec=map.spec,b=spec.bounds;
+   const sx=x=>(x-b.minX)/(b.maxX-b.minX)*w;
+   const sz=z=>(b.maxZ-z)/(b.maxZ-b.minZ)*h;
+   ctx.clearRect(0,0,w,h);
+   ctx.fillStyle='#12232d';ctx.fillRect(0,0,w,h);
+   ctx.strokeStyle='#71877e';ctx.lineWidth=2;
+   ctx.strokeRect(sx(spec.castle.minX),sz(spec.castle.maxZ),
+     sx(spec.castle.maxX)-sx(spec.castle.minX),
+     sz(spec.castle.minZ)-sz(spec.castle.maxZ));
+   for(const block of spec.boxes){
+     if(!block.solid||(block.id==='gate-main'&&bridge.scenario.gate.open))continue;
+     ctx.fillStyle=block.type==='gate'?'#dfae61':'#687b84';
+     ctx.fillRect(sx(block.x-block.w/2),sz(block.z+block.d/2),
+       block.w/(b.maxX-b.minX)*w,block.d/(b.maxZ-b.minZ)*h);
+   }
+   for(const side of ['west','east']){
+     if(!bridge.scenario.lanes[side])continue;
+     const pos=spec.lanes[side].entry;
+     ctx.fillStyle='#f7df87';ctx.beginPath();
+     ctx.arc(sx(pos[0]),sz(pos[1]),5,0,Math.PI*2);ctx.fill();
+   }
+   for(const u of state.soldiers){
+     if(!u.alive)continue;
+     const x=sx(u.x),y=sz(u.z);
+     if(x<0||x>w||y<0||y>h)continue;
+     ctx.fillStyle=u.team==='red'?'#ea786f':'#73c7f3';
+     ctx.beginPath();ctx.arc(x,y,1.9,0,Math.PI*2);ctx.fill();
+   }
+   for(const squad of state.squads){
+     if(!squad.alive)continue;
+     const x=sx(squad.x),y=sz(squad.z);
+     ctx.strokeStyle=squad.playerControlled?'#ffe3a1':
+       squad.team==='red'?'#f6b5ab':'#9bdcff';
+     ctx.lineWidth=squad.playerControlled?3:1.4;
+     ctx.beginPath();ctx.arc(x,y,squad.playerControlled?8:5,0,Math.PI*2);
+     ctx.stroke();
+   }
+   const own=state.squads[state.playerSquadId];
+   if(own?.routeGoal){
+     ctx.strokeStyle='#ffe099';ctx.fillStyle='#ffe099';
+     ctx.beginPath();ctx.moveTo(sx(own.x),sz(own.z));
+     ctx.lineTo(sx(own.routeGoal.x),sz(own.routeGoal.z));
+     for(const wp of own.waypoints||[])ctx.lineTo(sx(wp.x),sz(wp.z));
+     ctx.stroke();
+     ctx.fillRect(sx(own.routeGoal.x)-3,sz(own.routeGoal.z)-3,6,6);
+   }
+   for(const btn of fieldTactical.querySelectorAll('[data-field-map-action]')){
+     const yes=btn.dataset.fieldMapAction===fieldMapAction;
+     btn.setAttribute('aria-pressed',String(yes));
+     btn.style.background=yes?'#854d0e':'#273449';
+     btn.style.borderColor=yes?'#fbbf24':'#8d744b';
+   }
+   fieldTactical.querySelector('[data-field-map-units]').textContent=
+     'Mavi '+state.soldiers.filter(x=>x.alive&&x.team==='blue').length+
+     ' / Kırmızı '+state.soldiers.filter(x=>x.alive&&x.team==='red').length+
+     ' · 8 G5.4 bölük · Seçili: '+(source.ORDERS[own?.order]||own?.order||'–');
+   fieldTactical.dataset.actualNativeTroops=String(state.soldiers.length);
+ }
  function sendArmy(action,value,x,z){
    if(!sharedCommand){
      if(action!=='order')return;
@@ -476,6 +552,66 @@
    if(oldHold)oldHold.textContent='Bölüğüm: mevzi tut [J]';
    if(oldAdvance)oldAdvance.textContent='Bölüğüm: ilerle [K]';
    drawSharedCommandHUD();
+   fieldTactical=document.createElement('section');
+   fieldTactical.id='ak02-g54-tactical-overlay';
+   fieldTactical.dataset.open='false';
+   fieldTactical.style.cssText='position:fixed;inset:0;z-index:1200;background:#050d18f0;display:none;align-items:center;justify-content:center;pointer-events:auto;padding:10px;overflow:auto';
+   fieldTactical.innerHTML=[
+     '<div role="dialog" aria-modal="true" aria-label="G5.4 Taktik Harita"',
+     ' style="width:min(650px,97vw);max-height:96vh;overflow:auto;background:#172637;border:1px solid #d7ad59;border-radius:10px;padding:14px;color:#f7efdb;font:12px system-ui">',
+     '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px">',
+     '<strong style="color:#f6c77a">G5.4 TAKTİK HARİTA • KALE KUŞATMASI</strong>',
+     '<button type="button" data-field-map-close>Esc · Kapat</button></div>',
+     '<div data-field-map-units style="margin:8px 0">140 gerçek asker</div>',
+     '<div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:8px">',
+     '<button type="button" data-field-map-action="position">Hedef seç</button>',
+     '<button type="button" data-field-map-action="waypoint">Ara nokta ekle</button>',
+     '<button type="button" data-field-map-action="face">Yön belirle</button>',
+     '<button type="button" data-field-map-clear>Rotayı temizle</button></div>',
+     '<canvas id="ak02-g54-map-canvas" width="550" height="400" aria-label="140 canlı asker içeren 3B kale komuta haritası"',
+     ' style="width:100%;height:auto;display:block;max-width:550px;aspect-ratio:11/8;cursor:crosshair;background:#14242d;border:1px solid #ac986f"></canvas>',
+     '<p style="color:#cfc5b3">🔴 Kırmızı saldıran · 🔵 Mavi savunan · 🟡 Kendi bölüğün</p>',
+     '<div data-field-map-message role="status" style="color:#f2d69d">',
+     'Haritaya tıkla: hedef · Shift+tıkla: ara nokta · P/Esc: kapat</div>',
+     '<p style="color:#bbc1bc;font-size:10px">Emirler doğrudan özgün G5.4 bölük motoruna gider. Sahte hasar veya işgal oluşturulmaz.</p>',
+     '</div>'
+   ].join('');
+   document.body.appendChild(fieldTactical);
+   fieldTactical.addEventListener('pointerdown',event=>event.stopPropagation());
+   for(const b of fieldTactical.querySelectorAll('button')){
+     b.style.cssText='border:1px solid #a68752;background:#273449;color:#f6e4bf;padding:7px 10px;border-radius:6px;font:700 12px system-ui;cursor:pointer';
+   }
+   fieldTactical.querySelector('[data-field-map-close]')
+     .addEventListener('click',()=>setFieldMap(false));
+   fieldTactical.querySelector('[data-field-map-clear]')
+     .addEventListener('click',()=>{
+       const result=sendArmy('clear-waypoints');
+       fieldTactical.querySelector('[data-field-map-message]').textContent=
+         result?.ok?'G5.4 ara nokta kuyruğu temizlendi':'G5.4 rota temizlemeyi reddetti';
+     });
+   for(const b of fieldTactical.querySelectorAll('[data-field-map-action]'))
+     b.addEventListener('click',()=>{
+       fieldMapAction=b.dataset.fieldMapAction;
+       drawFieldMap();
+     });
+   fieldTactical.querySelector('canvas').addEventListener('click',event=>{
+     const canvas=event.currentTarget,rect=canvas.getBoundingClientRect();
+     if(!rect.width||!rect.height)return;
+     const bounds=map.spec.bounds;
+     const x=bounds.minX+Math.max(0,Math.min(1,
+       (event.clientX-rect.left)/rect.width))*(bounds.maxX-bounds.minX);
+     const z=bounds.maxZ-Math.max(0,Math.min(1,
+       (event.clientY-rect.top)/rect.height))*(bounds.maxZ-bounds.minZ);
+     const action=event.shiftKey?'waypoint':fieldMapAction;
+     const result=sendArmy(action,undefined,x,z);
+     fieldMapClicks++;
+     if(result?.ok)fieldMapAccepted++;
+     fieldTactical.querySelector('[data-field-map-message]').textContent=
+       (result?.ok?'G5.4 kabul: ':'G5.4 reddetti: ')+action+
+       ' ('+Math.round(x)+', '+Math.round(z)+')'+
+       (result?.reason?' • '+result.reason:'');
+     drawFieldMap();
+   });
    const tactical=document.getElementById('siege-mini-map');
    if(!tactical)throw Error('Genuine S2 castle tactical map missing');
    tactical.style.cursor='crosshair';
@@ -529,6 +665,17 @@
    sharedG54NativeShortcutBindings:sharedCommand?
      Object.keys(sharedArmyCommands.FIELD_KEYS):[],
    sharedG54KeyboardCommandsAccepted:shortcutsAccepted,
+   fieldG54HudBottomLeftNativeStyle:true,
+   fieldG54RealEightSquadRosterRendered:!!commandHUD?.querySelector('[data-army-roster]')&&
+     commandHUD.querySelector('[data-army-roster]').children.length===8,
+   fieldG54PMapConnected:!!fieldTactical,
+   fieldG54PMapOpen:fieldMapOpen,
+   fieldG54MapOpens:fieldMapOpens,
+   fieldG54MapCloses:fieldMapCloses,
+   fieldG54NativeMapClicks:fieldMapClicks,
+   fieldG54NativeAcceptedMapClicks:fieldMapAccepted,
+   fieldSquareUsesVToPreserveCastleSlideC:true,
+   fullOriginalG54FieldLayoutPixelIdentical:false,
    authenticGateDamageSupported:!!siegeCombat,
    genuineGateStrikes:bridge.structureCombat?
      bridge.structureCombatEngine.snapshot(bridge.structureCombat):null,
