@@ -136,4 +136,7 @@ Her adımda GitHub commit, uygulanan dosyalar, CI test özeti, **YAPILDI / KISME
 - [x] Gerçek S1 kale collider/kapı kurallarından geçen yatay-dikey hareket; AI, 140 G5.4 asker, iki merdiven, kapı ve senaryo fazlarını değiştirmez. S1/S2 eski önizlemelerine modül enjekte edilmez.
 - [x] Kamera kayarken alçalır. Havada/merdivende ateş gerçek 3B balistik hazır olmadığından kapalıdır.
 - [ ] Arena'nın tam TPS animasyonları, tam fare kilidi, silah/hit geri bildirimleri ve sur üstü 3B balistik ayrı S3D2 işleri; bu hareket düzeltmesi tek başına tam eşitlik değildir.
-- [ ] Node regresyon, üç modlu Chromium kabulü ve Windows fiziksel GPU testi sonuçları tamamlanmadan nihai onay verilmez.
+- [x] Node regresyon ve üç modlu Chromium/SwiftShader kabulü tamamlandı. Fiziksel Windows GPU ve oynanış hissi oyuncu kabulü AÇIK.
+
+
+**S3D2a doğrulaması (19 Kasım):** [Üç modlu CI #44532599418](https://github.com/zxc28tarik/killtheking/actions/runs/44532599418) iki iş **SUCCESS**: üç modlu paket + gerçek Chromium/SwiftShader 140 asker, Space zıplama (1 gerçek keydown, havalanma, iniş), Shift kayma ve Arena'ya dönüş. `pageErrors=[]`, `consoleErrors=[]`. 7 yeni/eski menü + 7 eski iki-mod + 5 runtime + 15 canlı HP + 3 sınıf görsel + **8/8 yeni hareket testi** = **45/45 test PASS**. [Birleşik HTML artifact #14533937466](https://github.com/zxc28tarik/killtheking/actions/runs/44532599418/artifacts/14533937466); ekran görüntüleri [#14533443427](https://github.com/zxc28tarik/killtheking/actions/runs/44532599418/artifacts/14533443427). Fiziksel Windows GPU/manuel FPS hissi kabulü açık; orijinal FFA tam hareket motoru ve 3B balistik paylaşılmıyor.
