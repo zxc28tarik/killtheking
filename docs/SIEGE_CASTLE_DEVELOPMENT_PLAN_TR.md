@@ -121,3 +121,11 @@ Her adımda GitHub commit, uygulanan dosyalar, CI test özeti, **YAPILDI / KISME
 ## 4. Sıradaki kesin geliştirme
 
 **S3D1 100 HP ve 4 silahlı gerçek insan komutan köprüsü tamamlandı (yalnız zeminli FPS/TPS önizleme avatarı).** **Sırada S3D2** ana arena karakter hareketi ve 3B silah yüksekliği/fizik bağlantısı ile doğrulanmış doğal insan-vs-AI savaş testleri. **S4 kritik:** mavi savunucuların keep/sur/avlu rezervi ve anti-stuck. Üç modlu ana menü/tek HTML **tamamlandı**; bundan sonra S3D2 ve görsel/karakter paritesi, S4 mavi savunma AI, S5–S6 GPU/kalite/yayın kabulü. PR taslak, FFA/G5.4 ve `main` korunur; nihai denge ve merge için kullanıcı onayı gerekir.
+
+
+### 19 Kasım — S3V1 sınıf bazlı karakter görsel entegrasyonu (aday)
+
+- [x] S3D1 ve üç modlu ana menü derlemelerine `siege-character-visuals.js` eklendi. 140 gerçek G5.4 kimliği/konumu üzerinden kılıçlı, mızraklı, okçu ve tüfekçi için takım renkli gövde/zırh/başlık/silah parçaları `InstancedMesh` ile çizilir; uzuvlar yalnız gerçek hareketten türetilir.
+- [x] Eski silindir askerler çizimde gizlenir ama gerçek G5.4 konumları, HP, hasar, bölüm/komuta ve QA matrisi korunur. Daha eski S1–S3C HTML yapıları etkilenmez.
+- [ ] Bu bir **Arena orijinal mesh'inin birebir paylaşımı değildir**: kıyafet ve silah siluetleri Arena'yı referans alır. Tam aynı mesh/animasyon, FPS karakter fiziği ve gerçek 3B balistik S3D2 ve sonraki kabul işlerinde AÇIK.
+- [ ] Yeni görsel katmanın gerçek GPU FPS/stres onayı bekleniyor; Node/Chromium CI kanıtı olmadan tamamlanmış sayılmamalı.

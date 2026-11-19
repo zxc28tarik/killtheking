@@ -8,6 +8,9 @@ on:
       - 'recovered/army/integration/test_three_mode_launcher.mjs'
       - 'recovered/army/integration/browser_three_mode_smoke.mjs'
       - 'recovered/siege/build_siege_player_candidate.mjs'
+      - 'recovered/siege/siege-character-visuals.js'
+      - 'recovered/siege/siege-real-army-overlay.js'
+      - 'recovered/siege/test_siege_character_visuals.mjs'
       - 'recovered/siege/siege-player-ui.js'
       - 'recovered/siege/siege-player-combat.js'
       - '.github/workflows/three_mode_launcher_integration.yml'
@@ -63,6 +66,7 @@ jobs:
           node --test recovered/army/integration/test_isolated_launcher.mjs
           node --test recovered/army/integration/test_mode_router_runtime.mjs
           node --test recovered/siege/test_siege_player_combat.mjs
+          node --test recovered/siege/test_siege_character_visuals.mjs
       - name: Verify exactly three modes with explicit non-final-engine boundaries
         run: |
           node --input-type=module -e "

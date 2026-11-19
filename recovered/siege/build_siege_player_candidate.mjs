@@ -23,6 +23,7 @@ const files={
  KTK_SIEGE_CAPTURE_AI_JS:resolve(dir,'siege-capture-ai.js'),
  KTK_SIEGE_PLAYER_COMBAT_JS:resolve(dir,'siege-player-combat.js'),
  KTK_SIEGE_PREVIEW_JS:resolve(dir,'siege-preview.js'),
+ KTK_SIEGE_CHARACTER_VISUALS_JS:resolve(dir,'siege-character-visuals.js'),
  KTK_SIEGE_REAL_ARMY_OVERLAY_JS:resolve(dir,'siege-real-army-overlay.js'),
  KTK_SIEGE_PLAYER_UI_JS:resolve(dir,'siege-player-ui.js')
 };
@@ -42,6 +43,7 @@ html=html.replace(
  '<!-- KTK_SIEGE_CAPTURE_AI_JS -->',
  '<!-- KTK_SIEGE_PLAYER_COMBAT_JS -->',
  '<!-- KTK_SIEGE_PREVIEW_JS -->',
+ '<!-- KTK_SIEGE_CHARACTER_VISUALS_JS -->',
  '<!-- KTK_SIEGE_REAL_ARMY_OVERLAY_JS -->',
  '<!-- KTK_SIEGE_PLAYER_UI_JS -->'
  ].join('\n')
@@ -71,6 +73,8 @@ const manifest={
  genuineNativePlayerHealthAndHits:true,
  humanG54GroundWeaponDamage:true,
  originalWeaponBalancePreserved:true,
+ nativeRoleAwareInstancedSoldierVisuals:true,
+ exactOriginalFFAMeshReuse:false,
  friendlyFireSuppression:true,
  originalFFAMovementImported:false,
  ballistic3dProjectileImplemented:false,
@@ -92,7 +96,7 @@ for(const [id,path] of Object.entries(files)){
 const original='307987855abc0973ea9177fdd659c39d1d02673c8381c0501be8b63c04ddf841';
 if(manifest.sourceSha256.KTK_G54_ARMY_REAL_JS!==original)
  throw Error('Original G5.4 true-side engine changed! No unsafe substitution.');
-if((html.match(/<script\b/giu)||[]).length!==15||
+if((html.match(/<script\b/giu)||[]).length!==16||
    html.includes('<!-- KTK_')||
    !html.includes('GERÇEK OYUNCU SAVAŞ ADAYI')||
    !html.includes('Gerçek G5.4 ordusunda 140 asker'))

@@ -243,3 +243,6 @@ test('S3C3 remains separate: no combat module without explicit opt-in',()=>{
  assert.equal(typeof G54.damageSoldier,'function');
  assert.equal(typeof G54.raycastSoldier,'function');
 });
+
+// Visual-only S3D1 role model integration is tested in a dedicated Three.js
+// source-backed test. Native combat/HP tests above deliberately stay unchanged.

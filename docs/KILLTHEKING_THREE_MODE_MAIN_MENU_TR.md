@@ -50,3 +50,8 @@ Bu güncelleme **tek ürünün üçüncü seçilebilir savaş modu** koşulunu g
 - [ ] **Birleştirme/yayın:** Kullanıcı açık onayı olmadan `main` merge, release veya denge sabitleme YOK.
 
 **Oyun sözleşmesi:** Bundan sonra ayrı bağımsız Kale Kuşatması oyunu yapılmayacak; bütün kuşatma geliştirmeleri ana Kill the King'in **ÜÇÜNCÜ MODUNU** iyileştirecek. Kaynak izole tutulabilir, ancak kullanıcıya tek oyun/tek menü teslim edilmelidir.
+
+
+### S3V1 görsel yakınlaştırma adayı (19 Kasım)
+
+Kuşatma S3D1'in 140 gerçek asker görüntüsü, Arena'nın sınıf/zırh/silah siluetine benzer **sınıfa özgü parçalı InstancedMesh** katmanına taşınıyor. Bu, Arena'daki özgün yüksek detaylı modelin birebir taşınması veya FPS ortak motoru **değil**. Üç mod aynı menüyle açılmaya devam eder; eski Arena ve G5.4 ordu kaynaklarına dokunulmaz. Gerçek Chromium ve oyuncu kabulü tamamlanmadan görsel parite onayı verilmez.
