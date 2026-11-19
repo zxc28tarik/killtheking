@@ -150,12 +150,19 @@ test('independent native G5.4 field engine accepts exact same 6 formations and o
 });
 
 
-test('AK-02a reuses exact historic field combat shortcuts for orders and formations',()=>{
+test('AK-02b historical native G5.4 field order/form/fire hotkeys agree with real source',()=>{
  const expected={
-   KeyJ:['order','hold'],KeyK:['order','advance'],
+   KeyG:['order','follow'],KeyJ:['order','hold'],
+   KeyK:['order','advance'],KeyL:['order','charge'],
+   KeyU:['order','retreat'],KeyY:['order','flank'],
+   KeyN:['order','skirmish'],
    KeyZ:['formation','line'],KeyX:['formation','column'],
+   KeyV:['formation','square'],KeyB:['formation','wedge'],
+   KeyM:['formation','loose'],KeyI:['formation','shield'],
    Digit7:['fire','free'],Digit8:['fire','volley'],
-   Digit9:['fire','hold']
+   Digit9:['fire','hold'],
+   BracketLeft:['spacing-delta',-.1],
+   BracketRight:['spacing-delta',.1]
  };
  assert.deepEqual(Object.keys(core.FIELD_KEYS),Object.keys(expected));
  const {b,c}=make();
@@ -163,12 +170,13 @@ test('AK-02a reuses exact historic field combat shortcuts for orders and formati
    const cmd=core.shortcut({code});
    assert.equal(cmd.action,action,code);
    assert.equal(cmd.value,value,code);
-   // Melee intentionally rejects ranged fire, original native semantics.
-   const r=core.execute(c,cmd);
-   assert.equal(r.ok,action!=='fire',code);
+   const result=core.execute(c,cmd);
+   // Melee intentionally rejects firing modes, original native semantics.
+   assert.equal(result.ok,action!=='fire',code);
  }
- assert.equal(b.state.squads[b.state.playerSquadId].formation,'column');
- assert.equal(core.snapshot(c).order,'advance');
+ assert.equal(b.state.squads[b.state.playerSquadId].formation,'shield');
+ assert.equal(core.snapshot(c).order,'skirmish');
+ assert.equal(core.snapshot(c).spacingScale,1);
 });
 test('AK-02a shortcuts never seize WASD, weapon F/1..4, Space, Escape or chat inputs',()=>{
  for(const code of ['KeyW','KeyA','KeyS','KeyD','KeyE','KeyF',
@@ -196,4 +204,44 @@ test('AK-02a real keyboard fire shortcuts accept same original live archer squad
  }
  assert.equal(core.snapshot(c).accepted,3);
  assert.equal(core.snapshot(c).nonPlayerSquadsNeverAuthorized,true);
+});
+
+test('AK-02b actual G5.4 archive proves HUD bottom-left and original P tactical map',()=>{
+ const original=readFileSync(new URL('../army/KillTheKing_G5_4_Kanat_Savunmasi_Oyna.html',import.meta.url),'utf8');
+ assert.equal(createHash('sha256').update(original).digest('hex'),
+   '1d5f72768054b4138ba742e10923bfb20c00bd37fe789cdc3e40a65967cccfe2');
+ assert(original.includes('id="meadow-army-hud" class="hidden fixed left-3 bottom-12'));
+ assert(original.includes('id="army-tactical-overlay"'));
+ assert(original.includes("KeyG:'follow',KeyJ:'hold',KeyK:'advance',KeyL:'charge'"));
+ assert(original.includes("KeyU:'retreat',KeyY:'flank',KeyN:'skirmish'"));
+ assert(original.includes("KeyZ:'line',KeyX:'column',KeyC:'square'"));
+ assert(original.includes("KeyB:'wedge',KeyM:'loose',KeyI:'shield'"));
+ assert(original.includes("Digit7:'free',Digit8:'volley',Digit9:'hold'"));
+ assert(original.includes("e.code==='KeyP'"));
+ assert(original.includes("e.code==='BracketLeft'"));
+ assert(original.includes("e.code==='BracketRight'"));
+ assert(!Object.hasOwn(core.FIELD_KEYS,'KeyC'),
+   'Castle must preserve C slide; fallback square V is explicit');
+ assert.equal(core.FIELD_KEYS.KeyV.value,'square');
+});
+test('AK-02b original bracket spacing is native state with hard 0.65–1.65 boundaries',()=>{
+ const {b,c}=make();
+ const sq=b.state.squads[b.state.playerSquadId];
+ for(let i=0;i<19;i++)
+   assert.equal(core.execute(c,core.shortcut({code:'BracketRight'})).ok,true);
+ assert.equal(sq.spacingScale,1.65);
+ for(let i=0;i<19;i++)
+   assert.equal(core.execute(c,core.shortcut({code:'BracketLeft'})).ok,true);
+ assert.equal(sq.spacingScale,.65);
+ assert.equal(b.state.soldiers.length,140);
+ assert.equal(b.state.playerKills,0);
+});
+test('AK-02b square V does not steal C slide or any FPS weapon key',()=>{
+ assert.equal(core.shortcut({code:'KeyC'}),null);
+ assert.equal(core.shortcut({code:'KeyF'}),null);
+ for(const key of ['Digit1','Digit2','Digit3','Digit4','Space','KeyE'])
+   assert.equal(core.shortcut({code:key}),null);
+ const {b,c}=make();
+ assert.equal(core.execute(c,core.shortcut({code:'KeyV'})).ok,true);
+ assert.equal(b.state.squads[b.state.playerSquadId].formation,'square');
 });
