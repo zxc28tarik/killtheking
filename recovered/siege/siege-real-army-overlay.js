@@ -61,6 +61,10 @@
    if(!captureAI){panel.querySelector('h3').textContent='S3C2 • GERÇEK ASKER MERDİVENLERİ';
    panel.querySelector('p').textContent='Kırmızı G5.4 AI mızraklıları iki yan merdivene gerçek hızlarıyla ulaşır, orada gerçek asker varlığından inşa ilerlemesi üretir, suru 3B yükselip aşar ve iç avluya iner. Asker kimlikleri, HP ve özgün motor korunur; G5.4 gerçek 3B atış fiziği ve bütün kuşatma kazanma döngüsü henüz tamamlanmadı. Sahte merdiven/kapı/zafer düğmeleri devre dışı.';}
  }
+ if(defenderAI){
+   panel.querySelector('h3').textContent='S4A • GERÇEK MAVİ KALE SAVUNMASI';
+   panel.querySelector('p').textContent='Mavi kılıçlı/mızraklılar kapı ve avlu ön hattını, okçu/tüfekçiler arka destek mevzilerini korur. Yaşayan kırmızı askerler kapıdan veya merdivenden girince savunma avluya; iç kale fazında son hatta çekilir. Askerler gerçek G5.4 yürüyüş hızlarıyla ilerler. 3B sur üstü BOT atışı S4B için açık.';
+ }
   el.insertBefore(panel,el.firstChild);
  const dummy=new THREE.Object3D();
  const groups=preview.tokens.map(inst=>({
