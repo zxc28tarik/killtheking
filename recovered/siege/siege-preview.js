@@ -574,6 +574,9 @@
        throw Error('Incomplete S3 authentic army integration adapter');
      extensionFrame=onFrame;extensionReset=onReset;
      extensionTeam=typeof onTeamChange==='function'?onTeamChange:null;
+     // Immediately remove S1 forged-win controls before a real player can click.
+     // Do not rely on a later low-FPS SwiftShader RAF UI refresh.
+     updateUI();
    }
  });
   // Read-only browser acceptance status: never exposes mutable engine state.
