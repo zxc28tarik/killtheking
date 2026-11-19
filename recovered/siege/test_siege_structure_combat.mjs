@@ -173,10 +173,10 @@ test('S3C1 optional plugin leaves historic S3B candidate with gate auto combat O
    'Old S3B must NOT silently enable S3C1 siege combat');
 });
 
-test('unassisted genuine 24s G5.4 castle encounter reports real gate access without QA positions',()=>{
+test('unassisted genuine 32s G5.4 attackers BREAK the actual castle gate without QA placement',()=>{
  const b=create('blue');
  const trace=[];
- for(let i=0;i<300;i++){
+ for(let i=0;i<400;i++){
    bridge.step(b,.08);
    if(i%50===49){
      const v=bridge.snapshot(b);
@@ -195,13 +195,25 @@ test('unassisted genuine 24s G5.4 castle encounter reports real gate access with
  }
  // Record natural behavior separately from QA placed-genuine-soldier tests.
  // A nonzero realHits is proven, but zero is NOT reported as real success.
- console.log('S3C1_UNASSISTED_24_REAL_G54_SIM_SECONDS '+JSON.stringify(trace));
+ console.log('S3C1_UNASSISTED_32_REAL_G54_SIM_SECONDS '+JSON.stringify(trace));
  const v=bridge.snapshot(b);
- assert(v.realArmySeconds>=23.99);
+ assert(v.realArmySeconds>=31.99);
  assert(v.genuinelyMovedSoldierTicks>0);
  assert(v.genuineSoldierGateStrikes.strikes>=0);
  assert.equal(v.genuineSoldierGateStrikes.gateHp,v.scenario.gate.hp);
  assert(v.siegeSpecificRealSoldierNavigation?.actuallyGuidedNativeSoldierSteps>0);
- assert(v.scenario.gate.hp<=600);
- console.log('S3C1_NATURAL_GATE_HITS_VERIFIED '+v.genuineSoldierGateStrikes.strikes);
+ assert(v.genuineSoldierGateStrikes.strikes>=34,
+   'Natural soldiers did not reach enough true gate strike cycles');
+ assert.equal(v.scenario.gate.hp,0,
+   'Autonomous G5.4 siege units failed to break the gate naturally');
+ assert.equal(v.scenario.gate.open,true);
+ assert.equal(v.worldObstacleCount,14,
+   'True G5.4 LOS collider remained after naturally broken gate');
+ assert(b.scenario.events.some(e=>e.type==='GATE_BREACHED'),
+   'S1 scenario did not record authentic breach');
+ assert.equal(v.genuineSoldierGateStrikes.totalDamage,600);
+ console.log('S3C1_NATURAL_GATE_BREACH_CONFIRMED '+
+   JSON.stringify({hits:v.genuineSoldierGateStrikes.strikes,
+     elapsed:v.realArmySeconds,gateHp:v.scenario.gate.hp,
+     worldObstacles:v.worldObstacleCount,phase:v.scenario.phase}));
 });
