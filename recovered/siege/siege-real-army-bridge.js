@@ -107,7 +107,8 @@
    return count;
  }
  function create({armyEngine,map,objectives,traversal,
-     seed=1600,playerType='sword',playerTeam='red'}={}){
+     seed=1600,playerType='sword',playerTeam='red',
+     scenario:existingScenario=null}={}){
    required(armyEngine,['create','step','snapshot','setWorldObstacles',
      'setPlayerPosition','drainCombatEvents','drainPlayerHits',
      'issueOrder','setDestination'],'G5.4');
@@ -117,7 +118,9 @@
      throw Error('Invalid user-selectable authentic G5.4 commander');
    if(!Number.isSafeInteger(seed)||seed<0||seed>100000000)
      throw Error('Invalid deterministic G5.4 seed');
-   const scenario=objectives.createScenario();
+   const scenario=existingScenario||objectives.createScenario();
+   if(objectives.snapshot(scenario).kind!=='SIEGE_S1_NOT_REAL_ARMY_ENGINE')
+     throw Error('S3 preview needs an authentic siege scenario');
    if(map.validate().ok!==true)throw Error('Invalid authored siege map');
    const state=armyEngine.create(seed,playerType,playerTeam);
    const initial=deployment(state,map,traversal,scenario);
