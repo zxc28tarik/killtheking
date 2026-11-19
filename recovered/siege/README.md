@@ -1,6 +1,6 @@
-# Kill the King — Kuşatma Kalesi S1/S2/S3/S3C1/S3C2
+# Kill the King — Kuşatma Kalesi S1/S2/S3/S3C1/S3C2/S3C3
 
-**Durum:** S1 hedef motoru, S2 dolaşılabilirlik, S3 gerçek G5.4 140 asker, S3C1 gerçek doğal kapı kırma ve **S3C2 iki canlı asker merdiveni** tamamlandı. **Normal doğuşta batıdan 12 ve doğudan 12 asker suru aşıp içeri indi.** Gerçek avlu/iç kale ele geçirme, üç boyutlu silah balistiği, ana FPS oyuncusu ve yayın kabulü **hâlâ AÇIK**. Bu klasör yeni **tek bir kuşatma senaryosu** için ayrılmıştır. FFA/TDM, özgün kale, çimenlik meydan ve G5.4 ordu modları bu aşamada değiştirilmedi.
+**Durum:** S1 hedef motoru, S2 dolaşılabilirlik, S3 gerçek G5.4 140 asker, S3C1 doğal kapı kırma, S3C2 iki canlı asker merdiveni ve **S3C3 gerçek avlu/iç kale zafer mantığı** kodlandı. Normal 70v70 gerçek motor doğuşundan saldıranlar **109,36 oyun saniyesinde keep'i ele geçirdi**. Ancak **mavi AI'nın kale savunması, asıl FPS/TPS silahlı oyuncu, üç boyutlu silah balistiği ve yayın/GPU kabulü hâlâ AÇIK.** Bu klasör yeni **tek bir kuşatma senaryosu** için ayrılmıştır. FFA/TDM, özgün kale, çimenlik meydan ve G5.4 ordu modları bu aşamada değiştirilmedi.
 
 ## Tasarım ve plan
 
@@ -88,7 +88,21 @@ node recovered/siege/build_siege_ladder_candidate.mjs recovered/siege/dist/KillT
 node --test recovered/siege/test_siege_ladder_ai.mjs
 ```
 
-**Sıradaki iş S3C3:** gerçek askerlerle avlu / iç kale hedefini savaşarak alma, savunma ve gerçek zafer yenilgi döngüsü; ardından S3D silahlı FPS oyuncu, S4 koordinasyon, S5–S6 son kabul. Özgün G5.4 yalnız 2B saldırı simülatörüdür: gerçek 3B mermi/ok fiziği hâlâ yoktur.
+**S3C3 doğal saldırgan zaferi artık PASS.** Sıradaki S3D asıl FPS oyuncu/silah entegrasyonu; S4 mavi savunma AI, ardından S5–S6 son kabul. Özgün G5.4 2B saldırı simülatörüdür: gerçek 3B mermi/ok fiziği hâlâ yoktur.
+
+## S3C3 — Gerçek Askerler İç Avlu / Keep Ele Geçirme
+
+- `siege-capture-ai.js` orijinal G5.4 askerlerinin gerçek HP/pozisyon/rol ve hızlarını kullanarak, kapı veya merdiven gerçekten açıldıktan sonra avluya ve iç kaleye doğal yürüyüşünü sağlar. Kapı önü bir önceki sürümdeki sonsuz ileri-geri hareket sorunu asker ID'sine bağlı **kalıcı waypoint tamamlanması** ile düzeltildi.
+- S1 `ZONE_PRESENCE` / `FORCE_COUNTS` gerçek asker verisinden gelir; yalnız çekişmesiz avluda **12 saniye**, çekişmesiz iç kalede **20 saniye** tutulursa `ATTACKER_KEEP_CAPTURED`. Gerçek savunucu varsa süre sıfırlanır; sahte DEBUG zafer düğmeleri kilitli.
+- [**S3C3 gerçek native 140 G5.4 asker CI #44511218460 — SUCCESS**](https://github.com/zxc28tarik/killtheking/actions/runs/44511218460): doğal 70v70 savaş sonucu **109,36 oyun saniyesi**, **49 kırmızı / 48 mavi canlı**, keep 49 kırmızı/0 mavi; kapıdan **45 gerçek asker geçti**, keep'e **49 asker ulaştı**. Test kuralı 9 saniyeye düşürülen ayrı savunma örneği de mavi zaman zaferini doğruluyor. **97/97** Node regresyon PASS; gerçek Chromium/SwiftShader 3B ve HUD başlangıcı PASS.
+- [**S3C3 ayrı tek HTML artifact #14522437522**](https://github.com/zxc28tarik/killtheking/actions/runs/44511218460/artifacts/14522437522); [Chromium ekran görüntüsü ve JSON #14523521430](https://github.com/zxc28tarik/killtheking/actions/runs/44511218460/artifacts/14523521430).
+- [**Ayrıntılı S3C3 doğal maç ve eksik mavi AI raporu**](../../docs/SIEGE_CASTLE_S3C3_REAL_CAPTURE_ACCEPTANCE_TR.md).
+- **S4 kritik sorun:** doğal zaferde bile **48 mavi asker** hayatta kalıp iç kaleye savunma aktaramadı. Bu nedenle tam dengeli kuşatma savunması onaylanmadı; mavi taktik ve sıkışma işlerine devam edilmeli.
+
+```bash
+node --test recovered/siege/test_siege_capture_ai.mjs
+node recovered/siege/build_siege_capture_candidate.mjs recovered/siege/dist/KillTheKing_Kusatma_S3C3_Gercek_140_Asker_Kale_Ele_Gecirme_Aday.html
+```
 
 ## Geliştirici komutları
 
@@ -99,6 +113,6 @@ node recovered/siege/build_siege_preview.mjs recovered/siege/dist/KillTheKing_Ku
 
 Üretilen tek HTML'yi Chrome/Edge'de yerel aç. Harita kamerasında sürükleyip yakınlaştır; **FPS/TPS seçerek WASD ile yürü, E ile açık merdivene çık**, saldıran/savunan tarafı seç. Sağdaki **QA konumu** düğmeleri yalnız çarpışma denemesi için oyuncuyu yerleştirir. “Test olayları” düğmeleri S1 senaryo kurallarını sınar; gerçek savaş AI'sını gözlemlemek için kullanılmaz.
 
-## Sıradaki adım: S3C3 avlu ve iç kale zaferi
+## Sıradaki adım: S3D ana FPS/TPS oyuncu ve S4 mavi kale savunması
 
-S3C1 doğal kapı kırma ve S3C2 iki yan gerçek asker merdiveni/sur geçişi kaynak testlerinde PASS. **S3C3:** yaşayan askerlerin avlu/keep hedeflerine doğru doğal olarak ilerlemesi; mavi savunmayla çatışan bölgelerde ele geçirme süresi, geçerli iki taraflı sonuç ve yanlış zafer engelleri. Sonra S3D ana oyun FPS oyuncusu/silahı. S2 keşif avatarını tam silahlı oyuncu sayma; kullanıcı onayı olmadan dengeyi nihai hale getirme veya `main`e merge yapma.
+S3C1 doğal kapı, S3C2 iki merdiven, S3C3 109,36 oyun saniyelik saldırgan keep zaferi ve kısa test süresinde savunucu zaman zaferi kaynak testlerinde PASS. **S3D:** asıl silahlı FPS/TPS oyuncuyu savaş ve HP sistemine bağla; **S4:** mavi 48 canlı askerin iç kaleyi koruyamayıp başka bölgede kalmasını iyileştir. S2 keşif avatarını gerçek silahlı oyuncu sayma; kullanıcı onayı olmadan dengeyi nihai hale getirme veya `main`e merge yapma.
