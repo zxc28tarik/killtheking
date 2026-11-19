@@ -4,6 +4,7 @@ on:
     branches:
       - codex/s1-siege-castle-phase1
     paths:
+      - 'recovered/army/integration/audit_g54_army_hud.mjs'
       - 'recovered/army/integration/build_three_mode_launcher.mjs'
       - 'recovered/army/integration/test_three_mode_launcher.mjs'
       - 'recovered/army/integration/browser_three_mode_smoke.mjs'
@@ -55,6 +56,8 @@ jobs:
         run: |
           python3 ffa-source/tools/build_offline.py --out dist/KillTheKing_Oyna.html
           echo '18dca2a895763f0955566f2fc90651f1ab1a98f86597e399cbac42ac2fc6f15a  ffa-source/dist/KillTheKing_Oyna.html' | sha256sum --check -
+      - name: Audit original G5.4 Army HUD and keyboard reference without modifying it
+        run: node recovered/army/integration/audit_g54_army_hud.mjs
       - name: Build unchanged two-mode FFA + G5.4 launcher
         run: |
           node recovered/army/integration/build_isolated_launcher.mjs \
