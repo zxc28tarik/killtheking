@@ -1,6 +1,6 @@
-# Kill the King — Kuşatma Kalesi S1/S2
+# Kill the King — Kuşatma Kalesi S1/S2/S3
 
-**Durum: S1 hedef sistemi ve S2 dolaşılabilir kale önizlemesi kodlandı; gerçek 140 asker savaş motoru henüz entegre DEĞİL.** Bu klasör yeni **tek bir kuşatma senaryosu** için ayrılmıştır. FFA/TDM, özgün kale, çimenlik meydan ve G5.4 ordu modları bu aşamada değiştirilmedi.
+**Durum: S1 senaryo motoru, S2 FPS/TPS dolaşılabilirlik önizlemesi ve S3 G5.4'ün gerçek 140 askeriyle 3B kale hareket/komuta entegrasyon adayı var. Tam gerçek kuşatma AI'sı, kapı saldırısı, merdiven, asıl oyun oyuncu silahları ve yayına hazır sürüm HENÜZ TAMAMLANMADI.** Bu klasör yeni **tek bir kuşatma senaryosu** için ayrılmıştır. FFA/TDM, özgün kale, çimenlik meydan ve G5.4 ordu modları bu aşamada değiştirilmedi.
 
 ## Tasarım ve plan
 
@@ -37,6 +37,24 @@
 - S2 tek HTML SHA-256: `d9c6a614a344bb5377837be5640071fa379e50920b42d6bac1cd37a9be06cdd5`. Bu sadece önizleme sürümüdür.
 
 **S2'nin sınırı:** Gerçek G5.4 `ArenaArmyBattle` 140 asker AI, kapı hasarı, NPC merdiven navigasyonu, ana oyun FPS/TPS motoru ve gerçek GPU kabulü açık. Kalenin fizik ve yollarını önizleme içinde doğrulamak bunların bittiği anlamına gelmez.
+
+## S3 — Değişmemiş G5.4 ile gerçek 140 asker 3B entegre aday
+
+- `siege-real-army-bridge.js` gerçek ve SHA-pinned G5.4 `create/step/snapshot/setWorldObstacles/drainCombatEvents` kullanır. Sekiz özgün bölük ve toplam 140 asker gerçek G5.4 pozisyonlarıyla S1 kale koordinatlarında başlatılır. Kendi asker/komuta sözleşmesi korunur.
+- `siege-real-army-overlay.js` aynı 140 asker modelini Three.js `InstancedMesh` ile gerçek asker koordinatlarına bağlar; gerçek insan bölüğüne mevzi tut/ilerle/hücum/geri çekil komutları ve kırmızı/mavi komutan değişimi sunar. S1/S2 önizleme HTML'si bu modun içine **yazılmadı**; yeni S3 için ayrı dosya üretilir.
+- G5.4 kale engellerine kapalı kapı ve 14 duvar/siper eklenir; DEBUG kapısı açılınca engel azalır. Yaşayan gerçek askerlerin avlu/iç kale konumları okunur; sahte ele geçirme ve takım imha düğmeleri S3 modunda kapalıdır.
+- **S3 gerçek 140 asker, tam kuşatma oyunu demek değildir.** Kapıya gerçek asker darbeleri, G5.4 askerlerinin 3B merdiven/sur çıkması ve ana FPS oyuncu/silahı hâlâ bağlı değil.
+- [S3 gerçek asker entegrasyon raporu](../../docs/SIEGE_CASTLE_S3_REAL_ARMY_INTEGRATION_TR.md).
+- [**S3B CI #44500646656 SUCCESS — 52/52 Node test + gerçek Chromium 140 asker 3B**](https://github.com/zxc28tarik/killtheking/actions/runs/44500646656).
+- [**S3 3B HTML adayını indir — artifact #14517570833**](https://github.com/zxc28tarik/killtheking/actions/runs/44500646656/artifacts/14517570833).
+- [Chromium ekran görüntüleri ve JSON — artifact #14517276278](https://github.com/zxc28tarik/killtheking/actions/runs/44500646656/artifacts/14517276278).
+
+**Yeni S3 adayını üretmek:**
+
+```bash
+node recovered/siege/build_siege_real_army_candidate.mjs recovered/siege/dist/KillTheKing_Kusatma_S3_Gercek_140_Asker_Entegrasyon_Aday.html
+node --test recovered/siege/test_siege_real_army_bridge.mjs
+```
 
 ## Geliştirici komutları
 
