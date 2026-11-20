@@ -71,6 +71,13 @@
      adapterUsesOnlyOriginalNativeG54PublicAPI:true,
      statesCreated,mapClicks,mapAccepted:mapAccept,domCommands,keyCommands,
      deliberateCommanderResumes,
+     realNativeGameTick:active.state.tick,
+     realNativePlayerHealth:active.state.playerHealth,
+     realNativeArmyWinner:active.state.winner,
+     realOriginalMatchPhase:typeof arenaMatch==='undefined'?
+       'unavailable':arenaMatch.phase,
+     realOriginalGameIsActive:typeof isGameActive==='undefined'?
+       false:isGameActive,
      fieldNativeMeleeAndRangedDamageUnmodified:true,
      mapOriginalFieldZoom:mapZoom,
      nativeFieldGameSourceEdited:false};
