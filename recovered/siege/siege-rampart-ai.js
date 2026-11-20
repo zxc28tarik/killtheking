@@ -203,7 +203,7 @@
    for(const post of ai.posts.values()){
      const u=ai.state.soldiers[post.id];
      if(!u?.alive||ai.state.elapsed+1e-9<post.nextShotAt)continue;
-     if(ai.state.squads[u.squadId]?.playerControlled)
+     if(u.squadId===ai.state.playerSquadId)
        throw Error('S4B1 player commanded squad entered native rampart AI');
      const target=chooseTarget(ai,u);
      if(!target)continue;
