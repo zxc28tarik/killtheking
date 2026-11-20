@@ -144,13 +144,13 @@ try{
    const selected=await fieldStatus();
    assert.deepEqual(selected.selectedSquadIds,
      [selected.authorizedFriendlySquadIds[i]]);
-   await child().locator('[data-ak04-action="order"][data-ak04-value="hold"]').click();
+   await child().locator('[data-ak04-selector="floating"] [data-ak04-action="order"][data-ak04-value="hold"]').click();
    const after=await fieldStatus();
    assert.equal(after.squads.find(s=>s.id===selected.selectedSquadIds[0]).order,'hold');
  }
  await child().locator('[data-ak04-selector="floating"] [data-ak04-all]').click();
  assert.equal((await fieldStatus()).selectedSquadIds.length,4);
- await child().locator('[data-ak04-action="order"][data-ak04-value="charge"]').click();
+ await child().locator('[data-ak04-selector="floating"] [data-ak04-action="order"][data-ak04-value="charge"]').click();
  assert((await fieldStatus()).squads.every(s=>s.order==='charge'));
  assert.equal((await fieldStatus()).physicalPlayerControlledSquadCount,1);
  const beforeTicks=(await fieldStatus()).nativeCommandTicks;
