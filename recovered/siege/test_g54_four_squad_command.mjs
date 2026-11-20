@@ -206,3 +206,38 @@ test('native G5.4 open-field game can load SAME opt-in four-squad command contra
  assert.equal(state.playerSquadId,before);
  assert.equal(state.squads.filter(s=>s.playerControlled).length,1);
 });
+
+test('AK-04a uncommanded pikes retain authentic automated ladder construction',()=>{
+ const b=make('red',{
+   structureCombatEngine:structure,assaultNavigationEngine:assault,
+   ladderAIEngine:ladder,captureAIEngine:capture,defenderAIEngine:defend
+ }),m=moduleOf(b);
+ assert.deepEqual([...m.activeDelegates],[]);
+ const pike=sq(b,id(b,'pike'));
+ assert.equal(pike.playerControlled,false);
+ assert.equal(four.beginNativeTick(m),true);
+ assert.equal(pike.playerControlled,false,'Uncommanded allied pikes must remain native AI');
+ assert.equal(sq(b,m.realOwnerId).playerControlled,true);
+ assert.equal(four.endNativeTick(m),true);
+ for(let i=0;i<24;i++)bridge.step(b,.08);
+ assert.equal(pike.playerControlled,false);
+ assert.equal(four.snapshot(m).uncommandedAlliedSquadsKeepOriginalAI,true);
+});
+test('AK-04a ordered red pikes no longer collide with automatic ladder AI authority',()=>{
+ const b=make('red',{
+   structureCombatEngine:structure,assaultNavigationEngine:assault,
+   ladderAIEngine:ladder,captureAIEngine:capture,defenderAIEngine:defend
+ }),m=moduleOf(b);
+ four.select(m,id(b,'pike'));
+ assert.equal(four.execute(m,{action:'order',value:'hold'}).ok,true);
+ assert.equal(m.activeDelegates.size,1);
+ const pike=sq(b,id(b,'pike'));
+ for(let j=0;j<45;j++){
+   bridge.step(b,.08);
+   assert.equal(b.state.squads.filter(s=>s.playerControlled).length,1);
+ }
+ assert.equal(pike.order,'hold');
+ assert.equal(four.snapshot(m).humanCommandsTakePriorityOverNativeLadderAutomation,true);
+ assert.equal(four.snapshot(m).physicalPlayerControlledSquadCount,1);
+ assert.equal(b.state.soldiers.length,140);
+});
