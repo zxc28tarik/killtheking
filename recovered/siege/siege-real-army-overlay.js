@@ -16,6 +16,7 @@
  const rampartAI=globalThis.KTKSiegeRampartAI||null;
  const sharedArmyCommands=globalThis.KTKSharedG54ArmyCommands||null;
  const sharedBattleSession=globalThis.KTKSharedG54BattleSession||null;
+ const fourSquadEngine=globalThis.KTKG54FourSquadCommand||null;
  if(rampartAI&&!defenderAI)throw Error('S4B1 rampart counterfire requires native S4A defense');
  if(defenderAI&&!captureAI)throw Error('S4 blue role defender requires S3C3 real capture');
  if(captureAI&&!ladderAI)throw Error('S3C3 objective assault requires actual S3C2 ladder bridge');
@@ -83,7 +84,7 @@
  const roleVisuals=globalThis.KTKSiegeCharacterVisuals?.create({
    THREE,scene:preview.scene,groups
  })||null;
- let bridge=null,sharedCommand=null,liveSession=null,lastArmyCommandNotice='';
+ let bridge=null,sharedCommand=null,liveSession=null,fourCommand=null,lastArmyCommandNotice='';
  let commandHUD=null,shortcutsAccepted=0;
  let fieldTactical=null,fieldMapOpen=false,fieldMapAction='position';
  let fieldMapOpens=0,fieldMapCloses=0,fieldMapClicks=0,fieldMapAccepted=0;
@@ -101,7 +102,8 @@
      rampartAIEngine:rampartAI,
      ballisticsAPI:rampartAI?globalThis.KTKSiege3DBallistics:null,
      weaponBalance:rampartAI?bal:null,
-     defenderRender:rampartAI?{THREE,scene:preview.scene}:null
+     defenderRender:rampartAI?{THREE,scene:preview.scene}:null,
+     fourSquadCommandEngine:fourSquadEngine
    });
    if(bridge.state.soldiers.length!==140||
       bridge.state.squads.length!==8)
@@ -111,6 +113,9 @@
    sharedCommand=sharedArmyCommands?.create({
      engine:source,bridge,map
    })||null;
+   fourCommand=bridge.multiSquadCommand;
+   if(!fourCommand)
+     throw Error('AK-04a requires genuine four-squad native authority');
    liveSession=sharedBattleSession?.create({
      engine:source,state:bridge.state,scenario:bridge.scenario,
      mode:'siege',playerTeam:team
@@ -160,7 +165,7 @@
  function drawMetrics(){
    const view=bridgeApi.snapshot(bridge);
    if(sharedCommand){
-     const c=sharedArmyCommands.snapshot(sharedCommand);
+     const c=displayCommand();
      drawSharedCommandHUD(c);
      const line=document.getElementById('s3-shared-army-command-line');
      if(line)line.textContent='G5.4 bölüğü: '+c.commandedRole+
@@ -247,9 +252,45 @@
    realStructureCombat:!!siegeCombat,realLadderAI:!!ladderAI});
  // Army (G5.4) is the ONLY order/formation/fire authority in both
  // field and castle; siege-specific structure orders are a future layer.
+ function displayCommand(){
+   const c=sharedArmyCommands.snapshot(sharedCommand);
+   if(!fourCommand)return c;
+   const multi=fourSquadEngine.snapshot(fourCommand);
+   const ids=multi.selectedSquadIds;
+   const own=bridge.state.squads[ids[0]];
+   if(!own)throw Error('AK-04a selected native squad missing');
+   const all=ids.length>1;
+   return {...c,
+     commandedRole:all?'4 BÖLÜK':own.type,
+     aliveInSquad:ids.reduce((n,id)=>n+bridge.state.squads[id].alive,0),
+     order:all?'mixed':own.order,
+     formation:all?'mixed':own.formation,
+     fireMode:all?
+       (ids.some(id=>['bow','musket'].includes(bridge.state.squads[id].type))
+         ?'mixed':null):
+       (['bow','musket'].includes(own.type)?own.fireMode:null),
+     commandSquadId:ids[0],
+     lastResult:fourCommand.lastResult?
+       {ok:fourCommand.lastResult.someAccepted,
+        action:fourCommand.lastResult.action,
+        reason:fourCommand.lastResult.reason}:c.lastResult
+   };
+ }
+ function setFourSquadSelection(index,all=false){
+   if(!fourCommand)throw Error('Missing real native G5.4 allied squads');
+   const own=fourSquadEngine.snapshot(fourCommand).authorizedFriendlySquadIds;
+   if(all)fourSquadEngine.pickAll(fourCommand);
+   else {
+     if(!Number.isInteger(index)||index<0||index>=own.length)
+       throw Error('Invalid allied unit index');
+     fourSquadEngine.select(fourCommand,own[index]);
+   }
+   drawMetrics();
+   return fourSquadEngine.snapshot(fourCommand);
+ }
  function drawSharedCommandHUD(state=null){
    if(!commandHUD||!sharedCommand)return;
-   const c=state||sharedArmyCommands.snapshot(sharedCommand);
+   const c=state||displayCommand();
    const roles={bow:'OKÇU',musket:'TÜFEKÇİ',pike:'MIZRAKÇI',sword:'KILIÇLI'};
    const status=commandHUD.querySelector('[data-army-status]');
    const header=commandHUD.querySelector('[data-army-heading]');
@@ -268,6 +309,20 @@
        ' · '+latest.action+
        (latest.reason?' · '+latest.reason:'')
      :'J: mevzi · K: ileri · Z: saf · X: kol · 7/8/9: ateş';
+   const choose=fourCommand?fourSquadEngine.snapshot(fourCommand):null;
+   for(const b of commandHUD.querySelectorAll('[data-four-squad-index]')){
+     const id=choose?.authorizedFriendlySquadIds[Number(b.dataset.fourSquadIndex)];
+     const sq=bridge.state.squads[id];
+     if(!sq)continue;
+     b.textContent=(roles[sq.type]||sq.type)+' · '+sq.alive+'/'+sq.startCount;
+     const selected=choose.selectedSquadIds.length===1&&
+       choose.selectedSquadIds[0]===id;
+     b.setAttribute('aria-pressed',String(selected));
+     b.disabled=!sq.alive;b.style.borderColor=selected?'#e9b657':'#52676a';
+   }
+   const allBtn=commandHUD.querySelector('[data-four-squad-all]');
+   if(allBtn)allBtn.setAttribute('aria-pressed',String(
+     choose?.selectedSquadIds.length===4));
    for(const el of commandHUD.querySelectorAll('[data-field-kind]')){
      const kind=el.dataset.fieldKind,selected=el.dataset.fieldCommand;
      const actual=kind==='order'?c.order:
@@ -350,7 +405,10 @@
      ctx.beginPath();ctx.arc(x,y,squad.playerControlled?8:5,0,Math.PI*2);
      ctx.stroke();
    }
-   const own=state.squads[state.playerSquadId];
+   const primary=fourCommand?
+     fourSquadEngine.snapshot(fourCommand).selectedSquadIds[0]:
+     state.playerSquadId;
+   const own=state.squads[primary];
    if(own?.routeGoal){
      ctx.strokeStyle='#ffe099';ctx.fillStyle='#ffe099';
      ctx.beginPath();ctx.moveTo(sx(own.x),sz(own.z));
@@ -378,12 +436,13 @@
      if(!yes)throw Error('Native G5.4 player squad rejected '+value);
      drawMetrics();return;
    }
-   const result=sharedArmyCommands.execute(sharedCommand,{
-     action,value,x,z
-   });
+   const result=fourCommand?
+     fourSquadEngine.execute(fourCommand,{action,value,x,z}):
+     sharedArmyCommands.execute(sharedCommand,{action,value,x,z});
    if(fieldMapOpen)drawFieldMap();
-   lastArmyCommandNotice=result.ok
+   lastArmyCommandNotice=(result.ok||result.someAccepted)
      ?'G5.4 komutu kabul etti: '+action+' '+(value??'')+
+       (fourCommand?' · '+result.accepted+'/'+result.results.length+' bölük':'')+
        (Number.isFinite(x)?' ('+x.toFixed(0)+', '+z.toFixed(0)+')':'')
      :'G5.4 reddetti: '+result.reason;
    drawMetrics();
@@ -436,6 +495,13 @@
      '<div style="margin-top:3px;font-weight:800"><span data-army-blue style="color:#91d0ff">MAVİ 70</span>',
      ' / <span data-army-red style="color:#f19a8c">KIRMIZI 70</span></div>',
      '<div data-army-status style="font-size:11px;margin:5px 0"></div>',
+     fieldLabel('AK-04a · Hangi bölüğü yöneteceksin?'),
+     '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">',
+     '<button type="button" data-four-squad-index="0">Bölük 1</button>',
+     '<button type="button" data-four-squad-index="1">Bölük 2</button>',
+     '<button type="button" data-four-squad-index="2">Bölük 3</button>',
+     '<button type="button" data-four-squad-all>Tüm 4 Bölük</button>',
+     '</div>',
      fieldLabel('Bölük emirleri'),fieldRow,fieldButtons(fieldOrderKeys,'order'),'</div>',
      fieldLabel('Formasyonlar'),fieldRow,fieldButtons(fieldFormationKeys,'formation'),'</div>',
      fieldLabel('Menzilli birlik ateşi'),fieldRow,fieldButtons(fieldFireKeys,'fire'),'</div>',
@@ -459,6 +525,11 @@
    commandHUD.addEventListener('pointerdown',event=>event.stopPropagation());
    commandHUD.addEventListener('click',event=>event.stopPropagation());
    scene.appendChild(commandHUD);
+   for(const b of commandHUD.querySelectorAll('[data-four-squad-index]'))
+     b.addEventListener('click',()=>
+       setFourSquadSelection(Number(b.dataset.fourSquadIndex)));
+   commandHUD.querySelector('[data-four-squad-all]')
+     .addEventListener('click',()=>setFourSquadSelection(0,true));
    for(const b of commandHUD.querySelectorAll('[data-field-kind]'))
      b.addEventListener('click',()=>sendArmy(b.dataset.fieldKind,b.dataset.fieldCommand));
    for(const b of commandHUD.querySelectorAll('[data-field-spacing]'))
@@ -652,7 +723,9 @@
  globalThis.ktkSiegeSharedBattleSessionStatus=()=>liveSession?
    sharedBattleSession.snapshot(liveSession):null;
  globalThis.ktkSiegeArmyCommandStatus=()=>sharedCommand?
-   sharedArmyCommands.snapshot(sharedCommand):null;
+   displayCommand():null;
+ globalThis.ktkSiegeFourSquadCommandStatus=()=>fourCommand?
+   fourSquadEngine.snapshot(fourCommand):null;
  globalThis.ktkSiegeArmyStatus=()=>({
    ...bridgeApi.snapshot(bridge),
    renderedRealSoldierCount:groups.reduce((a,g)=>a+g.units.length,0),
@@ -666,6 +739,9 @@
    fullSiegeBattleReady:false,
    playerControlsRealArmySquad:true,
    sharedNativeG54ArmyCommandContract:!!sharedCommand,
+   realFourSquadNativeCommandConnected:!!fourCommand,
+   realFourSquadNativeCommand:fourCommand?
+     fourSquadEngine.snapshot(fourCommand):null,
    sharedNativeG54BattleSessionConnected:!!liveSession,
    sharedNativeG54BattleSession:liveSession?
      sharedBattleSession.snapshot(liveSession):null,
