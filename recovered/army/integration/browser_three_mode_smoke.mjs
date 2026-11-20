@@ -156,7 +156,16 @@ try{
  const beforeTicks=(await fieldStatus()).nativeCommandTicks;
  await page.waitForTimeout(650);
  const afterTicks=await fieldStatus();
- assert(afterTicks.nativeCommandTicks>beforeTicks);
+ assert(afterTicks.nativeCommandTicks>beforeTicks,
+   'Native G5.4 command time frozen: '+JSON.stringify({
+     beforeTicks,afterTicks:afterTicks.nativeCommandTicks,
+     realNativeGameTick:afterTicks.realNativeGameTick,
+     health:afterTicks.realNativePlayerHealth,
+     winner:afterTicks.realNativeArmyWinner,
+     phase:afterTicks.realOriginalMatchPhase,
+     isActive:afterTicks.realOriginalGameIsActive,
+     resumed:afterTicks.deliberateCommanderResumes
+   }));
  assert.equal(afterTicks.physicalPlayerControlledSquadCount,1);
  assert.equal(afterTicks.uncommandedAlliedSquadsKeepOriginalAI,true);
  report.checks.push('PASS_AK04B_REAL_FIELD_FOUR_INDIVIDUAL_AND_ALL_ORDERS_NATIVE_TICKS');
