@@ -191,16 +191,15 @@ test('AK-05c2 authentic blue native musket must have 3D first contact and origin
    to={x:c.x,y:2.7,z:c.z};
  const actual=catapult.rayHit(c,from,to);
  assert(actual?.distance>0,'No physical catapult AABB in native blue line');
- const solver=ballistics.create({map});
  const hp=c.hp;
  const denied=catapult.hitByDefender(c,{
-   soldierId:gun.id,weapon:'musket',damage:28,from,to,ballistics:solver
+   soldierId:gun.id,weapon:'musket',damage:28,from,to,ballistics
  });
  assert.equal(denied.ok,false);
  assert.equal(c.hp,hp);
  const hit=catapult.hitByDefender(c,{
    soldierId:gun.id,weapon:'musket',damage:28,from,to,
-   ballistics:solver,verifiedPost:true
+   ballistics,verifiedPost:true
  });
  assert.equal(hit.ok,true,JSON.stringify(hit));
  assert.equal(hit.dealt,28);
@@ -209,7 +208,7 @@ test('AK-05c2 authentic blue native musket must have 3D first contact and origin
  assert.equal(catapult.snapshot(c).counterBatteryNativeMusket15s,true);
  const early=catapult.hitByDefender(c,{
    soldierId:gun.id,weapon:'musket',damage:28,from,to,
-   ballistics:solver,verifiedPost:true
+   ballistics,verifiedPost:true
  });
  assert.equal(early.ok,false);
  assert.equal(early.reason,'native-musket-cadence');
@@ -217,7 +216,7 @@ test('AK-05c2 authentic blue native musket must have 3D first contact and origin
  b.state.elapsed+=15;
  const again=catapult.hitByDefender(c,{
    soldierId:gun.id,weapon:'musket',damage:28,from,to,
-   ballistics:solver,verifiedPost:true
+   ballistics,verifiedPost:true
  });
  assert.equal(again.ok,true);
  assert.equal(c.hp,hp-56);
