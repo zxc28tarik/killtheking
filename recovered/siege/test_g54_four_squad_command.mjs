@@ -41,7 +41,7 @@ test('AK-04a original G5.4 source SHA and 140 real soldiers / 8 native squads un
  assert.equal(m.genuineSquadCount,8);
  assert.equal(m.visibleControlledSquadCount,4);
  assert.equal(m.physicalPlayerControlledSquadCount,1);
- assert.deepEqual(m.authorizedFriendlySquadIds.map(i=>sq(b,i).type).sort(),
+ assert.deepEqual([...m.authorizedFriendlySquadIds].map(i=>sq(b,i).type).sort(),
    ['bow','musket','pike','sword']);
  assert.equal(m.nativeG54SourceEdited,false);
  assert.equal(m.originalPlayerDamageAndWeaponAuthorityUnchanged,true);
