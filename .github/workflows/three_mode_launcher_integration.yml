@@ -6,6 +6,7 @@ on:
     paths:
       - 'recovered/army/integration/audit_g54_army_hud.mjs'
       - 'recovered/army/integration/build_three_mode_launcher.mjs'
+      - 'recovered/army/integration/g54-field-four-squad-runtime.js'
       - 'recovered/army/integration/test_three_mode_launcher.mjs'
       - 'recovered/army/integration/browser_three_mode_smoke.mjs'
       - 'recovered/siege/build_siege_player_candidate.mjs'
@@ -57,6 +58,7 @@ jobs:
       - name: Parse all new genuine three-mode source modules
         run: |
           node --check recovered/army/integration/build_three_mode_launcher.mjs
+          node --check recovered/army/integration/g54-field-four-squad-runtime.js
           node --check recovered/army/integration/test_three_mode_launcher.mjs
           node --check recovered/army/integration/browser_three_mode_smoke.mjs
       - name: Compile exact source-pinned October FFA game
@@ -128,7 +130,10 @@ jobs:
              m.siegeAK03bFieldStylePointerLockAndAim!==true||
              m.siegeAK04aNativeFourSquadCastleOrders!==true||
              m.siegeAK04aFourDistinctAlliedNativeSquads!==true||
-             m.fieldArmyUnmodifiedSourceFourSquadUIIntegrated!==false||
+             m.fieldArmyUnmodifiedSourceFourSquadUIIntegrated!==true||
+             m.fieldArmyOriginalPayloadByteIdentical!==true||
+             m.AK04bFieldNativeFourSquadRuntimeAddon!==true||
+             m.AK04bFieldRuntimeOnlyInjection!==true||
              m.siegeAK03bSharedInputWASDJumpSlide!==true||
              m.siegeAK03bOriginalFieldPhysicsPorted!==false||
              m.siegeNativeFieldMovementPhysicsCopied!==false||
