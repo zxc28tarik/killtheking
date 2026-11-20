@@ -21,7 +21,8 @@
  let active=null,mapZoom=240,mapAction='destination',mapClicks=0,
    mapAccept=0,domCommands=0,keyCommands=0,statesCreated=0;
  const TYPES={sword:'Kılıçlı',pike:'Mızrakçı',bow:'Okçu',musket:'Tüfekçi'};
- const FORM_KEYS={KeyZ:'line',KeyX:'column',KeyC:'square',KeyV:'square',
+ // Original field C=square and V=quick ability. Preserve V combat input.
+ const FORM_KEYS={KeyZ:'line',KeyX:'column',KeyC:'square',
    KeyB:'wedge',KeyM:'loose',KeyI:'shield'};
  const ORDER_KEYS={KeyG:'follow',KeyJ:'hold',KeyK:'advance',
    KeyL:'charge',KeyU:'retreat',KeyY:'flank',KeyN:'skirmish'};
