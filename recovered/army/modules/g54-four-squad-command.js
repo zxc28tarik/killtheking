@@ -42,7 +42,7 @@
      engine,bridge,map,realOwnerId:bridge.state.playerSquadId,
      team:bridge.state.playerTeam,
      authorized:own.map(s=>s.id),
-     selected:[bridge.state.playerSquadId],
+     selected:[bridge.state.playerSquadId],activeDelegates:new Set(),
      attempts:0,accepted:0,rejected:0,scopeTicks:0,
      scopeActive:false,scopedBefore:null,lastResult:null};
  }
@@ -56,7 +56,7 @@
      state.playerTeam!==c.team||
      !own?.playerControlled||own.team!==c.team||
      state.squads.filter(s=>s.playerControlled).length!==
-       (c.scopeActive?4:1)||
+       (c.scopeActive?1+c.activeDelegates.size:1)||
      c.authorized.some(id=>state.squads[id]?.team!==c.team))
      throw Error('AK-04a real G5.4 authority/ownership lost');
    if(state.playerHealth<=0||c.bridge.scenario?.phase==='RESULT'||
@@ -142,7 +142,10 @@
        ok:result.ok,reason:result.reason,
        nativeRevision:c.bridge.state.squads[id].commandRevision});
      c.attempts++;
-     if(result.ok)c.accepted++;else c.rejected++;
+     if(result.ok){
+       c.accepted++;
+       if(id!==c.realOwnerId)c.activeDelegates.add(id);
+     }else c.rejected++;
    }
    const summary={action:command.action,value:command.value??null,
      x:command.x??null,z:command.z??null,
@@ -156,9 +159,11 @@
    if(!guard(c))return false;
    if(c.scopeActive)throw Error('Double entered G5.4 command scope');
    const state=c.bridge.state;
-   const previous=c.authorized.map(id=>({id,was:state.squads[id].playerControlled}));
+   const previous=[c.realOwnerId,...c.activeDelegates].map(id=>({
+     id,was:state.squads[id].playerControlled
+   }));
    try{
-     for(const id of c.authorized)state.squads[id].playerControlled=true;
+     for(const p of previous)state.squads[p.id].playerControlled=true;
      c.scopeActive=true;c.scopedBefore=previous;c.scopeTicks++;
    }catch(e){
      for(const p of previous)state.squads[p.id].playerControlled=p.was;
@@ -209,6 +214,9 @@
      originalPlayerDamageAndWeaponAuthorityUnchanged:true,
      opponentSquadsNeverSelectable:true,
      scopedAILeaseActive:c.scopeActive,
+     delegatedCommandedSquadIds:[...c.activeDelegates],
+     uncommandedAlliedSquadsKeepOriginalAI:true,
+     humanCommandsTakePriorityOverNativeLadderAutomation:true,
      scopedNativeAIHoursFake:false,
      nativeCommandTicks:c.scopeTicks,
      attempts:c.attempts,accepted:c.accepted,rejected:c.rejected,
