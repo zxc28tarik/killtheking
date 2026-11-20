@@ -97,6 +97,51 @@ try{
  assert.equal(await child().locator('#meadow-army-demo-btn').getAttribute('aria-pressed'),'true');
  report.checks.push('PASS_ORIGINAL_140_ARMY_CHROMIUM_MODE_STILL_PLAYABLE: '+
   JSON.stringify(army));
+ // AK-04b: unchanged historical field game, four authentic allied squads.
+ assert.equal(await child().locator('[data-ak04-selector="hud"]').count(),1);
+ assert.equal(await child().locator('[data-ak04-pick]').count(),8);
+ assert.equal(await child().locator('[data-ak04-all]').count(),2);
+ await child().locator('#play-btn').click();
+ await page.waitForFunction(()=>{
+   const w=document.querySelector('#stage iframe')?.contentWindow;
+   return w?.ktkFieldFourSquadStatus?.()?.gameStarted===true;
+ },{timeout:85000});
+ const fieldStatus=()=>page.evaluate(()=>document.querySelector('#stage iframe')
+   ?.contentWindow?.ktkFieldFourSquadStatus?.());
+ const initialField=await fieldStatus();
+ assert.equal(initialField.genuineSoldierCount,140);
+ assert.equal(initialField.genuineSquadCount,8);
+ assert.equal(initialField.visibleControlledSquadCount,4);
+ assert.equal(initialField.physicalPlayerControlledSquadCount,1);
+ assert.equal(initialField.playerTeam,'blue');
+ assert.equal(initialField.authorizedFriendlySquadIds.length,4);
+ const originalStatus=await page.evaluate(()=>document.querySelector('#stage iframe')
+   ?.contentWindow?.krunkerArenaStatus?.());
+ assert.equal(originalStatus.meadowBattleMode,true);
+ assert.equal(originalStatus.meadowBattle.playerSquadId,
+   initialField.truePhysicalPlayerSquadId);
+ report.checks.push('PASS_AK04B_REAL_ORIGINAL_FIELD_BLUE_FOUR_SQUAD_AUTHORITY_140_NATIVE');
+ for(let i=0;i<4;i++){
+   await child().locator('[data-ak04-selector="hud"] [data-ak04-pick="'+i+'"]').click();
+   const selected=await fieldStatus();
+   assert.deepEqual(selected.selectedSquadIds,
+     [selected.authorizedFriendlySquadIds[i]]);
+   await child().locator('[data-ak04-action="order"][data-ak04-value="hold"]').click();
+   const after=await fieldStatus();
+   assert.equal(after.squads.find(s=>s.id===selected.selectedSquadIds[0]).order,'hold');
+ }
+ await child().locator('[data-ak04-selector="hud"] [data-ak04-all]').click();
+ assert.equal((await fieldStatus()).selectedSquadIds.length,4);
+ await child().locator('[data-ak04-action="order"][data-ak04-value="charge"]').click();
+ assert((await fieldStatus()).squads.every(s=>s.order==='charge'));
+ assert.equal((await fieldStatus()).physicalPlayerControlledSquadCount,1);
+ const beforeTicks=(await fieldStatus()).nativeCommandTicks;
+ await page.waitForTimeout(650);
+ const afterTicks=await fieldStatus();
+ assert(afterTicks.nativeCommandTicks>beforeTicks);
+ assert.equal(afterTicks.physicalPlayerControlledSquadCount,1);
+ assert.equal(afterTicks.uncommandedAlliedSquadsKeepOriginalAI,true);
+ report.checks.push('PASS_AK04B_REAL_FIELD_FOUR_INDIVIDUAL_AND_ALL_ORDERS_NATIVE_TICKS');
  await page.screenshot({path:resolve(dir,'three-main-mode-2-army.png'),fullPage:true});
  await switchMode('siege');
  await page.waitForFunction(()=>{
