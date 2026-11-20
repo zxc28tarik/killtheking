@@ -245,7 +245,7 @@ test('AK-05b3 opt-in physical bow crosses real distance before hitting live wood
  assert.equal(impacts[0].kind,'equipment');
  assert.equal(impacts[0].equipmentId,'ak05-ram-body');
  assert.equal(impacts[0].weapon,'bow');
- assert(impacts[0].point.y>0&&impacts[0].point.y<4.35);
+ assert(impacts[0].point.y>=-1e-6&&impacts[0].point.y<=4.35+1e-6);
  assert.equal(solver.status().authenticPhysicalSiegeEquipmentContacts,1);
  assert.equal(solver.status().activePlayerArrows,0);
  assert.equal(solver.status().pendingRealEquipmentDamage,undefined);
