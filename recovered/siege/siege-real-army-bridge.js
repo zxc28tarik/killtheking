@@ -115,7 +115,7 @@
      captureAIEngine=null,defenderAIEngine=null,
      rampartAIEngine=null,ballisticsAPI=null,
      weaponBalance=null,defenderRender=null,
-     fourSquadCommandEngine=null}={}){
+     fourSquadCommandEngine=null,ramEngine=null}={}){
    required(armyEngine,['create','step','snapshot','setWorldObstacles',
      'setPlayerPosition','drainCombatEvents','drainPlayerHits',
      'issueOrder','setDestination'],'G5.4');
@@ -148,6 +148,7 @@
      defenderAI:null,defenderAIEngine,
      rampartAI:null,rampartAIEngine,
      multiSquadCommand:null,fourSquadCommandEngine,
+     ram:null,ramEngine,
      terrainBlockedMoves:0,
      terrainRecoveredMoves:0,
      lastGateOpen:false,logs:[],ended:false
@@ -218,6 +219,17 @@
          'select','execute'],'AK-04a real four allied G5.4 squads');
      bridge.multiSquadCommand=fourSquadCommandEngine.create({
        engine:armyEngine,bridge,map
+     });
+   }
+   if(ramEngine){
+     if(!bridge.multiSquadCommand||!bridge.structureCombat)
+       throw Error('AK-05a siege ram needs real G5.4 team orders and authentic gate combat');
+     required(ramEngine,['create','enlist','afterNativeTick','snapshot'],
+       'AK-05a genuine soldier-operated castle siege ram');
+     bridge.ram=ramEngine.create({
+       engine:armyEngine,state,scenario,map,objectives,
+       fourSquadAuthority:bridge.multiSquadCommand,
+       fourSquadEngine:fourSquadCommandEngine
      });
    }
    return bridge;
@@ -354,6 +366,11 @@
      const gateEvent=bridge.structureCombatEngine.afterNativeTick(
        bridge.structureCombat);
      if(gateEvent.opened)refreshObstacles(bridge);
+     if(bridge.ram){
+       bridge.ramEngine.afterNativeTick(bridge.ram);
+       if(bridge.lastGateOpen!==bridge.scenario.gate.open)
+         refreshObstacles(bridge);
+     }
      if(bridge.ladderAI&&elapsedDelta>0)
        bridge.ladderAIEngine.afterNativeTick(
          bridge.ladderAI,elapsedDelta);
@@ -434,6 +451,8 @@
      realStructureDamageConnected:!!b.structureCombat,
      genuineSoldierGateStrikes:b.structureCombat?
        b.structureCombatEngine.snapshot(b.structureCombat):null,
+     siegeRamConnected:!!b.ram,
+     siegeRam:b.ram?b.ramEngine.snapshot(b.ram):null,
      terrainBlockedSoldierMoves:b.terrainBlockedMoves,
      terrainRecoveredSoldierMoves:b.terrainRecoveredMoves,
      rejectsInvalidStonePenetrationWithoutTeleport:true,
