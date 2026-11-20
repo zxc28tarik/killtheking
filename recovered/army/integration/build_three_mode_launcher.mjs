@@ -38,6 +38,16 @@ function expectSource(check,id){
  if(!/^[A-Za-z0-9+/=\s]+$/.test(encoded))throw Error('Invalid source base64 '+id);
  return Buffer.from(encoded,'base64').toString('utf8');
 }
+function fieldArmyAddon(){
+ const module=readFileSync(resolve(base,'../modules/g54-four-squad-command.js'),'utf8');
+ const runtime=readFileSync(resolve(base,'g54-field-four-squad-runtime.js'),'utf8');
+ for(const [name,code]of [['four-squad module',module],['field runtime',runtime]]){
+   if(!code.includes('AK-04')||/<\/script/i.test(code))
+     throw Error('Unsafe or unverified AK-04b native field adapter: '+name);
+   new vm.Script(code,{filename:name+'.js'});
+ }
+ return '<script>'+module+'</script>'+'<script>'+runtime+'</script>';
+}
 export function addCastleThirdMode(twoModeHtml, siegeHtml){
  if(typeof twoModeHtml!=='string'||typeof siegeHtml!=='string')
    throw Error('Give exact two-mode HTML and real S3D1 siege HTML');
@@ -91,7 +101,23 @@ export function addCastleThirdMode(twoModeHtml, siegeHtml){
  replace(oldTitleExpr,
    'frame.title=mode==="ffa"?"Kill the King Serbest Arena":mode==="army"?"Kill the King G5.4 Ordu Savaşı":"Kill the King Kale Kuşatması";');
  replace(oldInfoExpr,
-   'info.textContent=mode==="ffa"?"FFA / TDM • Oyuncu da hedeflenir":mode==="army"?"G5.4 • 70 mavi + 70 kırmızı • oyuncu hedefleme düzeltmesi":"KALE KUŞATMASI • 70 saldıran + 70 savunan • kapı, sur ve iç kale";');
+   'info.textContent=mode==="ffa"?"FFA / TDM • Oyuncu da hedeflenir":mode==="army"?"G5.4 • 70 mavi + 70 kırmızı • dört dost bölük komutası":"KALE KUŞATMASI • 70 saldıran + 70 savunan • kapı, sur ve iç kale";');
+ // AK-04b: the original field game stays EXACTLY unchanged in the
+ // original inert base64 archive. Only the DECODED army frame receives a
+ // self-contained, source-audited, offline opt-in native command adapter.
+ // Existing original FFA and S3D1 siege are never touched.
+ const originalLoad='stage.appendChild(frame);frame.srcdoc=decode("ktk-source-"+mode);';
+ const addonB64=Buffer.from(fieldArmyAddon(),'utf8').toString('base64');
+ const runtimeLoad='stage.appendChild(frame);'+
+   'const original=decode("ktk-source-"+mode);'+
+   'const ak04b='+JSON.stringify(addonB64)+';'+
+   'if(mode==="army"){'+
+     'if(original.split("</body>").length!==2)throw Error("AK04b original body changed");'+
+     'const bytes=Uint8Array.from(atob(ak04b),c=>c.charCodeAt(0));'+
+     'const addon=new TextDecoder("utf-8",{fatal:true}).decode(bytes);'+
+     'frame.srcdoc=original.replace("</body>",addon+"</body>");'+
+   '}else frame.srcdoc=original;';
+ replace(originalLoad,runtimeLoad);
  // Add the entire S3D1 game as a third inert payload, immediately before
  // the original controller script. No external file dependencies.
  one(result,oldPayloadEnd);
@@ -138,13 +164,16 @@ export function build({dualFile,siegeFile,outFile}={}){
   siegeAK03bFieldStylePointerLockAndAim:true,
   siegeAK04aNativeFourSquadCastleOrders:true,
   siegeAK04aFourDistinctAlliedNativeSquads:true,
-  fieldArmyUnmodifiedSourceFourSquadUIIntegrated:false,
+  fieldArmyUnmodifiedSourceFourSquadUIIntegrated:true,
+  fieldArmyOriginalPayloadByteIdentical:true,
+  AK04bFieldNativeFourSquadRuntimeAddon:true,
+  AK04bFieldRuntimeOnlyInjection:true,
   siegeAK03bSharedInputWASDJumpSlide:true,
   siegeAK03bOriginalFieldPhysicsPorted:false,
   siegeNativeFieldMovementPhysicsCopied:false,
   siegeFullyUnifiedCameraEngine:false,
   siegeExactOriginalArmyControlHUDShared:false,
-  siegeAllFourSquadsIndividuallySelectable:false,
+  siegeAllFourSquadsIndividuallySelectable:true,
   siegeReal3DBallisticsAvailable:false,
   siegePlayer3DMusketAndPhysicalBow:true,
   siegeNativeG54Soldier3DBallistics:false,
