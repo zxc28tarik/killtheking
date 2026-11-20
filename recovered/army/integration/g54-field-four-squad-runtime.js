@@ -103,7 +103,7 @@
    return status();
  }
  function controls(id){
-   const suffix=id==='map'?'map':'hud';
+   const suffix=id;
    const bar=document.createElement('div');
    bar.className='ak04-field-selector';
    bar.dataset.ak04Selector=suffix;
@@ -143,6 +143,18 @@
  const originalCommander=controls('hud');
  hud.prepend(originalCommander);
  const tacticalCommander=controls('map');
+ // Native G5.4's original left-bottom HUD can extend past a visible
+ // play viewport. This floating, fixed commander stays clickable while
+ // the historic HUD and original game layout remain untouched.
+ const floating=controls('floating');
+ floating.id='ak04-field-floating-commander';
+ floating.style.cssText='position:fixed;right:12px;top:75px;z-index:110;'+
+   'width:min(455px,calc(100vw - 24px));max-height:43vh;overflow:auto;'+
+   'display:none;background:rgba(13,27,44,.97);padding:9px 10px;'+
+   'border:2px solid #d8ac64;border-radius:9px;'+
+   'box-shadow:0 8px 25px rgba(0,0,0,.7);color:#f8dfb1;'+
+   'font:700 11px system-ui;pointer-events:auto';
+ document.body.append(floating);
  const header=mapOverlay.querySelector('h2, h3, strong, p')||mapOverlay.firstElementChild;
  if(header?.parentElement)header.insertAdjacentElement('afterend',tacticalCommander);
  else mapOverlay.prepend(tacticalCommander);
@@ -164,6 +176,18 @@
    extra.append(b);
  }
  originalCommander.append(extra);
+ const floatCommands=document.createElement('div');
+ floatCommands.style.cssText='display:flex;flex-wrap:wrap;gap:4px;margin-top:7px';
+ for(const [action,value,label]of specs){
+   const btn=document.createElement('button');
+   btn.type='button';btn.textContent=label;
+   btn.dataset.ak04Action=action;btn.dataset.ak04Value=value;
+   btn.style.cssText='border:1px solid #8a754e;background:#263449;'+
+     'color:#f9e7c1;border-radius:5px;padding:5px 7px;cursor:pointer';
+   btn.addEventListener('click',()=>command(action,value));
+   floatCommands.append(btn);
+ }
+ floating.append(floatCommands);
  function render(){
    if(!active)return;
    const snap=shared.snapshot(active.cmd);
@@ -172,7 +196,10 @@
    const summary='Seçim: '+names.join(' + ')+
      ' • Fiziksel oyuncu: '+TYPES[active.state.playerType]+
      ' • gerçek G5.4 komut';
-   for(const bar of [originalCommander,tacticalCommander]){
+   floating.style.display=
+     !hud.classList.contains('hidden')&&
+     mapOverlay.classList.contains('hidden')?'block':'none';
+   for(const bar of [originalCommander,tacticalCommander,floating]){
      bar.querySelector('[data-ak04-status]').textContent=summary;
      for(const b of bar.querySelectorAll('[data-ak04-pick]')){
        const i=Number(b.dataset.ak04Pick),s=snap.squads[i];
