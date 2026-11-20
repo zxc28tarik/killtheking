@@ -56,8 +56,9 @@ export function addCastleThirdMode(twoModeHtml, siegeHtml){
  if(!siegeHtml.startsWith('<!')||!siegeHtml.includes('S3D1 GERÇEK OYUNCU SAVAŞ ADAYI')||
    !siegeHtml.includes('ktkSiegePlayerCombatStatus')||
    !siegeHtml.includes('ktkSiegeArmyStatus')||
-   sourceScripts(siegeHtml).length!==26||
+   sourceScripts(siegeHtml).length!==27||
    !siegeHtml.includes('KTKSiegeRam')||
+   !siegeHtml.includes('KTKSiegeCatapult')||
    !siegeHtml.includes('ktkSiegeArmyStatus')||
    !siegeHtml.includes('KTKG54FourSquadCommand')||
    !siegeHtml.includes('ktkSiegeFourSquadCommandStatus')||
