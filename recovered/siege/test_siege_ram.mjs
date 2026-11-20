@@ -242,3 +242,30 @@ test('AK-05a real red pikes actually march to staffed ram from untouched initial
  assert.equal(b.state.soldiers.length,140);
  assert.equal(b.state.squads.filter(s=>s.playerControlled).length,1);
 });
+
+
+test('AK-05a native pikes sustain an unassisted ram approach toward the real closed gate',()=>{
+ const {b,r}=make();
+ assert.equal(ram.enlist(r).ok,true);
+ let topCrew=0,topProgress=0;
+ for(let i=0;i<650;i++){
+   bridge.step(b,.08);
+   const v=ram.snapshot(r);
+   topCrew=Math.max(topCrew,v.crewCount);
+   topProgress=Math.max(topProgress,v.physicalProgress);
+   if(v.gateOpen||v.strikeCount>0||b.scenario.phase==='RESULT')break;
+ }
+ const last=ram.snapshot(r);
+ console.log('AK05A_NATIVE_LONG_MARCH',JSON.stringify({
+   maxCrew:topCrew,topProgress,lastProgress:last.physicalProgress,
+   ramState:last.state,ramHits:last.strikeCount,
+   gateHp:last.gateHp,alivePikes:b.state.soldiers.filter(u=>
+     u.squadId===r.pikeId&&u.alive).length,
+   originalPikeRoute:b.state.squads[r.pikeId].routeGoal
+ }));
+ assert(topCrew>=2,'Native pikes cannot keep crew with the ram');
+ assert(topProgress>.35,
+   'Ram must make substantive physical progress on real native soldier AI');
+ assert.equal(b.state.soldiers.length,140);
+ assert.equal(b.state.squads.filter(s=>s.playerControlled).length,1);
+});
