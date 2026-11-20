@@ -212,3 +212,33 @@ test('ram state rejects malformed commands and simulation clock rewinds',()=>{
  r.state.tick=-1;
  assert.throws(()=>ram.afterNativeTick(r),/clock regressed/);
 });
+
+
+test('AK-05a real red pikes actually march to staffed ram from untouched initial spawns (no QA teleport)',()=>{
+ const {b,r}=make();
+ const crew=b.state.soldiers.filter(u=>u.squadId===r.pikeId);
+ const initial=crew.map(u=>({id:u.id,x:u.x,z:u.z,hp:u.hp}));
+ assert.equal(ram.enlist(r).ok,true);
+ let maxCrew=0,maxProgress=0,steps=0;
+ for(let i=0;i<820&&!b.scenario.gate.open;i++){
+   bridge.step(b,.08);
+   steps++;
+   maxCrew=Math.max(maxCrew,b.ram.crewCount);
+   maxProgress=Math.max(maxProgress,ram.snapshot(r).physicalProgress);
+   if(maxProgress>.04)break;
+   if(b.scenario.phase==='RESULT')break;
+ }
+ const displaced=crew.filter((u,i)=>Math.hypot(u.x-initial[i].x,
+   u.z-initial[i].z)>1.2).length;
+ console.log('AK05A_UNASSISTED_G54_CREW_DIAGNOSTIC',JSON.stringify({
+   steps,maxCrew,maxProgress,displaced,ramState:r.stateName,
+   finalG54PikeSquadOrder:b.state.squads[r.pikeId].order,
+   finalG54PikeGoal:b.state.squads[r.pikeId].routeGoal,
+   alivePikes:crew.filter(u=>u.alive).length
+ }));
+ assert(displaced>0,'No original native G5.4 pikes moved from spawn');
+ assert(maxCrew>=2,'No actual native G5.4 pikes ever reached staffed ram');
+ assert(maxProgress>0,'Actual G5.4 crew arrived but ram never moved');
+ assert.equal(b.state.soldiers.length,140);
+ assert.equal(b.state.squads.filter(s=>s.playerControlled).length,1);
+});
