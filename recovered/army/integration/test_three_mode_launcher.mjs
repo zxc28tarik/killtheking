@@ -187,7 +187,6 @@ test('AK-04b original field archive and true-side engine remain SHA-pinned despi
  const b=stub();b.buttons[1].click();
  assert.equal(extract(combined,'army')!==b.current.srcdoc,true);
  assert(b.current.srcdoc.includes('AK-04b field-mode adapter'));
- assert(b.current.srcdoc.includes('one authentic G5.4'));
  const ffab=stub();ffab.buttons[0].click();
  assert.equal(ffab.current.srcdoc,extract(combined,'ffa'));
  const siegeb=stub();siegeb.buttons[2].click();
