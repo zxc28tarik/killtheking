@@ -17,6 +17,7 @@
  const sharedArmyCommands=globalThis.KTKSharedG54ArmyCommands||null;
  const sharedBattleSession=globalThis.KTKSharedG54BattleSession||null;
  const fourSquadEngine=globalThis.KTKG54FourSquadCommand||null;
+ const ramMachine=globalThis.KTKSiegeRam||null;
  if(rampartAI&&!defenderAI)throw Error('S4B1 rampart counterfire requires native S4A defense');
  if(defenderAI&&!captureAI)throw Error('S4 blue role defender requires S3C3 real capture');
  if(captureAI&&!ladderAI)throw Error('S3C3 objective assault requires actual S3C2 ladder bridge');
@@ -74,6 +75,31 @@
    panel.querySelector('h3').textContent='S4B1 • GERÇEK 3B SUR SAVUNUCULARI';
    panel.querySelector('p').textContent='Gerçek G5.4 mavi okçu/tüfekçilerden 8 asker oyunun başlangıcında sur üstünde mevzilenir. Oklar 3B gerçek uçuş, tüfekler 3B ilk temas ile kırmızı askerlere karşılık verir; zarar ve kadans gerçek G5.4 kaynağından gelir. Mavi kara savunması S4A devam eder. Oyuncuya 3B karşı ateş ve tam karşılıklı bot fizik S4B2 için açık.';
  }
+  if(ramMachine){
+    const ramPanel=document.createElement('section');
+    ramPanel.id='ak05-siege-ram-panel';
+    ramPanel.style.cssText='border:1px solid #be9852;border-radius:7px;background:#28302e;margin-top:9px;padding:9px';
+    ramPanel.innerHTML=[
+      '<strong style="color:#ffda91">AK-05a • KOÇBAŞI VE GERÇEK MÜRETTEBAT</strong>',
+      '<p style="font-size:11px;line-height:1.5;margin:5px 0">',
+      'Kırmızı mızrakçıları koçbaşına yönlendir. Araç yalnız yakındaki',
+      ' canlı G5.4 askerleriyle ilerler; kapıya yeterli askerle ulaşırsa vurur.',
+      '</p>',
+      '<button type="button" id="ak05-ram-enlist">Mızrakçıları koçbaşına ata</button>',
+      '<div id="ak05-ram-status" role="status" style="font-size:11px;margin-top:6px"></div>'
+    ].join('');
+    panel.appendChild(ramPanel);
+    ramPanel.querySelector('button').addEventListener('click',()=>{
+      if(!bridge?.ram)return;
+      const outcome=ramMachine.enlist(bridge.ram);
+      const label=ramPanel.querySelector('#ak05-ram-status');
+      label.dataset.lastAssignment=outcome.ok?'accepted':'rejected';
+      label.textContent=outcome.ok?
+        'Gerçek G5.4 mızrakçı bölüğüne koçbaşı emri gönderildi.':
+        'Emir reddedildi: '+outcome.reason;
+      drawMetrics();
+    });
+  }
   el.insertBefore(panel,el.firstChild);
  const dummy=new THREE.Object3D();
  const groups=preview.tokens.map(inst=>({
@@ -85,6 +111,7 @@
    THREE,scene:preview.scene,groups
  })||null;
  let bridge=null,sharedCommand=null,liveSession=null,fourCommand=null,lastArmyCommandNotice='';
+ let ramVisual=null;
  let commandHUD=null,shortcutsAccepted=0;
  let fieldTactical=null,fieldMapOpen=false,fieldMapAction='position';
  let fieldMapOpens=0,fieldMapCloses=0,fieldMapClicks=0,fieldMapAccepted=0;
@@ -103,7 +130,8 @@
      ballisticsAPI:rampartAI?globalThis.KTKSiege3DBallistics:null,
      weaponBalance:rampartAI?bal:null,
      defenderRender:rampartAI?{THREE,scene:preview.scene}:null,
-     fourSquadCommandEngine:fourSquadEngine
+     fourSquadCommandEngine:fourSquadEngine,
+     ramEngine:ramMachine
    });
    if(bridge.state.soldiers.length!==140||
       bridge.state.squads.length!==8)
@@ -121,6 +149,14 @@
      mode:'siege',playerTeam:team
    })||null;
    if(!liveSession)throw Error('AK-03a missing native shared battle session');
+   if(ramVisual){
+     ramMachine.removeVisual(ramVisual,preview.scene);
+     ramVisual=null;
+   }
+   if(ramMachine){
+     if(!bridge.ram)throw Error('AK-05a real ram absent from G5.4 bridge');
+     ramVisual=ramMachine.mountVisual(bridge.ram,{THREE,scene:preview.scene});
+   }
    lastArmyCommandNotice='';
    if(commandHUD)drawSharedCommandHUD();
    for(const g of groups){
@@ -216,6 +252,23 @@
        ' • Gerçek mavi asker adımları: '+
        view.realDefenderRoleCoordination.actualGuidedDefenderSteps
      :'';
+   if(ramMachine&&bridge?.ram){
+     const info=ramMachine.snapshot(bridge.ram);
+     const btn=document.getElementById('ak05-ram-enlist');
+     const desc=document.getElementById('ak05-ram-status');
+     btn.disabled=bridge.playerTeam!=='red'||info.assigned||
+       bridge.scenario.gate.open||bridge.scenario.phase==='RESULT';
+     btn.textContent=bridge.playerTeam==='red'?
+       (info.assigned?'Koçbaşı mürettebatı görevlendirildi':
+         'Mızrakçıları koçbaşına ata'):
+       'Koçbaşı yalnız kırmızı saldıranlara açık';
+     desc.textContent='Koçbaşı: '+info.state+
+       ' • Gerçek mızraklı: '+info.crewCount+
+       ' • İlerleme: '+Math.round(info.physicalProgress*100)+'%'+
+       ' • Vuruş: '+info.strikeCount+
+       ' • Kapı: '+info.gateHp+' HP'+
+       (info.assigned?' • Görev verildi':' • Görev bekliyor');
+   }
    const gateCaption=siegeCombat
      ?' • Gerçek asker kapı vuruşları: '+view.genuineSoldierGateStrikes.strikes+
        ' / kalan kapı HP: '+view.scenario.gate.hp
@@ -237,6 +290,7 @@
      bridgeApi.step(bridge,dt);
    if(nativePostStep)nativePostStep(dt);
    renderRealSoldiers();
+   if(ramVisual&&bridge?.ram)ramMachine.renderVisual(bridge.ram,ramVisual);
    if(frames++%8===0)drawMetrics();
  }
  function onReset(scenario){
@@ -388,6 +442,13 @@
      const pos=spec.lanes[side].entry;
      ctx.fillStyle='#f7df87';ctx.beginPath();
      ctx.arc(sx(pos[0]),sz(pos[1]),5,0,Math.PI*2);ctx.fill();
+   }
+   if(bridge.ram){
+     const ram=ramMachine.snapshot(bridge.ram);
+     const rx=sx(ram.x),ry=sz(ram.z);
+     ctx.fillStyle='#ffcd73';ctx.strokeStyle='#f19e41';ctx.lineWidth=2;
+     ctx.fillRect(rx-6,ry-9,12,18);
+     ctx.strokeRect(rx-6,ry-9,12,18);
    }
    for(const u of state.soldiers){
      if(!u.alive)continue;
@@ -741,6 +802,9 @@
    playerControlsRealArmySquad:true,
    sharedNativeG54ArmyCommandContract:!!sharedCommand,
    realFourSquadNativeCommandConnected:!!fourCommand,
+   realPikeOperatedSiegeRamConnected:!!bridge.ram,
+   actualSiegeRamStatus:bridge.ram?ramMachine.snapshot(bridge.ram):null,
+   siegeRamThreeJSVisualMeshes:ramVisual?.meshCount||0,
    realFourSquadNativeCommand:fourCommand?
      fourSquadEngine.snapshot(fourCommand):null,
    sharedNativeG54BattleSessionConnected:!!liveSession,
