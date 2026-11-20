@@ -10,6 +10,7 @@ import {createRequire} from 'node:module';
 const require=createRequire(import.meta.url);
 const THREE=require('../../vendor/three-r128.js');
 const ram=require('./siege-ram.js');
+const traversal=require('./siege-traversal.js');
 const map=require('./siege-map.js');
 const objectives=require('./siege-objectives.js');
 const bridge=require('./siege-real-army-bridge.js');
@@ -268,4 +269,70 @@ test('AK-05a native pikes sustain an unassisted ram approach toward the real clo
    'Ram must make substantive physical progress on real native soldier AI');
  assert.equal(b.state.soldiers.length,140);
  assert.equal(b.state.squads.filter(s=>s.playerControlled).length,1);
+});
+
+test('AK-05b1 3D chassis blocks genuine FPS/TPS ground movement but not elevated player',()=>{
+ const {r}=make();
+ const body=ram.collider(r);
+ assert.equal(body.id,'ak05-ram-body');
+ assert.deepEqual([body.w,body.d,body.h],[5.5,7.3,4.35]);
+ traversal.setDynamicColliderProvider(()=>[ram.collider(r)]);
+ try{
+  const p={x:-8,y:0,z:r.z};
+  const moved=traversal.move(p,{x:35,z:0},.25,map.spec,r.scenario,
+    traversal.RADIUS,traversal.HEIGHT);
+  assert.equal(moved.blockedX,true);
+  assert(moved.x<-body.w/2-traversal.RADIUS+0.02);
+  assert.equal(traversal.overlaps({x:moved.x,y:0,z:moved.z},
+    map.spec,r.scenario),false);
+  assert.equal(traversal.overlaps({x:0,y:0,z:r.z},
+    map.spec,r.scenario),true);
+  assert.equal(traversal.overlaps({x:0,y:6,z:r.z},
+    map.spec,r.scenario),false);
+ }finally{traversal.setDynamicColliderProvider(null);}
+});
+test('AK-05b1 real G5.4 ground infantry cannot traverse the siege chassis',()=>{
+ const {r}=make();
+ traversal.setDynamicColliderProvider(()=>[ram.collider(r)]);
+ try{
+  const p={x:0,y:0,z:r.z-7};
+  const step=traversal.move(p,{x:0,z:30},.25,
+    map.spec,r.scenario,.65,2.6);
+  assert.equal(step.blockedZ,true);
+  assert(step.z<r.z-ram.BODY.d/2-.65+.02);
+  assert.equal(traversal.overlaps({x:step.x,y:0,z:step.z},
+    map.spec,r.scenario,.65,2.6),false);
+ }finally{traversal.setDynamicColliderProvider(null);}
+});
+test('AK-05b1 advancing vehicle cannot newly contact living native player',()=>{
+ const {r}=make();
+ assert.equal(ram.enlist(r).ok,true);
+ A.step(r.state,.08);
+ realCrewNear(r,2); // QA manual position, original native soldier IDs
+ r.state.playerPosition={x:r.x,z:r.z+ram.BODY.d/2+.88};
+ r.state.playerActive=true;r.state.playerHealth=100;
+ const start=r.z;
+ const result=ram.afterNativeTick(r);
+ assert.equal(r.z,start);
+ assert.equal(result.state,'WAITING_FOR_CLEAR_RAM_PATH');
+ assert.equal(result.livingActorBlockedAdvances,1);
+ assert.equal(result.actualGateDamage,0);
+ assert.equal(result.defenderCanDamageRamImplemented,false);
+ r.state.playerPosition={x:50,z:-100};
+ A.step(r.state,.08);realCrewNear(r,2);
+ ram.afterNativeTick(r);
+ assert(r.z>start);
+});
+test('AK-05b1 invalid collider fails closed and unregister restores unchanged castle',()=>{
+ const {r}=make();
+ assert.throws(()=>traversal.setDynamicColliderProvider(3),
+    /Expected function or null/);
+ traversal.setDynamicColliderProvider(()=>[{
+    id:'bad',x:NaN,y:0,z:0,w:1,h:1,d:1,solid:true
+ }]);
+ assert.throws(()=>traversal.activeColliders(map.spec,r.scenario),
+    /Invalid live castle dynamic collider/);
+ traversal.setDynamicColliderProvider(null);
+ assert.equal(traversal.activeColliders(map.spec,r.scenario)
+    .some(c=>c.id==='ak05-ram-body'),false);
 });

@@ -20,6 +20,27 @@
  });
  const finite=x=>typeof x==='number'&&Number.isFinite(x);
  const r2=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
+ // AK-05b1 physical chassis size matches the visible roof.
+ const BODY=Object.freeze({w:5.5,d:7.3,h:4.35});
+ function collider(c){ensure(c);return {
+   id:'ak05-ram-body',x:c.x,y:0,z:c.z,
+   w:BODY.w,d:BODY.d,h:BODY.h,solid:true
+ };}
+ function touch(c,unit,nextZ,radius){
+   if(!unit||!finite(unit.x)||!finite(unit.z))return false;
+   if((unit.siegeY??0)>=BODY.h)return false;
+   const x=unit.x-Math.max(c.x-BODY.w/2,Math.min(unit.x,c.x+BODY.w/2));
+   const z=unit.z-Math.max(nextZ-BODY.d/2,Math.min(unit.z,nextZ+BODY.d/2));
+   return x*x+z*z<radius*radius-1e-9;
+ }
+ function obstructedAdvance(c,nextZ){
+   const soldiers=c.state.soldiers.some(u=>u.alive&&u.hp>0&&
+     !touch(c,u,c.z,.65)&&touch(c,u,nextZ,.65));
+   const p=c.state.playerPosition;
+   const player=c.state.playerActive&&c.state.playerHealth>0&&p&&
+     !touch(c,p,c.z,.85)&&touch(c,p,nextZ,.85);
+   return soldiers||player;
+ }
  function create({engine,state,map,scenario,objectives,
       fourSquadAuthority=null,fourSquadEngine=null}={}){
    const gate=map?.spec?.boxes?.find(b=>b.id==='gate-main');
@@ -52,7 +73,7 @@
      movingSeconds:0,strokeCountdown:SETTINGS.strikeSeconds,
      strikeCount:0,actualGateDamage:0,
      lastRallyZ:SETTINGS.startZ,retargetTimer:0,
-     retargets:0,rejected:0,
+     retargets:0,rejected:0,blockedAdvances:0,
      strikeEvents:[]
    };
  }
@@ -129,7 +150,13 @@
    if(c.z<c.terminalZ-.001){
      const advance=Math.min(c.terminalZ-c.z,SETTINGS.walkSpeed*dt*
        Math.min(1,c.crewCount/5));
-     c.z=Math.round((c.z+advance)*1000000)/1000000;
+     const nextZ=Math.round((c.z+advance)*1000000)/1000000;
+     if(obstructedAdvance(c,nextZ)){
+       c.blockedAdvances++;
+       c.stateName='WAITING_FOR_CLEAR_RAM_PATH';
+       return snapshot(c);
+     }
+     c.z=nextZ;
      c.movingSeconds+=dt;
      c.stateName='MOVING_WITH_G54_CREW';
      // Crew does not teleport with the model. The original pike G5.4
@@ -197,7 +224,11 @@
      originalG54WeaponDamageUnchanged:true,
      artificialGateDamageWithoutCrew:false,
      bluePlayerCannotOperateAttackersRam:true,
-     collisionWithPlayerImplemented:false,
+     collisionWithPlayerImplemented:true,
+     collisionWithGroundSoldiersImplemented:true,
+     defenderCanDamageRamImplemented:false,
+     livingActorBlockedAdvances:c.blockedAdvances,
+     ramBodyDimensions:{...BODY},
      independentManciniAndSiegeTowerImplemented:false
    };
  }
@@ -255,6 +286,6 @@
        o.material.dispose?.();
    });
  }
- return Object.freeze({create,enlist,afterNativeTick,snapshot,
-   mountVisual,renderVisual,removeVisual,SETTINGS});
+ return Object.freeze({create,enlist,afterNativeTick,snapshot,collider,
+   mountVisual,renderVisual,removeVisual,SETTINGS,BODY});
 });

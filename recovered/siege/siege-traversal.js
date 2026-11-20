@@ -12,10 +12,24 @@
  const finite=x=>typeof x==='number'&&Number.isFinite(x);
  const pos=p=>p&&finite(p.x)&&finite(p.y)&&finite(p.z);
  const gateState=s=>Boolean(s?.gate?.open);
+ // Siege-only dynamic collision. Remains empty in original S1/S2 previews.
+ let dynamicColliderProvider=null;
+ function setDynamicColliderProvider(provider=null){
+   if(provider!==null&&typeof provider!=='function')
+     throw Error('Expected function or null for siege dynamic collider');
+   dynamicColliderProvider=provider;
+ }
  function activeColliders(spec,s){
    if(!spec?.boxes||!s?.lanes)throw Error('Siege scene contract missing');
-   return spec.boxes.filter(b=>b.solid&&
+   const fixed=spec.boxes.filter(b=>b.solid&&
      (b.id!=='gate-main'||!gateState(s)));
+   if(!dynamicColliderProvider)return fixed;
+   const extras=dynamicColliderProvider();
+   if(!Array.isArray(extras)||extras.some(b=>!b||!b.solid||
+       !['x','y','z','w','h','d'].every(k=>finite(b[k]))||
+       b.w<=0||b.h<=0||b.d<=0))
+     throw Error('Invalid live castle dynamic collider');
+   return fixed.concat(extras);
  }
  function circleBox(p,r,b){
    const dx=p.x-Math.max(b.x-b.w/2,Math.min(p.x,b.x+b.w/2));
@@ -170,6 +184,7 @@
  }
  return Object.freeze({
    RADIUS,HEIGHT,SPEED,activeColliders,overlaps,move,route,
+   setDynamicColliderProvider,
    routeNodes,beginClimb,stepClimb,spawn,bounded
  });
 });

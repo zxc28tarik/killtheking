@@ -155,6 +155,10 @@
    }
    if(ramMachine){
      if(!bridge.ram)throw Error('AK-05a real ram absent from G5.4 bridge');
+     if(typeof ramMachine.collider!=='function'||
+        typeof traversal.setDynamicColliderProvider!=='function')
+       throw Error('AK-05b1 needs live human and native soldier collision');
+     traversal.setDynamicColliderProvider(()=>[ramMachine.collider(bridge.ram)]);
      ramVisual=ramMachine.mountVisual(bridge.ram,{THREE,scene:preview.scene});
    }
    lastArmyCommandNotice='';
@@ -805,6 +809,8 @@
    realPikeOperatedSiegeRamConnected:!!bridge.ram,
    actualSiegeRamStatus:bridge.ram?ramMachine.snapshot(bridge.ram):null,
    siegeRamThreeJSVisualMeshes:ramVisual?.meshCount||0,
+   siegeRamDynamicGroundColliderActive:!!ramVisual&&
+     !!ramMachine.collider&&!!traversal.setDynamicColliderProvider,
    realFourSquadNativeCommand:fourCommand?
      fourSquadEngine.snapshot(fourCommand):null,
    sharedNativeG54BattleSessionConnected:!!liveSession,
