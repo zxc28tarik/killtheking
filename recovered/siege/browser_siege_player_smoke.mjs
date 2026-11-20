@@ -39,6 +39,15 @@ try{
  const scene=()=>page.evaluate(()=>window.ktkSiegePreviewStatus());
  const initial=await player(),a=await army(),view=await scene();
  assert.equal(a.authentic140Soldiers,140);
+ assert.equal(a.realPikeOperatedSiegeRamConnected,true);
+ assert(a.siegeRamThreeJSVisualMeshes>=12);
+ assert.equal(a.actualSiegeRamStatus.assigned,false);
+ assert.equal(a.actualSiegeRamStatus.actualGateDamage,0);
+ assert.equal(a.actualSiegeRamStatus.gateHp,600);
+ assert.equal(a.actualSiegeRamStatus.noNativeSoldierPositionsInvented,true);
+ assert.equal(await page.locator('#ak05-ram-enlist').count(),1);
+ assert.equal(await page.locator('#ak05-ram-enlist').isEnabled(),true);
+ report.checks.push('PASS_AK05A_REAL_3D_RAM_NATIVE_140_UNASSIGNED_NO_FICTITIOUS_GATE_DAMAGE');
  assert.equal(a.sharedNativeG54BattleSessionConnected,true);
  assert.equal(view.explorer.sharedG54InputContract,true);
  assert.equal(initial.sharedFieldSiegePlayerInputContract,true);
@@ -299,12 +308,32 @@ try{
  await page.keyboard.press('Escape');
  assert.equal((await army()).fieldG54PMapOpen,false);
  report.checks.push('PASS_AK03B_REAL_CHROMIUM_FPS_POINTER_LOCK_FREE_LOOK_AND_P_MAP_RELEASE');
+ // Send a genuine siege-only order to the actual G5.4 red pike squad.
+ // No enemy damage/instant movement is implied by the human click.
+ await page.locator('#ak05-ram-enlist').click();
+ const actualRam=(await army()).actualSiegeRamStatus;
+ assert.equal(actualRam.assigned,true);
+ assert.equal(actualRam.operatorOrderAccepted,true);
+ assert.equal(actualRam.realNativeRedPikeSquadId,
+   (await multi()).squads.find(s=>s.type==='pike').id);
+ assert.equal(actualRam.actualGateDamage,0);
+ assert.equal(actualRam.strikeCount,0);
+ await page.waitForTimeout(350);
+ const advancingRam=(await army()).actualSiegeRamStatus;
+ assert.equal(advancingRam.nativeTick>0,true);
+ assert.equal(advancingRam.assigned,true);
+ assert.equal((await multi()).physicalPlayerControlledSquadCount,1);
+ report.checks.push('PASS_AK05A_REAL_USER_CLICK_PIKES_ASSIGNMENT_NATIVE_ORDER_WITH_NO_INSTANT_HIT');
  await page.screenshot({path:resolve(dir,'s3d1-native-human-fps-140-real-army.png'),
   fullPage:true});
  await page.locator('#siege-team-blue').click();
  await page.waitForFunction(()=>window.ktkSiegePlayerCombatStatus?.().playerTeam==='blue',
    {timeout:85000});
  const blue=await player(),blueArmy=await army();
+ assert.equal(blueArmy.realPikeOperatedSiegeRamConnected,true);
+ assert.equal(blueArmy.actualSiegeRamStatus.assigned,false);
+ assert.equal(await page.locator('#ak05-ram-enlist').isDisabled(),true);
+ report.checks.push('PASS_AK05A_BLUE_PLAYER_CANNOT_ORDER_ATTACKER_RAM_AND_RESTART_RESETS');
  const blueFour=await multi();
  assert.equal(blueFour.playerTeam,'blue');
  assert.equal(blueFour.authorizedFriendlySquadIds.length,4);

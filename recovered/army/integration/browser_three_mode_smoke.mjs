@@ -199,6 +199,14 @@ try{
  assert.equal(siege.army.realRampart3DDefenderAIConnected,true);
  assert.equal(siege.army.sharedNativeG54ArmyCommandContract,true);
  assert.equal(siege.army.realFourSquadNativeCommandConnected,true);
+ assert.equal(siege.army.realPikeOperatedSiegeRamConnected,true);
+ assert(siege.army.siegeRamThreeJSVisualMeshes>=12);
+ assert.equal(siege.army.actualSiegeRamStatus.gateHp,600);
+ assert.equal(siege.army.actualSiegeRamStatus.assigned,false);
+ assert.equal(siege.army.actualSiegeRamStatus.actualGateDamage,0);
+ assert.equal(await child().locator('#ak05-siege-ram-panel').count(),1);
+ assert.equal(await child().locator('#ak05-ram-enlist').count(),1);
+ report.checks.push('PASS_AK05A_CASTLE_ONLY_REAL_3D_RAM_NATIVE_G54_PIKES_NO_GATE_HIT');
  assert.equal(siege.army.realFourSquadNativeCommand.genuineSoldierCount,140);
  assert.equal(siege.army.realFourSquadNativeCommand.visibleControlledSquadCount,4);
  assert.equal(siege.army.realFourSquadNativeCommand.physicalPlayerControlledSquadCount,1);
