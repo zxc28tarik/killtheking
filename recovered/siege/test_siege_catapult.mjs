@@ -96,11 +96,13 @@ test('only 2 actual native archers cannot fire, third real living archer enables
  const b=make(),c=b.catapult;
  assert.equal(catapult.enlist(c).ok,true);
  const all=positionCrew(b);
- all[2].alive=false;all[2].hp=0;
+ // Crew eligibility can disappear by physical distance, not by
+ // fabricating a native death outside G5.4's own alive reconciliation.
+ all[2].x=115;all[2].z=-116;
  bridge.step(b,.08);
  assert.equal(catapult.snapshot(c).crewCount,2);
  assert.equal(catapult.snapshot(c).shots,0);
- all[2].alive=true;all[2].hp=all[2].maxHp;
+ all[2].x=c.x+1.8;all[2].z=c.z-5;
  bridge.step(b,.08);
  assert.equal(catapult.snapshot(c).shots,1);
  assert.equal(catapult.snapshot(c).projectileInFlight,true);
@@ -142,7 +144,7 @@ test('three-native-archer crew cannot bypass original catapult reload or score e
 test('the real 3D castle wall takes impact first if gate path is physically blocked',()=>{
  const b=make(),c=b.catapult;
  catapult.enlist(c);positionCrew(b);
- c.gate.x=-30;
+ c.gate={...c.gate,x:-30}; // QA-only target shift; actual castle wall unchanged
  bridge.step(b,.08);
  let count=0;
  while(c.projectile&&count++<100)bridge.step(b,.08);
