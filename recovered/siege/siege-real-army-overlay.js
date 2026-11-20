@@ -80,7 +80,7 @@
     ramPanel.id='ak05-siege-ram-panel';
     ramPanel.style.cssText='border:1px solid #be9852;border-radius:7px;background:#28302e;margin-top:9px;padding:9px';
     ramPanel.innerHTML=[
-      '<strong style="color:#ffda91">AK-05a • KOÇBAŞI VE GERÇEK MÜRETTEBAT</strong>',
+      '<strong style="color:#ffda91">AK-05b2 • KOÇBAŞI VE SAVUNUCU ATIŞLARI</strong>',
       '<p style="font-size:11px;line-height:1.5;margin:5px 0">',
       'Kırmızı mızrakçıları koçbaşına yönlendir. Araç yalnız yakındaki',
       ' canlı G5.4 askerleriyle ilerler; kapıya yeterli askerle ulaşırsa vurur.',
@@ -91,11 +91,14 @@
     panel.appendChild(ramPanel);
     ramPanel.querySelector('button').addEventListener('click',()=>{
       if(!bridge?.ram)return;
-      const outcome=ramMachine.enlist(bridge.ram);
+      const status=ramMachine.snapshot(bridge.ram);
+      const outcome=status.assigned?
+        ramMachine.reassign(bridge.ram):ramMachine.enlist(bridge.ram);
       const label=ramPanel.querySelector('#ak05-ram-status');
       label.dataset.lastAssignment=outcome.ok?'accepted':'rejected';
       label.textContent=outcome.ok?
-        'Gerçek G5.4 mızrakçı bölüğüne koçbaşı emri gönderildi.':
+        (status.assigned?'Gerçek G5.4 mızrakçılar yeniden çağrıldı.':
+         'Gerçek G5.4 mızrakçı bölüğüne koçbaşı emri gönderildi.'):
         'Emir reddedildi: '+outcome.reason;
       drawMetrics();
     });
@@ -158,7 +161,10 @@
      if(typeof ramMachine.collider!=='function'||
         typeof traversal.setDynamicColliderProvider!=='function')
        throw Error('AK-05b1 needs live human and native soldier collision');
-     traversal.setDynamicColliderProvider(()=>[ramMachine.collider(bridge.ram)]);
+     traversal.setDynamicColliderProvider(()=>{
+       const body=ramMachine.collider(bridge.ram);
+       return body?[body]:[];
+     });
      ramVisual=ramMachine.mountVisual(bridge.ram,{THREE,scene:preview.scene});
    }
    lastArmyCommandNotice='';
@@ -260,18 +266,25 @@
      const info=ramMachine.snapshot(bridge.ram);
      const btn=document.getElementById('ak05-ram-enlist');
      const desc=document.getElementById('ak05-ram-status');
-     btn.disabled=bridge.playerTeam!=='red'||info.assigned||
-       bridge.scenario.gate.open||bridge.scenario.phase==='RESULT';
-     btn.textContent=bridge.playerTeam==='red'?
-       (info.assigned?'Koçbaşı mürettebatı görevlendirildi':
-         'Mızrakçıları koçbaşına ata'):
-       'Koçbaşı yalnız kırmızı saldıranlara açık';
+     const requiresCrew=info.crewCount<info.minimumPushers;
+     btn.disabled=bridge.playerTeam!=='red'||info.destroyed||
+       bridge.scenario.gate.open||bridge.scenario.phase==='RESULT'||
+       (info.assigned&&!requiresCrew);
+     btn.textContent=info.destroyed?'KOÇBAŞI YIKILDI':
+       bridge.playerTeam!=='red'?'Koçbaşı yalnız kırmızı saldıranlara açık':
+       info.assigned?(requiresCrew?'Mızrakçıları yeniden görevlendir':
+         'Mürettebat görevde'):
+       'Mızrakçıları koçbaşına ata';
      desc.textContent='Koçbaşı: '+info.state+
+       ' • Dayanıklılık: '+info.hp+' / '+info.maxHp+' HP'+
+       ' • Savunucu isabeti: '+info.defenderHits+
        ' • Gerçek mızraklı: '+info.crewCount+
+       ' • Yeniden emir: '+info.crewReassignments+
        ' • İlerleme: '+Math.round(info.physicalProgress*100)+'%'+
        ' • Vuruş: '+info.strikeCount+
        ' • Kapı: '+info.gateHp+' HP'+
-       (info.assigned?' • Görev verildi':' • Görev bekliyor');
+       (info.destroyed?' • SAVUNUCULAR ARACI İMHA ETTİ':
+         info.assigned?' • Görev verildi':' • Görev bekliyor');
    }
    const gateCaption=siegeCombat
      ?' • Gerçek asker kapı vuruşları: '+view.genuineSoldierGateStrikes.strikes+
@@ -811,6 +824,8 @@
    siegeRamThreeJSVisualMeshes:ramVisual?.meshCount||0,
    siegeRamDynamicGroundColliderActive:!!ramVisual&&
      !!ramMachine.collider&&!!traversal.setDynamicColliderProvider,
+   siegeRamGenuineBlueRampartTargeting:!!bridge.ram&&
+     !!bridge.rampartAI&&bridge.rampartAI.ram===bridge.ram,
    realFourSquadNativeCommand:fourCommand?
      fourSquadEngine.snapshot(fourCommand):null,
    sharedNativeG54BattleSessionConnected:!!liveSession,

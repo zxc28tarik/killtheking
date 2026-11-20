@@ -64,8 +64,11 @@
    const ai={
      kind:'S4B1_G54_BLUE_RAMPART_3D_SOLDIER_COUNTERFIRE',
      state,engine,balance,map,scenario,traversal,ballistics:shots,
+     ballisticsAPI,ram:null,ramEngine:null,
      posts,ownerByArrow,initialPosts:posts.size,initialRoles:byClass,
      musketShots:0,bowShots:0,totalHits:0,blockedShots:0,
+     ramShots:0,ramHits:0,ramDamage:0,ramBlockedShots:0,
+     ramMissedShots:0,
      missedShots:0,alliedBlocks:0,
      guardSteps:0,visualArrowImpacts:0,exposedG54BotAttackPrevented:0,
      nativeDamageOnly:true
@@ -73,6 +76,67 @@
    return ai;
  }
  function postFor(ai,u){return ai?.posts?.get(u?.id)||null;}
+ function attachRam(ai,ramEngine,ram){
+   if(ai?.kind!=='S4B1_G54_BLUE_RAMPART_3D_SOLDIER_COUNTERFIRE'||
+      ai.ram||!ram||ram.state!==ai.state||ram.scenario!==ai.scenario||
+      !ramEngine?.rayHit||!ramEngine?.hitByDefender||!ramEngine?.snapshot)
+     throw Error('AK-05b2 requires genuine S4B1 rampart and one siege ram');
+   ai.ram=ram;ai.ramEngine=ramEngine;
+   return true;
+ }
+ function chooseRamTarget(ai,u){
+   if(!ai.ram||!ai.ramEngine||u.type!=='musket'||
+      ai.ram.destroyed||ai.scenario.phase==='RESULT')return null;
+   const range=ai.engine.TYPES[u.type].range;
+   const from={x:u.x,y:(u.siegeY??0)+UNIT_EYE,z:u.z};
+   const to={x:ai.ram.x,y:2.8,z:ai.ram.z};
+   const length=Math.hypot(to.x-from.x,to.y-from.y,to.z-from.z);
+   if(length>range||length<2)return null;
+   const chassis=ai.ramEngine.rayHit(ai.ram,from,to);
+   if(!chassis)return null;
+   // Real G5.4 soldiers and the original stone walls prevent a
+   // defender from seeing/hitting the wooden engine through cover.
+   const first=ai.ballisticsAPI.trace({state:ai.state,
+     map:ai.map,scenario:ai.scenario,from,to,team:'blue'});
+   if(first&&first.distance<chassis.distance-.000001)return null;
+   return {from,to,range};
+ }
+ function shootRam(ai,u,post,site){
+   const state=ai.state;
+   // Existing native G5.4 dispersion is applied to this NEW equipment
+   // target. The original field AI and approved damage table stay intact.
+   const roll=(n)=>((Math.imul((n+1)|0,1664525)+1013904223)>>>0)/4294967296;
+   const h=roll(u.id+post.shots*17+state.tick);
+   const v=roll(u.id*3+post.shots*23+state.tick*7);
+   const aim=ai.balance.aimedShot('musket',site.from,
+     {x:site.to.x,y:0,z:site.to.z},h,v,3.2);
+   const point=aim?.point||site.to;
+   const delta={x:point.x-site.from.x,y:point.y-site.from.y,
+     z:point.z-site.from.z};
+   const distance=Math.hypot(delta.x,delta.y,delta.z);
+   if(!finite(distance)||distance<1e-7)
+     throw Error('Invalid real G5.4 rampart ram aim');
+   const actualTo={x:site.from.x+delta.x/distance*site.range,
+     y:site.from.y+delta.y/distance*site.range,
+     z:site.from.z+delta.z/distance*site.range};
+   // Bound ray length to actual original role range.
+   const contact=ai.ramEngine.rayHit(ai.ram,site.from,actualTo);
+   const result=contact?ai.ramEngine.hitByDefender(ai.ram,{
+     soldierId:u.id,weapon:'musket',
+     damage:ai.ramEngine.SETTINGS.defenderMusketDamage,
+     from:site.from,to:actualTo,verifiedPost:true,
+     ballistics:ai.ballisticsAPI
+   }):{ok:false,reason:'miss'};
+   ai.ramShots++;ai.musketShots++;post.shots++;
+   if(result.ok){ai.ramHits++;ai.ramDamage+=result.dealt;}
+   else if(result.reason==='covered')ai.ramBlockedShots++;
+   else ai.ramMissedShots++;
+   post.nextShotAt=state.elapsed+ai.balance.SHOT_INTERVAL.musket;
+   post.lastTarget='AK05B2_REAL_SIEGE_RAM';
+   u.attackPose=.30;
+   u.stamina=Math.max(.45,u.stamina-.018);
+   return result;
+ }
  function prepareNativeStep(ai,dt){
    if(ai?.kind!=='S4B1_G54_BLUE_RAMPART_3D_SOLDIER_COUNTERFIRE'||
       !finite(dt)||dt<=0||dt>.25)
@@ -205,7 +269,13 @@
      if(!u?.alive||ai.state.elapsed+1e-9<post.nextShotAt)continue;
      if(u.squadId===ai.state.playerSquadId)
        throw Error('S4B1 player commanded squad entered native rampart AI');
+     // One shared 15s native musket clock: every other available shot
+     // can contest the siege engine when real 3D visibility is clear.
+     // No additional instant off-clock shot is created.
      const target=chooseTarget(ai,u);
+     const ramSite=u.type==='musket'&&
+       (post.shots%2===0||!target)?chooseRamTarget(ai,u):null;
+     if(ramSite){shootRam(ai,u,post,ramSite);continue;}
      if(!target)continue;
      shoot(ai,u,post,target);
    }
@@ -227,6 +297,12 @@
      botPlayer3DCounterfire:false,
      reciprocalNative3DRampartTargeting:false,
      musket3DShots:ai.musketShots,bow3DShots:ai.bowShots,
+     nativeBlueRampartRamShots:ai.ramShots,
+     nativeBlueRampartRamImpacts:ai.ramHits,
+     siegeEquipmentDamage:ai.ramDamage,
+     ramShotsBlockedByReal3DCover:ai.ramBlockedShots,
+     missedRamShots:ai.ramMissedShots,
+     ramActive:!!ai.ram&&!ai.ram.destroyed,
      successfulAuthenticSoldierHits:ai.totalHits,
      castleBlockedShots:ai.blockedShots,
      friendlyBodyBlocks:ai.alliedBlocks,
@@ -241,6 +317,6 @@
  }
  return Object.freeze({
    create,prepareNativeStep,preservePhysicalPost,afterNativeStep,
-   postFor,snapshot,POST_Y
+   postFor,attachRam,snapshot,POST_Y
  });
 });

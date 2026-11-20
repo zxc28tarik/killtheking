@@ -132,3 +132,7 @@ node recovered/siege/build_siege_preview.mjs recovered/siege/dist/KillTheKing_Ku
 ## Sıradaki adım: S3D2 asıl FPS hareketi ve S4 mavi kale savunması
 
 S3C1 doğal kapı, S3C2 iki merdiven, S3C3 109,36 oyun saniyelik saldırgan keep zaferi ve kısa test süresinde savunucu zaman zaferi kaynak testlerinde PASS. **S3D1:** gerçek HP, konum, 4 zemin silahı ve G5.4 asker hasarı PASS; **S3D2:** asıl FFA hareket/animasyon ve 3B balistik/yaşanan tam maç entegrasyonu AÇIK; **S4:** mavi 48 canlı askerin iç kaleyi koruyamayıp başka bölgede kalmasını iyileştir. S2 keşif avatarı artık S3D1'de gerçek G5.4 silah/HP kullanır fakat asıl FFA hareket motoru değildir; kullanıcı onayı olmadan dengeyi nihai hale getirme veya `main`e merge yapma.
+
+### AK-05b2 koçbaşı savunma adayı
+
+AK-05a orijinal G5.4 kırmızı mızrakçı atamasını, yürüyüşünü ve gerçek S1 kapı HP bağlantısını korur. AK-05b1 dinamik kale çarpışması üzerine AK-05b2'de gerçek 3B görüş hattı açık olan mavi G5.4 sur tüfekçileri mevcut S4B1 atış saatinden bir atışı koçbaşına ayırabilir. Geçici dayanıklılık 360, ekipman HP kaybı mavi tüfek isabetinde 32'dir. Bu özgün G5.4 asker silahı yerine yeni yapı HP mekanizmasıdır. 0 HP koçbaşını etkisiz hale getirir; komutan, canlı gerçek mızrakçıları aynı native yetkiyle yeniden çağırabilir. Bu ara aday, okçuların koçbaşına atışını, fiziksel gerçek Windows GPU/oyuncu kabulünü, mancınık ve kuşatma kulesini henüz tamamlamaz.

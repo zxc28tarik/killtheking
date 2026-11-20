@@ -306,3 +306,13 @@ AK-01 kaynak kodu: `recovered/army/modules/shared-g54-army-commands.js` + `recov
 
 
 **AK-05a nihai gerçek tarayıcı ve 3-mod artefakt kabulü (20 Kasım 2026):** [Üç modlu birleşik build/Chromium #44714266097](https://github.com/zxc28tarik/killtheking/actions/runs/44714266097) **2/2 SUCCESS**. 159/159 otomatik kaynak testi, orijinal Arena→Meydan→Kale→Arena giriş/çıkış ve `PASS_AK05A_CASTLE_ONLY_REAL_3D_RAM_NATIVE_G54_PIKES_NO_GATE_HIT`, `pageErrors=[]`, `consoleErrors=[]`. [Bağımsız Kale aday/Chromium #44714266109](https://github.com/zxc28tarik/killtheking/actions/runs/44714266109) **2/2 SUCCESS**; `PASS_AK05A_REAL_USER_CLICK_PIKES_ASSIGNMENT_NATIVE_ORDER_WITH_NO_INSTANT_HIT` ve mavi takım yetki reddi PASS. **İndirip çıkarıp çevrimdışı açılabilir tek üç modlu HTML ZIP:** [GitHub Actions artifact #14618187313](https://github.com/zxc28tarik/killtheking/actions/runs/44714266097/artifacts/14618187313). [Gerçek Chromium ekran görüntüleri/JSON #14619560387](https://github.com/zxc28tarik/killtheking/actions/runs/44714266097/artifacts/14619560387). Bu kanıtlar Windows gerçek donanım GPU/insan oynanış kabulü yerine geçmez. `main` değişmedi ve PR #50 taslak.
+
+### AK-05 kuşatma teçhizatı güncellemesi — 20 Kasım 2026
+
+- [x] AK-05a — 3B koçbaşı, gerçek G5.4 mızrakçılarla yürüyüş ve S1 kapı hasarı (önceki 159/159 ve Chromium kanıtı).
+- [x] AK-05b1 — Yalnız Kale Kuşatması'nda oyuncu/asker swept çarpışmasına bağlı dinamik koçbaşı AABB'si.
+- [x] AK-05b2 **kod adayı** — Mavi gerçek sur tüfekçilerinin aynı native 15s atış saatini kullanarak koçbaşının 3B yüzeyini hedeflemesi, 360 HP geçici dayanıklılık ve 32 HP ekipman isabeti, duvar/dost/asker engeli, araç yıkılınca kapı darbesini ve gövde çarpışmasını durdurma, canlı kırmızı gerçek mızrakçılara yeniden emir. CI ve uzun gerçek GPU/manuel kabul sonuçları ayrıca doğrulanır. Bu, orijinal G5.4 askeri silah hasarına değişiklik değildir.
+- [ ] AK-05b3 — Farklı savunma silahları/oklar, kuşatma makinesi görsel/işitsel etkiler, tam doğal savunma çatışma dengesi ve Windows GPU.
+- [ ] AK-05c — Mancınık (3B mermi, gerçek kütleli engel/yapı çarpışması, karşılıklı HP/ekip).
+- [ ] AK-05d — Kuşatma kulesi (gerçek ekip, çarpışma, sur üstüne asker çıkışı).
+- [ ] AK-06 — Üç modda manuel güvenilirlik ve gerçek GPU kabulü, sonrasında kullanıcı onaylı ana dala birleşme.

@@ -224,13 +224,18 @@
    if(ramEngine){
      if(!bridge.multiSquadCommand||!bridge.structureCombat)
        throw Error('AK-05a siege ram needs real G5.4 team orders and authentic gate combat');
-     required(ramEngine,['create','enlist','afterNativeTick','snapshot'],
-       'AK-05a genuine soldier-operated castle siege ram');
+     required(ramEngine,['create','enlist','afterNativeTick','snapshot',
+       'reassign','rayHit','hitByDefender'],
+       'AK-05b2 real soldier crew, equipment HP and physical defense');
      bridge.ram=ramEngine.create({
        engine:armyEngine,state,scenario,map,objectives,
        fourSquadAuthority:bridge.multiSquadCommand,
        fourSquadEngine:fourSquadCommandEngine
      });
+     if(bridge.rampartAI){
+       required(rampartAIEngine,['attachRam'],'AK-05b2 native rampart siege engine targeting');
+       rampartAIEngine.attachRam(bridge.rampartAI,ramEngine,bridge.ram);
+     }
    }
    return bridge;
  }

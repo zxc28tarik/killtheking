@@ -10,6 +10,7 @@ import {createRequire} from 'node:module';
 const require=createRequire(import.meta.url);
 const THREE=require('../../vendor/three-r128.js');
 const ram=require('./siege-ram.js');
+const ballistics=require('./siege-player-ballistics-3d.js');
 const traversal=require('./siege-traversal.js');
 const map=require('./siege-map.js');
 const objectives=require('./siege-objectives.js');
@@ -335,4 +336,118 @@ test('AK-05b1 invalid collider fails closed and unregister restores unchanged ca
  traversal.setDynamicColliderProvider(null);
  assert.equal(traversal.activeColliders(map.spec,r.scenario)
     .some(c=>c.id==='ak05-ram-body'),false);
+});
+
+test('AK-05b2 authentic red commander can reissue a genuine native pike rendezvous, no teleport',()=>{
+ const {b,r}=make('red');
+ assert.equal(ram.enlist(r).ok,true);
+ const original=four.snapshot(b.multiSquadCommand).selectedSquadIds.slice();
+ const pikes=b.state.soldiers.filter(u=>u.team==='red'&&u.type==='pike');
+ const poses=pikes.map(u=>[u.x,u.z,u.hp]);
+ const rev=b.state.squads[r.pikeId].commandRevision;
+ const again=ram.reassign(r);
+ assert.equal(again.ok,true,again.reason);
+ assert.equal(again.reassigned,true);
+ assert.equal(again.reassignments,1);
+ assert(b.state.squads[r.pikeId].commandRevision>rev);
+ assert.deepEqual(four.snapshot(b.multiSquadCommand).selectedSquadIds,original);
+ assert.deepEqual(pikes.map(u=>[u.x,u.z,u.hp]),poses);
+ const blue=make('blue').r;
+ assert.equal(ram.reassign(blue).ok,false);
+});
+test('AK-05b2 native blue musket has physical first-hit 3D ram shot and 15s cooldown',()=>{
+ const {b,r}=make();
+ const gun=b.state.soldiers.find(u=>u.team==='blue'&&u.type==='musket'&&
+   !b.state.squads[u.squadId].playerControlled);
+ assert(gun);
+ for(const u of b.state.soldiers){
+  if(u.id===gun.id)continue;
+  u.x=u.team==='red'?-120:120;u.z=-118;u.siegeY=0;
+ }
+ gun.x=17;gun.z=-40.2;gun.siegeY=13.035;
+ const from={x:gun.x,y:gun.siegeY+1.85,z:gun.z};
+ const to={x:r.x,y:2.5,z:r.z};
+ const shots=ballistics.create({map});
+ assert(ram.rayHit(r,from,to)?.distance>0);
+ const unauthorized=ram.hitByDefender(r,{
+  soldierId:gun.id,weapon:'musket',damage:32,from,to,ballistics
+ });
+ assert.equal(unauthorized.ok,false);
+ assert.equal(r.hp,360);
+ const hit=ram.hitByDefender(r,{
+  soldierId:gun.id,weapon:'musket',damage:32,from,to,
+  ballistics,verifiedPost:true
+ });
+ assert.equal(hit.ok,true,JSON.stringify(hit));
+ assert.equal(r.hp,328);
+ assert.equal(ram.snapshot(r).actualBlueNativeShooterIds.includes(gun.id),true);
+ const premature=ram.hitByDefender(r,{
+  soldierId:gun.id,weapon:'musket',damage:32,from,to,
+  ballistics,verifiedPost:true
+ });
+ assert.equal(premature.reason,'native-musket-cadence');
+ assert.equal(r.hp,328);
+ assert.equal(ram.snapshot(r).gateHp,600);
+ b.state.elapsed+=15;
+ const second=ram.hitByDefender(r,{
+  soldierId:gun.id,weapon:'musket',damage:32,from,to,
+  ballistics,verifiedPost:true
+ });
+ assert.equal(second.ok,true);
+ assert.equal(r.hp,296);
+});
+test('AK-05b2 intact castle gate physically protects ram from fake through-wall shots',()=>{
+ const {b,r}=make();
+ const gun=b.state.soldiers.find(u=>u.team==='blue'&&u.type==='musket');
+ for(const u of b.state.soldiers){
+  if(u.id===gun.id)continue;
+  u.x=118;u.z=-118;
+ }
+ gun.x=0;gun.z=-17;gun.siegeY=0;
+ const from={x:gun.x,y:1.85,z:gun.z};
+ const to={x:r.x,y:2.4,z:r.z};
+ const shot=ram.hitByDefender(r,{
+  soldierId:gun.id,weapon:'musket',damage:32,from,to,
+  verifiedPost:true,ballistics
+ });
+ assert.equal(shot.ok,false);
+ assert.equal(shot.reason,'covered');
+ assert.equal(r.hp,r.maxHp);
+});
+test('AK-05b2 ruined ram stops moving/striking, cannot reassign and removes active chassis',()=>{
+ const {b,r}=make();
+ assert.equal(ram.enlist(r).ok,true);
+ const gun=b.state.soldiers.find(u=>u.team==='blue'&&u.type==='musket'&&
+   !b.state.squads[u.squadId].playerControlled);
+ for(const u of b.state.soldiers){
+  if(u.id===gun.id)continue;
+  u.x=u.team==='red'?-118:118;u.z=-118;u.siegeY=0;
+ }
+ gun.x=17;gun.z=-40.2;gun.siegeY=13.035;
+ const from={x:gun.x,y:14.885,z:gun.z};
+ r.hp=12; // controlled equipment integrity test, NOT normal game HP
+ const first=ram.hitByDefender(r,{
+  soldierId:gun.id,weapon:'musket',damage:32,
+  from,to:{x:r.x,y:2.4,z:r.z},verifiedPost:true,ballistics
+ });
+ assert.equal(first.ok,true,JSON.stringify(first));
+ assert.equal(first.destroyed,true);
+ assert.equal(first.dealt,12);
+ assert.equal(ram.snapshot(r).hp,0);
+ assert.equal(ram.snapshot(r).destroyed,true);
+ assert.equal(ram.collider(r),null);
+ assert.equal(ram.reassign(r).ok,false);
+ assert.equal(ram.enlist(r).ok,false);
+ const z=r.z,gate=r.scenario.gate.hp;
+ A.step(r.state,.08);ram.afterNativeTick(r);
+ assert.equal(r.z,z);
+ assert.equal(r.scenario.gate.hp,gate);
+ assert.equal(ram.snapshot(r).state,'DESTROYED');
+ const scene=new THREE.Scene(),visual=ram.mountVisual(r,{THREE,scene});
+ ram.renderVisual(r,visual);
+ assert.equal(visual.group.visible,false);
+ ram.removeVisual(visual,scene);
+ const fresh=make().r;
+ assert.equal(ram.snapshot(fresh).destroyed,false);
+ assert.equal(ram.snapshot(fresh).hp,360);
 });

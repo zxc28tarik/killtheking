@@ -13,6 +13,8 @@ const assault=require('./siege-assault-navigation.js');
 const ladder=require('./siege-ladder-ai.js'),capture=require('./siege-capture-ai.js');
 const defend=require('./siege-defender-ai.js');
 const rampart=require('./siege-rampart-ai.js');
+const ram=require('./siege-ram.js');
+const four=require('../army/modules/g54-four-squad-command.js');
 const ballistics=require('./siege-player-ballistics-3d.js');
 const bridge=require('./siege-real-army-bridge.js');
 const source=readFileSync(new URL('../army/mirror/arena-army-battle-true-side-swap.js',import.meta.url),'utf8');
@@ -163,4 +165,52 @@ test('S4B1 never edits native damage/cadence, no fake victory, no 3D player coun
  assert.equal(b.scenario.gate.hp,600);
  assert.equal(b.scenario.winner,null);
  assert.equal(b.state.playerKills,0);
+});
+
+test('AK-05b2 actual 4 blue native rampart muskets can target the ram with original 15s clock',()=>{
+ const b=bridge.create({armyEngine:A,map,objectives,traversal,
+  playerTeam:'red',playerType:'sword',seed:1600,
+  structureCombatEngine:structure,assaultNavigationEngine:assault,
+  ladderAIEngine:ladder,captureAIEngine:capture,
+  defenderAIEngine:defend,rampartAIEngine:rampart,
+  ballisticsAPI:ballistics,weaponBalance:W,
+  fourSquadCommandEngine:four,ramEngine:ram
+ });
+ assert.equal(b.rampartAI.ram,b.ram);
+ assert.equal(b.state.soldiers.length,140);
+ const initialHp=b.ram.hp;
+ const shooters=[...b.rampartAI.posts.values()].filter(p=>p.type==='musket');
+ assert.equal(shooters.length,4);
+ // Controlled clear sight fixture with the ORIGINAL G5.4 140 soldiers.
+ for(const u of b.state.soldiers){
+  if(b.rampartAI.posts.has(u.id))continue;
+  u.x=u.team==='red'?-118:118;u.z=-118;u.siegeY=0;
+ }
+ b.state.elapsed=1.05;
+ rampart.afterNativeStep(b.rampartAI,.08);
+ let shotStats=rampart.snapshot(b.rampartAI);
+ assert(shotStats.nativeBlueRampartRamShots>=1,'No genuine blue AI musket targeted ram');
+ assert(shotStats.nativeBlueRampartRamShots<=4);
+ assert(b.ram.hp<initialHp,'No real 3D line-of-sight projectile damaged ram');
+ assert(shotStats.siegeEquipmentDamage>0);
+ assert(shotStats.siegeEquipmentDamage<=4*32);
+ assert(shotStats.ramShotsBlockedByReal3DCover>=0);
+ assert.equal(shotStats.nativeOriginalMusketInterval,15);
+ const prior=shotStats.nativeBlueRampartRamShots;
+ b.state.elapsed=1.10;rampart.afterNativeStep(b.rampartAI,.05);
+ assert.equal(rampart.snapshot(b.rampartAI).nativeBlueRampartRamShots,prior);
+ assert.equal(b.ram.defenderDamage,shotStats.siegeEquipmentDamage);
+ const ids=ram.snapshot(b.ram).actualBlueNativeShooterIds;
+ assert(ids.length>=1);
+ assert(ids.every(id=>shooters.some(p=>p.id===id)));
+ assert.equal(b.scenario.gate.hp,600);
+ assert.equal(b.state.soldiers.length,140);
+});
+test('AK-05b2 earlier approved S4B1 soldier shots work with no siege ram plugged in',()=>{
+ const b=make();
+ assert.equal(b.rampartAI.ram,null);
+ assert.equal(rampart.snapshot(b.rampartAI).nativeBlueRampartRamShots,0);
+ b.state.elapsed=2;
+ assert.doesNotThrow(()=>rampart.afterNativeStep(b.rampartAI,.08));
+ assert.equal(b.scenario.gate.hp,600);
 });
