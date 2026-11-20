@@ -1,0 +1,224 @@
+name: Kill the King - Third Mode Castle Siege in Main Game Menu
+on:
+  push:
+    branches:
+      - codex/s1-siege-castle-phase1
+    paths:
+      - 'recovered/army/integration/audit_g54_army_hud.mjs'
+      - 'recovered/army/integration/build_three_mode_launcher.mjs'
+      - 'recovered/army/integration/g54-field-four-squad-runtime.js'
+      - 'recovered/army/integration/test_three_mode_launcher.mjs'
+      - 'recovered/army/integration/browser_three_mode_smoke.mjs'
+      - 'recovered/siege/build_siege_player_candidate.mjs'
+      - 'recovered/siege/siege-player-locomotion.js'
+      - 'recovered/siege/siege-preview.js'
+      - 'recovered/siege/test_siege_player_locomotion.mjs'
+      - 'recovered/siege/siege-character-visuals.js'
+      - 'recovered/siege/siege-real-army-overlay.js'
+      - 'recovered/siege/test_siege_character_visuals.mjs'
+      - 'recovered/army/modules/g54-four-squad-command.js'
+      - 'recovered/siege/test_g54_four_squad_command.mjs'
+      - 'recovered/army/modules/shared-g54-player-input.js'
+      - 'recovered/siege/test_shared_g54_player_input.mjs'
+      - 'recovered/siege/test_siege_collision_recovery.mjs'
+      - 'recovered/army/modules/shared-g54-battle-session.js'
+      - 'recovered/siege/test_shared_g54_battle_session.mjs'
+      - 'recovered/army/modules/shared-g54-army-commands.js'
+      - 'recovered/siege/test_shared_g54_army_commands.mjs'
+      - 'recovered/siege/siege-rampart-ai.js'
+      - 'recovered/siege/test_siege_rampart_ai.mjs'
+      - 'recovered/siege/siege-defender-ai.js'
+      - 'recovered/siege/test_siege_defender_ai.mjs'
+      - 'recovered/siege/siege-ram.js'
+      - 'recovered/siege/siege-catapult.js'
+      - 'recovered/siege/test_siege_catapult.mjs'
+      - 'recovered/siege/test_siege_ram.mjs'
+      - 'recovered/siege/siege-real-army-bridge.js'
+      - 'recovered/siege/siege-player-ballistics-3d.js'
+      - 'recovered/siege/test_siege_player_ballistics_3d.mjs'
+      - 'recovered/siege/siege-weapon-feedback.js'
+      - 'recovered/siege/test_siege_weapon_feedback.mjs'
+      - 'recovered/siege/siege-player-ui.js'
+      - 'recovered/siege/siege-player-combat.js'
+      - '.github/workflows/three_mode_launcher_integration.yml'
+  workflow_dispatch:
+jobs:
+  package:
+    name: Pinned FFA, genuine G5.4 Army, Siege — source SHA/3 choices/one offline HTML
+    runs-on: ubuntu-24.04
+    timeout-minutes: 22
+    steps:
+      - name: Checkout THIRD MODE candidate branch (not main)
+        uses: actions/checkout@v4
+      - name: Checkout historically accepted A5 FFA independently
+        uses: actions/checkout@v4
+        with:
+          ref: codex/a5-meadow-twentyfold-area
+          path: ffa-source
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Parse all new genuine three-mode source modules
+        run: |
+          node --check recovered/army/integration/build_three_mode_launcher.mjs
+          node --check recovered/army/integration/g54-field-four-squad-runtime.js
+          node --check recovered/siege/siege-ram.js
+          node --check recovered/siege/siege-catapult.js
+          node --check recovered/siege/test_siege_catapult.mjs
+          node --check recovered/siege/test_siege_ram.mjs
+          node --check recovered/army/integration/test_three_mode_launcher.mjs
+          node --check recovered/army/integration/browser_three_mode_smoke.mjs
+      - name: Compile exact source-pinned October FFA game
+        run: |
+          python3 ffa-source/tools/build_offline.py --out dist/KillTheKing_Oyna.html
+          echo '18dca2a895763f0955566f2fc90651f1ab1a98f86597e399cbac42ac2fc6f15a  ffa-source/dist/KillTheKing_Oyna.html' | sha256sum --check -
+      - name: Audit original G5.4 Army HUD and keyboard reference without modifying it
+        run: node recovered/army/integration/audit_g54_army_hud.mjs
+      - name: Build unchanged two-mode FFA + G5.4 launcher
+        run: |
+          node recovered/army/integration/build_isolated_launcher.mjs \
+            ffa-source/dist/KillTheKing_Oyna.html \
+            recovered/army/integration/dist/KillTheKing_2_Mode_Eski_Aday.html
+      - name: Build standalone S3D1 true 140 soldier castle with human FPS combat
+        run: |
+          node recovered/siege/build_siege_player_candidate.mjs \
+            recovered/siege/dist/KillTheKing_Kusatma_S3D1_FPS_140_Gercek_Asker_Savas_Aday.html
+      - name: Package THREE modes from existing signed 2-mode + actual S3D1
+        run: |
+          node recovered/army/integration/build_three_mode_launcher.mjs \
+            recovered/army/integration/dist/KillTheKing_2_Mode_Eski_Aday.html \
+            recovered/siege/dist/KillTheKing_Kusatma_S3D1_FPS_140_Gercek_Asker_Savas_Aday.html \
+            recovered/army/integration/dist/KillTheKing_3_Mod_Arena_Ordu_Kusatma_Oyna.html
+      - name: Check exact FFA/Army source preservation and real third-mode routing
+        env:
+          KTK_DUAL_HTML: recovered/army/integration/dist/KillTheKing_2_Mode_Eski_Aday.html
+          KTK_SIEGE_HTML: recovered/siege/dist/KillTheKing_Kusatma_S3D1_FPS_140_Gercek_Asker_Savas_Aday.html
+          KTK_FFA_HTML: ffa-source/dist/KillTheKing_Oyna.html
+        run: |
+          node --test recovered/army/integration/test_three_mode_launcher.mjs
+          node --test recovered/army/integration/test_isolated_launcher.mjs
+          node --test recovered/army/integration/test_mode_router_runtime.mjs
+          node --test recovered/siege/test_siege_player_combat.mjs
+          node --test recovered/siege/test_siege_character_visuals.mjs
+          node --test recovered/siege/test_siege_player_locomotion.mjs
+          node --test recovered/siege/test_siege_weapon_feedback.mjs
+          node --test recovered/siege/test_siege_player_ballistics_3d.mjs
+          node --test recovered/siege/test_siege_defender_ai.mjs
+          node --test recovered/siege/test_siege_rampart_ai.mjs
+          node --test recovered/siege/test_shared_g54_army_commands.mjs
+          node --test recovered/siege/test_shared_g54_battle_session.mjs
+          node --test recovered/siege/test_shared_g54_player_input.mjs
+          node --test recovered/siege/test_g54_four_squad_command.mjs
+          node --test recovered/siege/test_siege_ram.mjs
+          node --test recovered/siege/test_siege_catapult.mjs
+          node --test recovered/siege/test_siege_collision_recovery.mjs
+      - name: Verify exactly three modes with explicit non-final-engine boundaries
+        run: |
+          node --input-type=module -e "
+          import {readFileSync} from 'node:fs';
+          import {createHash} from 'node:crypto';
+          const p='recovered/army/integration/dist/KillTheKing_3_Mod_Arena_Ordu_Kusatma_Oyna.html';
+          const m=JSON.parse(readFileSync(p+'.build.json','utf8'));
+          const h=readFileSync(p,'utf8');
+          const sha=s=>createHash('sha256').update(s).digest('hex');
+          if(m.modes.join(',')!=='ffa,army,siege'||
+             (h.match(/data-ktk-launch=/g)||[]).length!==3||
+             (h.match(/application\\/octet-stream/g)||[]).length!==3||
+             m.gameSourcesBytePreserved!==true||
+             m.siegeRealSoldiers!==140||
+             m.siegeOriginalFFARendererShared!==false||
+             m.siegeOriginalFFAMovementShared!==false||
+             m.siegeReal3DBallisticsAvailable!==false||
+             m.siegePlayer3DMusketAndPhysicalBow!==true||
+             m.siegeNativeG54Soldier3DBallistics!==false||
+             m.siegeG54BlueDefenderCoordinatedGroundRoles!==true||
+             m.siegeS4B1EightBlueRampartPostSoldiers!==true||
+             m.siegeS4B1Real3DBotVsSoldierFire!==true||
+             m.siegeSameNativeG54ArmyCommanderCommands!==true||
+             m.siegeAK03SharedNativeG54BattleSession!==true||
+             m.siegeAK03bFieldStylePointerLockAndAim!==true||
+             m.siegeAK04aNativeFourSquadCastleOrders!==true||
+             m.siegeAK05aNativeCrewOperatedRam!==true||
+             m.siegeAK05aRealRamThreeJSModel!==true||
+             m.siegeAK05c1GenuineArcherCrewCatapult!==true||
+             m.siegeAK05c1Actual3DStoneAndS1GateDamage!==true||
+             m.siegeAK05aIndependentSiegeCatapultComplete!==false||
+             m.siegeAK04aFourDistinctAlliedNativeSquads!==true||
+             m.fieldArmyUnmodifiedSourceFourSquadUIIntegrated!==true||
+             m.fieldArmyOriginalPayloadByteIdentical!==true||
+             m.AK04bFieldNativeFourSquadRuntimeAddon!==true||
+             m.AK04bFieldRuntimeOnlyInjection!==true||
+             m.siegeAK03bSharedInputWASDJumpSlide!==true||
+             m.siegeAK03bOriginalFieldPhysicsPorted!==false||
+             m.siegeNativeFieldMovementPhysicsCopied!==false||
+             m.siegeExactOriginalArmyControlHUDShared!==false||
+             m.siegeBot3DPlayerCounterfire!==false||
+             m.siegeFullNativeBotRampart3DCombat!==false||
+             m.productionApproved!==false||
+             m.mainBranchMerged!==false||
+             m.bytes!==Buffer.byteLength(h)||
+             m.sha256!==sha(h))
+           throw Error('Three-mode real game candidate fails source or honesty gate');
+          console.log('THREE MAIN MENU MODES — exact source preservation and non-final limitations PASS');
+          "
+      - name: Upload ONE genuine three-mode HTML to open in Chrome/Edge
+        uses: actions/upload-artifact@v4
+        with:
+          name: KillTheKing-3-Mod-Arena-Ordu-Kale-Kusatmasi-Tek-HTML-NOT-Final
+          path: |
+            recovered/army/integration/dist/KillTheKing_3_Mod_Arena_Ordu_Kusatma_Oyna.html
+            recovered/army/integration/dist/KillTheKing_3_Mod_Arena_Ordu_Kusatma_Oyna.html.build.json
+          if-no-files-found: error
+  chromium:
+    name: Real browser FFA/Army/Siege modes and safe back-and-forth navigation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 22
+    needs: package
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/a5-meadow-twentyfold-area
+          path: ffa-source
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Rebuild exact original sources and one three-mode HTML
+        run: |
+          python3 ffa-source/tools/build_offline.py --out dist/KillTheKing_Oyna.html
+          node recovered/army/integration/build_isolated_launcher.mjs \
+            ffa-source/dist/KillTheKing_Oyna.html \
+            recovered/army/integration/dist/KillTheKing_2_Mode_Eski_Aday.html
+          node recovered/siege/build_siege_player_candidate.mjs \
+            recovered/siege/dist/KillTheKing_Kusatma_S3D1_FPS_140_Gercek_Asker_Savas_Aday.html
+          node recovered/army/integration/build_three_mode_launcher.mjs \
+            recovered/army/integration/dist/KillTheKing_2_Mode_Eski_Aday.html \
+            recovered/siege/dist/KillTheKing_Kusatma_S3D1_FPS_140_Gercek_Asker_Savas_Aday.html \
+            recovered/army/integration/dist/KillTheKing_3_Mod_Arena_Ordu_Kusatma_Oyna.html
+      - name: Install pinned Chromium software WebGL test environment
+        run: |
+          npm install --no-save --no-package-lock playwright@1.58.2
+          if command -v google-chrome >/dev/null 2>&1; then
+            echo "KTK_CHROME_EXECUTABLE=$(command -v google-chrome)" >> "$GITHUB_ENV"
+          elif command -v google-chrome-stable >/dev/null 2>&1; then
+            echo "KTK_CHROME_EXECUTABLE=$(command -v google-chrome-stable)" >> "$GITHUB_ENV"
+          else
+            npx playwright install chromium
+          fi
+      - name: Actually launch all THREE games inside single offline browser HTML
+        env:
+          KTK_THREE_BROWSER_DIR: recovered/army/integration/browser-evidence-three
+        run: |
+          node recovered/army/integration/browser_three_mode_smoke.mjs \
+            recovered/army/integration/dist/KillTheKing_3_Mod_Arena_Ordu_Kusatma_Oyna.html
+      - name: Preserve screenshots and actual error logs even if a test fails
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: KillTheKing-Three-Modes-Chromium-SOFTWARE-WebGL-Screenshots
+          path: |
+            recovered/army/integration/browser-evidence-three/
+            recovered/army/integration/dist/KillTheKing_3_Mod_Arena_Ordu_Kusatma_Oyna.html.build.json
+          if-no-files-found: warn

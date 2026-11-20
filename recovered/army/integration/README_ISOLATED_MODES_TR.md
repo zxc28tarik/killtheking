@@ -69,3 +69,14 @@ Kullanıcı önceki talebini netleştirdi: **0,5 saniye yalnız arena bot okçus
 - **Ordu okçusu:** G5.4 ordu motoru aynı, değiştirilmedi.
 - **İki ok arasında en az 4 saniye, atıştan sonra 1 saniye toparlanma** aynı; ok hasarı, isabet ve diğer silahlar aynı.
 - Yeni aday FFA SHA-256: `bbf86d76ae05d23f7069024cef329c222752d98f0ac29d4d120a3d2fd7949538`. Eski oynanabilir aday SHA ve eski raporlar yalnız geçmiş sürümler içindir. `main` korunur; PR #48 DRAFT.
+
+
+## 19 Kasım — Güncel durum: Kale Kuşatması ÜÇÜNCÜ OYUN MODU olarak ana menüye alındı
+
+**Bu belge önceki 2 modlu entegrasyonun tarihî kaydıdır.** Kullanıcı kararına göre güncel birleşik aday artık **Serbest Arena / TDM + 140 Askerli Ordu Savaşı + Kale Kuşatması** içerir. Tam grafik ve kontrol paritesi henüz yoktur; bu, üçüncü modun ayrı bir oyun olarak kalacağı anlamına gelmez.
+
+- Yeni **`build_three_mode_launcher.mjs`**: özgün 2 modlu HTML'yi aynı byte'larla korur; gerçek 140 asker, 100 HP oyuncu ve S3D1 silah köprüsüne sahip Kuşatma'yı **aynı ana menüde üçüncü seçenek** yapar.
+- [**3 modlu tek çevrim dışı HTML, CI #44524696649 SUCCESS**](https://github.com/zxc28tarik/killtheking/actions/runs/44524696649/artifacts/14528493467). 4.258.277 byte, SHA-256 `5fcd3f11076414cc23f2cc7201ef6cbe406c86149ccf9ccdd646c59735039685`.
+- Gerçek Chromium/SwiftShader'da FFA (6 bot) → Ordu (gerçek 140) → Kuşatma (gerçek 140 + insan FPS + 100 HP) → FFA dönüşü PASS, JavaScript hatası 0. Sadece yazılım GPU; Windows ESC manuel kabul açık.
+- 7 yeni üçlü menü testi + 7 tarihî kaynak testi + 5 önceki iki modlu DOM testi + 15 gerçek oyuncu S3D1 testi = **34/34 Node PASS**. Eski ayrı kuşatma regresyonu daha önce 112/112 PASS.
+- [**Asıl üçüncü mod sözleşmesi ve açık görsel parite işleri**](../../../docs/KILLTHEKING_THREE_MODE_MAIN_MENU_TR.md). `main`, eski oyunlar, PR #48 değişmedi; bütün yeni ilerlemeler PR #50 taslakta.

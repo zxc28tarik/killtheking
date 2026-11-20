@@ -1,0 +1,37 @@
+name: Kill the King - S3A Authentic G5.4 Siege 140-Soldier Bridge
+on:
+  push:
+    branches:
+      - codex/s1-siege-castle-phase1
+    paths:
+      - 'recovered/siege/siege-real-army-bridge.js'
+      - 'recovered/siege/test_siege_real_army_bridge.mjs'
+      - 'recovered/siege/siege-map.js'
+      - 'recovered/siege/siege-objectives.js'
+      - 'recovered/siege/siege-traversal.js'
+      - '.github/workflows/s3_siege_real_army_bridge.yml'
+  workflow_dispatch:
+jobs:
+  actual-army-contract:
+    name: Execute pinned 140 G5.4 soldiers with real castle wall obstacles
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax check separate S3 bridge and source-backed tests
+        run: |
+          node --check recovered/siege/siege-real-army-bridge.js
+          node --check recovered/siege/test_siege_real_army_bridge.mjs
+      - name: Run authentic G5.4 pinned-soldier army siege integration
+        run: node --test recovered/siege/test_siege_real_army_bridge.mjs
+      - name: S1 and S2 original kuşatma regression must stay green
+        run: |
+          node --test recovered/siege/test_siege_phase1.mjs recovered/siege/test_siege_traversal.mjs
+      - name: Verify historical file is unmodified by S3 implementation
+        shell: bash
+        run: |
+          printf '307987855abc0973ea9177fdd659c39d1d02673c8381c0501be8b63c04ddf841  recovered/army/mirror/arena-army-battle-true-side-swap.js\n' | sha256sum --check -
+          echo "S3A does not modify the original G5.4 weapon/army engine, FFA, main or issue #44."
