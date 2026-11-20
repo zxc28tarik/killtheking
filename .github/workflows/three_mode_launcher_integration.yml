@@ -15,6 +15,8 @@ on:
       - 'recovered/siege/siege-character-visuals.js'
       - 'recovered/siege/siege-real-army-overlay.js'
       - 'recovered/siege/test_siege_character_visuals.mjs'
+      - 'recovered/army/modules/g54-four-squad-command.js'
+      - 'recovered/siege/test_g54_four_squad_command.mjs'
       - 'recovered/army/modules/shared-g54-player-input.js'
       - 'recovered/siege/test_shared_g54_player_input.mjs'
       - 'recovered/siege/test_siege_collision_recovery.mjs'
@@ -97,6 +99,7 @@ jobs:
           node --test recovered/siege/test_shared_g54_army_commands.mjs
           node --test recovered/siege/test_shared_g54_battle_session.mjs
           node --test recovered/siege/test_shared_g54_player_input.mjs
+          node --test recovered/siege/test_g54_four_squad_command.mjs
           node --test recovered/siege/test_siege_collision_recovery.mjs
       - name: Verify exactly three modes with explicit non-final-engine boundaries
         run: |
@@ -123,6 +126,9 @@ jobs:
              m.siegeSameNativeG54ArmyCommanderCommands!==true||
              m.siegeAK03SharedNativeG54BattleSession!==true||
              m.siegeAK03bFieldStylePointerLockAndAim!==true||
+             m.siegeAK04aNativeFourSquadCastleOrders!==true||
+             m.siegeAK04aFourDistinctAlliedNativeSquads!==true||
+             m.fieldArmyUnmodifiedSourceFourSquadUIIntegrated!==false||
              m.siegeAK03bSharedInputWASDJumpSlide!==true||
              m.siegeAK03bOriginalFieldPhysicsPorted!==false||
              m.siegeNativeFieldMovementPhysicsCopied!==false||

@@ -7,6 +7,8 @@ on:
       - 'recovered/siege/siege-player-locomotion.js'
       - 'recovered/siege/test_siege_player_locomotion.mjs'
       - 'recovered/siege/siege-player-combat.js'
+      - 'recovered/army/modules/g54-four-squad-command.js'
+      - 'recovered/siege/test_g54_four_squad_command.mjs'
       - 'recovered/army/modules/shared-g54-player-input.js'
       - 'recovered/siege/test_shared_g54_player_input.mjs'
       - 'recovered/siege/test_siege_collision_recovery.mjs'
@@ -60,6 +62,8 @@ jobs:
           node --check recovered/army/modules/shared-g54-army-commands.js
           node --check recovered/army/modules/shared-g54-battle-session.js
           node --check recovered/army/modules/shared-g54-player-input.js
+          node --check recovered/army/modules/g54-four-squad-command.js
+          node --check recovered/siege/test_g54_four_squad_command.mjs
           node --check recovered/siege/test_shared_g54_player_input.mjs
           node --check recovered/siege/test_siege_collision_recovery.mjs
           node --check recovered/siege/test_shared_g54_battle_session.mjs
@@ -78,6 +82,7 @@ jobs:
           node --test recovered/siege/test_shared_g54_army_commands.mjs
           node --test recovered/siege/test_shared_g54_battle_session.mjs
           node --test recovered/siege/test_shared_g54_player_input.mjs
+          node --test recovered/siege/test_g54_four_squad_command.mjs
           node --test recovered/siege/test_siege_collision_recovery.mjs
       - name: Unmodified natural S3C3, dual ladders, gate, 140 soldier and S1/S2 regression
         run: |
