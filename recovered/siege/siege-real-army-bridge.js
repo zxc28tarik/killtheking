@@ -114,7 +114,8 @@
      assaultNavigationEngine=null,ladderAIEngine=null,
      captureAIEngine=null,defenderAIEngine=null,
      rampartAIEngine=null,ballisticsAPI=null,
-     weaponBalance=null,defenderRender=null}={}){
+     weaponBalance=null,defenderRender=null,
+     fourSquadCommandEngine=null}={}){
    required(armyEngine,['create','step','snapshot','setWorldObstacles',
      'setPlayerPosition','drainCombatEvents','drainPlayerHits',
      'issueOrder','setDestination'],'G5.4');
@@ -146,6 +147,7 @@
      captureAI:null,captureAIEngine,
      defenderAI:null,defenderAIEngine,
      rampartAI:null,rampartAIEngine,
+     multiSquadCommand:null,fourSquadCommandEngine,
      terrainBlockedMoves:0,
      terrainRecoveredMoves:0,
      lastGateOpen:false,logs:[],ended:false
@@ -210,6 +212,14 @@
        state,engine:armyEngine,scenario,map,objectives
      });
    }
+   if(fourSquadCommandEngine){
+     required(fourSquadCommandEngine,
+       ['create','beginNativeTick','endNativeTick','snapshot',
+         'select','execute'],'AK-04a real four allied G5.4 squads');
+     bridge.multiSquadCommand=fourSquadCommandEngine.create({
+       engine:armyEngine,bridge,map
+     });
+   }
    return bridge;
  }
  function refreshObstacles(bridge){
@@ -252,6 +262,12 @@
    // This does NOT claim soldiers attacked a structure: S3A has no such source.
    if(bridge.lastGateOpen!==bridge.scenario.gate.open)
      refreshObstacles(bridge);
+   // AK-04a: leased human tactical control is scoped to exactly this
+   // real native+siege AI tick; playerSquadId and physical owner never move.
+   const leased=bridge.multiSquadCommand?
+     bridge.fourSquadCommandEngine.beginNativeTick(bridge.multiSquadCommand):
+     false;
+   try{
    const before=bridge.state.soldiers.map(u=>({id:u.id,x:u.x,z:u.z,
      siegeY:u.siegeY??0}));
    if(bridge.rampartAI)
@@ -370,6 +386,10 @@
    if(bridge.scenario.phase!=='RESULT')
      bridge.objectives.step(bridge.scenario,dt);
    bridge.ended=bridge.scenario.phase==='RESULT';
+   }finally{
+     if(leased)bridge.fourSquadCommandEngine.endNativeTick(
+       bridge.multiSquadCommand);
+   }
    return snapshot(bridge);
  }
  function command(bridge,order,{x=null,z=null}={}){
@@ -403,6 +423,9 @@
        playerControlled:s.playerControlled,kills:s.kills,
        x:s.x,z:s.z,order:s.order,commandStatus:s.commandStatus
      })),
+     multiSquadNativeCommandConnected:!!b.multiSquadCommand,
+     multiSquadNativeCommand:b.multiSquadCommand?
+       b.fourSquadCommandEngine.snapshot(b.multiSquadCommand):null,
      genuineCombat:b.combatEvents.slice(-16).map(x=>({...x})),
      genuinePlayerHits:b.playerHits.slice(-8).map(x=>({...x})),
      scenario:scene,
