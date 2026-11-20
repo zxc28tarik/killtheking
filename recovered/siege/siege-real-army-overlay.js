@@ -500,6 +500,7 @@
      '<button type="button" data-four-squad-index="0">Bölük 1</button>',
      '<button type="button" data-four-squad-index="1">Bölük 2</button>',
      '<button type="button" data-four-squad-index="2">Bölük 3</button>',
+     '<button type="button" data-four-squad-index="3">Bölük 4</button>',
      '<button type="button" data-four-squad-all>Tüm 4 Bölük</button>',
      '</div>',
      fieldLabel('Bölük emirleri'),fieldRow,fieldButtons(fieldOrderKeys,'order'),'</div>',
