@@ -153,8 +153,19 @@ try{
  await child().locator('[data-ak04-selector="floating"] [data-ak04-action="order"][data-ak04-value="charge"]').click();
  assert((await fieldStatus()).squads.every(s=>s.order==='charge'));
  assert.equal((await fieldStatus()).physicalPlayerControlledSquadCount,1);
- const beforeTicks=(await fieldStatus()).nativeCommandTicks;
- await page.waitForTimeout(650);
+ const beforeSnapshot=await fieldStatus();
+ const beforeTicks=beforeSnapshot.nativeCommandTicks;
+ const beforeNativeTick=beforeSnapshot.realNativeGameTick;
+ // Original Three.js field battle is software-WebGL heavy. Do not assume
+ // one real animation-frame/native 80ms step fits within 650ms wall-time
+ // on a headless GitHub Actions runner.
+ await page.waitForFunction((before)=>{
+   const s=document.querySelector('#stage iframe')
+     ?.contentWindow?.ktkFieldFourSquadStatus?.();
+   return s?.nativeCommandTicks>before.command&&
+     s.realNativeGameTick>before.native;
+ },{command:beforeTicks,native:beforeNativeTick},
+   {timeout:85000,polling:250});
  const afterTicks=await fieldStatus();
  assert(afterTicks.nativeCommandTicks>beforeTicks,
    'Native G5.4 command time frozen: '+JSON.stringify({
