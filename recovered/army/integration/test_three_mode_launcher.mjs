@@ -60,7 +60,10 @@ test('launcher embeds only the real main menu controller; source games are inert
  for(let i=0;i<3;i++)assert(scr[i][0].includes('application/octet-stream'));
  assert(scr[3][1].includes('stage.replaceChildren()'));
  assert(scr[3][1].includes('window.confirm('));
- assert(scr[3][1].includes('frame.srcdoc=decode('));
+ assert(scr[3][1].includes('frame.srcdoc=original.replace('));
+ assert(scr[3][1].includes('if(mode==="army")'));
+ assert(!scr[3][1].includes('window.eval('));
+ assert(!scr[3][1].includes('new Function('));
  new vm.Script(scr[3][1],{filename:'three-mode-main-controller.js'});
 });
 function stub(){
@@ -108,7 +111,13 @@ test('each of THREE main menu buttons launches its EXACT actual game HTML',()=>{
  assert.equal(b.buttons.length,3);
  for(const [i,id] of ['ffa','army','siege'].entries()){
    b.buttons[i].click();
-   assert.equal(b.current.srcdoc,extract(combined,id));
+   if(id==='army'){
+     assert(b.current.srcdoc.startsWith(extract(combined,'army').slice(0,100)));
+     assert(b.current.srcdoc.includes('AK04B_FIELD_NATIVE_G54_FOUR_SQUAD_RUNTIME_ADAPTER'));
+     assert(b.current.srcdoc.includes('KTKG54FourSquadCommand'));
+     assert(b.current.srcdoc.includes('ktkFieldFourSquadStatus'));
+     assert(b.current.srcdoc.includes('const native=root.ArenaArmyBattle'));
+   }else assert.equal(b.current.srcdoc,extract(combined,id));
    assert.equal(b.current.attrs.allowfullscreen,'');
    assert.equal(b.buttons[i].attrs['aria-pressed'],'true');
    assert.equal(b.elements.get('stage').children.length,1);
@@ -137,7 +146,9 @@ test('switches destroy previous frame; cancel holds the old active match',()=>{
  assert.equal(b.confirms,2);
  b.buttons[1].click();
  assert.notEqual(b.current,siegeFrame);
- assert.equal(b.current.srcdoc,extract(dual,'army'));
+ assert(b.current.srcdoc.includes('ktkFieldFourSquadStatus'));
+ assert(b.current.srcdoc.includes('AK-04b'));
+ assert.equal(extract(combined,'army'),extract(dual,'army'));
  assert.equal(b.frames.length,3);
 });
 test('byte-reproducible one-file build has three modes and honest manifest',()=>{
@@ -155,9 +166,30 @@ test('byte-reproducible one-file build has three modes and honest manifest',()=>
  assert.equal(m.siegeOriginalFFARendererShared,false);
  assert.equal(m.siegeOriginalFFAMovementShared,false);
  assert.equal(m.siegeReal3DBallisticsAvailable,false);
+ assert.equal(m.fieldArmyOriginalPayloadByteIdentical,true);
+ assert.equal(m.fieldArmyUnmodifiedSourceFourSquadUIIntegrated,true);
+ assert.equal(m.AK04bFieldRuntimeOnlyInjection,true);
+ assert.equal(m.AK04bFieldNativeFourSquadRuntimeAddon,true);
+ assert.equal(m.siegeAllFourSquadsIndividuallySelectable,true);
  assert.equal(m.productionApproved,false);
  assert.equal(m.mainBranchMerged,false);
  assert.equal(m.sha256,hash(actual));
  assert.equal(m.sourceSha256.siege,hash(siege));
  assert.equal(m.bytes,Buffer.byteLength(actual));
+});
+
+test('AK-04b original field archive and true-side engine remain SHA-pinned despite runtime opt-in',()=>{
+ const original=readFileSync(new URL('../KillTheKing_G5_4_Kanat_Savunmasi_Oyna.html',import.meta.url),'utf8');
+ const native=readFileSync(new URL('../mirror/arena-army-battle-true-side-swap.js',import.meta.url),'utf8');
+ assert.equal(hash(original),'1d5f72768054b4138ba742e10923bfb20c00bd37fe789cdc3e40a65967cccfe2');
+ assert.equal(hash(native),'307987855abc0973ea9177fdd659c39d1d02673c8381c0501be8b63c04ddf841');
+ assert.equal(extract(combined,'army'),extract(dual,'army'));
+ const b=stub();b.buttons[1].click();
+ assert.equal(extract(combined,'army')!==b.current.srcdoc,true);
+ assert(b.current.srcdoc.includes('AK-04b field-mode adapter'));
+ assert(b.current.srcdoc.includes('one authentic G5.4'));
+ const ffab=stub();ffab.buttons[0].click();
+ assert.equal(ffab.current.srcdoc,extract(combined,'ffa'));
+ const siegeb=stub();siegeb.buttons[2].click();
+ assert.equal(siegeb.current.srcdoc,siege);
 });
