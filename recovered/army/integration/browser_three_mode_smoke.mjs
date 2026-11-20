@@ -125,7 +125,20 @@ try{
  await child().locator('#ak04-field-floating-commander').waitFor({state:'visible',timeout:85000});
  // The original G5.4 mouse pointer may still be locked after Play.
  await page.keyboard.press('Escape');
- await page.waitForTimeout(260);
+ await page.waitForTimeout(320);
+ // Chromium headless may refuse ESC-based Pointer Lock release even though
+ // real browser hardware accepts it. Same explicit test-only fallback as
+ // the existing certified three-mode launcher switch routine.
+ const fieldLocked=await page.evaluate(()=>!!document.querySelector('#stage iframe')
+   ?.contentDocument?.pointerLockElement);
+ if(fieldLocked){
+   report.checks.push('AK04B_HEADLESS_POINTER_LOCK_TEST_ONLY_FALLBACK');
+   await page.evaluate(async()=>document.querySelector('#stage iframe')
+     ?.contentDocument?.exitPointerLock?.());
+   await page.waitForTimeout(360);
+ }
+ assert.equal(await page.evaluate(()=>!!document.querySelector('#stage iframe')
+   ?.contentDocument?.pointerLockElement),false);
  for(let i=0;i<4;i++){
    await child().locator('[data-ak04-selector="floating"] [data-ak04-pick="'+i+'"]').click();
    const selected=await fieldStatus();
