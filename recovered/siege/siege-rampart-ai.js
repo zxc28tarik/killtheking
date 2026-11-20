@@ -65,10 +65,12 @@
      kind:'S4B1_G54_BLUE_RAMPART_3D_SOLDIER_COUNTERFIRE',
      state,engine,balance,map,scenario,traversal,ballistics:shots,
      ballisticsAPI,ram:null,ramEngine:null,
-     posts,ownerByArrow,initialPosts:posts.size,initialRoles:byClass,
+     posts,ownerByArrow,ramArrowShots:new Map(),
+     initialPosts:posts.size,initialRoles:byClass,
      musketShots:0,bowShots:0,totalHits:0,blockedShots:0,
      ramShots:0,ramHits:0,ramDamage:0,ramBlockedShots:0,
-     ramMissedShots:0,
+     ramMissedShots:0,ramBowShots:0,ramBowImpacts:0,
+     ramBowDamage:0,ramBowBlocked:0,
      missedShots:0,alliedBlocks:0,
      guardSteps:0,visualArrowImpacts:0,exposedG54BotAttackPrevented:0,
      nativeDamageOnly:true
@@ -79,13 +81,15 @@
  function attachRam(ai,ramEngine,ram){
    if(ai?.kind!=='S4B1_G54_BLUE_RAMPART_3D_SOLDIER_COUNTERFIRE'||
       ai.ram||!ram||ram.state!==ai.state||ram.scenario!==ai.scenario||
-      !ramEngine?.rayHit||!ramEngine?.hitByDefender||!ramEngine?.snapshot)
+      !ramEngine?.rayHit||!ramEngine?.hitByDefender||!ramEngine?.snapshot||
+      !ai.ballistics?.setEquipmentCollider)
      throw Error('AK-05b2 requires genuine S4B1 rampart and one siege ram');
    ai.ram=ram;ai.ramEngine=ramEngine;
+   ai.ballistics.setEquipmentCollider(()=>ramEngine.collider(ram));
    return true;
  }
  function chooseRamTarget(ai,u){
-   if(!ai.ram||!ai.ramEngine||u.type!=='musket'||
+   if(!ai.ram||!ai.ramEngine||!VALID.includes(u.type)||
       ai.ram.destroyed||ai.scenario.phase==='RESULT')return null;
    const range=ai.engine.TYPES[u.type].range;
    const from={x:u.x,y:(u.siegeY??0)+UNIT_EYE,z:u.z};
@@ -136,6 +140,31 @@
    u.attackPose=.30;
    u.stamina=Math.max(.45,u.stamina-.018);
    return result;
+ }
+ function shootRamBow(ai,u,post,site){
+   const state=ai.state;
+   const spin=n=>((Math.imul((n+1)|0,1664525)+1013904223)>>>0)/4294967296;
+   const h=spin(u.id+post.shots*17+state.tick);
+   const v=spin(u.id*3+post.shots*23+state.tick*7);
+   const roll=ai.balance.aimedShot('archer',site.from,
+     {x:site.to.x,y:0,z:site.to.z},h,v,3.2);
+   if(!roll?.point)return false;
+   const distance=at(u,ai.ram);
+   const t=distance/ai.ballistics.status().playerArrowFlightSpeed;
+   const gravity=ai.ballistics.status().playerArrowGravity;
+   const aim={x:roll.point.x-site.from.x,
+     y:roll.point.y+.5*gravity*t*t-site.from.y,
+     z:roll.point.z-site.from.z};
+   const arrow=ai.ballistics.launch({state,scenario:ai.scenario,
+     from:site.from,aim,team:'blue',range:site.range,charge:.55});
+   if(!arrow)return false;
+   ai.ownerByArrow.set(arrow.id,u.id);
+   ai.ramArrowShots.set(arrow.id,{shooterId:u.id,launchedAt:state.elapsed});
+   ai.ramBowShots++;ai.bowShots++;post.shots++;
+   post.nextShotAt=state.elapsed+ai.balance.SHOT_INTERVAL.bow;
+   post.lastTarget='AK05B3_PHYSICAL_BOW_VS_RAM';
+   u.attackPose=.30;u.stamina=Math.max(.45,u.stamina-.018);
+   return true;
  }
  function prepareNativeStep(ai,dt){
    if(ai?.kind!=='S4B1_G54_BLUE_RAMPART_3D_SOLDIER_COUNTERFIRE'||
@@ -247,8 +276,29 @@
      ai.visualArrowImpacts++;
      const shooterId=ai.ownerByArrow.get(impact.id);
      ai.ownerByArrow.delete(impact.id);
+     const ramFlight=ai.ramArrowShots.get(impact.id);
+     ai.ramArrowShots.delete(impact.id);
      const shooter=ai.state.soldiers[shooterId];
      const post=ai.posts.get(shooterId);
+     if(impact.kind==='equipment'){
+       if(ramFlight&&shooter?.alive&&shooter.team==='blue'&&
+          shooter.type==='bow'&&post&&ai.ram&&!ai.ram.destroyed&&
+          ai.state.elapsed-ramFlight.launchedAt>.06){
+         const from={x:shooter.x,y:(shooter.siegeY??0)+UNIT_EYE,
+           z:shooter.z};
+         const hit=ai.ramEngine.hitByDefender(ai.ram,{
+           soldierId:shooter.id,weapon:'bow',
+           damage:ai.ramEngine.SETTINGS.defenderBowDamage,
+           from,to:impact.point,ballistics:ai.ballisticsAPI,
+           verifiedPost:true,projectileImpact:impact
+         });
+         if(hit.ok){
+           ai.ramBowImpacts++;ai.ramBowDamage+=hit.dealt;
+           if(post)post.hits++;
+         }else ai.ramBowBlocked++;
+       }else ai.ramBowBlocked++;
+       continue;
+     }
      if(impact.kind==='soldier'&&impact.friendly)ai.alliedBlocks++;
      else if(impact.kind==='soldier'&&shooter?.alive){
        const amount=ai.balance.damage('bow',impact.zone,.55);
@@ -276,6 +326,9 @@
      const ramSite=u.type==='musket'&&
        (post.shots%2===0||!target)?chooseRamTarget(ai,u):null;
      if(ramSite){shootRam(ai,u,post,ramSite);continue;}
+     const ramBowSite=u.type==='bow'&&
+       (post.shots%3===0||!target)?chooseRamTarget(ai,u):null;
+     if(ramBowSite&&shootRamBow(ai,u,post,ramBowSite))continue;
      if(!target)continue;
      shoot(ai,u,post,target);
    }
@@ -302,6 +355,12 @@
      siegeEquipmentDamage:ai.ramDamage,
      ramShotsBlockedByReal3DCover:ai.ramBlockedShots,
      missedRamShots:ai.ramMissedShots,
+     nativeBlueRampartPhysicalBowVsRamShots:ai.ramBowShots,
+     nativeBlueRampartPhysicalBowRamImpacts:ai.ramBowImpacts,
+     bowEquipmentDamage:ai.ramBowDamage,
+     bowBlockedOrRejectedRamImpacts:ai.ramBowBlocked,
+     pendingRealRamArrowIds:ai.ramArrowShots.size,
+
      ramActive:!!ai.ram&&!ai.ram.destroyed,
      successfulAuthenticSoldierHits:ai.totalHits,
      castleBlockedShots:ai.blockedShots,

@@ -255,7 +255,9 @@
        '/'+view.realRampart3DDefenderAI.initialGenuineDefendersOnRamparts+
        ' • 3B tüfek/ok: '+view.realRampart3DDefenderAI.musket3DShots+
        '/'+view.realRampart3DDefenderAI.bow3DShots+
-       ' • Gerçek isabet: '+view.realRampart3DDefenderAI.successfulAuthenticSoldierHits
+       ' • Gerçek isabet: '+view.realRampart3DDefenderAI.successfulAuthenticSoldierHits+
+       ' • Koçbaşı 3B ok: '+(view.realRampart3DDefenderAI.nativeBlueRampartPhysicalBowVsRamShots||0)+
+       '/'+(view.realRampart3DDefenderAI.nativeBlueRampartPhysicalBowRamImpacts||0)
      :'';
    const defenderCaption=defenderAI&&view.realDefenderRoleCoordination
      ?' • Savunma: '+view.realDefenderRoleCoordination.activeDefensivePhase+
@@ -278,6 +280,8 @@
      desc.textContent='Koçbaşı: '+info.state+
        ' • Dayanıklılık: '+info.hp+' / '+info.maxHp+' HP'+
        ' • Savunucu isabeti: '+info.defenderHits+
+       ' • Fiziksel ok isabeti: '+info.physicalBowRamHits+
+       ' • Son darbe: '+(info.lastImpactWeapon||'yok')+
        ' • Gerçek mızraklı: '+info.crewCount+
        ' • Yeniden emir: '+info.crewReassignments+
        ' • İlerleme: '+Math.round(info.physicalProgress*100)+'%'+

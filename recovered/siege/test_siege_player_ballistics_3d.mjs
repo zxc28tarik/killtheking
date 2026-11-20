@@ -226,3 +226,42 @@ test('native guard for melee at elevated wall remains conservative',()=>{
  combat.setWeapon(human,'sword');
  assert.equal(combat.trigger(human).status,'unsupported-height');
 });
+
+test('AK-05b3 opt-in physical bow crosses real distance before hitting live wooden ram',()=>{
+ const state=fake(),scenario=scenarios(),solver=physics.create({map});
+ const equipment={id:'ak05-ram-body',x:0,y:0,z:-73,w:5.5,d:7.3,h:4.35,solid:true};
+ assert.equal(solver.status().siegeEquipmentProviderActive,false);
+ assert.equal(solver.setEquipmentCollider(()=>equipment),true);
+ const from={x:0,y:14.885,z:-40.2};
+ const arrow=solver.launch({state,scenario,from,
+  aim:{x:0,y:-9.2,z:-33},team:'blue',charge:.55,range:90});
+ assert(arrow?.id>0);
+ assert.equal(solver.status().authenticPhysicalSiegeEquipmentContacts,0);
+ assert.equal(solver.advance({state,scenario,dt:.06}).length,0);
+ let impacts=[];
+ for(let i=0;i<30&&!impacts.length;i++)
+   impacts=solver.advance({state,scenario,dt:.025});
+ assert.equal(impacts.length,1);
+ assert.equal(impacts[0].kind,'equipment');
+ assert.equal(impacts[0].equipmentId,'ak05-ram-body');
+ assert.equal(impacts[0].weapon,'bow');
+ assert(impacts[0].point.y>0&&impacts[0].point.y<4.35);
+ assert.equal(solver.status().authenticPhysicalSiegeEquipmentContacts,1);
+ assert.equal(solver.status().activePlayerArrows,0);
+ assert.equal(solver.status().pendingRealEquipmentDamage,undefined);
+});
+test('AK-05b3 siege-only equipment provider is absent for the original player solver',()=>{
+ const state=fake(),scenario=scenarios(),solver=physics.create({map});
+ const from={x:0,y:14.885,z:-40.2};
+ const to={x:0,y:2.7,z:-73};
+ assert.equal(physics.trace({state,map,scenario,from,to,team:'blue'}),null);
+ assert.throws(()=>solver.setEquipmentCollider(12),/requires live collider provider/);
+ assert.throws(()=>physics.trace({state,map,scenario,from,to,team:'blue',
+  equipmentCollider:{id:'bad',x:0,y:0,z:-73,w:5,h:5,d:5,solid:true}}),
+  /Invalid AK-05b3/);
+ solver.setEquipmentCollider(()=>({id:'ak05-ram-body',x:0,y:0,z:-73,
+  w:5.5,d:7.3,h:4.35,solid:true}));
+ assert.equal(physics.trace({state,map,scenario,from,to,team:'blue'}),null);
+ assert.equal(solver.setEquipmentCollider(null),false);
+ assert.equal(solver.status().siegeEquipmentProviderActive,false);
+});

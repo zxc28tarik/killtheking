@@ -214,3 +214,60 @@ test('AK-05b2 earlier approved S4B1 soldier shots work with no siege ram plugged
  assert.doesNotThrow(()=>rampart.afterNativeStep(b.rampartAI,.08));
  assert.equal(b.scenario.gate.hp,600);
 });
+
+test('AK-05b3 four original G5.4 blue rampart bows launch delayed 3D ram arrows, no fabricated hit on release',()=>{
+ const b=bridge.create({armyEngine:A,map,objectives,traversal,
+  playerTeam:'red',playerType:'sword',seed:1600,
+  structureCombatEngine:structure,assaultNavigationEngine:assault,
+  ladderAIEngine:ladder,captureAIEngine:capture,
+  defenderAIEngine:defend,rampartAIEngine:rampart,
+  ballisticsAPI:ballistics,weaponBalance:W,
+  fourSquadCommandEngine:four,ramEngine:ram
+ });
+ assert.equal(b.rampartAI.ram,b.ram);
+ assert.equal(b.rampartAI.ballistics.status().siegeEquipmentProviderActive,true);
+ for(const u of b.state.soldiers){
+  if(b.rampartAI.posts.has(u.id))continue;
+  u.x=u.team==='red'?-118:118;u.z=-116;u.siegeY=0;
+ }
+ for(const p of b.rampartAI.posts.values())
+  if(p.type==='musket')p.nextShotAt=100; // fixture isolates BOW
+ const hp=b.ram.hp;
+ b.state.elapsed=3.05;
+ rampart.afterNativeStep(b.rampartAI,.05);
+ let q=rampart.snapshot(b.rampartAI);
+ assert(q.nativeBlueRampartPhysicalBowVsRamShots>=1,
+   'No original blue native bow AI queued physical ram arrow');
+ assert(q.nativeBlueRampartPhysicalBowVsRamShots<=4);
+ assert.equal(b.ram.hp,hp,'Arrow launch cannot immediately hit equipment');
+ assert(q.pendingRealRamArrowIds>=1);
+ assert.equal(q.nativeOriginalBowInterval,4);
+ assert.equal(q.nativeOriginalMusketInterval,15);
+ const launched=q.nativeBlueRampartPhysicalBowVsRamShots;
+ b.state.elapsed+=.025;rampart.afterNativeStep(b.rampartAI,.025);
+ assert.equal(b.ram.hp,hp,'Arrow crossed a long physical distance instantaneously');
+ let simulation=0;
+ while(simulation<1.6&&b.rampartAI.ballistics.status().activePlayerArrows){
+  b.state.elapsed+=.025;simulation+=.025;
+  rampart.afterNativeStep(b.rampartAI,.025);
+ }
+ q=rampart.snapshot(b.rampartAI);
+ assert.equal(q.pendingRealRamArrowIds,0);
+ assert.equal(q.nativeBlueRampartPhysicalBowVsRamShots,launched);
+ assert.equal(q.bowEquipmentDamage,b.ram.defenderBowHits*ram.SETTINGS.defenderBowDamage);
+ assert.equal(b.ram.hp,hp-q.bowEquipmentDamage);
+ assert(q.nativeBlueRampartPhysicalBowRamImpacts>0,
+   'At least one original 3D native bow flight should hit wooden chassis');
+ assert.equal(q.nativeBlueRampartPhysicalBowRamImpacts,b.ram.defenderBowHits);
+ assert.equal(b.state.soldiers.length,140);
+ assert.equal(b.scenario.gate.hp,600);
+});
+test('AK-05b3 no equipment source means preserved authentic S4B1 arrow-vs-soldier behavior',()=>{
+ const b=make();
+ assert.equal(b.rampartAI.ram,null);
+ assert.equal(b.rampartAI.ballistics.status().siegeEquipmentProviderActive,false);
+ assert.equal(rampart.snapshot(b.rampartAI).nativeBlueRampartPhysicalBowVsRamShots,0);
+ assert.equal(b.state.soldiers.length,140);
+ assert.equal(W.SHOT_INTERVAL.bow,4);
+ assert.equal(W.SHOT_INTERVAL.musket,15);
+});

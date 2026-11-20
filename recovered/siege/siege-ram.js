@@ -16,7 +16,8 @@
    crewRadius:10.5,minimumPushers:2,minimumStrikers:3,
    strikeSeconds:3.4,strikeDamage:36,
    retargetDistance:3.2,retargetSeconds:1.2,
-   maxEvents:22,maxHp:360,defenderMusketDamage:32
+   maxEvents:22,maxHp:360,defenderMusketDamage:32,
+   defenderBowDamage:6
  });
  const finite=x=>typeof x==='number'&&Number.isFinite(x);
  const r2=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
@@ -77,6 +78,7 @@
      maxHp:SETTINGS.maxHp,hp:SETTINGS.maxHp,destroyed:false,
      defenderShots:0,defenderHits:0,defenderDamage:0,
      defenderShotEvents:[],defenderLastShotAt:new Map(),crewReassignments:0,
+     defenderBowHits:0,lastEquipmentHitAt:-Infinity,lastImpactWeapon:null,
      strikeEvents:[]
    };
  }
@@ -168,14 +170,24 @@
      z:from.z+direction.z*enter
    }};
  }
- function hitByDefender(c,{soldierId,weapon,damage,from,to,ballistics,verifiedPost=false}={}){
+ function hitByDefender(c,{soldierId,weapon,damage,from,to,ballistics,
+     verifiedPost=false,projectileImpact=null}={}){
    ensure(c);
    if(c.destroyed||c.scenario.phase==='RESULT')return {ok:false,reason:'inactive'};
    const u=c.state.soldiers.find(s=>s.id===soldierId);
+   const validMusket=weapon==='musket'&&u?.type==='musket'&&
+     finite(damage)&&damage>0&&damage<=SETTINGS.defenderMusketDamage;
+   const validBow=weapon==='bow'&&u?.type==='bow'&&
+     finite(damage)&&damage>0&&damage<=SETTINGS.defenderBowDamage&&
+     projectileImpact?.kind==='equipment'&&
+     projectileImpact?.weapon==='bow'&&
+     projectileImpact?.equipmentId==='ak05-ram-body'&&
+     Number.isSafeInteger(projectileImpact?.id)&&projectileImpact.id>0&&
+     ['x','y','z'].every(k=>finite(projectileImpact?.point?.[k])&&
+       finite(to?.[k])&&Math.abs(projectileImpact.point[k]-to[k])<.015);
    if(!verifiedPost||!u?.alive||u.hp<=0||u.team!=='blue'||
-       weapon!=='musket'||u.type!=='musket'||
+       !(validMusket||validBow)||
        c.state.squads[u.squadId]?.playerControlled||
-       !finite(damage)||damage<=0||damage>SETTINGS.defenderMusketDamage||
        !ballistics?.trace)
      return {ok:false,reason:'unauthorized-blue-native-rampart-shot'};
    if(!from||!finite(from.x)||!finite(from.y)||!finite(from.z)||
@@ -183,7 +195,8 @@
        Math.abs(from.y-((u.siegeY??0)+1.85))>.02)
      return {ok:false,reason:'inconsistent-native-shooter-position'};
    const last=c.defenderLastShotAt.get(u.id);
-   if(last!==undefined&&c.state.elapsed-last<15-1e-8)
+   if(last!==undefined&&c.state.elapsed-last<
+       (weapon==='musket'?15:3.5)-1e-8)
      return {ok:false,reason:'native-musket-cadence'};
    const hit=rayHit(c,from,to);
    if(!hit)return {ok:false,reason:'miss'};
@@ -196,7 +209,9 @@
    const dealt=Math.min(c.hp,damage);
    c.defenderLastShotAt.set(u.id,c.state.elapsed);
    c.hp-=dealt;
+   c.lastEquipmentHitAt=c.state.elapsed;c.lastImpactWeapon=weapon;
    c.defenderShots++;c.defenderHits++;c.defenderDamage+=dealt;
+   if(weapon==='bow')c.defenderBowHits++;
    c.defenderShotEvents.push({shooterId:u.id,weapon,nativeTick:c.state.tick,
      at:c.state.elapsed,dealt,ramHp:c.hp});
    if(c.defenderShotEvents.length>SETTINGS.maxEvents)c.defenderShotEvents.shift();
@@ -318,12 +333,17 @@
      hp:c.hp,maxHp:c.maxHp,destroyed:c.destroyed,
      defenderShots:c.defenderShots,defenderHits:c.defenderHits,
      actualDefenderDamage:c.defenderDamage,
+     physicalBowRamHits:c.defenderBowHits,
+     lastEquipmentHitAt:c.lastEquipmentHitAt,
+     lastImpactWeapon:c.lastImpactWeapon,
+     equipmentBalanceProvisional:true,
+     defenderBowDamagePerImpact:SETTINGS.defenderBowDamage,
      actualBlueNativeShooterIds:[...new Set(c.defenderShotEvents.map(e=>e.shooterId))],
      crewReassignments:c.crewReassignments,
      defenderShotEvents:c.defenderShotEvents.slice(-5).map(e=>({...e})),
      collisionWithPlayerImplemented:true,
      collisionWithGroundSoldiersImplemented:true,
-     defenderCanDamageRamImplemented:false,
+     defenderCanDamageRamImplemented:true,
      livingActorBlockedAdvances:c.blockedAdvances,
      ramBodyDimensions:{...BODY},
      independentManciniAndSiegeTowerImplemented:false
@@ -360,7 +380,8 @@
    for(const x of [-2,2])
      add(new THREE.BoxGeometry(.15,.36,1.8),iron,x,3.7,0);
    group.position.set(c.x,0,c.z);scene.add(group);
-   const visual={group,log,head,meshCount:group.children.length};
+   const visual={group,log,head,wood,trim,iron,
+     meshCount:group.children.length};
    renderVisual(c,visual);
    return visual;
  }
@@ -369,6 +390,19 @@
    if(!visual?.group||!visual?.head)throw Error('Invalid ram 3D render bridge');
    visual.group.position.set(c.x,0,c.z);
    visual.group.visible=!c.destroyed;
+   // AK-05b3: actual native 3D equipment contact briefly warms the
+   // wood and metal. Zero fabricated hits; this is read-only feedback.
+   const flash=Math.max(0,1-(c.state.elapsed-c.lastEquipmentHitAt)/.32);
+   if(visual.wood?.emissive?.setHex){
+     visual.wood.emissive.setHex(flash>0?0x9c3b10:0x000000);
+     visual.wood.emissiveIntensity=flash*.8;
+   }
+   const gateFlash=c.strikeEvents.length&&
+     c.state.elapsed-c.strikeEvents.at(-1).nativeElapsed<.2;
+   if(visual.iron?.emissive?.setHex){
+     visual.iron.emissive.setHex(gateFlash?0xa16c2e:0x000000);
+     visual.iron.emissiveIntensity=gateFlash?.5:0;
+   }
    const swing=c.stateName==='STRIKING_REAL_GATE'?
      Math.sin((SETTINGS.strikeSeconds-c.strokeCountdown)*Math.PI*1.2)*.42:0;
    visual.log.position.z=.15+swing;

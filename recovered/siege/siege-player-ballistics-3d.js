@@ -71,7 +71,7 @@
    }
    return near;
  }
- function trace({state,map,scenario,from,to,team}={}){
+ function trace({state,map,scenario,from,to,team,equipmentCollider=null}={}){
    if(!state||state.soldiers?.length!==140||!map?.spec?.boxes||
       !scenario?.gate||!finitePoint(from)||!finitePoint(to)||
       !['red','blue'].includes(team))
@@ -109,6 +109,19 @@
          friendly:soldier.team===team,distance:best,zone:hit.zone};
      }
    }
+   // AK-05b3 only: a live castle siege machine can be intersected by a
+   // physical arrow. Older player and soldier callers omit the collider.
+   // Existing castle walls, ground and genuine bodies win first-contact.
+   if(equipmentCollider){
+     const b=equipmentCollider;
+     if(!b.solid||!['x','y','z','w','h','d'].every(k=>valid(b[k]))||
+        b.w<=0||b.h<=0||b.d<=0||b.id!=='ak05-ram-body')
+       throw Error('Invalid AK-05b3 live siege equipment collider');
+     const contact=boxRay(from,d,length,b);
+     if(contact!==null&&contact<best-.000001){
+       best=contact;closest={kind:'equipment',equipmentId:b.id,distance:contact};
+     }
+   }
    if(!closest)return null;
    return {...closest,point:{x:from.x+d.x*closest.distance,
      y:from.y+d.y*closest.distance,z:from.z+d.z*closest.distance}};
@@ -116,7 +129,14 @@
  function create({map,scene=null,THREE=null}={}){
    if(!map?.spec?.boxes)throw Error('Missing S1 castle map');
    let arrows=[],nextId=1,shotCount=0,impactCount=0,
-     elevatedHits=0,wallBlocks=0,lastImpact=null;
+     elevatedHits=0,wallBlocks=0,equipmentImpacts=0,lastImpact=null,
+     equipmentProvider=null;
+   function setEquipmentCollider(provider=null){
+     if(provider!==null&&typeof provider!=='function')
+       throw Error('3D siege equipment requires live collider provider');
+     equipmentProvider=provider;
+     return !!provider;
+   }
    const visuals=new Map();
    const shaft=THREE?new THREE.CylinderGeometry(.025,.025,.64,7):null;
    const featherMat=THREE?new THREE.MeshStandardMaterial({color:0xcda965,roughness:.6}):null;
@@ -179,7 +199,8 @@
            y:p.y+p.vy*h-.5*ARROW_GRAVITY*h*h,
            z:p.z+p.vz*h
          };
-         const hit=trace({state,map,scenario,from,to:next,team:p.team});
+         const hit=trace({state,map,scenario,from,to:next,team:p.team,
+           equipmentCollider:equipmentProvider?equipmentProvider():null});
          const move=Math.hypot(next.x-p.x,next.y-p.y,next.z-p.z);
          p.life+=h;p.travel+=move;
          if(hit){
@@ -196,9 +217,11 @@
        }
        if(done){
          if(done.kind==='castle'||done.kind==='ground')wallBlocks++;
+         if(done.kind==='equipment')equipmentImpacts++;
          if(done.kind==='soldier'&&(done.soldier.siegeY??0)>=1)elevatedHits++;
          impactCount++;lastImpact={kind:done.kind,id:done.id,
-           targetId:done.targetId??null,colliderId:done.colliderId??null};
+           targetId:done.targetId??null,colliderId:done.colliderId??null,
+           equipmentId:done.equipmentId??null};
          hideArrow(p);arrows.splice(i,1);events.push(done);
        }else positionArrow(p);
      }
@@ -207,7 +230,7 @@
    function reset(){
      for(const p of arrows)hideArrow(p);
      arrows=[];nextId=1;shotCount=0;impactCount=0;
-     elevatedHits=0;wallBlocks=0;lastImpact=null;
+     elevatedHits=0;wallBlocks=0;equipmentImpacts=0;lastImpact=null;
    }
    function status(){return Object.freeze({
      exactNative140Soldier3DTargets:true,
@@ -221,10 +244,13 @@
      totalProjectileImpacts:impactCount,
      elevatedSoldierIntersections:elevatedHits,
      castleOrGroundBlocks:wallBlocks,
+     authenticPhysicalSiegeEquipmentContacts:equipmentImpacts,
+     siegeEquipmentProviderActive:!!equipmentProvider,
      lastImpact,
      nativeG54Bot3DTargetingIntegrated:false
    });}
-   return Object.freeze({musket,launch,advance,reset,status});
+   return Object.freeze({musket,launch,advance,reset,status,
+     setEquipmentCollider});
  }
  return Object.freeze({create,trace,unit,ARROW_SPEED,ARROW_GRAVITY});
 });

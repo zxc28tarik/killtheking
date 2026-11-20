@@ -316,3 +316,10 @@ AK-01 kaynak kodu: `recovered/army/modules/shared-g54-army-commands.js` + `recov
 - [ ] AK-05c — Mancınık (3B mermi, gerçek kütleli engel/yapı çarpışması, karşılıklı HP/ekip).
 - [ ] AK-05d — Kuşatma kulesi (gerçek ekip, çarpışma, sur üstüne asker çıkışı).
 - [ ] AK-06 — Üç modda manuel güvenilirlik ve gerçek GPU kabulü, sonrasında kullanıcı onaylı ana dala birleşme.
+
+### AK-05b3 teknik iş ilerlemesi — 20 Kasım 2026
+
+- [x] Gerçek G5.4 mavi sur okçuları 4 saniye/kadansında, fiziksel 3B oklarla yalnız kuşatmaya özgü koçbaşını hedefleyebilir. Aynı özgün 70 m/s uçuş / 22 m/s² yerçekimi ve taş/asker/araç ilk-temas denetimi kullanılır; sahte anlık hasar yoktur.
+- [x] Koçbaşı 360 HP, tüfek 32 HP, ok 6 HP **yalnız geçici kuşatma makinesi dengeleme değerleri**; özgün dört asker sınıfı hasarı ve saldırı hızları sabit. Görsel ahşap darbe ve demir kapı vuruş geri bildirimi, koçbaşı/ok durum HUD'u.
+- [x] Opt-in yeni temas alanı orijinal Arena/Meydan dosyalarına, orijinal G5.4 SHA kaynağına veya 3 modlu router'ın izolasyonuna taşınmaz.
+- [ ] İşitsel efekt, dengeli uzun doğal gerçek senaryo, farklı FPS/GPU kabulü ve manuel oyuncu testi; **AK-05c mancınık**, **AK-05d kuşatma kulesi** ve AK-06 son kabul bekliyor. Bu yüzden AK-05 tümü tamamlanmadı.

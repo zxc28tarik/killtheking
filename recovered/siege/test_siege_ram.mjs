@@ -318,7 +318,7 @@ test('AK-05b1 advancing vehicle cannot newly contact living native player',()=>{
  assert.equal(result.state,'WAITING_FOR_CLEAR_RAM_PATH');
  assert.equal(result.livingActorBlockedAdvances,1);
  assert.equal(result.actualGateDamage,0);
- assert.equal(result.defenderCanDamageRamImplemented,false);
+ assert.equal(result.defenderCanDamageRamImplemented,true);
  r.state.playerPosition={x:50,z:-100};
  A.step(r.state,.08);realCrewNear(r,2);
  ram.afterNativeTick(r);
@@ -450,4 +450,46 @@ test('AK-05b2 ruined ram stops moving/striking, cannot reassign and removes acti
  const fresh=make().r;
  assert.equal(ram.snapshot(fresh).destroyed,false);
  assert.equal(ram.snapshot(fresh).hp,360);
+});
+
+test('AK-05b3 unflown or forged bow equipment contacts never damage genuine 140-man siege ram',()=>{
+ const {b,r}=make();
+ const nativeBlueBow=b.state.soldiers.find(u=>
+   u.team==='blue'&&u.type==='bow'&&
+   !b.state.squads[u.squadId].playerControlled);
+ assert(nativeBlueBow);
+ nativeBlueBow.x=-17;nativeBlueBow.z=-40.2;nativeBlueBow.siegeY=13.035;
+ const from={x:nativeBlueBow.x,y:14.885,z:nativeBlueBow.z};
+ const to={x:r.x,y:2.75,z:r.z};
+ const solver=ballistics.create({map});
+ const hp=r.hp;
+ const fake=ram.hitByDefender(r,{soldierId:nativeBlueBow.id,
+  weapon:'bow',damage:6,from,to,verifiedPost:true,ballistics:solver});
+ assert.equal(fake.ok,false);
+ assert.equal(r.hp,hp);
+ const invalid=ram.hitByDefender(r,{soldierId:nativeBlueBow.id,
+  weapon:'bow',damage:6,from,to,verifiedPost:true,ballistics:solver,
+  projectileImpact:{kind:'equipment',weapon:'bow',equipmentId:'not-the-ram',
+    id:3,point:to}});
+ assert.equal(invalid.ok,false);
+ assert.equal(r.hp,hp);
+ assert.equal(ram.snapshot(r).physicalBowRamHits,0);
+ assert.equal(ram.snapshot(r).defenderBowDamagePerImpact,6);
+ assert.equal(r.scenario.gate.hp,600);
+});
+test('AK-05b3 equipment impact feedback flashes only after a recorded actual hit',()=>{
+ const {r}=make();
+ const scene=new THREE.Scene(),visual=ram.mountVisual(r,{THREE,scene});
+ const initial=ram.renderVisual(r,visual);
+ assert.equal(visual.wood.emissiveIntensity,0);
+ r.lastEquipmentHitAt=r.state.elapsed;
+ r.lastImpactWeapon='bow';
+ ram.renderVisual(r,visual);
+ assert(visual.wood.emissiveIntensity>0);
+ r.state.elapsed+=.4;
+ ram.renderVisual(r,visual);
+ assert.equal(visual.wood.emissiveIntensity,0);
+ assert.equal(ram.snapshot(r).defenderCanDamageRamImplemented,true);
+ ram.removeVisual(visual,scene);
+ assert.equal(scene.children.includes(visual.group),false);
 });

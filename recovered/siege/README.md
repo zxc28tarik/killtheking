@@ -136,3 +136,7 @@ S3C1 doğal kapı, S3C2 iki merdiven, S3C3 109,36 oyun saniyelik saldırgan keep
 ### AK-05b2 koçbaşı savunma adayı
 
 AK-05a orijinal G5.4 kırmızı mızrakçı atamasını, yürüyüşünü ve gerçek S1 kapı HP bağlantısını korur. AK-05b1 dinamik kale çarpışması üzerine AK-05b2'de gerçek 3B görüş hattı açık olan mavi G5.4 sur tüfekçileri mevcut S4B1 atış saatinden bir atışı koçbaşına ayırabilir. Geçici dayanıklılık 360, ekipman HP kaybı mavi tüfek isabetinde 32'dir. Bu özgün G5.4 asker silahı yerine yeni yapı HP mekanizmasıdır. 0 HP koçbaşını etkisiz hale getirir; komutan, canlı gerçek mızrakçıları aynı native yetkiyle yeniden çağırabilir. Bu ara aday, okçuların koçbaşına atışını, fiziksel gerçek Windows GPU/oyuncu kabulünü, mancınık ve kuşatma kulesini henüz tamamlamaz.
+
+### AK-05b3 fiziksel savunma oku
+
+Surdaki gerçek mavi G5.4 okçuları, önceki S4B1 gerçek fiziksel ok atışı (70 m/s ve 22 m/s²) ile koçbaşının canlı `ak05-ram-body` 3B gövdesine nişan alabilir. `siege-player-ballistics-3d.js` içindeki isteğe bağlı ekipman sağlayıcısı, eski oyuncu ve S4B1 yalnız asker savaşında kapalıdır. Yalnız uçuş sonunda 3B ilk temas `equipment` ise kuşatma HP'sine geçici 6 HP ok hasarı aktarılır; G5.4 asker hasarı ve kapı HP'si ayrıdır. Darbe anında görsel ahşap parlaması ve HUD'da koçbaşı ok bilgileri gösterilir. Ses, uzun GPU ve mancınık/kule hâlâ açık iş.
