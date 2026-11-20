@@ -29,6 +29,8 @@ on:
       - 'recovered/siege/test_siege_rampart_ai.mjs'
       - 'recovered/siege/siege-defender-ai.js'
       - 'recovered/siege/test_siege_defender_ai.mjs'
+      - 'recovered/siege/siege-ram.js'
+      - 'recovered/siege/test_siege_ram.mjs'
       - 'recovered/siege/siege-real-army-bridge.js'
       - 'recovered/siege/siege-player-ballistics-3d.js'
       - 'recovered/siege/test_siege_player_ballistics_3d.mjs'
@@ -59,6 +61,8 @@ jobs:
         run: |
           node --check recovered/army/integration/build_three_mode_launcher.mjs
           node --check recovered/army/integration/g54-field-four-squad-runtime.js
+          node --check recovered/siege/siege-ram.js
+          node --check recovered/siege/test_siege_ram.mjs
           node --check recovered/army/integration/test_three_mode_launcher.mjs
           node --check recovered/army/integration/browser_three_mode_smoke.mjs
       - name: Compile exact source-pinned October FFA game
@@ -102,6 +106,7 @@ jobs:
           node --test recovered/siege/test_shared_g54_battle_session.mjs
           node --test recovered/siege/test_shared_g54_player_input.mjs
           node --test recovered/siege/test_g54_four_squad_command.mjs
+          node --test recovered/siege/test_siege_ram.mjs
           node --test recovered/siege/test_siege_collision_recovery.mjs
       - name: Verify exactly three modes with explicit non-final-engine boundaries
         run: |
@@ -129,6 +134,9 @@ jobs:
              m.siegeAK03SharedNativeG54BattleSession!==true||
              m.siegeAK03bFieldStylePointerLockAndAim!==true||
              m.siegeAK04aNativeFourSquadCastleOrders!==true||
+             m.siegeAK05aNativeCrewOperatedRam!==true||
+             m.siegeAK05aRealRamThreeJSModel!==true||
+             m.siegeAK05aIndependentSiegeCatapultComplete!==false||
              m.siegeAK04aFourDistinctAlliedNativeSquads!==true||
              m.fieldArmyUnmodifiedSourceFourSquadUIIntegrated!==true||
              m.fieldArmyOriginalPayloadByteIdentical!==true||

@@ -20,6 +20,8 @@ on:
       - 'recovered/siege/test_siege_rampart_ai.mjs'
       - 'recovered/siege/siege-defender-ai.js'
       - 'recovered/siege/test_siege_defender_ai.mjs'
+      - 'recovered/siege/siege-ram.js'
+      - 'recovered/siege/test_siege_ram.mjs'
       - 'recovered/siege/siege-real-army-bridge.js'
       - 'recovered/siege/siege-player-ballistics-3d.js'
       - 'recovered/siege/test_siege_player_ballistics_3d.mjs'
@@ -59,6 +61,8 @@ jobs:
           node --check recovered/siege/siege-player-locomotion.js
           node --check recovered/siege/test_siege_player_locomotion.mjs
           node --check recovered/siege/siege-real-army-overlay.js
+          node --check recovered/siege/siege-ram.js
+          node --check recovered/siege/test_siege_ram.mjs
           node --check recovered/army/modules/shared-g54-army-commands.js
           node --check recovered/army/modules/shared-g54-battle-session.js
           node --check recovered/army/modules/shared-g54-player-input.js
@@ -83,6 +87,7 @@ jobs:
           node --test recovered/siege/test_shared_g54_battle_session.mjs
           node --test recovered/siege/test_shared_g54_player_input.mjs
           node --test recovered/siege/test_g54_four_squad_command.mjs
+          node --test recovered/siege/test_siege_ram.mjs
           node --test recovered/siege/test_siege_collision_recovery.mjs
       - name: Unmodified natural S3C3, dual ladders, gate, 140 soldier and S1/S2 regression
         run: |
@@ -104,6 +109,8 @@ jobs:
           const m=JSON.parse(readFileSync(p+'.build.json','utf8'));
           if(m.authenticSoldiersAndCombatEngine!==true ||
              m.genuineNativePlayerHealthAndHits!==true ||
+             m.AK05aLivingG54PikeOperatedRam!==true ||
+             m.AK05aRealThreeJSRamMesh!==true ||
              m.humanG54GroundWeaponDamage!==true ||
              m.originalWeaponBalancePreserved!==true ||
              m.realFPSPlayerWeaponConnected!==true ||
