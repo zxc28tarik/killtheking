@@ -165,19 +165,19 @@ test('ram crew lost at gate blocks ALL further gate damage without fresh living 
  assert.equal(ram.snapshot(r).strikeCount,1);
  assert.equal(ram.snapshot(r).crewCount,0);
 });
-test('original objective FSM actually opens the gate only after accumulated verified ram contacts',()=>{
- const {r}=make('red',{gateHp:72});
+test('real original objective FSM opens 36HP QA gate after one verified crewed ram strike',()=>{
+ const {r}=make('red',{gateHp:36});
  assert.equal(ram.enlist(r).ok,true);
  r.z=r.terminalZ;
- for(let i=0;i<102&&!r.scenario.gate.open;i++){
-   realCrewNear(r,3);
+ for(let i=0;i<65&&!r.scenario.gate.open;i++){
+   realCrewNear(r,5);
    nativeTick(r);
  }
  assert.equal(r.scenario.gate.open,true);
  assert.equal(r.scenario.lanes.gate,true);
  assert.equal(r.scenario.gate.hp,0);
- assert.equal(r.strikeCount,2);
- assert.equal(r.actualGateDamage,72);
+ assert.equal(r.strikeCount,1);
+ assert.equal(r.actualGateDamage,36);
  assert.equal(ram.snapshot(r).state,'GATE_BREACHED');
  assert.equal(r.scenario.events.some(e=>e.type==='GATE_BREACHED'),true);
 });
