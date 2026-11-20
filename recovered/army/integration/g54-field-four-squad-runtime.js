@@ -19,7 +19,8 @@
  if(!hud||!mapOverlay||!tacticalCanvas||!mapMessage)
    throw Error('AK-04b requires original G5.4 live field commander HUD/map');
  let active=null,mapZoom=240,mapAction='destination',mapClicks=0,
-   mapAccept=0,domCommands=0,keyCommands=0,statesCreated=0;
+   mapAccept=0,domCommands=0,keyCommands=0,statesCreated=0,
+   deliberateCommanderResumes=0;
  const TYPES={sword:'Kılıçlı',pike:'Mızrakçı',bow:'Okçu',musket:'Tüfekçi'};
  // Original field C=square and V=quick ability. Preserve V combat input.
  const FORM_KEYS={KeyZ:'line',KeyX:'column',KeyC:'square',
@@ -69,6 +70,7 @@
      originalSourcePayloadPreserved:true,
      adapterUsesOnlyOriginalNativeG54PublicAPI:true,
      statesCreated,mapClicks,mapAccepted:mapAccept,domCommands,keyCommands,
+     deliberateCommanderResumes,
      fieldNativeMeleeAndRangedDamageUnmodified:true,
      mapOriginalFieldZoom:mapZoom,
      nativeFieldGameSourceEdited:false};
@@ -79,8 +81,27 @@
    const c=active.cmd;
    return c.selected.length===1&&c.selected[0]===c.realOwnerId;
  }
+ function activateCommander(){
+   if(!active)return;
+   // The historic field FPS pauses on ESC/pointer-unlock. A deliberate
+   // click on this unit-commander toolbar must be able to resume native
+   // G5.4 AI combat WITHOUT recapturing the mouse (the player is issuing
+   // orders). Normal ESC alone still pauses as in the original game.
+   if(typeof arenaMatch==='undefined'||typeof isGameActive==='undefined'||
+      typeof menuOverlay==='undefined')
+     throw Error('Missing historic G5.4 field match lifecycle');
+   if(arenaMatch.phase==='paused'){
+     ArenaMatch.resume(arenaMatch);
+     isGameActive=arenaMatch.phase==='playing';
+     if(isGameActive){
+       menuOverlay.classList.add('hidden');
+       deliberateCommanderResumes++;
+     }
+   }
+ }
  function command(action,value,x,z){
    if(!active)return {ok:false,reason:'No real G5.4 field army started'};
+   activateCommander();
    const result=shared.execute(active.cmd,{action,value,x,z});
    if(result.someAccepted)domCommands++;
    show(result.ok?'✓ '+action+' · '+result.accepted+' bölük':
@@ -97,6 +118,7 @@
  }
  function choose(index,all){
    if(!active)throw Error('No original native G5.4 match');
+   activateCommander();
    const ids=shared.snapshot(active.cmd).authorizedFriendlySquadIds;
    if(all)shared.pickAll(active.cmd);
    else shared.select(active.cmd,ids[index]);
@@ -149,7 +171,7 @@
  // the historic HUD and original game layout remain untouched.
  const floating=controls('floating');
  floating.id='ak04-field-floating-commander';
- floating.style.cssText='position:fixed;right:12px;top:75px;z-index:110;'+
+ floating.style.cssText='position:fixed;right:12px;top:75px;z-index:999999;'+
    'width:min(455px,calc(100vw - 24px));max-height:43vh;overflow:auto;'+
    'display:none;background:rgba(13,27,44,.97);padding:9px 10px;'+
    'border:2px solid #d8ac64;border-radius:9px;'+
@@ -197,8 +219,11 @@
    const summary='Seçim: '+names.join(' + ')+
      ' • Fiziksel oyuncu: '+TYPES[active.state.playerType]+
      ' • gerçek G5.4 komut';
-   floating.style.display=
-     !hud.classList.contains('hidden')&&
+   // Keep commander accessible while native ESC has paused the battle;
+   // only a conscious commander click resumes. Old full HUD may hide.
+   floating.style.display=(
+     !hud.classList.contains('hidden')||
+     (typeof arenaMatch!=='undefined'&&arenaMatch.phase==='paused'))&&
      mapOverlay.classList.contains('hidden')?'block':'none';
    for(const bar of [originalCommander,tacticalCommander,floating]){
      bar.querySelector('[data-ak04-status]').textContent=summary;
