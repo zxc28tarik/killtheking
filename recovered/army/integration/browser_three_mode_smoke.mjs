@@ -99,8 +99,9 @@ try{
   JSON.stringify(army));
  // AK-04b: unchanged historical field game, four authentic allied squads.
  assert.equal(await child().locator('[data-ak04-selector="hud"]').count(),1);
- assert.equal(await child().locator('[data-ak04-pick]').count(),8);
- assert.equal(await child().locator('[data-ak04-all]').count(),2);
+ assert.equal(await child().locator('[data-ak04-pick]').count(),12);
+ assert.equal(await child().locator('[data-ak04-selector="floating"]').count(),1);
+ assert.equal(await child().locator('[data-ak04-all]').count(),3);
  await child().locator('#play-btn').click();
  await page.waitForFunction(()=>{
    const w=document.querySelector('#stage iframe')?.contentWindow;
@@ -121,8 +122,12 @@ try{
  assert.equal(originalStatus.meadowBattle.playerSquadId,
    initialField.truePhysicalPlayerSquadId);
  report.checks.push('PASS_AK04B_REAL_ORIGINAL_FIELD_BLUE_FOUR_SQUAD_AUTHORITY_140_NATIVE');
+ await child().locator('#ak04-field-floating-commander').waitFor({state:'visible',timeout:85000});
+ // The original G5.4 mouse pointer may still be locked after Play.
+ await page.keyboard.press('Escape');
+ await page.waitForTimeout(260);
  for(let i=0;i<4;i++){
-   await child().locator('[data-ak04-selector="hud"] [data-ak04-pick="'+i+'"]').click();
+   await child().locator('[data-ak04-selector="floating"] [data-ak04-pick="'+i+'"]').click();
    const selected=await fieldStatus();
    assert.deepEqual(selected.selectedSquadIds,
      [selected.authorizedFriendlySquadIds[i]]);
@@ -130,7 +135,7 @@ try{
    const after=await fieldStatus();
    assert.equal(after.squads.find(s=>s.id===selected.selectedSquadIds[0]).order,'hold');
  }
- await child().locator('[data-ak04-selector="hud"] [data-ak04-all]').click();
+ await child().locator('[data-ak04-selector="floating"] [data-ak04-all]').click();
  assert.equal((await fieldStatus()).selectedSquadIds.length,4);
  await child().locator('[data-ak04-action="order"][data-ak04-value="charge"]').click();
  assert((await fieldStatus()).squads.every(s=>s.order==='charge'));
