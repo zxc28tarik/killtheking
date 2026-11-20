@@ -17,7 +17,10 @@ const catapult=require('./siege-catapult.js');
 const ballistics=require('./siege-player-ballistics-3d.js');
 const bridge=require('./siege-real-army-bridge.js');
 const source=readFileSync(new URL('../army/mirror/arena-army-battle-true-side-swap.js',import.meta.url),'utf8');
-const ctx=vm.createContext({console});vm.runInContext(source,ctx,{timeout:3000});
+const balance=readFileSync(new URL('../army/modules/weapon-balance.js',import.meta.url),'utf8');
+const ctx=vm.createContext({console});
+vm.runInContext(balance,ctx,{timeout:3000});
+vm.runInContext(source,ctx,{timeout:3000});
 const A=ctx.ArenaArmyBattle;
 function make(team='red',withRam=false){
  return bridge.create({armyEngine:A,map,objectives,traversal,
