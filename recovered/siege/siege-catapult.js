@@ -13,7 +13,8 @@
    x:-18,z:-90,bodyW:5.0,bodyD:6.4,bodyH:4.0,
    crewRadius:12.5,minimumCrew:3,cooldownSeconds:9.5,
    damage:100,projectileSpeed:27,gravity:19,
-   launchY:5.0,gateAimY:5.5,maxFlight:5,maxLogs:16
+   launchY:5.0,gateAimY:5.5,maxFlight:5,maxLogs:16,
+   maxHp:300,defenderMusketDamage:28
  });
  const finite=x=>typeof x==='number'&&Number.isFinite(x);
  function ensure(c){
@@ -48,12 +49,82 @@
      cooldown:0,shots:0,gateHits:0,gateDamage:0,
      blockedShots:0,misses:0,shotsHistory:[],
      lastTime:state.elapsed,lastTick:state.tick,
-     lastImpactAt:-Infinity,lastImpactKind:null};
+     lastImpactAt:-Infinity,lastImpactKind:null,
+     maxHp:SETTINGS.maxHp,hp:SETTINGS.maxHp,destroyed:false,
+     defenderHits:0,defenderShots:0,defenderDamage:0,
+     defenderLastShotAt:new Map(),defenderEvents:[]};
  }
- function collider(c){ensure(c);return {
+ function collider(c){ensure(c);if(c.destroyed)return null;return {
    id:'ak05c-catapult-body',x:c.x,y:0,z:c.z,
    w:SETTINGS.bodyW,d:SETTINGS.bodyD,h:SETTINGS.bodyH,solid:true
  };}
+ function rayHit(c,from,to){
+   ensure(c);
+   if(!from||!to||!['x','y','z'].every(k=>finite(from[k])&&finite(to[k])))
+     throw Error('Invalid AK-05c2 3D defender equipment ray');
+   if(c.destroyed)return null;
+   const direction={x:to.x-from.x,y:to.y-from.y,z:to.z-from.z};
+   const length=Math.hypot(direction.x,direction.y,direction.z);
+   if(length<=1e-6)return null;
+   const box=collider(c);let enter=0,exit=1;
+   for(const [k,min,max] of [
+     ['x',box.x-box.w/2,box.x+box.w/2],
+     ['y',box.y,box.y+box.h],
+     ['z',box.z-box.d/2,box.z+box.d/2]
+   ]){
+     if(Math.abs(direction[k])<1e-12){
+       if(from[k]<min||from[k]>max)return null;
+       continue;
+     }
+     let a=(min-from[k])/direction[k],b=(max-from[k])/direction[k];
+     if(a>b)[a,b]=[b,a];
+     enter=Math.max(enter,a);exit=Math.min(exit,b);
+     if(enter>exit)return null;
+   }
+   return {distance:length*enter,point:{
+     x:from.x+direction.x*enter,y:from.y+direction.y*enter,
+     z:from.z+direction.z*enter}};
+ }
+ function hitByDefender(c,{soldierId,weapon,damage,from,to,ballistics,
+   verifiedPost=false}={}){
+   ensure(c);
+   if(c.destroyed||c.scenario.phase==='RESULT')
+     return {ok:false,reason:'inactive'};
+   const u=c.state.soldiers.find(s=>s.id===soldierId);
+   if(!verifiedPost||!u?.alive||u.hp<=0||u.team!=='blue'||
+      u.type!=='musket'||weapon!=='musket'||
+      c.state.squads[u.squadId]?.playerControlled||
+      !finite(damage)||damage<=0||damage>SETTINGS.defenderMusketDamage||
+      !ballistics?.trace)
+     return {ok:false,reason:'unauthorized-native-blue-rampart-musket'};
+   if(!from||!finite(from.x)||!finite(from.y)||!finite(from.z)||
+      Math.hypot(from.x-u.x,from.z-u.z)>.02||
+      Math.abs(from.y-((u.siegeY??0)+1.85))>.02)
+     return {ok:false,reason:'inconsistent-native-blue-shooter-position'};
+   const last=c.defenderLastShotAt.get(u.id);
+   if(last!==undefined&&c.state.elapsed-last<15-1e-8)
+     return {ok:false,reason:'native-musket-cadence'};
+   const contact=rayHit(c,from,to);
+   if(!contact)return {ok:false,reason:'miss'};
+   const first=ballistics.trace({state:c.state,map:c.map,
+     scenario:c.scenario,from,to,team:'blue'});
+   if(first&&first.distance<contact.distance-1e-6)
+     return {ok:false,reason:'covered',firstKind:first.kind};
+   const dealt=Math.min(c.hp,damage);
+   c.defenderLastShotAt.set(u.id,c.state.elapsed);
+   c.hp-=dealt;c.defenderShots++;c.defenderHits++;
+   c.defenderDamage+=dealt;
+   c.lastImpactAt=c.state.elapsed;c.lastImpactKind='counterbattery';
+   c.defenderEvents.push({shooterId:u.id,nativeTick:c.state.tick,
+     at:c.state.elapsed,weapon:'musket',dealt,hp:c.hp,
+     point:{...contact.point}});
+   if(c.defenderEvents.length>SETTINGS.maxLogs)c.defenderEvents.shift();
+   if(c.hp<=0){
+     c.hp=0;c.destroyed=true;c.projectile=null;
+     c.stateName='DESTROYED_BY_NATIVE_BLUE_COUNTERBATTERY';
+   }
+   return {ok:true,dealt,hp:c.hp,destroyed:c.destroyed};
+ }
  function crew(c){
    ensure(c);
    const alive=c.state.soldiers.filter(u=>u.alive&&u.hp>0&&
@@ -65,6 +136,7 @@
  }
  function enlist(c){
    ensure(c);
+   if(c.destroyed)return {ok:false,reason:'Destroyed physical siege catapult'};
    if(c.assigned)return {ok:true,alreadyAssigned:true};
    if(c.state.playerTeam!=='red'||c.state.playerHealth<=0||
       c.scenario.phase==='RESULT'||c.scenario.gate.open)
@@ -155,6 +227,11 @@
    const tickChanged=c.state.tick>c.lastTick;
    c.lastTime=c.state.elapsed;c.lastTick=c.state.tick;
    crew(c);
+   if(c.destroyed){
+     c.projectile=null;
+     c.stateName='DESTROYED_BY_NATIVE_BLUE_COUNTERBATTERY';
+     return snapshot(c);
+   }
    if(c.scenario.phase==='RESULT'){
      c.projectile=null;c.stateName='BATTLE_ENDED';return snapshot(c);
    }
@@ -191,13 +268,19 @@
      shots:c.shots,gateHits:c.gateHits,actualGateDamage:c.gateDamage,
      blockedShots:c.blockedShots,misses:c.misses,
      actualS1GateHp:c.scenario.gate.hp,
+     hp:c.hp,maxHp:c.maxHp,destroyed:c.destroyed,
+     genuineBlueRampartHits:c.defenderHits,
+     genuineBlueRampartEquipmentDamage:c.defenderDamage,
+     nativeDefenderShotEvents:c.defenderEvents.slice(-4).map(e=>({...e})),
+     counterBatteryNativeMusket15s:true,
      lastImpactKind:c.lastImpactKind,lastImpactAt:c.lastImpactAt,
      impactHistory:c.shotsHistory.slice(-4).map(e=>({...e})),
      native140SoldierAuthorityPreserved:true,
      noFreeShotsWithoutLivingArchers:true,
      real3DFirstContactPhysics:true,
      soldierProjectileDamageNotYetImplemented:true,
-     defenderCounterBatteryNotYetImplemented:true};
+     defenderCounterBatteryNotYetImplemented:false,
+     blueArcherCounterBatteryNotYetImplemented:true};
  }
  function mountVisual(c,{THREE,scene}={}){
    ensure(c);
@@ -228,20 +311,31 @@
    projectile.name='AK05C1_Live_Physical_Projectile';
    projectile.castShadow=true;scene.add(projectile);
    group.position.set(c.x,0,c.z);scene.add(group);
-   const v={group,projectile,beam,cup,wood,iron,meshCount:group.children.length+1};
+   const v={group,projectile,beam,cup,wood,iron,
+     meshCount:group.children.length+1};
    renderVisual(c,v);return v;
  }
  function renderVisual(c,v){
    ensure(c);
    if(!v?.group||!v.projectile)throw Error('Invalid AK-05c1 visual');
    v.group.position.set(c.x,0,c.z);
-   v.projectile.visible=!!c.projectile;
+   // Keep the wreck visible as a visibly damaged physical siege machine.
+   v.beam.rotation.z=c.destroyed?-.55:0;
+   v.cup.scale.setScalar(c.destroyed?.72:1);
+   v.projectile.visible=!c.destroyed&&!!c.projectile;
+   const counterFlash=Math.max(0,1-
+     (c.state.elapsed-c.lastImpactAt)/.38);
+   v.wood.emissive.setHex(counterFlash>0&&
+     c.lastImpactKind==='counterbattery'?0x9c340e:0);
+   v.wood.emissiveIntensity=counterFlash*.85;
+   v.wood.color.setHex(c.destroyed?0x302922:0x5e422a);
    if(c.projectile)v.projectile.position.set(
      c.projectile.x,c.projectile.y,c.projectile.z);
    const flash=Math.max(0,1-(c.state.elapsed-c.lastImpactAt)/.35);
    v.iron.emissive.setHex(flash&&c.lastImpactKind==='gate'?0x9d672f:0);
    v.iron.emissiveIntensity=flash*.7;
-   const arm=c.projectile?-.18:Math.sin(c.cooldown/.55)*.06;
+   const arm=c.destroyed?-.62:c.projectile?-.18:
+     Math.sin(c.cooldown/.55)*.06;
    v.beam.rotation.x=arm;
    return {visible:true,projectileInFlight:!!c.projectile,meshCount:v.meshCount};
  }
@@ -254,6 +348,6 @@
        if(o.material&&!o.material.userData?.shared)o.material.dispose?.();
      });
  }
- return Object.freeze({create,enlist,afterNativeTick,collider,
-   snapshot,mountVisual,renderVisual,removeVisual,SETTINGS});
+ return Object.freeze({create,enlist,afterNativeTick,collider,rayHit,
+   hitByDefender,snapshot,mountVisual,renderVisual,removeVisual,SETTINGS});
 });

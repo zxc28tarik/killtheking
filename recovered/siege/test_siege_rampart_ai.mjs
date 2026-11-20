@@ -14,6 +14,7 @@ const ladder=require('./siege-ladder-ai.js'),capture=require('./siege-capture-ai
 const defend=require('./siege-defender-ai.js');
 const rampart=require('./siege-rampart-ai.js');
 const ram=require('./siege-ram.js');
+const catapult=require('./siege-catapult.js');
 const four=require('../army/modules/g54-four-squad-command.js');
 const ballistics=require('./siege-player-ballistics-3d.js');
 const bridge=require('./siege-real-army-bridge.js');
@@ -270,4 +271,60 @@ test('AK-05b3 no equipment source means preserved authentic S4B1 arrow-vs-soldie
  assert.equal(b.state.soldiers.length,140);
  assert.equal(W.SHOT_INTERVAL.bow,4);
  assert.equal(W.SHOT_INTERVAL.musket,15);
+});
+
+test('AK-05c2 real four blue G5.4 rampart muskets counterattack genuine catapult with original 15s cadence',()=>{
+ const b=bridge.create({armyEngine:A,map,objectives,traversal,
+  playerTeam:'red',playerType:'sword',seed:1600,
+  structureCombatEngine:structure,assaultNavigationEngine:assault,
+  ladderAIEngine:ladder,captureAIEngine:capture,
+  defenderAIEngine:defend,rampartAIEngine:rampart,
+  ballisticsAPI:ballistics,weaponBalance:W,
+  fourSquadCommandEngine:four,catapultEngine:catapult
+ });
+ assert.equal(b.rampartAI.catapult,b.catapult);
+ assert.equal(rampart.snapshot(b.rampartAI).catapultActive,true);
+ assert.equal(b.state.soldiers.length,140);
+ for(const u of b.state.soldiers){
+  if(b.rampartAI.posts.has(u.id))continue;
+  u.x=u.team==='red'?-117:117;u.z=-117;u.siegeY=0;
+ }
+ const hp=b.catapult.hp;
+ b.state.elapsed=1.05;
+ rampart.afterNativeStep(b.rampartAI,.08);
+ let s=rampart.snapshot(b.rampartAI);
+ assert(s.nativeBlueRampartCatapultShots>=1,
+  'Actual G5.4 blue wall-post muskets did not target the physical catapult');
+ assert(s.nativeBlueRampartCatapultShots<=4);
+ assert.equal(s.nativeOriginalMusketInterval,15);
+ assert(s.actualCatapultCounterBatteryDamage>0,
+  'No real original wall defender musket damaged the exposed 3D catapult');
+ assert(s.actualCatapultCounterBatteryDamage<=4*catapult.SETTINGS.defenderMusketDamage);
+ assert.equal(b.catapult.hp,hp-s.actualCatapultCounterBatteryDamage);
+ const prior=s.nativeBlueRampartCatapultShots;
+ b.state.elapsed=1.1;
+ rampart.afterNativeStep(b.rampartAI,.05);
+ s=rampart.snapshot(b.rampartAI);
+ assert.equal(s.nativeBlueRampartCatapultShots,prior);
+ assert.equal(s.nativeBlueRampartCatapultHits,b.catapult.defenderHits);
+ assert.equal(b.scenario.gate.hp,600);
+ assert.equal(b.state.soldiers.length,140);
+});
+test('AK-05c2 field-independent S4B1 ram-only and soldier-only opt-ins unaffected',()=>{
+ const solo=make();
+ assert.equal(solo.rampartAI.catapult,null);
+ assert.equal(rampart.snapshot(solo.rampartAI).nativeBlueRampartCatapultShots,0);
+ const withRam=bridge.create({armyEngine:A,map,objectives,traversal,
+  playerTeam:'red',playerType:'sword',seed:1600,
+  structureCombatEngine:structure,assaultNavigationEngine:assault,
+  ladderAIEngine:ladder,captureAIEngine:capture,
+  defenderAIEngine:defend,rampartAIEngine:rampart,
+  ballisticsAPI:ballistics,weaponBalance:W,
+  fourSquadCommandEngine:four,ramEngine:ram
+ });
+ assert.equal(withRam.rampartAI.catapult,null);
+ assert.equal(withRam.rampartAI.ram,withRam.ram);
+ assert.equal(rampart.snapshot(withRam.rampartAI).nativeBlueRampartCatapultShots,0);
+ assert.equal(W.SHOT_INTERVAL.musket,15);
+ assert.equal(W.SHOT_INTERVAL.bow,4);
 });

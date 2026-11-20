@@ -331,3 +331,12 @@ AK-01 kaynak kodu: `recovered/army/modules/shared-g54-army-commands.js` + `recov
 - [x] Three.js mancınık, taş mermisi ve HUD; üç moddan Arena/Meydan geçmiş dosyalarının hash korunması, hiçbir otomatik main merge.
 - [ ] AK-05c2: fiziksel uzun maç, karşı ateş ve mancınık dayanıklılık/yıkım, animasyon/partikül/ses, farklı hedef ve düşman asker hasarı; AK-05d kuşatma kulesi. Saha GPU/manuel yayın doğrulaması yapılacak.
 - [ ] Pitch deck kullanıcı söylemeden başlamayacak.
+
+### AK-05c2 — 20 Kasım 2026
+
+- [x] Mancınık 300 HP (geçici) ve gerçek G5.4 4 mavi sur tüfekçisinin doğal 15 saniyelik periyotlarından 28 ekipman HP isabeti; gerçek 3B taş/asker örtüsü, ayrı atış eklemeden.
+- [x] Mancınık yıkılınca mevcut uçan taş ve yeni emir/atış iptali; dinamik kütle engeli kaldırma, kararmış fiziksel enkaz/kol ve darbede renk geri bildirimi, HUD.
+- [x] Mevcut koçbaşı, gerçek 140 asker, Arena/Meydan arşivleri, özgün G5.4 SHA ve 3 mod ayrımı korunur.
+- [ ] AK-05c3: gerçek gecikmeli savunucu okları, ses/partikül ve uzun doğal denge testi.
+- [ ] AK-05d: gerçek kuşatma kulesi; ardından tüm modların Windows donanım GPU/manuel kabulü.
+- [ ] Yayıncı pitch deck kullanıcı komutu bekler; `main` merge kullanıcı onayına bağlı.

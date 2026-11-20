@@ -144,3 +144,7 @@ Surdaki gerçek mavi G5.4 okçuları, önceki S4B1 gerçek fiziksel ok atışı 
 ### AK-05c1 — bağımsız kuşatma mancınığı
 
 `siege-catapult.js` 15 gerçek kırmızı G5.4 okçusundan üçünün fiziksel varlığını kontrol ederek mevcut dört bölük yetkisiyle ateş eder. Taş mermisi sabit hız/yükseklikten gerçek uçuş/yerçekimi altına girer, 3B kule/taş/asker çizgi ilk temasında durur; yalnız gerçek `gate-main` temasına `GATE_HIT/catapult` gönderir. Yeni `catapult` kaynak sınıfı, S1 amaç motoru tarafından sadece kırmızı kapı hasar kaynağı olarak işlenir. Gösterilen 100 hasar/9,5s geçici, orijinal G5.4 oyuncu/bot hasarı değildir. Enemy splash, yıkılma, uzun GPU kabul ve kule henüz yoktur.
+
+### AK-05c2 mancınık dayanıklılığı ve karşı ateş
+
+Üçüncü moddaki gerçek mürettebatlı G5.4 mancınığı, 300 HP (geçici), yıkım, okunur HP HUD ve isabete bağlı 3B ahşap parlaması/enkaz durumunu kullanır. Orijinal G5.4 dört mavi sur tüfekçisinin atışları, önceki 15s doğal atış zamanından mancınığa ayrılır. Gerçek ilk 3B kale/140 asker teması temizse ve makinaya değdiyse geçici 28 ekipman HP kaybı olur. 0 HP'ye geldiğinde uçuş/atış/atama durur ve dinamik çarpışma gövdesi kalkar. G5.4 orijinal asker tüfeğinin hasarı ile yeni ekipman HP tablosu kesinlikle ayrı tutulur. Mavi savunucu oklarının mancınığa fiziksel teması, ses/partikül ve uzun süreli donanım GPU kabulü gelecekte.

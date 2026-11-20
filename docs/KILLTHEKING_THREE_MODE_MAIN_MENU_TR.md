@@ -259,3 +259,13 @@ AK-01 kaynak kodu: `recovered/army/modules/shared-g54-army-commands.js` + `recov
 - [x] `test_siege_catapult.mjs` gerçek G5.4 kimlikleri, komut yetkisi, yetersiz mürettebat, uçuş sürekliliği, gecikmeli kapı hasarı, engellenme, orijinal koçbaşı birlikte kullanım ve Three.js ömrü kontrollerini çalıştırır. **GitHub CI/Chromium sonuçları bu adımın doğrulaması olarak ayrıca kaydedilir.**
 - [ ] AK-05c2 açık: kuşatma makinesinin HP/yıkılma ve karşı ateş, görsel/işitsel iyileştirme, doğal gerçek oyuncu uzun maç dengesi, mancınığın farklı hedefleri ve asker sıçrama hasarı; sonra AK-05d kuşatma kulesi. Son donanım GPU ve manuel yayın kabulü bekliyor.
 - [ ] Yayıncı pitch deck **kullanıcı açıkça başlayalım diyene kadar beklemede**; geliştirme sürüyor. Kullanıcı onayı olmadan `main` dalına birleştirme yok.
+
+### AK-05c2 — Orijinal G5.4 sur tüfekçilerinden mancınığa 3B karşı ateş (20 Kasım 2026, test adayı)
+
+- [x] Yalnız Kale Kuşatması: AK-05c1 gerçek mürettebatlı mancınığa **300 HP** geçici makine dayanıklılığı eklendi. Özgün G5.4 asker HP ve dört sınıf silah hasarları değiştirilmez.
+- [x] Önceden oluşturulan **dört gerçek mavi G5.4 sur tüfekçisinin** S4B1 3B ateşi, eski **15 saniyelik doğal tüfek atış saati** içinde mancınığı hedefleyebilir; bir mermi aynı anda hem askere hem teçhizata hasar veremez. 3B yörünge ilk teması, asıl S1 kale taşları ve gerçek 140 asker engeli her defasında kontrol edilir.
+- [x] Mancınık isabet başına **28 ekipman HP** kaybeder; bu özgün G5.4 tüfek gövde hasarı değil, yeni özel kuşatma ekipmanı denge değeridir. Mavi tüfekçinin gerçek yaşayan kimliği, yüksek 3B pozisyonu ve kullanıcı takımının zorla yönetilmemesi doğrulanır. Hileli/uygunsuz mavi atıcı, duvar arkası, tek 15s kadansını aşan ikinci atış reddedilir.
+- [x] Mancınık HP sıfırlandığında **uçan taş silinir, yeni kapı saldırısı/atama durur, hareket engel gövdesi kaldırılır**. Enkaz sahnede kararmış ahşap ve düşen kol olarak görünür; gerçek isabette kısa sıcak renk geri bildirimi vardır. HUD'da can, savunucu isabetleri, yıkım ve ekipman durumu gösterilir.
+- [x] Fiziksel ilk temas, kadans, isabet/yıkım ve özgün S4B1 yalnız asker/koçbaşı modlarının bozulmaması için hedefli testler eklendi. GitHub CI ve Chromium raporu üretilecektir; uzun manuel oyun ve donanım GPU kabulü bununla karıştırılmayacaktır.
+- [ ] **AK-05c3** açık: mancınığın mavi okçulardan gecikmeli fiziksel ok darbesi alması, görsel parçacık/ses ve gerçek tam maç dengesi; düşman askere alan hasarı ayrı tasarım/onay gerektirir. Sonraki **AK-05d kuşatma kulesi** henüz yapılmadı.
+- [ ] **Pitch deck kullanıcı başlayalım diyene kadar beklemede.** `main` kullanıcının açık onayı olmadan birleştirilmeyecek.

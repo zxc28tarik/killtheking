@@ -65,12 +65,15 @@
      kind:'S4B1_G54_BLUE_RAMPART_3D_SOLDIER_COUNTERFIRE',
      state,engine,balance,map,scenario,traversal,ballistics:shots,
      ballisticsAPI,ram:null,ramEngine:null,
+     catapult:null,catapultEngine:null,
      posts,ownerByArrow,ramArrowShots:new Map(),
      initialPosts:posts.size,initialRoles:byClass,
      musketShots:0,bowShots:0,totalHits:0,blockedShots:0,
      ramShots:0,ramHits:0,ramDamage:0,ramBlockedShots:0,
      ramMissedShots:0,ramBowShots:0,ramBowImpacts:0,
      ramBowDamage:0,ramBowBlocked:0,
+     catapultShots:0,catapultHits:0,catapultDamage:0,
+     catapultMisses:0,catapultBlocked:0,
      missedShots:0,alliedBlocks:0,
      guardSteps:0,visualArrowImpacts:0,exposedG54BotAttackPrevented:0,
      nativeDamageOnly:true
@@ -87,6 +90,63 @@
    ai.ram=ram;ai.ramEngine=ramEngine;
    ai.ballistics.setEquipmentCollider(()=>ramEngine.collider(ram));
    return true;
+ }
+ function attachCatapult(ai,catapultEngine,catapult){
+   if(ai?.kind!=='S4B1_G54_BLUE_RAMPART_3D_SOLDIER_COUNTERFIRE'||
+      ai.catapult||!catapult||catapult.state!==ai.state||
+      catapult.scenario!==ai.scenario||
+      !catapultEngine?.rayHit||!catapultEngine?.hitByDefender||
+      !catapultEngine?.snapshot)
+     throw Error('AK-05c2 requires genuine S4B1 blue ramparts and siege catapult');
+   ai.catapult=catapult;ai.catapultEngine=catapultEngine;
+   return true;
+ }
+ function chooseCatapultTarget(ai,u){
+   if(!ai.catapult||!ai.catapultEngine||
+      u.type!=='musket'||ai.catapult.destroyed||
+      ai.scenario.phase==='RESULT')return null;
+   const range=ai.engine.TYPES.musket.range;
+   const from={x:u.x,y:(u.siegeY??0)+UNIT_EYE,z:u.z};
+   const to={x:ai.catapult.x,y:2.7,z:ai.catapult.z};
+   const distance=Math.hypot(to.x-from.x,to.y-from.y,to.z-from.z);
+   if(distance<2||distance>range)return null;
+   const chassis=ai.catapultEngine.rayHit(ai.catapult,from,to);
+   if(!chassis)return null;
+   const first=ai.ballisticsAPI.trace({state:ai.state,
+     map:ai.map,scenario:ai.scenario,from,to,team:'blue'});
+   if(first&&first.distance<chassis.distance-1e-6)return null;
+   return {from,to,range};
+ }
+ function shootCatapult(ai,u,post,site){
+   const state=ai.state;
+   const spin=n=>((Math.imul((n+1)|0,1664525)+1013904223)>>>0)/4294967296;
+   const h=spin(u.id+post.shots*17+state.tick);
+   const v=spin(u.id*3+post.shots*23+state.tick*7);
+   const roll=ai.balance.aimedShot('musket',site.from,
+     {x:site.to.x,y:0,z:site.to.z},h,v,3.2);
+   const point=roll?.point||site.to;
+   const delta={x:point.x-site.from.x,y:point.y-site.from.y,
+     z:point.z-site.from.z};
+   const distance=Math.hypot(delta.x,delta.y,delta.z);
+   if(!finite(distance)||distance<1e-7)
+     throw Error('Invalid native AK-05c2 musket equipment ray');
+   const to={x:site.from.x+delta.x/distance*site.range,
+     y:site.from.y+delta.y/distance*site.range,
+     z:site.from.z+delta.z/distance*site.range};
+   const contact=ai.catapultEngine.rayHit(ai.catapult,site.from,to);
+   const result=contact?ai.catapultEngine.hitByDefender(ai.catapult,{
+     soldierId:u.id,weapon:'musket',
+     damage:ai.catapultEngine.SETTINGS.defenderMusketDamage,
+     from:site.from,to,ballistics:ai.ballisticsAPI,verifiedPost:true
+   }):{ok:false,reason:'miss'};
+   ai.catapultShots++;ai.musketShots++;post.shots++;
+   if(result.ok){ai.catapultHits++;ai.catapultDamage+=result.dealt;}
+   else if(result.reason==='covered')ai.catapultBlocked++;
+   else ai.catapultMisses++;
+   post.nextShotAt=state.elapsed+ai.balance.SHOT_INTERVAL.musket;
+   post.lastTarget='AK05C2_REAL_NATIVE_CATAPULT';
+   u.attackPose=.30;u.stamina=Math.max(.45,u.stamina-.018);
+   return result;
  }
  function chooseRamTarget(ai,u){
    if(!ai.ram||!ai.ramEngine||!VALID.includes(u.type)||
@@ -323,6 +383,10 @@
      // can contest the siege engine when real 3D visibility is clear.
      // No additional instant off-clock shot is created.
      const target=chooseTarget(ai,u);
+     const catapultSite=u.type==='musket'&&
+       (post.id%2===0||post.shots%3===1||!ai.ram)?
+         chooseCatapultTarget(ai,u):null;
+     if(catapultSite){shootCatapult(ai,u,post,catapultSite);continue;}
      const ramSite=u.type==='musket'&&
        (post.shots%2===0||!target)?chooseRamTarget(ai,u):null;
      if(ramSite){shootRam(ai,u,post,ramSite);continue;}
@@ -360,6 +424,12 @@
      bowEquipmentDamage:ai.ramBowDamage,
      bowBlockedOrRejectedRamImpacts:ai.ramBowBlocked,
      pendingRealRamArrowIds:ai.ramArrowShots.size,
+     nativeBlueRampartCatapultShots:ai.catapultShots,
+     nativeBlueRampartCatapultHits:ai.catapultHits,
+     actualCatapultCounterBatteryDamage:ai.catapultDamage,
+     catapult3DBlockedShots:ai.catapultBlocked,
+     catapult3DMisses:ai.catapultMisses,
+     catapultActive:!!ai.catapult&&!ai.catapult.destroyed,
 
      ramActive:!!ai.ram&&!ai.ram.destroyed,
      successfulAuthenticSoldierHits:ai.totalHits,
@@ -376,6 +446,6 @@
  }
  return Object.freeze({
    create,prepareNativeStep,preservePhysicalPost,afterNativeStep,
-   postFor,attachRam,snapshot,POST_Y
+   postFor,attachRam,attachCatapult,snapshot,POST_Y
  });
 });

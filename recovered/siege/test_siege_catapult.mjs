@@ -176,3 +176,126 @@ test('new catapult lacks independent original G5.4 structure magic and rejects i
  assert.throws(()=>catapult.afterNativeTick({...b.catapult,state:fakeState}),
   /native G5.4 red archer crew invalid/);
 });
+
+test('AK-05c2 authentic blue native musket must have 3D first contact and original 15-second clock',()=>{
+ const b=make(),c=b.catapult;
+ const gun=b.state.soldiers.find(u=>u.team==='blue'&&u.type==='musket'&&
+   !b.state.squads[u.squadId].playerControlled);
+ assert(gun);
+ for(const u of b.state.soldiers){
+   if(u.id===gun.id)continue;
+   u.x=u.team==='red'?-117:117;u.z=-118;u.siegeY=0;
+ }
+ gun.x=-17;gun.z=-40.2;gun.siegeY=13.035;
+ const from={x:gun.x,y:gun.siegeY+1.85,z:gun.z},
+   to={x:c.x,y:2.7,z:c.z};
+ const actual=catapult.rayHit(c,from,to);
+ assert(actual?.distance>0,'No physical catapult AABB in native blue line');
+ const solver=ballistics.create({map});
+ const hp=c.hp;
+ const denied=catapult.hitByDefender(c,{
+   soldierId:gun.id,weapon:'musket',damage:28,from,to,ballistics:solver
+ });
+ assert.equal(denied.ok,false);
+ assert.equal(c.hp,hp);
+ const hit=catapult.hitByDefender(c,{
+   soldierId:gun.id,weapon:'musket',damage:28,from,to,
+   ballistics:solver,verifiedPost:true
+ });
+ assert.equal(hit.ok,true,JSON.stringify(hit));
+ assert.equal(hit.dealt,28);
+ assert.equal(c.hp,hp-28);
+ assert.equal(c.defenderHits,1);
+ assert.equal(catapult.snapshot(c).counterBatteryNativeMusket15s,true);
+ const early=catapult.hitByDefender(c,{
+   soldierId:gun.id,weapon:'musket',damage:28,from,to,
+   ballistics:solver,verifiedPost:true
+ });
+ assert.equal(early.ok,false);
+ assert.equal(early.reason,'native-musket-cadence');
+ assert.equal(c.hp,hp-28);
+ b.state.elapsed+=15;
+ const again=catapult.hitByDefender(c,{
+   soldierId:gun.id,weapon:'musket',damage:28,from,to,
+   ballistics:solver,verifiedPost:true
+ });
+ assert.equal(again.ok,true);
+ assert.equal(c.hp,hp-56);
+ assert.equal(c.scenario.gate.hp,600);
+});
+test('AK-05c2 stone wall always blocks musket counterbattery before equipment',()=>{
+ const b=make(),c=b.catapult,gun=b.state.soldiers.find(u=>
+   u.team==='blue'&&u.type==='musket');
+ for(const u of b.state.soldiers){
+   if(u.id===gun.id)continue;
+   u.x=116;u.z=-117;
+ }
+ gun.x=-18;gun.z=-15;gun.siegeY=0;
+ const from={x:gun.x,y:1.85,z:gun.z},to={x:c.x,y:2.7,z:c.z};
+ const r=catapult.hitByDefender(c,{
+   soldierId:gun.id,weapon:'musket',damage:28,from,to,
+   ballistics:ballistics,verifiedPost:true
+ });
+ assert.equal(r.ok,false);
+ assert.equal(r.reason,'covered');
+ assert.equal(c.hp,300);
+ assert.equal(c.defenderShots,0);
+});
+test('AK-05c2 real destroyed machine loses projectile, cannot launch or enlist and removes collider',()=>{
+ const b=make(),c=b.catapult;
+ catapult.enlist(c);positionCrew(b);
+ bridge.step(b,.08);
+ assert.equal(c.projectile!==null,true);
+ const gun=b.state.soldiers.find(u=>u.team==='blue'&&u.type==='musket'&&
+   !b.state.squads[u.squadId].playerControlled);
+ for(const u of b.state.soldiers){
+   if(u.id===gun.id)continue;
+   u.x=u.team==='red'?-115:115;u.z=-116;
+ }
+ gun.x=-17;gun.z=-40.2;gun.siegeY=13.035;
+ const from={x:gun.x,y:14.885,z:gun.z};
+ c.hp=19; // QA-only near-death equipment integrity, not invented actor HP
+ const damage=catapult.hitByDefender(c,{
+   soldierId:gun.id,weapon:'musket',damage:28,from,
+   to:{x:c.x,y:2.7,z:c.z},
+   verifiedPost:true,ballistics
+ });
+ assert.equal(damage.ok,true,JSON.stringify(damage));
+ assert.equal(damage.dealt,19);
+ assert.equal(damage.destroyed,true);
+ assert.equal(c.hp,0);
+ assert.equal(c.projectile,null);
+ assert.equal(catapult.collider(c),null);
+ assert.equal(catapult.enlist(c).ok,false);
+ const gateHp=c.scenario.gate.hp,shots=c.shots;
+ A.step(b.state,.08);catapult.afterNativeTick(c);
+ assert.equal(c.scenario.gate.hp,gateHp);
+ assert.equal(c.shots,shots);
+ assert.equal(catapult.snapshot(c).state,'DESTROYED_BY_NATIVE_BLUE_COUNTERBATTERY');
+ const THREE=require('../../vendor/three-r128.js');
+ const scene=new THREE.Scene(),visual=catapult.mountVisual(c,{THREE,scene});
+ catapult.renderVisual(c,visual);
+ assert.equal(visual.projectile.visible,false);
+ assert.equal(visual.wood.color.getHex(),0x302922);
+ assert(visual.beam.rotation.x<-.5);
+ catapult.removeVisual(visual,scene);
+ const next=make().catapult;
+ assert.equal(catapult.snapshot(next).hp,300);
+ assert.equal(catapult.snapshot(next).destroyed,false);
+});
+test('AK-05c2 denied fake counterbattery on blue-owned, dead, wrong weapon or unrelated shots',()=>{
+ const b=make(),c=b.catapult;
+ const gun=b.state.soldiers.find(u=>u.team==='blue'&&u.type==='musket');
+ gun.x=-17;gun.z=-40.2;gun.siegeY=13.035;
+ const from={x:gun.x,y:14.885,z:gun.z},to={x:c.x,y:2.7,z:c.z};
+ const payload={soldierId:gun.id,from,to,ballistics,verifiedPost:true};
+ assert.equal(catapult.hitByDefender(c,{...payload,weapon:'bow',damage:28}).ok,false);
+ assert.equal(catapult.hitByDefender(c,{...payload,weapon:'musket',damage:36}).ok,false);
+ gun.alive=false;
+ assert.equal(catapult.hitByDefender(c,{...payload,weapon:'musket',damage:28}).ok,false);
+ gun.alive=true;
+ assert.equal(catapult.hitByDefender(c,{...payload,weapon:'musket',damage:28,
+   from:{...from,x:from.x+3}}).ok,false);
+ assert.equal(c.hp,c.maxHp);
+ assert.equal(c.defenderShots,0);
+});

@@ -250,6 +250,12 @@
        fourSquadAuthority:bridge.multiSquadCommand,
        fourSquadEngine:fourSquadCommandEngine
      });
+     if(bridge.rampartAI){
+       required(rampartAIEngine,['attachCatapult'],
+         'AK-05c2 native blue battlements genuine anti-catapult fire');
+       rampartAIEngine.attachCatapult(bridge.rampartAI,
+         catapultEngine,bridge.catapult);
+     }
    }
    return bridge;
  }

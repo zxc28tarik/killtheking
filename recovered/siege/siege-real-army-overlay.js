@@ -329,15 +329,20 @@
      const btn=document.getElementById('ak05c-catapult-enlist');
      const desc=document.getElementById('ak05c-catapult-status');
      btn.disabled=bridge.playerTeam!=='red'||info.assigned||
-       bridge.scenario.phase==='RESULT'||bridge.scenario.gate.open;
-     btn.textContent=bridge.playerTeam==='red'?
+       info.destroyed||bridge.scenario.phase==='RESULT'||
+       bridge.scenario.gate.open;
+     btn.textContent=info.destroyed?'MANCINIK YIKILDI':
+       bridge.playerTeam==='red'?
        (info.assigned?'Gerçek okçu mürettebatı görevlendirildi':
          'Okçuları mancınığa ata'):'Mancınık sadece kırmızı saldıranlar için';
      desc.textContent='Mancınık: '+info.state+
+       ' • HP: '+info.hp+'/'+info.maxHp+
+       ' • Savunucu isabeti: '+info.genuineBlueRampartHits+
        ' • Gerçek okçu: '+info.crewCount+'/'+info.minimumCrew+
        ' • Atış: '+info.shots+' • Kapı isabeti: '+info.gateHits+
        ' • Hasar: '+info.actualGateDamage+
-       ' • Uçuş: '+(info.projectileInFlight?'EVET':'Hayır');
+       ' • Uçuş: '+(info.projectileInFlight?'EVET':'Hayır')+
+       (info.destroyed?' • MANCINIK ETKİSİZ':'');
    }
    const gateCaption=siegeCombat
      ?' • Gerçek asker kapı vuruşları: '+view.genuineSoldierGateStrikes.strikes+
@@ -881,6 +886,9 @@
      catapultMachine.snapshot(bridge.catapult):null,
    siegeCatapultThreeJSVisualMeshes:catapultVisual?.meshCount||0,
    siegeCatapultNativeCrewEngineConnected:!!bridge.catapult,
+   siegeCatapultBlueRampartCounterBatteryConnected:
+     !!bridge.catapult&&!!bridge.rampartAI&&
+     bridge.rampartAI.catapult===bridge.catapult,
    siegeRamDynamicGroundColliderActive:!!ramVisual&&
      !!ramMachine.collider&&!!traversal.setDynamicColliderProvider,
    siegeRamGenuineBlueRampartTargeting:!!bridge.ram&&
