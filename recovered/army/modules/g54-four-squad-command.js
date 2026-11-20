@@ -14,7 +14,7 @@
  root.KTKG54FourSquadCommand=api;
 })(typeof globalThis!=='undefined'?globalThis:this,function(){
  'use strict';
- const ACTIONS=Object.freeze(['order','formation','fire','position','waypoint',
+ const ACTIONS=Object.freeze(['order','formation','fire','position','waypoint','target',
    'clear-waypoints','face','clear-face','spacing','spacing-delta',
    'frontage','depth']);
  const ORDERS=Object.freeze(['follow','hold','advance','charge',
@@ -23,7 +23,7 @@
  const FIRES=Object.freeze(['free','volley','hold']);
  const finite=x=>typeof x==='number'&&Number.isFinite(x);
  function create({engine,bridge,map}={}){
-   const methods=['issueOrder','setFormation','setFireMode',
+   const methods=['issueOrder','setFormation','setFireMode','setTargetSquad',
      'setDestination','appendWaypoint','clearWaypoints','setFacing',
      'clearFacing','setSpacing','setFrontage','setDepthScale'];
    if(!bridge||!engine||methods.some(x=>typeof engine[x]!=='function')||
@@ -104,6 +104,11 @@
      else ok=action==='position'?
        engine.setDestination(state,id,x,z,false):
        engine.appendWaypoint(state,id,x,z,false);
+   }else if(action==='target'){
+     const enemy=state.squads[value];
+     if(!Number.isInteger(value)||!enemy?.alive||enemy.team===c.team)
+       reason='Target must be an actual living enemy G5.4 squad';
+     else ok=engine.setTargetSquad(state,id,value,false);
    }else if(action==='face')
      ok=finite(x)&&finite(z)&&engine.setFacing(state,id,x,z,false);
    else if(action==='clear-face')
