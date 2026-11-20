@@ -115,6 +115,13 @@ try{
  assert.equal(siege.army.realDefenderRoleCoordinationConnected,true);
  assert.equal(siege.army.realRampart3DDefenderAIConnected,true);
  assert.equal(siege.army.sharedNativeG54ArmyCommandContract,true);
+ assert.equal(siege.army.realFourSquadNativeCommandConnected,true);
+ assert.equal(siege.army.realFourSquadNativeCommand.genuineSoldierCount,140);
+ assert.equal(siege.army.realFourSquadNativeCommand.visibleControlledSquadCount,4);
+ assert.equal(siege.army.realFourSquadNativeCommand.physicalPlayerControlledSquadCount,1);
+ assert.equal(await child().locator('[data-four-squad-index]').count(),4);
+ assert.equal(await child().locator('[data-four-squad-all]').count(),1);
+ report.checks.push('PASS_AK04A_FOUR_NATIVE_REAL_TEAM_SQUADS_AVAILABLE_ON_SIEGE_HUD');
  assert.equal(siege.army.sharedNativeG54BattleSessionConnected,true);
  assert.equal(siege.scene.explorer.sharedG54InputContract,true);
  assert.equal(siege.player.sharedFieldSiegePlayerInputContract,true);

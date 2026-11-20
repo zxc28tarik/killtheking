@@ -62,6 +62,16 @@ try{
  assert.equal(a.realDefenderRoleCoordinationConnected,true);
  assert.equal(a.realRampart3DDefenderAIConnected,true);
  assert.equal(a.sharedNativeG54ArmyCommandContract,true);
+ assert.equal(a.realFourSquadNativeCommandConnected,true);
+ const multi=()=>page.evaluate(()=>window.ktkSiegeFourSquadCommandStatus?.());
+ const active4=await multi();
+ assert.equal(active4.genuineSoldierCount,140);
+ assert.equal(active4.genuineSquadCount,8);
+ assert.equal(active4.visibleControlledSquadCount,4);
+ assert.equal(active4.physicalPlayerControlledSquadCount,1);
+ assert.equal(active4.authorizedFriendlySquadIds.length,4);
+ assert.deepEqual(active4.squads.map(x=>x.type).sort(),
+   ['bow','musket','pike','sword']);
  assert.equal(a.sharedG54ArmyHudOverlayActive,true);
  assert.equal(a.sharedG54OriginalFieldShortcutsEnabled,true);
  assert.deepEqual(a.sharedG54NativeShortcutBindings,
@@ -130,6 +140,28 @@ try{
  assert.equal((await army()).fieldG54PMapOpen,false);
  assert.equal((await army()).fieldG54MapOpens,1);
  report.checks.push('PASS_AK02B_REAL_P_MAP_G54_SOLDIERS_AND_ACTUAL_NATIVE_DESTINATION_ESC_CLOSE');
+ // AK-04a real user-control of EACH native same-team squad plus group order.
+ for(const unit of (await multi()).squads){
+   const index=(await multi()).authorizedFriendlySquadIds.indexOf(unit.id);
+   await page.locator('[data-four-squad-index="'+index+'"]').click();
+   assert.deepEqual((await multi()).selectedSquadIds,[unit.id]);
+   await page.locator('#ak02-g54-commander-hud [data-field-kind="order"][data-field-command="hold"]').click();
+   assert.equal((await multi()).squads.find(s=>s.id===unit.id).order,'hold');
+ }
+ await page.locator('[data-four-squad-all]').click();
+ assert.equal((await multi()).selectedSquadIds.length,4);
+ await page.locator('#ak02-g54-commander-hud [data-field-kind="order"][data-field-command="charge"]').click();
+ assert((await multi()).squads.every(s=>s.order==='charge'));
+ await page.locator('#ak02-g54-commander-hud [data-field-kind="formation"][data-field-command="line"]').click();
+ assert((await multi()).squads.every(s=>s.formation==='line'));
+ assert.equal((await multi()).physicalPlayerControlledSquadCount,1);
+ await page.waitForTimeout(500);
+ assert.equal((await multi()).physicalPlayerControlledSquadCount,1);
+ assert((await multi()).nativeCommandTicks>0);
+ report.checks.push('PASS_AK04A_REAL_4_NATIVE_RED_SQUADS_INDIVIDUAL_AND_GROUP_ORDERS');
+ const originalSquad=(await multi()).squads.find(s=>s.playerControlledPhysical);
+ const originalIndex=(await multi()).authorizedFriendlySquadIds.indexOf(originalSquad.id);
+ await page.locator('[data-four-squad-index="'+originalIndex+'"]').click();
  report.checks.push('PASS_AK02A_ORIGINAL_G54_ARMY_KEYBOARD_J_K_X_Z_AND_PERSISTENT_COMBAT_HUD');
  assert.equal(a.sharedNativeG54ArmyCommands.originalG54ArmyCommandFunctions,true);
  assert.equal(a.sharedNativeG54ArmyCommands.visualLayoutFullyShared,false);
@@ -273,6 +305,11 @@ try{
  await page.waitForFunction(()=>window.ktkSiegePlayerCombatStatus?.().playerTeam==='blue',
    {timeout:85000});
  const blue=await player(),blueArmy=await army();
+ const blueFour=await multi();
+ assert.equal(blueFour.playerTeam,'blue');
+ assert.equal(blueFour.authorizedFriendlySquadIds.length,4);
+ assert.equal(blueFour.physicalPlayerControlledSquadCount,1);
+ assert(blueFour.squads.every(s=>s.team==='blue'));
  assert.equal(blue.playerHealth,100);
  assert.equal(blue.playerTeam,'blue');
  assert.equal(blueArmy.controlledPlayerTeam,'blue');
