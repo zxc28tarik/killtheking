@@ -89,6 +89,12 @@
    if(!rec||!u.alive||u.hp<=0||
       ai.scenario.phase==='RESULT')return null;
    const squad=ai.state.squads[u.squadId];
+   if(squad?.playerControlled&&u.squadId!==ai.state.playerSquadId){
+     // AK-04a: this genuine ally was explicitly given a human order.
+     // Do not hijack it with automatic ladder work or falsely treat its
+     // reversible native command lease as a second physical human.
+     return null;
+   }
    if(!squad||squad.playerControlled)
      throw Error('Native player-controlled squad was routed to siege ladder');
    const speed=ai.engine.TYPES[u.type]?.speed;
