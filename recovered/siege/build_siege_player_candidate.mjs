@@ -23,6 +23,7 @@ const files={
  KTK_SIEGE_REAL_ARMY_BRIDGE_JS:resolve(dir,'siege-real-army-bridge.js'),
  KTK_SIEGE_STRUCTURE_COMBAT_JS:resolve(dir,'siege-structure-combat.js'),
  KTK_SIEGE_RAM_JS:resolve(dir,'siege-ram.js'),
+ KTK_SIEGE_CATAPULT_JS:resolve(dir,'siege-catapult.js'),
  KTK_SIEGE_ASSAULT_NAV_JS:resolve(dir,'siege-assault-navigation.js'),
  KTK_SIEGE_LADDER_AI_JS:resolve(dir,'siege-ladder-ai.js'),
  KTK_SIEGE_CAPTURE_AI_JS:resolve(dir,'siege-capture-ai.js'),
@@ -53,6 +54,7 @@ html=html.replace(
  '<!-- KTK_SIEGE_REAL_ARMY_BRIDGE_JS -->',
  '<!-- KTK_SIEGE_STRUCTURE_COMBAT_JS -->',
  '<!-- KTK_SIEGE_RAM_JS -->',
+ '<!-- KTK_SIEGE_CATAPULT_JS -->',
  '<!-- KTK_SIEGE_ASSAULT_NAV_JS -->',
  '<!-- KTK_SIEGE_LADDER_AI_JS -->',
  '<!-- KTK_SIEGE_CAPTURE_AI_JS -->',
@@ -95,6 +97,10 @@ const manifest={
  AK05b3DamageReadOnlyVisualFlash:true,
  AK05b3ProvisionalBowEquipmentDamage:6,
  AK05b2RamUsesSiegeEquipmentDamageNotG54StructureDamage:true,
+ AK05c1RealG54ArcherCrewedCatapult:true,
+ AK05c1PhysicalThreeJSStoneProjectile:true,
+ AK05c1GenuineFirstContactS1GateEvent:true,
+ AK05c1NoCounterBatteryAndSoldierSplashYet:true,
  AK05b2ManciniAndSiegeTowersImplemented:false,
  AK05aManciniAndSiegeTowersImplemented:false,
  AK05aUnassistedCrewArrivalValidated:false,
@@ -161,7 +167,7 @@ for(const [id,path] of Object.entries(files)){
 const original='307987855abc0973ea9177fdd659c39d1d02673c8381c0501be8b63c04ddf841';
 if(manifest.sourceSha256.KTK_G54_ARMY_REAL_JS!==original)
  throw Error('Original G5.4 true-side engine changed! No unsafe substitution.');
-if((html.match(/<script\b/giu)||[]).length!==26||
+if((html.match(/<script\b/giu)||[]).length!==27||
    html.includes('<!-- KTK_')||
    !html.includes('GERÇEK OYUNCU SAVAŞ ADAYI')||
    !html.includes('Gerçek G5.4 ordusunda 140 asker'))

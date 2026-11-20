@@ -115,7 +115,8 @@
      captureAIEngine=null,defenderAIEngine=null,
      rampartAIEngine=null,ballisticsAPI=null,
      weaponBalance=null,defenderRender=null,
-     fourSquadCommandEngine=null,ramEngine=null}={}){
+     fourSquadCommandEngine=null,ramEngine=null,
+     catapultEngine=null}={}){
    required(armyEngine,['create','step','snapshot','setWorldObstacles',
      'setPlayerPosition','drainCombatEvents','drainPlayerHits',
      'issueOrder','setDestination'],'G5.4');
@@ -149,6 +150,7 @@
      rampartAI:null,rampartAIEngine,
      multiSquadCommand:null,fourSquadCommandEngine,
      ram:null,ramEngine,
+     catapult:null,catapultEngine,
      terrainBlockedMoves:0,
      terrainRecoveredMoves:0,
      lastGateOpen:false,logs:[],ended:false
@@ -236,6 +238,18 @@
        required(rampartAIEngine,['attachRam'],'AK-05b2 native rampart siege engine targeting');
        rampartAIEngine.attachRam(bridge.rampartAI,ramEngine,bridge.ram);
      }
+   }
+
+   if(catapultEngine){
+     if(!bridge.multiSquadCommand||!bridge.structureCombat||!ballisticsAPI)
+       throw Error('AK-05c1 catapult needs G5.4 team orders, real structure and 3D trace');
+     required(catapultEngine,['create','enlist','afterNativeTick','snapshot',
+       'mountVisual','collider'],'AK-05c1 native crewed 3D siege catapult');
+     bridge.catapult=catapultEngine.create({
+       engine:armyEngine,state,scenario,map,objectives,ballisticsAPI,
+       fourSquadAuthority:bridge.multiSquadCommand,
+       fourSquadEngine:fourSquadCommandEngine
+     });
    }
    return bridge;
  }
@@ -376,6 +390,11 @@
        if(bridge.lastGateOpen!==bridge.scenario.gate.open)
          refreshObstacles(bridge);
      }
+     if(bridge.catapult){
+       bridge.catapultEngine.afterNativeTick(bridge.catapult);
+       if(bridge.lastGateOpen!==bridge.scenario.gate.open)
+         refreshObstacles(bridge);
+     }
      if(bridge.ladderAI&&elapsedDelta>0)
        bridge.ladderAIEngine.afterNativeTick(
          bridge.ladderAI,elapsedDelta);
@@ -458,6 +477,8 @@
        b.structureCombatEngine.snapshot(b.structureCombat):null,
      siegeRamConnected:!!b.ram,
      siegeRam:b.ram?b.ramEngine.snapshot(b.ram):null,
+     siegeCatapultConnected:!!b.catapult,
+     siegeCatapult:b.catapult?b.catapultEngine.snapshot(b.catapult):null,
      terrainBlockedSoldierMoves:b.terrainBlockedMoves,
      terrainRecoveredSoldierMoves:b.terrainRecoveredMoves,
      rejectsInvalidStonePenetrationWithoutTeleport:true,

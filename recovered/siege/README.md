@@ -140,3 +140,7 @@ AK-05a orijinal G5.4 kırmızı mızrakçı atamasını, yürüyüşünü ve ger
 ### AK-05b3 fiziksel savunma oku
 
 Surdaki gerçek mavi G5.4 okçuları, önceki S4B1 gerçek fiziksel ok atışı (70 m/s ve 22 m/s²) ile koçbaşının canlı `ak05-ram-body` 3B gövdesine nişan alabilir. `siege-player-ballistics-3d.js` içindeki isteğe bağlı ekipman sağlayıcısı, eski oyuncu ve S4B1 yalnız asker savaşında kapalıdır. Yalnız uçuş sonunda 3B ilk temas `equipment` ise kuşatma HP'sine geçici 6 HP ok hasarı aktarılır; G5.4 asker hasarı ve kapı HP'si ayrıdır. Darbe anında görsel ahşap parlaması ve HUD'da koçbaşı ok bilgileri gösterilir. Ses, uzun GPU ve mancınık/kule hâlâ açık iş.
+
+### AK-05c1 — bağımsız kuşatma mancınığı
+
+`siege-catapult.js` 15 gerçek kırmızı G5.4 okçusundan üçünün fiziksel varlığını kontrol ederek mevcut dört bölük yetkisiyle ateş eder. Taş mermisi sabit hız/yükseklikten gerçek uçuş/yerçekimi altına girer, 3B kule/taş/asker çizgi ilk temasında durur; yalnız gerçek `gate-main` temasına `GATE_HIT/catapult` gönderir. Yeni `catapult` kaynak sınıfı, S1 amaç motoru tarafından sadece kırmızı kapı hasar kaynağı olarak işlenir. Gösterilen 100 hasar/9,5s geçici, orijinal G5.4 oyuncu/bot hasarı değildir. Enemy splash, yıkılma, uzun GPU kabul ve kule henüz yoktur.

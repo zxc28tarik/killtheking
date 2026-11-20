@@ -71,7 +71,7 @@
    switch(event.type){
      case 'GATE_HIT':{
        if(event.team!=='red')throw Error('Only attacker may hit siege gate');
-       if(!['sword','pike','musket','archer','ram'].includes(event.weapon))
+       if(!['sword','pike','musket','archer','ram','catapult'].includes(event.weapon))
          throw Error('Unrecognized gate attack source');
        const damage=requireFinite(event.damage,'gate damage',.001,150);
        if(state.gate.open)return false;

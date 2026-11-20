@@ -18,6 +18,7 @@
  const sharedBattleSession=globalThis.KTKSharedG54BattleSession||null;
  const fourSquadEngine=globalThis.KTKG54FourSquadCommand||null;
  const ramMachine=globalThis.KTKSiegeRam||null;
+ const catapultMachine=globalThis.KTKSiegeCatapult||null;
  if(rampartAI&&!defenderAI)throw Error('S4B1 rampart counterfire requires native S4A defense');
  if(defenderAI&&!captureAI)throw Error('S4 blue role defender requires S3C3 real capture');
  if(captureAI&&!ladderAI)throw Error('S3C3 objective assault requires actual S3C2 ladder bridge');
@@ -103,6 +104,27 @@
       drawMetrics();
     });
   }
+  if(catapultMachine){
+    const section=document.createElement('section');
+    section.id='ak05c-siege-catapult-panel';
+    section.style.cssText='border:1px solid #ad8c58;border-radius:7px;background:#302e27;margin-top:9px;padding:9px';
+    section.innerHTML=[
+      '<strong style="color:#ffe2a5">AK-05c1 • MANCINIK</strong>',
+      '<p style="font-size:11px;line-height:1.5;margin:5px 0">Gerçek kırmızı 15 okçu bölüğünden en az 3 asker mancınığa gelip çalıştırmalı. 3B taş mermisi yalnız fiziksel kale kapısı isabetinde hasar verir.</p>',
+      '<button type="button" id="ak05c-catapult-enlist">Okçuları mancınığa ata</button>',
+      '<div id="ak05c-catapult-status" role="status" style="font-size:11px;margin-top:6px"></div>'
+    ].join('');
+    panel.appendChild(section);
+    section.querySelector('button').addEventListener('click',()=>{
+      if(!bridge?.catapult)return;
+      const result=catapultMachine.enlist(bridge.catapult);
+      const label=section.querySelector('#ak05c-catapult-status');
+      label.dataset.lastAssignment=result.ok?'accepted':'rejected';
+      label.textContent=result.ok?'Gerçek kırmızı G5.4 okçu bölüğüne mancınık emri verildi.':
+        'Emir reddedildi: '+result.reason;
+      drawMetrics();
+    });
+  }
   el.insertBefore(panel,el.firstChild);
  const dummy=new THREE.Object3D();
  const groups=preview.tokens.map(inst=>({
@@ -114,7 +136,7 @@
    THREE,scene:preview.scene,groups
  })||null;
  let bridge=null,sharedCommand=null,liveSession=null,fourCommand=null,lastArmyCommandNotice='';
- let ramVisual=null;
+ let ramVisual=null,catapultVisual=null;
  let commandHUD=null,shortcutsAccepted=0;
  let fieldTactical=null,fieldMapOpen=false,fieldMapAction='position';
  let fieldMapOpens=0,fieldMapCloses=0,fieldMapClicks=0,fieldMapAccepted=0;
@@ -134,7 +156,8 @@
      weaponBalance:rampartAI?bal:null,
      defenderRender:rampartAI?{THREE,scene:preview.scene}:null,
      fourSquadCommandEngine:fourSquadEngine,
-     ramEngine:ramMachine
+     ramEngine:ramMachine,
+     catapultEngine:catapultMachine
    });
    if(bridge.state.soldiers.length!==140||
       bridge.state.squads.length!==8)
@@ -156,16 +179,27 @@
      ramMachine.removeVisual(ramVisual,preview.scene);
      ramVisual=null;
    }
+   if(catapultVisual){
+     catapultMachine.removeVisual(catapultVisual,preview.scene);
+     catapultVisual=null;
+   }
    if(ramMachine){
      if(!bridge.ram)throw Error('AK-05a real ram absent from G5.4 bridge');
      if(typeof ramMachine.collider!=='function'||
         typeof traversal.setDynamicColliderProvider!=='function')
        throw Error('AK-05b1 needs live human and native soldier collision');
      traversal.setDynamicColliderProvider(()=>{
-       const body=ramMachine.collider(bridge.ram);
-       return body?[body]:[];
+       const ramBody=ramMachine.collider(bridge.ram);
+       const catapultBody=catapultMachine&&bridge.catapult?
+         catapultMachine.collider(bridge.catapult):null;
+       return [ramBody,catapultBody].filter(Boolean);
      });
      ramVisual=ramMachine.mountVisual(bridge.ram,{THREE,scene:preview.scene});
+   }
+   if(catapultMachine){
+     if(!bridge.catapult)throw Error('AK-05c1 real G5.4 catapult absent');
+     catapultVisual=catapultMachine.mountVisual(bridge.catapult,
+       {THREE,scene:preview.scene});
    }
    lastArmyCommandNotice='';
    if(commandHUD)drawSharedCommandHUD();
@@ -290,6 +324,21 @@
        (info.destroyed?' • SAVUNUCULAR ARACI İMHA ETTİ':
          info.assigned?' • Görev verildi':' • Görev bekliyor');
    }
+   if(catapultMachine&&bridge?.catapult){
+     const info=catapultMachine.snapshot(bridge.catapult);
+     const btn=document.getElementById('ak05c-catapult-enlist');
+     const desc=document.getElementById('ak05c-catapult-status');
+     btn.disabled=bridge.playerTeam!=='red'||info.assigned||
+       bridge.scenario.phase==='RESULT'||bridge.scenario.gate.open;
+     btn.textContent=bridge.playerTeam==='red'?
+       (info.assigned?'Gerçek okçu mürettebatı görevlendirildi':
+         'Okçuları mancınığa ata'):'Mancınık sadece kırmızı saldıranlar için';
+     desc.textContent='Mancınık: '+info.state+
+       ' • Gerçek okçu: '+info.crewCount+'/'+info.minimumCrew+
+       ' • Atış: '+info.shots+' • Kapı isabeti: '+info.gateHits+
+       ' • Hasar: '+info.actualGateDamage+
+       ' • Uçuş: '+(info.projectileInFlight?'EVET':'Hayır');
+   }
    const gateCaption=siegeCombat
      ?' • Gerçek asker kapı vuruşları: '+view.genuineSoldierGateStrikes.strikes+
        ' / kalan kapı HP: '+view.scenario.gate.hp
@@ -312,6 +361,8 @@
    if(nativePostStep)nativePostStep(dt);
    renderRealSoldiers();
    if(ramVisual&&bridge?.ram)ramMachine.renderVisual(bridge.ram,ramVisual);
+   if(catapultVisual&&bridge?.catapult)
+     catapultMachine.renderVisual(bridge.catapult,catapultVisual);
    if(frames++%8===0)drawMetrics();
  }
  function onReset(scenario){
@@ -826,6 +877,10 @@
    realPikeOperatedSiegeRamConnected:!!bridge.ram,
    actualSiegeRamStatus:bridge.ram?ramMachine.snapshot(bridge.ram):null,
    siegeRamThreeJSVisualMeshes:ramVisual?.meshCount||0,
+   actualSiegeCatapultStatus:bridge.catapult?
+     catapultMachine.snapshot(bridge.catapult):null,
+   siegeCatapultThreeJSVisualMeshes:catapultVisual?.meshCount||0,
+   siegeCatapultNativeCrewEngineConnected:!!bridge.catapult,
    siegeRamDynamicGroundColliderActive:!!ramVisual&&
      !!ramMachine.collider&&!!traversal.setDynamicColliderProvider,
    siegeRamGenuineBlueRampartTargeting:!!bridge.ram&&

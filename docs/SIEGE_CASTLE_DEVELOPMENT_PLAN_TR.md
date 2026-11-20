@@ -323,3 +323,11 @@ AK-01 kaynak kodu: `recovered/army/modules/shared-g54-army-commands.js` + `recov
 - [x] Koçbaşı 360 HP, tüfek 32 HP, ok 6 HP **yalnız geçici kuşatma makinesi dengeleme değerleri**; özgün dört asker sınıfı hasarı ve saldırı hızları sabit. Görsel ahşap darbe ve demir kapı vuruş geri bildirimi, koçbaşı/ok durum HUD'u.
 - [x] Opt-in yeni temas alanı orijinal Arena/Meydan dosyalarına, orijinal G5.4 SHA kaynağına veya 3 modlu router'ın izolasyonuna taşınmaz.
 - [ ] İşitsel efekt, dengeli uzun doğal gerçek senaryo, farklı FPS/GPU kabulü ve manuel oyuncu testi; **AK-05c mancınık**, **AK-05d kuşatma kulesi** ve AK-06 son kabul bekliyor. Bu yüzden AK-05 tümü tamamlanmadı.
+
+### AK-05c1 oynanabilir mancınık ilk sürüm — 20 Kasım 2026
+
+- [x] Sahada gerçek 15 kişilik kırmızı G5.4 okçu bölüğüne, önceki AK-04 dört bölük komut yetkisiyle mancınık görevi; en az 3 yaşayan fiziksel okçu gerek.
+- [x] Gerçek 3B taş uçuşu, S1 kale/asker ilk çarpışma kontrolü, fiziksel kapı temasından sonra `GATE_HIT/catapult`, mevcut 600 HP kapı kuralı; atış süresi 9,5 s ve hasar 100 HP **geçici**.
+- [x] Three.js mancınık, taş mermisi ve HUD; üç moddan Arena/Meydan geçmiş dosyalarının hash korunması, hiçbir otomatik main merge.
+- [ ] AK-05c2: fiziksel uzun maç, karşı ateş ve mancınık dayanıklılık/yıkım, animasyon/partikül/ses, farklı hedef ve düşman asker hasarı; AK-05d kuşatma kulesi. Saha GPU/manuel yayın doğrulaması yapılacak.
+- [ ] Pitch deck kullanıcı söylemeden başlamayacak.
