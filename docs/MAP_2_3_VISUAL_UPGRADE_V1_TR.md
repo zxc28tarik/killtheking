@@ -83,3 +83,12 @@ Tarih: 21 Kasım 2026. Durum: uygulama başladı; gerçek tarayıcı kabul testi
 - [x] Üç modlu CI workflow'u yalnız görsel feature dalı için de push ile koşacak ve yeni arazi testlerini kapsayacak şekilde güncellendi.
 - [ ] Workflow'un SUCCESS sonucu ve gerçek Chromium ekran görüntüsü henüz doğrulanmadı; oyunda çalıştığına ilişkin son kabul verilmedi.
 - [ ] Önceki yükseltili tepe 3B görseli canlı oyunda henüz bağlı değil; bugünkü entegrasyon düz çimenlikteki native grass içindir.
+
+## V12 — G5.4 gerçek Meydan'da yakın kamera çimleri
+- [x] Gerçek 1.257.893 karakterlik orijinal HTML kaynak blob'u ile kontrollü derleyici çalışma-zamanı enjeksiyonu doğrulandı.
+- [x] G5.4 Meydan modunda yerleşik ArenaMeadowGrass görsel sistemine 2.700 uzak + **12.000 oyuncu çevresi** çim demeti bağlandı (iki InstancedMesh çizim grubu). createNearbyTufts ve updateNearbyTufts gerçek yerleşik oyun kodu.
+- [x] Yakın çimler yalnız Meydan durumunda oyun animate() döngüsünde oyuncu konumuna göre, yaklaşık 20 birimlik karolar geçildiğinde güncellenir. Kurulumda scene içine girer ve orijinal harita görünürlük sistemiyle kapatılıp açılır.
+- [x] Görsel yama derleyicide gerçek özgün meadowNearGrass ve renderer.render kaynak işaretleri **birer kez** doğrulandı, frame.srcdoc üzerinde yürütüldü. Sonuçtaki HTML içinden çıkarılan **29 script'in tamamı JavaScript derlemesini geçti**. Kaynak orijinal saklı base64 içerik değişmedi.
+- [x] Chromium kabul senaryosu uzak ve yakın instance sayısını, görünürlüğünü ve lastTileX güncellemesini açıkça sınayacak biçimde genişletildi.
+- [ ] Henüz tam 3 modlu HTML artefaktı bu ortamda yeniden üretilip tarayıcıda çalıştırılmadı. CI SUCCESS ve gerçek GPU görsel kabulü henüz teyit edilmedi.
+- [ ] Tepeler canlı G5.4 sahnesine bağlanmış değildir. Yalnızca gerçek çimenlik görünümü genişletildi; savaş fiziği değiştirilmedi.
