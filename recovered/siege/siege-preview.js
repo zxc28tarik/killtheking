@@ -123,6 +123,20 @@
    const crown=new THREE.Mesh(new THREE.CylinderGeometry(8.2,8.2,2.3,8),
      material(0xb0a38a));crown.position.set(x,20.1,z);scene.add(crown);
  }
+ // V2 castle crown: low-poly parapet teeth on the existing towers.
+ // These decorative details stay above the playable space and carry no colliders.
+ const towerCrownStone=material(0xb5a88f);
+ const towerBandStone=material(0x655f55);
+ for(const [tx,tz] of [[-51,-40],[51,-40],[-51,55],[51,55]]){
+   const ring=new THREE.Mesh(new THREE.CylinderGeometry(7.55,7.55,.22,8),towerBandStone);
+   ring.position.set(tx,15.5,tz);scene.add(ring);
+   for(let k=0;k<8;k++){
+     const a=(k+.5)*Math.PI/4;
+     const tooth=new THREE.Mesh(new THREE.BoxGeometry(2.05,1.55,1.1),towerCrownStone);
+     tooth.position.set(tx+7.5*Math.cos(a),22.0,tz+7.5*Math.sin(a));
+     tooth.rotation.y=-a;scene.add(tooth);
+   }
+ }
  // Real gate is a solid map obstacle now, hidden only when the FSM breaches it.
  const gate=meshesById.get('gate-main');
  const gateDecor=new THREE.Group();scene.add(gateDecor);
@@ -134,6 +148,19 @@
  for(const y of [2.2,7.7]){
    const band=new THREE.Mesh(new THREE.BoxGeometry(15,.28,.4),metal);
    band.position.set(0,y,-37.0);gateDecor.add(band);
+ }
+ // Gate front: shallow timber grain and forged rivets, parented to the
+ // existing gate decoration so a breached gate removes ALL added details.
+ const timber=material(0x81593a);
+ const rivet=material(0x797776,.65);
+ for(let x=-6.3;x<=6.3;x+=2.1){
+   const plank=new THREE.Mesh(new THREE.BoxGeometry(.12,8.65,.09),timber);
+   plank.position.set(x,5.0,-37.31);gateDecor.add(plank);
+ }
+ const rivetGeo=new THREE.SphereGeometry(.13,5,4);
+ for(const y of [2.2,7.7])for(let x=-6.4;x<=6.4;x+=1.6){
+   const head=new THREE.Mesh(rivetGeo,rivet);
+   head.position.set(x,y,-37.27);gateDecor.add(head);
  }
  function addFlag(x,z,team){
    addBlock(.25,9,.25,x,4.5,z,metal);
