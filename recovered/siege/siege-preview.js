@@ -73,6 +73,30 @@
    patch.position.set(x,.012+(i%3)*.002,z);
    scene.add(patch);
  }
+ // MAP3-V5: distant low-poly meadow vegetation around the outer siege field.
+ // Instanced for fewer draw calls; visual-only (not registered as world obstacles).
+ // Keep the centre gate, crew lanes, soldier routes and inner courtyard clear.
+ const tuftGeometry=new THREE.ConeGeometry(.7,1.0,3);
+ const tuftMaterials=[0x536b46,0x60794b,0x708153].map(c=>material(c));
+ const tuftDummy=new THREE.Object3D();
+ for(let tone=0;tone<tuftMaterials.length;tone++){
+   const count=48;
+   const tufts=new THREE.InstancedMesh(tuftGeometry,tuftMaterials[tone],count);
+   for(let j=0;j<count;j++){
+     const n=tone*count+j;
+     const side=n%2?-1:1;
+     const x=side*(68+(n*13%51));
+     const z=-116+(n*37%196);
+     const height=.45+(n%4)*.12;
+     tuftDummy.position.set(x,height*.45,z);
+     tuftDummy.rotation.set(0,(n*.67)%6.283,0);
+     tuftDummy.scale.set(.75+(n%3)*.22,height,.75+(n%3)*.2);
+     tuftDummy.updateMatrix();tufts.setMatrixAt(j,tuftDummy.matrix);
+   }
+   tufts.instanceMatrix.needsUpdate=true;
+   tufts.frustumCulled=false;
+   scene.add(tufts);
+ }
  // Narrow stone courses add scale and masonry depth without new solid geometry.
  const mortar=material(0x797566);
  for(const box of spec.boxes){
