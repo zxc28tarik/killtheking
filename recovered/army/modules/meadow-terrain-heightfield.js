@@ -70,8 +70,29 @@
      triangles.push(a,c,b,b,c,d);
    }
    geometry.setIndex(triangles);geometry.computeVertexNormals();
+   // Visual-only vertex colors: low, wet valleys; grassy flatland;
+   // muted dry ridge shoulders. No real elevation/physics changes.
+   const shades=new Float32Array((segments+1)*(segments+1)*3);
+   const palette=[
+     [0.31,0.39,0.25], // shallow shaded valley
+     [0.43,0.54,0.34], // grass
+     [0.49,0.55,0.35], // upper grass
+     [0.55,0.51,0.40]  // muted dry hilltop
+   ];
+   const mix=(a,b,t)=>a+(b-a)*t;
+   for(let iz=0;iz<=segments;iz++)for(let ix=0;ix<=segments;ix++){
+     const j=iz*(segments+1)+ix,h=positions[j*3+1];
+     const ratio=Math.max(0,Math.min(1,(h+3)/15));
+     const band=ratio<.23?0:ratio<.67?1:2;
+     const local=band===0?ratio/.23:band===1?(ratio-.23)/.44:(ratio-.67)/.33;
+     const a=palette[band],b=palette[band+1];
+     const variation=.965+.035*Math.sin(ix*.77+iz*.43);
+     for(let k=0;k<3;k++)shades[3*j+k]=mix(a[k],b[k],local)*variation;
+   }
+   geometry.setAttribute('color',new THREE.Float32BufferAttribute(shades,3));
    const material=new THREE.MeshStandardMaterial({
-     color:0x6c8455,roughness:1,metalness:0,side:THREE.DoubleSide
+     color:0xffffff,vertexColors:true,roughness:1,metalness:0,
+     side:THREE.DoubleSide
    });
    const mesh=new THREE.Mesh(geometry,material);
    mesh.name='KTK_MAP2_UNINTEGRATED_TERRAIN_VISUAL';
