@@ -307,6 +307,21 @@
    add(new THREE.BoxGeometry(4.1,.36,5.4),iron,0,1.65,0);
    const beam=add(new THREE.BoxGeometry(.42,.46,5.7),wood,0,3,1.05);
    const cup=add(new THREE.SphereGeometry(.56,10,8),iron,0,3.3,3.3);
+   // MAP3-V4: low-poly frame details remain within the original physics body.
+   // Cosmetic only: no changes to the real crew, launch arc or collision.
+   const darkTimber=new THREE.MeshStandardMaterial({color:0x463321,roughness:.94});
+   for(const x of [-1.65,1.65]){
+     const upright=add(new THREE.BoxGeometry(.3,2.15,.28),darkTimber,x,2.8,-1.45);
+     upright.rotation.z=x<0?-.16:.16;
+     for(const z of [-2.2,2.2]){
+       const hub=add(new THREE.CylinderGeometry(.25,.25,.075,10),iron,
+         x+(x<0?-.21:.21),.85,z);
+       hub.rotation.z=Math.PI/2;
+     }
+   }
+   for(const z of [-1.9,1.85]){
+     add(new THREE.BoxGeometry(3.85,.15,.24),darkTimber,0,3.86,z);
+   }
    const projectile=new THREE.Mesh(new THREE.SphereGeometry(.43,12,10),stone);
    projectile.name='AK05C1_Live_Physical_Projectile';
    projectile.castShadow=true;scene.add(projectile);
