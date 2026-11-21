@@ -116,17 +116,33 @@ export function addCastleThirdMode(twoModeHtml, siegeHtml){
    'const ak04b='+JSON.stringify(addonB64)+';'+
    'if(mode==="army"){'+
      'if(original.split("</body>").length!==2)throw Error("AK04b original body changed");'+
-   // MAP2 live G5.4: patch only the decoded runtime, never the archived source.
+   // MAP2 native grass enhancement. The historical G5.4 HTML remains
+   // unchanged inside the base64 archive. Patch the decoded field only.
+   // Large meadow batches: distant sparse grass + dense, player-local grass.
    'const grassMark="            meadowNearGrass=null;\\n            const leafMat=";'+
    'if(original.split(grassMark).length!==2)throw Error("MAP2 grass anchor changed");'+
-   'const visualArmy=original.replace(grassMark,'+
+   'let visualArmy=original.replace(grassMark,'+
      '"            meadowNearGrass=ArenaMeadowGrass.createInstancedTufts(THREE,spec,2700);\\n'+
      '            scene.add(meadowNearGrass);\\n'+
+     '            meadowDenseGrass=ArenaMeadowGrass.createNearbyTufts(THREE,12000);\\n'+
+     '            scene.add(meadowDenseGrass);\\n'+
      '            window.ktkMeadowGrassVisualStatus=()=>({\\n'+
      '              count:meadowNearGrass.count,\\n'+
+     '              nearbyCount:meadowDenseGrass.count,\\n'+
      '              meshName:meadowNearGrass.name,\\n'+
-     '              visible:meadowNearGrass.visible\\n'+
+     '              visible:meadowNearGrass.visible,\\n'+
+     '              nearbyVisible:meadowDenseGrass.visible,\\n'+
+     '              lastTileX:meadowDenseGrass.userData.lastTileX\\n'+
      '            });\\n            const leafMat=");'+
+   'const grassVar="        let meadowNearGrass=null;";'+
+   'if(visualArmy.split(grassVar).length!==2)throw Error("MAP2 nearby variable anchor changed");'+
+   'visualArmy=visualArmy.replace(grassVar,grassVar+"\\n        let meadowDenseGrass=null;");'+
+   'const renderMark="            renderer.render(scene, camera);";'+
+   'if(visualArmy.split(renderMark).length!==2)throw Error("MAP2 render anchor changed");'+
+   'visualArmy=visualArmy.replace(renderMark,'+
+     '"            if(arenaMap===\'meadow\'&&meadowDenseGrass){\\n'+
+     '              ArenaMeadowGrass.updateNearbyTufts(THREE,meadowDenseGrass,meadowSpec,player.pos.x,player.pos.z);\\n'+
+     '            }\\n"+renderMark);'+
      'const bytes=Uint8Array.from(atob(ak04b),c=>c.charCodeAt(0));'+
      'const addon=new TextDecoder("utf-8",{fatal:true}).decode(bytes);'+
      'frame.srcdoc=visualArmy.replace("</body>",addon+"</body>");'+
