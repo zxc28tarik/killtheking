@@ -10,14 +10,15 @@ Tarih: 21 Kasım 2026. Durum: uygulama başladı; gerçek tarayıcı kabul testi
 - [ ] Mevcut çimenlikte düşük poligonlu doğal renk varyasyonları ve uzak zemin katmanları.
 - [ ] Asker siluetleri ve savaş alanı okunurluğu için ışık/kontrast düzenlemesi.
 - [ ] Mevcut rotalar ve görüş/atış hatları dışında küçük çevre detayları.
-- [ ] G5.4 ordu HTML'sinin kaynak bütünlüğü korunarak izole görsel adaptör ve doğrulama.
+- [x] İzole G5.4 dört bölük taktik haritasında okunaklı, yakınlaştırmayla ölçeklenen koordinat ızgarası ve yön işareti (yalnız UI).
 - [ ] Chromium ve 70v70 komuta/çarpışma regresyonu.
 
 ## Harita 3 — Kale Kuşatması
 - [x] Çarpışmasız alçak poligon toprak ton kırılmaları; merkezi geçiş korundu.
 - [x] Sur taş sıraları ve iç kale üst kenar detayları; yeni collider yok.
-- [ ] Kapı, kule, merdiven, koçbaşı, mancınık materyal ve siluet iyileştirmeleri.
+- [x] Kule mazgal dişleri ve kapıya ahşap/metal yüzey detayları; mevcut kapı dekoru ile birlikte saklanır.
+- [ ] Merdiven, koçbaşı ve mancınık materyal ve siluet iyileştirmeleri.
 - [ ] 140 asker ve mevcut üç modlu oyunun gerçek Chromium/GPU testleri.
 
 ## Kabul
-İlk kod değişikliği sadece Harita 3 görsel katmanında. Harita 2 henüz kodda değiştirilmedi. Testler çalıştırılmadan PASS denmez. Ana dala birleştirme ve yayımlama için ayrıca kullanıcı kabulü gerekir.
+İlk kod değişiklikleri Harita 3 kale dekorasyonu ve Harita 2 canlı taktik haritasının görsel katmanında. Harita 2'nin 3B çevresi henüz değiştirilmedi. Testler çalıştırılmadan PASS denmez. Ana dala birleştirme ve yayımlama için ayrıca kullanıcı kabulü gerekir.
