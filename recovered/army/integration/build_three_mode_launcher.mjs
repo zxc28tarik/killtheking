@@ -116,9 +116,15 @@ export function addCastleThirdMode(twoModeHtml, siegeHtml){
    'const ak04b='+JSON.stringify(addonB64)+';'+
    'if(mode==="army"){'+
      'if(original.split("</body>").length!==2)throw Error("AK04b original body changed");'+
+   // MAP2 live G5.4: patch only the decoded runtime, never the archived source.
+   'const grassMark="            meadowNearGrass=null;\\n            const leafMat=";'+
+   'if(original.split(grassMark).length!==2)throw Error("MAP2 grass anchor changed");'+
+   'const visualArmy=original.replace(grassMark,'+
+     '"            meadowNearGrass=ArenaMeadowGrass.createInstancedTufts(THREE,spec,2700);\\n'+
+     '            scene.add(meadowNearGrass);\\n            const leafMat=");'+
      'const bytes=Uint8Array.from(atob(ak04b),c=>c.charCodeAt(0));'+
      'const addon=new TextDecoder("utf-8",{fatal:true}).decode(bytes);'+
-     'frame.srcdoc=original.replace("</body>",addon+"</body>");'+
+     'frame.srcdoc=visualArmy.replace("</body>",addon+"</body>");'+
    '}else frame.srcdoc=original;';
  replace(originalLoad,runtimeLoad);
  // Add the entire S3D1 game as a third inert payload, immediately before
