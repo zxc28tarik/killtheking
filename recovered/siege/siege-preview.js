@@ -58,6 +58,42 @@
  addBlock(21,.12,77,0,.04,-82,material(0x9b9075));
  addBlock(116,.13,6,0,.04,-44,material(0x988d6f));
  addBlock(35,.15,22,0,.06,32,material(0x9e997e));
+ // V1 visual-only terrain variation: shallow, collision-free low-poly earth.
+ // Keep the original routes, actual collider boxes, gate and ladder logic intact.
+ const earthTones=[0x647953,0x6d805d,0x586f4f,0x7a8260];
+ for(let i=0;i<36;i++){
+   const side=i%2===0?-1:1;
+   const x=side*(30+(i*17%76));
+   const z=-119+(i*37%203);
+   // Tiny flush patches never enter the central gate approach corridor.
+   const patch=new THREE.Mesh(new THREE.CircleGeometry(2+(i%4)*1.25,5+(i%3)),
+     material(earthTones[i%earthTones.length]));
+   patch.rotation.x=-Math.PI/2;
+   patch.rotation.z=(i*0.71)%6.28;
+   patch.position.set(x,.012+(i%3)*.002,z);
+   scene.add(patch);
+ }
+ // Narrow stone courses add scale and masonry depth without new solid geometry.
+ const mortar=material(0x797566);
+ for(const box of spec.boxes){
+   if(box.type!=='wall'||box.h<5)continue;
+   const longX=box.w>box.d;
+   for(let course=1;course<=3;course++){
+     const y=box.y+box.h*(course/4);
+     const trim=new THREE.Mesh(new THREE.BoxGeometry(
+       longX?box.w:box.w+.028,.10,longX?box.d+.028:box.d),mortar);
+     trim.position.set(box.x,y,box.z);
+     scene.add(trim);
+   }
+ }
+ // Restrained roof detailing, no neon and no altered player line-of-sight.
+ const roofEdge=material(0x514d45);
+ for(const box of spec.boxes){
+   if(box.type!=='keep-wall')continue;
+   const cap=new THREE.Mesh(new THREE.BoxGeometry(box.w+.25,.28,box.d+.25),roofEdge);
+   cap.position.set(box.x,box.y+box.h+.08,box.z);
+   scene.add(cap);
+ }
  // Weathered paving strips, not physics solids.
  for(let j=0;j<13;j++){
    addBlock(17,.018,1.1,0,.16,-113+j*7,material(j%2?0xaaa58b:0x938a76));
