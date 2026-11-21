@@ -46,3 +46,11 @@ Tarih: 21 Kasım 2026. Durum: uygulama başladı; gerçek tarayıcı kabul testi
 - [x] `test_meadow_terrain_heightfield.mjs` içinde 6 test senaryosu eklendi.
 - [ ] Test dosyası Node üzerinde henüz çalıştırılmadı; gerçek Chromium/GPU kabulü yok.
 - [ ] Özgün G5.4 geniş HTML çekilemediği için bu modül **henüz oyuna bağlanmadı**. Görsel tepeler ile asker Y koordinatları, görüş hattı, ok/kurşun ve nav birlikte bağlanıp sınanmadan açılmayacak.
+
+## V7 — Yükseklik modelinin hesaplama doğrulaması ve görsel renkler
+- [x] Mevcut tepe fonksiyonu GitHub'dan güncel kaynak okunarak çalıştırıldı: 5 tepe/vadi hedef yüksekliği doğru, 14.641 örnek noktada sonlu değerler; sınır yüksekliği 0.
+- [x] Örneklenen en yüksek eğim ~18,91°; 2 metre boyunca en büyük yükselti değişimi ~0,613 metre (halfSize=240 parametreli örnek). Bunlar mevcut G5.4 haritasının gerçek boyutuna bağlanmadan geçici ölçümlerdir.
+- [x] Altı yükseklik regresyon kontrolünün eşdeğeri JavaScript değerlendirmesinde 6/6 PASS (resmî Node CI çalışması değil).
+- [x] Görsel mesh'e vadi, çayır, sırt ve kurak tepe geçişli vertex color desteği eklendi. Mock Three.js ile 625 tepe noktası, 1.152 üçgen, sonlu renk değerleri ve geometri temizliği doğrulandı.
+- [ ] Büyük tarihî G5.4 ana HTML dosyası elde edilip zemin/yol/silah/soldier Y sözleşmeleri tespit edilecek.
+- [ ] Bu modül hâlen canlı 70v70 oyuna bağlı değil; gerçek tarayıcı/GPU ve 70v70 regresyonu bekleniyor.
