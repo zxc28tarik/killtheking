@@ -9,6 +9,10 @@ test('MAP2 visual patch is isolated to real decoded native G5.4 mode',()=>{
  assert.match(builder,/const grassMark=/);
  assert.match(builder,/MAP2 grass anchor changed/);
  assert.match(builder,/ArenaMeadowGrass\.createInstancedTufts\(THREE,spec,2700\)/);
+ assert.match(builder,/ArenaMeadowGrass\\.createNearbyTufts\\(THREE,12000\\)/);
+ assert.match(builder,/ArenaMeadowGrass\\.updateNearbyTufts/);
+ assert.match(builder,/MAP2 nearby variable anchor changed/);
+ assert.match(builder,/MAP2 render anchor changed/);
  assert.match(builder,/frame\.srcdoc=visualArmy\.replace/);
  assert.match(builder,/else frame\.srcdoc=original/);
  assert.match(builder,/expectSource\(result,'army'\)!==expectSource\(twoModeHtml,'army'\)/);
