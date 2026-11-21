@@ -92,3 +92,13 @@ Tarih: 21 Kasım 2026. Durum: uygulama başladı; gerçek tarayıcı kabul testi
 - [x] Chromium kabul senaryosu uzak ve yakın instance sayısını, görünürlüğünü ve lastTileX güncellemesini açıkça sınayacak biçimde genişletildi.
 - [ ] Henüz tam 3 modlu HTML artefaktı bu ortamda yeniden üretilip tarayıcıda çalıştırılmadı. CI SUCCESS ve gerçek GPU görsel kabulü henüz teyit edilmedi.
 - [ ] Tepeler canlı G5.4 sahnesine bağlanmış değildir. Yalnızca gerçek çimenlik görünümü genişletildi; savaş fiziği değiştirilmedi.
+
+## V13 — Meydan'ın gerçek 3B dış tepe siluetleri ve ufuk atmosferi
+- [x] Özgün 300x ölçekli G5.4 çimen meydanı çevresine 3B alçak çokgenli yumuşak tepeler eklendi. İşlem oynanabilir haritanın içindeki zemine veya asker Y yüksekliğine uygulanmıyor.
+- [x] Dış tepe halkası 325 köşe / 512 üçgen tek yüzey mesh'idir; yüksekliğe göre 5 düşük doygunluklu doğal arazi rengi ve düzensiz sırt silueti var.
+- [x] Kaynak gerçek boyutunda bütün tepe köşeleri meydanın kare sınırının en az 38,89 birim ötesinde; bot/oyuncu/mermi colliders ve nav verileri değiştirilmedi.
+- [x] Kale modunun orijinal turuncu sis ve gökyüzü görünümü korunuyor. Meydan seçildiğinde sis yoğunluğu 0.0046'dan 0.00065'e düşürülüyor ve daha doğal gökyüzü/sis tonları kullanılıyor; kale moduna dönülünce eski değerler geri geliyor.
+- [x] G5.4 oyununun orijinal HTML blob'u değiştirilmeden, üç modlu çalışma kopyasında yeni sahne mesh'i yaratılıyor. Doğrulama: oluşturulan HTML'deki 29 JS script sözdizimi PASS, gerçek geometri sonlu koordinatlar PASS, sahne nesnesi kaynak temizleme PASS.
+- [x] Chromium senaryosuna 325 köşe, 512 üçgen ve sahne görünürlüğü kontrolü eklendi. CI'ya yeni geometri testleri bağlandı.
+- [ ] Gerçek Chromium/GPU çizim sonucu ve tek dosyalı tam HTML artefaktının başarılı paketlemesi henüz doğrulanmadı. Bu sürümü ekran görüntüsü veya kabul edilmiş oynanış sürümü olarak değerlendirmeyin.
+- [ ] Mevcut oyun içinde üzerinde yürünebilir gerçek tepeler ve vadi hâlâ yok; bunun için asker/fizik ve atış uyumu gerekir. Bu adım yalnız dış tepe görselliğidir.
