@@ -365,6 +365,26 @@
    if(!active||mapOverlay.classList.contains('hidden'))return;
    const c=overlay.getContext('2d'),w=overlay.width,h=overlay.height;
    c.clearRect(0,0,w,h);
+   // MAP2-V1 tactical-map visual polish: only UI pixels, not the 3D world.
+   // The thin survey grid scales with the existing zoom and does not
+   // intercept clicks, add fake soldiers or modify the native pathfinder.
+   c.save();
+   c.strokeStyle='rgba(210,225,182,.16)';
+   c.lineWidth=1;
+   const spacing=w*40/(2*mapZoom);
+   if(spacing>=15){
+     c.beginPath();
+     for(let x=w/2%spacing;x<w;x+=spacing){c.moveTo(x,0);c.lineTo(x,h);}
+     for(let y=h/2%spacing;y<h;y+=spacing){c.moveTo(0,y);c.lineTo(w,y);}
+     c.stroke();
+   }
+   c.strokeStyle='rgba(251,222,157,.5)';
+   c.beginPath();c.moveTo(w/2-10,h/2);c.lineTo(w/2+10,h/2);
+   c.moveTo(w/2,h/2-10);c.lineTo(w/2,h/2+10);c.stroke();
+   c.fillStyle='rgba(241,234,210,.78)';
+   c.font='11px system-ui';
+   c.fillText('KUZEY',w/2-19,17);
+   c.restore();
    const ids=shared.snapshot(active.cmd).selectedSquadIds;
    for(let n=0;n<ids.length;n++){
      const squad=active.state.squads[ids[n]];
