@@ -54,3 +54,9 @@ Tarih: 21 Kasım 2026. Durum: uygulama başladı; gerçek tarayıcı kabul testi
 - [x] Görsel mesh'e vadi, çayır, sırt ve kurak tepe geçişli vertex color desteği eklendi. Mock Three.js ile 625 tepe noktası, 1.152 üçgen, sonlu renk değerleri ve geometri temizliği doğrulandı.
 - [ ] Büyük tarihî G5.4 ana HTML dosyası elde edilip zemin/yol/silah/soldier Y sözleşmeleri tespit edilecek.
 - [ ] Bu modül hâlen canlı 70v70 oyuna bağlı değil; gerçek tarayıcı/GPU ve 70v70 regresyonu bekleniyor.
+
+## V8 — Zemini gerçek asker fiziğine bağlamak için köprü
+- [x] `recovered/army/modules/meadow-terrain-bridge.js` bağımsız ve isteğe bağlı hesaplama katmanı: yükseklikten asker ayak/göz konumu, eğim sınırı, alt-adımlı yürüyüş ve arazinin 3B görüşü kapatması.
+- [x] `test_meadow_terrain_bridge.mjs` içine 7 regresyon vakası kaydedildi. Canlı kaynaktan değerlendirilen eşdeğer 7/7 kontrol PASS (resmî Node CI değildir).
+- [ ] Büyük G5.4 HTML tarihi kaynak dosyası içerik API'sinde boş döndüğünden mevcut asker renderer/hareket/atış API'siyle bağlama henüz yapılmadı. Git erişimi denemesi DNS nedeniyle başarısız. Canlı oyunda gerçek 3B yürüyüş ve ateş doğrulanmadı.
+- [ ] Güncel üç modlu tek dosyalık HTML yeniden paketleme ve gerçek tarayıcı/GPU kabulü yapılacak.
