@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - codex/s1-siege-castle-phase1
+      - codex/visual-meadow-siege-pass1
     paths:
       - 'recovered/army/integration/audit_g54_army_hud.mjs'
       - 'recovered/army/integration/build_three_mode_launcher.mjs'
@@ -62,6 +63,7 @@ jobs:
       - name: Parse all new genuine three-mode source modules
         run: |
           node --check recovered/army/integration/build_three_mode_launcher.mjs
+          node --check recovered/army/integration/test_meadow_visual_runtime.mjs
           node --check recovered/army/integration/g54-field-four-squad-runtime.js
           node --check recovered/siege/siege-ram.js
           node --check recovered/siege/siege-catapult.js
@@ -97,6 +99,10 @@ jobs:
           KTK_FFA_HTML: ffa-source/dist/KillTheKing_Oyna.html
         run: |
           node --test recovered/army/integration/test_three_mode_launcher.mjs
+          node --test recovered/army/integration/test_meadow_visual_runtime.mjs
+          node --test recovered/army/modules/test_meadow_grass_visual.mjs
+          node --test recovered/army/modules/test_meadow_terrain_heightfield.mjs
+          node --test recovered/army/modules/test_meadow_terrain_bridge.mjs
           node --test recovered/army/integration/test_isolated_launcher.mjs
           node --test recovered/army/integration/test_mode_router_runtime.mjs
           node --test recovered/siege/test_siege_player_combat.mjs
