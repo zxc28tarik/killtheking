@@ -178,6 +178,19 @@
    ramp.rotation.z=side==='west'?.66:-.66;
    ramp.visible=false;
    ladderMeshes[side]=ramp;
+   // MAP3-V3: existing functional ladder receives lightweight timber rails.
+   // All trim is parented to the ramp: deployment visibility and collision
+   // remain controlled exclusively by the original siege mechanics.
+   const sideRailMat=material(0x735238);
+   const edgeIronMat=material(0x4b4945,.85);
+   for(const depth of [-1.96,1.96]){
+     const rail=new THREE.Mesh(new THREE.BoxGeometry(15.2,.34,.32),sideRailMat);
+     rail.position.set(0,.32,depth);ramp.add(rail);
+     for(const px of [-6.6,0,6.6]){
+       const bracket=new THREE.Mesh(new THREE.BoxGeometry(.38,.4,.45),edgeIronMat);
+       bracket.position.set(px,.39,depth);ramp.add(bracket);
+     }
+   }
    for(let k=0;k<7;k++){
      const step=new THREE.Mesh(new THREE.BoxGeometry(.7,1.1,4.6),
        material(0x64563e));
