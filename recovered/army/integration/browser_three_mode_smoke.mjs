@@ -108,6 +108,16 @@ try{
  assert.ok(Number.isFinite(nativeGrass.lastTileX),
    'Nearby grass must be populated and updated by the live G5.4 render loop');
  report.checks.push('PASS_REAL_MEADOW_GRASS_2700_INSTANCES: '+JSON.stringify(nativeGrass));
+ const meadowHills=await page.evaluate(()=>{
+   const w=document.querySelector('#stage iframe')?.contentWindow;
+   return w?.ktkMeadowHorizonStatus?.()||null;
+ });
+ assert(meadowHills,'Meadow 3D landscape visual must mount');
+ assert.equal(meadowHills.triangles,512);
+ assert.equal(meadowHills.vertices,325);
+ assert.equal(meadowHills.visible,true);
+ assert.ok(meadowHills.innerRadius>850);
+ report.checks.push('PASS_MAP2_ROLLING_HILL_BACKDROP: '+JSON.stringify(meadowHills));
  report.checks.push('PASS_ORIGINAL_140_ARMY_CHROMIUM_MODE_STILL_PLAYABLE: '+
   JSON.stringify(army));
  // AK-04b: unchanged historical field game, four authentic allied squads.
