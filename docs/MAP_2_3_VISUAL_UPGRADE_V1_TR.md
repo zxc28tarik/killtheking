@@ -67,3 +67,11 @@ Tarih: 21 Kasım 2026. Durum: uygulama başladı; gerçek tarayıcı kabul testi
 - [x] Görsel nesneler için kaynak temizleme ve iki kez güvenle dispose edebilme.
 - [x] İşlevsel Three.js mock denemesinde 8.192 üçgenli zemin, 2.700 çim, geçerli renkler ve kaynak temizliği doğrulandı. Dört Node regresyon testi kaynak dosyası eklendi; CI çalıştırılmış değil.
 - [ ] Çok önemli: bu hâlâ G5.4 gerçek Meydan oyununun içine bağlanmış değil; orijinal büyük HTML oyun kaynağı indirilemedi. Oyuna eklenmiş veya tarayıcıda ekran görüntüsü alınmış gibi sunulmayacak.
+
+## V10 — Gerçek G5.4 Meydan çim entegrasyonu (kaynak düzeyinde)
+- [x] G5.4 arşivinin 1.257.893 karakterlik özgün kaynağı GitHub Blob SHA ile okunabildi. Gerçek `buildMeadowSquare()` ve `ArenaMeadowGrass.createInstancedTufts` bulundu; tarihî sahnede bu çimlerin kasıtlı olarak kapatıldığı doğrulandı.
+- [x] `build_three_mode_launcher.mjs` yalnız çalışma anında çözülen G5.4 Meydan HTML'sinde belirli ve tekil kaynak işaretinden 2700 adet native düşük poligonlu `InstancedMesh` çimi tekrar sahneye ekliyor. FFA ve Kale modlarına uygulanmıyor. Orijinal gömülü ordu HTML kaynak SHA'sı korunuyor.
+- [x] 3B çimler `meadowMapData.visuals` içine alındığı için orijinal harita değişiminde görünürlüğü asıl motor tarafından yönetiliyor. Dünya collider/atış/AI sistemleri değiştirilmedi.
+- [x] Kaynak işareti 1 kez eşleşiyor, derleyici JavaScript sözdizimi doğrulandı. İki regresyon testi kaynak dosyası yazıldı.
+- [ ] Üç modlu HTML henüz yeniden derlenmedi ve gerçek Chromium/WebGL başlatma testi yapılmadı; bu aşama **kod entegrasyon adayıdır, oynanış PASS değildir**.
+- [ ] Daha önce hazırlanan tepecikli yükseklik mesh'i G5.4'te etkin değil. Çünkü flat soldier physics devam ediyor; görünür yamaçların yere basma/mermi fiziğiyle uyumlu olması ayrı kabul gerektiriyor.
