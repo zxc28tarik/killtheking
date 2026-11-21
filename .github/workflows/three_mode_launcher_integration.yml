@@ -7,6 +7,8 @@ on:
     paths:
       - 'recovered/army/integration/audit_g54_army_hud.mjs'
       - 'recovered/army/integration/build_three_mode_launcher.mjs'
+      - 'recovered/army/integration/g54-meadow-horizon-visual.js'
+      - 'recovered/army/integration/test_meadow_horizon_visual.mjs'
       - 'recovered/army/integration/g54-field-four-squad-runtime.js'
       - 'recovered/army/integration/test_three_mode_launcher.mjs'
       - 'recovered/army/integration/browser_three_mode_smoke.mjs'
@@ -63,6 +65,8 @@ jobs:
       - name: Parse all new genuine three-mode source modules
         run: |
           node --check recovered/army/integration/build_three_mode_launcher.mjs
+          node --check recovered/army/integration/g54-meadow-horizon-visual.js
+          node --check recovered/army/integration/test_meadow_horizon_visual.mjs
           node --check recovered/army/integration/test_meadow_visual_runtime.mjs
           node --check recovered/army/integration/g54-field-four-squad-runtime.js
           node --check recovered/siege/siege-ram.js
@@ -100,6 +104,7 @@ jobs:
         run: |
           node --test recovered/army/integration/test_three_mode_launcher.mjs
           node --test recovered/army/integration/test_meadow_visual_runtime.mjs
+          node --test recovered/army/integration/test_meadow_horizon_visual.mjs
           node --test recovered/army/modules/test_meadow_grass_visual.mjs
           node --test recovered/army/modules/test_meadow_terrain_heightfield.mjs
           node --test recovered/army/modules/test_meadow_terrain_bridge.mjs
