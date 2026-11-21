@@ -101,8 +101,12 @@ try{
  });
  assert(nativeGrass,'Original G5.4 meadow should mount grass visual');
  assert.equal(nativeGrass.count,2700);
+ assert.equal(nativeGrass.nearbyCount,12000);
  assert.match(nativeGrass.meshName,/Meadow decorative grass/);
  assert.equal(nativeGrass.visible,true);
+ assert.equal(nativeGrass.nearbyVisible,true);
+ assert.ok(Number.isFinite(nativeGrass.lastTileX),
+   'Nearby grass must be populated and updated by the live G5.4 render loop');
  report.checks.push('PASS_REAL_MEADOW_GRASS_2700_INSTANCES: '+JSON.stringify(nativeGrass));
  report.checks.push('PASS_ORIGINAL_140_ARMY_CHROMIUM_MODE_STILL_PLAYABLE: '+
   JSON.stringify(army));
