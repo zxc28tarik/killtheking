@@ -60,3 +60,10 @@ Tarih: 21 Kasım 2026. Durum: uygulama başladı; gerçek tarayıcı kabul testi
 - [x] `test_meadow_terrain_bridge.mjs` içine 7 regresyon vakası kaydedildi. Canlı kaynaktan değerlendirilen eşdeğer 7/7 kontrol PASS (resmî Node CI değildir).
 - [ ] Büyük G5.4 HTML tarihi kaynak dosyası içerik API'sinde boş döndüğünden mevcut asker renderer/hareket/atış API'siyle bağlama henüz yapılmadı. Git erişimi denemesi DNS nedeniyle başarısız. Canlı oyunda gerçek 3B yürüyüş ve ateş doğrulanmadı.
 - [ ] Güncel üç modlu tek dosyalık HTML yeniden paketleme ve gerçek tarayıcı/GPU kabulü yapılacak.
+
+## V9 — Meydan çim yüzeyinin görsel kalite geçişi
+- [x] 3 ölçekli deterministik renk kırılması: geniş doğal çimen lekeleri, orta ölçekli varyasyon ve hafif ince doku. Yüksek alanlarda kuru ton; alçak alanlarda daha koyu/nemli yeşil.
+- [x] Tekrarsız sabit dağılımla 2.700 kısa, düşük poligonlu 3B çim demeti; 3 InstancedMesh çizim grubu, bağımsız katı engel veya balistik nesne yok.
+- [x] Görsel nesneler için kaynak temizleme ve iki kez güvenle dispose edebilme.
+- [x] İşlevsel Three.js mock denemesinde 8.192 üçgenli zemin, 2.700 çim, geçerli renkler ve kaynak temizliği doğrulandı. Dört Node regresyon testi kaynak dosyası eklendi; CI çalıştırılmış değil.
+- [ ] Çok önemli: bu hâlâ G5.4 gerçek Meydan oyununun içine bağlanmış değil; orijinal büyük HTML oyun kaynağı indirilemedi. Oyuna eklenmiş veya tarayıcıda ekran görüntüsü alınmış gibi sunulmayacak.
