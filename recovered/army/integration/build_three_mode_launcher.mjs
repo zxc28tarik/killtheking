@@ -121,7 +121,12 @@ export function addCastleThirdMode(twoModeHtml, siegeHtml){
    'if(original.split(grassMark).length!==2)throw Error("MAP2 grass anchor changed");'+
    'const visualArmy=original.replace(grassMark,'+
      '"            meadowNearGrass=ArenaMeadowGrass.createInstancedTufts(THREE,spec,2700);\\n'+
-     '            scene.add(meadowNearGrass);\\n            const leafMat=");'+
+     '            scene.add(meadowNearGrass);\\n'+
+     '            window.ktkMeadowGrassVisualStatus=()=>({\\n'+
+     '              count:meadowNearGrass.count,\\n'+
+     '              meshName:meadowNearGrass.name,\\n'+
+     '              visible:meadowNearGrass.visible\\n'+
+     '            });\\n            const leafMat=");'+
      'const bytes=Uint8Array.from(atob(ak04b),c=>c.charCodeAt(0));'+
      'const addon=new TextDecoder("utf-8",{fatal:true}).decode(bytes);'+
      'frame.srcdoc=visualArmy.replace("</body>",addon+"</body>");'+
