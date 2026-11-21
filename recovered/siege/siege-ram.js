@@ -379,6 +379,21 @@
      Math.PI/2,0);
    for(const x of [-2,2])
      add(new THREE.BoxGeometry(.15,.36,1.8),iron,x,3.7,0);
+   // MAP3-V4: shallow armour braces and wheel hubs, cosmetic only.
+   // No chassis/body dimensions, obstruction checks or attack clocks change.
+   const darkWood=new THREE.MeshStandardMaterial({color:0x483424,roughness:.95});
+   for(const x of [-2.12,2.12]){
+     for(const z of [-2.1,2.1]){
+       const brace=add(new THREE.BoxGeometry(.19,3.4,.25),darkWood,x,2.2,z);
+       brace.rotation.x=z<0?-.16:.16;
+     }
+   }
+   for(const x of [-2.57,2.57])for(const z of [-2.25,2.25]){
+     add(new THREE.CylinderGeometry(.24,.24,.06,10),iron,x,.96,z,0,Math.PI/2);
+   }
+   // Reinforce the roof silhouette but keep all details inside the real collider.
+   for(const z of [-2.5,0,2.5])
+     add(new THREE.BoxGeometry(5.25,.12,.20),darkWood,0,4.24,z);
    group.position.set(c.x,0,c.z);scene.add(group);
    const visual={group,log,head,wood,trim,iron,
      meshCount:group.children.length};
