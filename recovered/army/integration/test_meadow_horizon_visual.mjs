@@ -37,7 +37,7 @@ test('all horizon ridge vertices remain finite and fully outside playable radius
  assert.ok(Array.from(v).every(Number.isFinite));
  assert.ok(Array.from(colors).every(value=>Number.isFinite(value)&&value>0&&value<1));
  for(let i=0;i<v.length;i+=3){
-  assert.ok(Math.hypot(v[i],v[i+2])>=areaHalf*1.08);
+  assert.ok(Math.max(Math.abs(v[i]),Math.abs(v[i+2]))>areaHalf+30);
  }
  hill.dispose();
  assert.ok(hill.mesh.geometry.disposed);
