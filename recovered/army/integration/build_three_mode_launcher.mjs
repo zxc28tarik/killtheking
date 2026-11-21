@@ -154,12 +154,12 @@ export function addCastleThirdMode(twoModeHtml, siegeHtml){
       '              visible:meadowHorizon.mesh.visible,\\n'+
       '              innerRadius:meadowHorizon.innerRadius\\n'+
       '            });\\n"+horizonGround);'+
-   'const mapVisualSwitch="            meadowMapData.visuals.forEach(obj=>{obj.visible=map===\\'meadow\\';});";'+
+   'const mapVisualSwitch="            meadowMapData.visuals.forEach(obj=>{obj.visible=map===\'meadow\';});";'+
    'if(visualArmy.split(mapVisualSwitch).length!==2)throw Error("MAP2 switch anchor changed");'+
    'visualArmy=visualArmy.replace(mapVisualSwitch,mapVisualSwitch+'+
-      '"\\n            scene.fog.density=map===\\'meadow\\'?.00065:.0046;'+
-      '\\n            scene.fog.color.setHex(map===\\'meadow\\'?0xb9b7a3:0xd9824c);'+
-      '\\n            scene.background.setHex(map===\\'meadow\\'?0xb9c5b6:0xd97736);");'+
+      '"\\n            scene.fog.density=map===\'meadow\'?.00065:.0046;'+
+      '\\n            scene.fog.color.setHex(map===\'meadow\'?0xb9b7a3:0xd9824c);'+
+      '\\n            scene.background.setHex(map===\'meadow\'?0xb9c5b6:0xd97736);");'+
    'const renderMark="            renderer.render(scene, camera);";'+
    'if(visualArmy.split(renderMark).length!==2)throw Error("MAP2 render anchor changed");'+
    'visualArmy=visualArmy.replace(renderMark,'+
