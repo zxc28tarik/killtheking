@@ -19,8 +19,8 @@ const KTKMeadowHorizon=(function(){
    if(!THREE?.BufferGeometry||!THREE?.MeshStandardMaterial||
       !THREE?.Float32BufferAttribute||!scene?.add||
       !(spec?.half>0))throw Error('MAP2 3D scene and meadow spec required');
-   const SEG=64,steps=4,inner=spec.half*1.085;
-   const rings=[inner,inner+80,inner+180,inner+340,inner+550];
+   const SEG=64,steps=4,inner=spec.half+55;
+   const ringOffsets=[55,135,235,395,605];
    const geom=new THREE.BufferGeometry();
    const pos=new Float32Array((SEG+1)*(steps+1)*3);
    const colors=new Float32Array(pos.length);
@@ -36,7 +36,8 @@ const KTKMeadowHorizon=(function(){
      for(let j=0;j<=SEG;j++){
        const theta=TAU*j/SEG;
        // Slight radial scallops prevent a perfectly round artificial border.
-       const rad=rings[r]+(r===0?0:Math.sin(theta*5.5+1.2)*11);
+       const edgeRadius=spec.half/Math.max(Math.abs(Math.cos(theta)),Math.abs(Math.sin(theta)));
+       const rad=edgeRadius+ringOffsets[r]+(r===0?0:Math.sin(theta*5.5+1.2)*11);
        const y=height(theta,r);
        const i=r*(SEG+1)+j;
        pos[3*i]=Math.cos(theta)*rad;
@@ -64,7 +65,7 @@ const KTKMeadowHorizon=(function(){
    hills.frustumCulled=false;
    scene.add(hills);
    return {
-     mesh:hills,innerRadius:inner,outerRadius:rings[4],
+     mesh:hills,innerRadius:inner,outerClearance:ringOffsets[4],
      triangles:index.length/3,vertices:pos.length/3,
      dispose(){
        scene.remove(hills);geom.dispose();mat.dispose();
