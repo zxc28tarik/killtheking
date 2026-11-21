@@ -33,3 +33,9 @@ Tarih: 21 Kasım 2026. Durum: uygulama başladı; gerçek tarayıcı kabul testi
 - `siege-ram.js` ve `siege-catapult.js` gerçek AK-05 makinelerinin mountVisual fonksiyonlarında kozmetik detaylar eklendi. Yeni silah, makine veya oyun modu oluşturulmadı.
 - Her iki JavaScript kaynak dosyasının sözdizimi `new Function` ile PASS; tarayıcı, GPU, 140 asker ve üç modlu HTML yeniden paketleme kabulü henüz gerçekleştirilmedi.
 - Meydan Savaşı'nın özgün büyük G5.4 HTML gövdesi GitHub dosya içerik uç noktasından boş geldi; mevcut 3B sahnesine güvenli müdahale henüz gerçekleştirilemedi. Harita 2 görsel işlerinin geri kalanı açık.
+
+## 21 Kasım — V5 kuşatma çevre katmanı
+- [x] Kale dış kuşatma arazisinin sağ/sol kenarlarına üç malzeme grubunda toplam 144 instanced düşük poligonlu bitki eklendi. Merkez koridor, koçbaşı ve mancınık mevzileri, avlu ve asker yollarının üstüne eklenmedi.
+- [x] Görsel bitkiler dünya çarpışma listesine veya G5.4 yol/atak hesaplarına bağlanmadı.
+- [ ] Büyük G5.4 arşiv HTML'si GitHub dosya arabiriminden yine boş geldi; mevcut 3B Meydan sahnesi değiştirilemedi.
+- [ ] Üç modlu HTML oluşturma, gerçek Chromium ve GPU testi hâlâ yapılacak. Sözdizimi kontrolü PASS tek başına oynanış kabulü değildir.
