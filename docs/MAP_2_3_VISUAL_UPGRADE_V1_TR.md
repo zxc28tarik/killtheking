@@ -102,3 +102,13 @@ Tarih: 21 Kasım 2026. Durum: uygulama başladı; gerçek tarayıcı kabul testi
 - [x] Chromium senaryosuna 325 köşe, 512 üçgen ve sahne görünürlüğü kontrolü eklendi. CI'ya yeni geometri testleri bağlandı.
 - [ ] Gerçek Chromium/GPU çizim sonucu ve tek dosyalı tam HTML artefaktının başarılı paketlemesi henüz doğrulanmadı. Bu sürümü ekran görüntüsü veya kabul edilmiş oynanış sürümü olarak değerlendirmeyin.
 - [ ] Mevcut oyun içinde üzerinde yürünebilir gerçek tepeler ve vadi hâlâ yok; bunun için asker/fizik ve atış uyumu gerekir. Bu adım yalnız dış tepe görselliğidir.
+
+## V14 — Meydan'ın iç çimenliğine doğal büyük yüzey geçişleri
+- [x] Orijinal G5.4 Meadow grass CanvasTexture aynen korunarak yalnızca kendi zemin mesh'ine çok ölçekli vertex color görsel katmanı eklendi. Yüzeyde dalgalı açık/koyu ot alanları, mevsimsel kuru renk farklılıkları ve çok hafif aşınmış çim izi bulunuyor.
+- [x] 144x144 segmentte 21.025 renk köşesi kullanıldı. Yüzey yüksekliği Y=0 kalır; hiçbir yapay yokuş, asker çarpışma hacmi, mermi engeli, bot davranışı veya mekanik değiştirilmedi.
+- [x] Eski düz PlaneGeometry kaynak temizliği yapılıyor; özgün renkli doku, tekrarlama/filtreleme ve yerleşim korunuyor. Ayrı gölge kaplamaları veya binlerce tek tek zemin nesnesi oluşturulmuyor.
+- [x] G5.4 kaynak blob'unun orijinali saklı tutularak yalnız çalışma anında oluşturulan Meydan iframe koduna entegre edildi. Derleyicinin ürettiği çalışma kopyasında 29 JavaScript bölümü sözdizimi PASS; mevcut uzak tepeler ve yakın çimler de korunuyor.
+- [x] Bağımsız Three.js mock testinde 21.025 köşe, 41.472 üçgen, ton aralığı farkları, doku kimliği ve Y=0 doğrulandı.
+- [x] Gerçek Chromium kabul senaryosuna zemin renk geometrisi kontrolü eklendi ve ilgili CI workflow kapsamı genişletildi.
+- [ ] Henüz güncel üç modlu HTML bu oturumda gerçek Chromium/WebGL içinde açılıp ekranda doğrulanmadı; görsel kalite kabulü verilmedi.
+- [ ] Üzerinde yürünebilir gerçek iç tepeler mevcut değil; bu V14 yalnızca düz zeminin doğal görünümünü iyileştirir.
