@@ -1,0 +1,20 @@
+name: "AK-NATIVE-06 — original G5.4 siege map regression"
+on:
+  push:
+    branches:
+      - codex/native-g54-siege-map-phase2
+    paths:
+      - "recovered/native-siege/**"
+      - ".github/workflows/native_g54_siege_map_qa.yml"
+  workflow_dispatch:
+jobs:
+  native-g54-siege:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Original 28 scripts, authentic G5.4 140 soldiers, and defensive fallback
+        run: node --test recovered/native-siege/test_ak_native_06.mjs
