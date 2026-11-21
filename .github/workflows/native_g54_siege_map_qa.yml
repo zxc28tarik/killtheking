@@ -1,4 +1,4 @@
-name: "AK-NATIVE-08 — original G5.4 siege map regression"
+name: "AK-NATIVE-09 — original Kill the King G5.4 siege and menu regression"
 on:
   push:
     branches:
@@ -16,9 +16,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "24"
-      - name: AK06 historical original engine and soldier regression
+      - name: AK06 original game baseline
         run: node --test recovered/native-siege/test_ak_native_06.mjs
-      - name: AK07 original physical projectile / squad authority regression
+      - name: AK07 original game physical siege logic
         run: node --test recovered/native-siege/test_ak_native_07.mjs
-      - name: AK08 original 28 scripts and siege-only compact HUD regression
+      - name: AK08 original game real-GL HUD invariants
         run: node --test recovered/native-siege/test_ak_native_08.mjs
+      - name: AK09 original three-map mode isolation, 140 native actors and compact HUD
+        run: node --test recovered/native-siege/test_ak_native_09.mjs
