@@ -39,3 +39,10 @@ Tarih: 21 Kasım 2026. Durum: uygulama başladı; gerçek tarayıcı kabul testi
 - [x] Görsel bitkiler dünya çarpışma listesine veya G5.4 yol/atak hesaplarına bağlanmadı.
 - [ ] Büyük G5.4 arşiv HTML'si GitHub dosya arabiriminden yine boş geldi; mevcut 3B Meydan sahnesi değiştirilemedi.
 - [ ] Üç modlu HTML oluşturma, gerçek Chromium ve GPU testi hâlâ yapılacak. Sözdizimi kontrolü PASS tek başına oynanış kabulü değildir.
+
+## V6 — 2. harita yüksekliği için ilk kod teslimi
+- [x] `recovered/army/modules/meadow-terrain-heightfield.js`: merkezi savaş alanını koruyan, tepe ve vadiyi yerel alan fonksiyonlarıyla hesaplayan deterministik yükseklik modeli eklendi (kuzey +12m, doğu +8m, merkez +5m, güney +10m, batı -3m).
+- [x] Örneklenebilir 3B mesh, normal hesabı, sınırda sıfırlanan yükseklik ve kaynak temizleme fonksiyonu yazıldı.
+- [x] `test_meadow_terrain_heightfield.mjs` içinde 6 test senaryosu eklendi.
+- [ ] Test dosyası Node üzerinde henüz çalıştırılmadı; gerçek Chromium/GPU kabulü yok.
+- [ ] Özgün G5.4 geniş HTML çekilemediği için bu modül **henüz oyuna bağlanmadı**. Görsel tepeler ile asker Y koordinatları, görüş hattı, ok/kurşun ve nav birlikte bağlanıp sınanmadan açılmayacak.
