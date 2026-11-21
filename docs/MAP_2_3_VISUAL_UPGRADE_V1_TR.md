@@ -18,7 +18,8 @@ Tarih: 21 Kasım 2026. Durum: uygulama başladı; gerçek tarayıcı kabul testi
 - [x] Sur taş sıraları ve iç kale üst kenar detayları; yeni collider yok.
 - [x] Kule mazgal dişleri ve kapıya ahşap/metal yüzey detayları; mevcut kapı dekoru ile birlikte saklanır.
 - [x] Batı/doğu merdivenlerine işlevsel mesh'e bağlı ahşap yan raylar ve bağlantı kelepçeleri (sadece görsel, yeni collider yok).
-- [ ] Koçbaşı ve mancınık materyal ve siluet iyileştirmeleri.
+- [x] Gerçek G5.4 mürettebatlı koçbaşına ahşap çapraz destekler, tekerlek göbekleri ve çatı çıtaları eklendi (yalnız mesh).
+- [x] Gerçek G5.4 mürettebatlı mancınığa destekler, tekerlek göbekleri ve üst travers ayrıntıları eklendi (yalnız mesh).
 - [ ] 140 asker ve mevcut üç modlu oyunun gerçek Chromium/GPU testleri.
 
 ## Kabul
@@ -27,3 +28,8 @@ Tarih: 21 Kasım 2026. Durum: uygulama başladı; gerçek tarayıcı kabul testi
 - İki değişen JavaScript dosyası sözdizimi kontrolü PASS: `siege-preview.js`, `g54-field-four-squad-runtime.js`.
 - Tam üç modlu çevrim dışı HTML yeniden derlenmedi; Chromium/GPU/regresyon testleri çalıştırılmadı. Oynanış PASS iddiası yok.
 - Meydan 3B motoruna erişim sağlanmadan görsel geometri yazılmadı; taktik harita V1 güncellemesi kaydedildi.
+
+## 21 Kasım — V4
+- `siege-ram.js` ve `siege-catapult.js` gerçek AK-05 makinelerinin mountVisual fonksiyonlarında kozmetik detaylar eklendi. Yeni silah, makine veya oyun modu oluşturulmadı.
+- Her iki JavaScript kaynak dosyasının sözdizimi `new Function` ile PASS; tarayıcı, GPU, 140 asker ve üç modlu HTML yeniden paketleme kabulü henüz gerçekleştirilmedi.
+- Meydan Savaşı'nın özgün büyük G5.4 HTML gövdesi GitHub dosya içerik uç noktasından boş geldi; mevcut 3B sahnesine güvenli müdahale henüz gerçekleştirilemedi. Harita 2 görsel işlerinin geri kalanı açık.
