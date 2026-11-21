@@ -112,10 +112,12 @@ export function addCastleThirdMode(twoModeHtml, siegeHtml){
  const originalLoad='stage.appendChild(frame);frame.srcdoc=decode("ktk-source-"+mode);';
  const addonB64=Buffer.from(fieldArmyAddon(),'utf8').toString('base64');
  const horizonB64=Buffer.from(readFileSync(resolve(base,'g54-meadow-horizon-visual.js'),'utf8'),'utf8').toString('base64');
+ const surfaceB64=Buffer.from(readFileSync(resolve(base,'g54-meadow-surface-visual.js'),'utf8'),'utf8').toString('base64');
  const runtimeLoad='stage.appendChild(frame);'+
    'const original=decode("ktk-source-"+mode);'+
    'const ak04b='+JSON.stringify(addonB64)+';'+
    'const horizonB64='+JSON.stringify(horizonB64)+';'+
+   'const surfaceB64='+JSON.stringify(surfaceB64)+';'+
    'if(mode==="army"){'+
      'if(original.split("</body>").length!==2)throw Error("AK04b original body changed");'+
    // MAP2 native grass enhancement. The historical G5.4 HTML remains
@@ -140,10 +142,17 @@ export function addCastleThirdMode(twoModeHtml, siegeHtml){
    'if(visualArmy.split(grassVar).length!==2)throw Error("MAP2 nearby variable anchor changed");'+
    'visualArmy=visualArmy.replace(grassVar,grassVar+"\\n        let meadowDenseGrass=null;");'+
    // Install visual-only hills as a local symbol in the original game script.
+   // MAP2 interior surface: physically flat, spatially varied grass colors.
+   'const surfaceScript=new TextDecoder("utf-8",{fatal:true}).decode(Uint8Array.from(atob(surfaceB64),c=>c.charCodeAt(0)));'+
    'const horizonScript=new TextDecoder("utf-8",{fatal:true}).decode(Uint8Array.from(atob(horizonB64),c=>c.charCodeAt(0)));'+
    'const horizonFunction="        function buildMeadowSquare() {";'+
    'if(visualArmy.split(horizonFunction).length!==2)throw Error("MAP2 horizon function anchor changed");'+
-   'visualArmy=visualArmy.replace(horizonFunction,horizonScript+"\\n"+horizonFunction);'+
+   'visualArmy=visualArmy.replace(horizonFunction,surfaceScript+"\\n"+horizonScript+"\\n"+horizonFunction);'+
+   'const surfaceAnchor="            grassGround.rotation.x=-Math.PI/2;";'+
+   'if(visualArmy.split(surfaceAnchor).length!==2)throw Error("MAP2 ground surface anchor changed");'+
+   'visualArmy=visualArmy.replace(surfaceAnchor,surfaceAnchor+'+
+     '"\\n            const meadowSurfaceStatus=KTKMeadowSurfaceVisual.apply(THREE,grassGround,spec);'+
+     '\\n            window.ktkMeadowSurfaceStatus=()=>meadowSurfaceStatus;");'+
    'const horizonGround="            const leafMat=new THREE.MeshStandardMaterial({color:0x477a32,roughness:.95});";'+
    'if(visualArmy.split(horizonGround).length!==2)throw Error("MAP2 horizon ground anchor changed");'+
    'visualArmy=visualArmy.replace(horizonGround,'+
