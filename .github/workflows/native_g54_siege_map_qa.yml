@@ -1,4 +1,4 @@
-name: "AK-NATIVE-07 — original G5.4 siege map regression"
+name: "AK-NATIVE-08 — original G5.4 siege map regression"
 on:
   push:
     branches:
@@ -16,7 +16,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "24"
-      - name: Historical AK06 original-engine/source tests
+      - name: AK06 historical original engine and soldier regression
         run: node --test recovered/native-siege/test_ak_native_06.mjs
-      - name: AK07 original G5.4 gate collision, 140 actors, watchdog and manual priority
+      - name: AK07 original physical projectile / squad authority regression
         run: node --test recovered/native-siege/test_ak_native_07.mjs
+      - name: AK08 original 28 scripts and siege-only compact HUD regression
+        run: node --test recovered/native-siege/test_ak_native_08.mjs
