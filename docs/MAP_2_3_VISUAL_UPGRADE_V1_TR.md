@@ -75,3 +75,11 @@ Tarih: 21 Kasım 2026. Durum: uygulama başladı; gerçek tarayıcı kabul testi
 - [x] Kaynak işareti 1 kez eşleşiyor, derleyici JavaScript sözdizimi doğrulandı. İki regresyon testi kaynak dosyası yazıldı.
 - [ ] Üç modlu HTML henüz yeniden derlenmedi ve gerçek Chromium/WebGL başlatma testi yapılmadı; bu aşama **kod entegrasyon adayıdır, oynanış PASS değildir**.
 - [ ] Daha önce hazırlanan tepecikli yükseklik mesh'i G5.4'te etkin değil. Çünkü flat soldier physics devam ediyor; görünür yamaçların yere basma/mermi fiziğiyle uyumlu olması ayrı kabul gerektiriyor.
+
+## V11 — Gerçek üç modlu tarayıcı kabul kapısı
+- [x] Kaynak erişimi çözüldü: tarihî G5.4 1,26 milyon karakterlik HTML blob'undan gerçek `buildMeadowSquare` ve önceden var olan `ArenaMeadowGrass.createInstancedTufts` doğrulandı.
+- [x] Orijinal G5.4 çalışma kopyasının içinde `2700` çim InstancedMesh'ini doğrudan gerçek `scene` içine ekleyen korumalı görsel yama yazıldı. Arşiv ve üçüncü mod aynı kalır.
+- [x] Chromium smoke testine Meydan modunda `2700` gerçek görünür instanceli native çim mesh kontrolü eklendi. Yama beklenen tekil kaynağı bulmazsa dosya üretimi hata verecek.
+- [x] Üç modlu CI workflow'u yalnız görsel feature dalı için de push ile koşacak ve yeni arazi testlerini kapsayacak şekilde güncellendi.
+- [ ] Workflow'un SUCCESS sonucu ve gerçek Chromium ekran görüntüsü henüz doğrulanmadı; oyunda çalıştığına ilişkin son kabul verilmedi.
+- [ ] Önceki yükseltili tepe 3B görseli canlı oyunda henüz bağlı değil; bugünkü entegrasyon düz çimenlikteki native grass içindir.
