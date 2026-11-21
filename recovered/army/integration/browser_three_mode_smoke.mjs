@@ -118,6 +118,16 @@ try{
  assert.equal(meadowHills.visible,true);
  assert.ok(meadowHills.innerRadius>850);
  report.checks.push('PASS_MAP2_ROLLING_HILL_BACKDROP: '+JSON.stringify(meadowHills));
+ const meadowSurface=await page.evaluate(()=>{
+   const w=document.querySelector('#stage iframe')?.contentWindow;
+   return w?.ktkMeadowSurfaceStatus?.()||null;
+ });
+ assert(meadowSurface,'Real G5.4 meadow must have organic colored ground');
+ assert.equal(meadowSurface.vertices,21025);
+ assert.equal(meadowSurface.triangles,41472);
+ assert.equal(meadowSurface.minWorldHeight,0);
+ assert.equal(meadowSurface.unchangedPhysics,true);
+ report.checks.push('PASS_MAP2_NATURAL_TURF_COLORING: '+JSON.stringify(meadowSurface));
  report.checks.push('PASS_ORIGINAL_140_ARMY_CHROMIUM_MODE_STILL_PLAYABLE: '+
   JSON.stringify(army));
  // AK-04b: unchanged historical field game, four authentic allied squads.
