@@ -111,9 +111,11 @@ export function addCastleThirdMode(twoModeHtml, siegeHtml){
  // Existing original FFA and S3D1 siege are never touched.
  const originalLoad='stage.appendChild(frame);frame.srcdoc=decode("ktk-source-"+mode);';
  const addonB64=Buffer.from(fieldArmyAddon(),'utf8').toString('base64');
+ const horizonB64=Buffer.from(readFileSync(resolve(base,'g54-meadow-horizon-visual.js'),'utf8'),'utf8').toString('base64');
  const runtimeLoad='stage.appendChild(frame);'+
    'const original=decode("ktk-source-"+mode);'+
    'const ak04b='+JSON.stringify(addonB64)+';'+
+   'const horizonB64='+JSON.stringify(horizonB64)+';'+
    'if(mode==="army"){'+
      'if(original.split("</body>").length!==2)throw Error("AK04b original body changed");'+
    // MAP2 native grass enhancement. The historical G5.4 HTML remains
@@ -137,6 +139,27 @@ export function addCastleThirdMode(twoModeHtml, siegeHtml){
    'const grassVar="        let meadowNearGrass=null;";'+
    'if(visualArmy.split(grassVar).length!==2)throw Error("MAP2 nearby variable anchor changed");'+
    'visualArmy=visualArmy.replace(grassVar,grassVar+"\\n        let meadowDenseGrass=null;");'+
+   // Install visual-only hills as a local symbol in the original game script.
+   'const horizonScript=new TextDecoder("utf-8",{fatal:true}).decode(Uint8Array.from(atob(horizonB64),c=>c.charCodeAt(0)));'+
+   'const horizonFunction="        function buildMeadowSquare() {";'+
+   'if(visualArmy.split(horizonFunction).length!==2)throw Error("MAP2 horizon function anchor changed");'+
+   'visualArmy=visualArmy.replace(horizonFunction,horizonScript+"\\n"+horizonFunction);'+
+   'const horizonGround="            const leafMat=new THREE.MeshStandardMaterial({color:0x477a32,roughness:.95});";'+
+   'if(visualArmy.split(horizonGround).length!==2)throw Error("MAP2 horizon ground anchor changed");'+
+   'visualArmy=visualArmy.replace(horizonGround,'+
+      '"            const meadowHorizon=KTKMeadowHorizon.build(THREE,scene,spec);\\n'+
+      '            window.ktkMeadowHorizonStatus=()=>({\\n'+
+      '              triangles:meadowHorizon.triangles,\\n'+
+      '              vertices:meadowHorizon.vertices,\\n'+
+      '              visible:meadowHorizon.mesh.visible,\\n'+
+      '              innerRadius:meadowHorizon.innerRadius\\n'+
+      '            });\\n"+horizonGround);'+
+   'const mapVisualSwitch="            meadowMapData.visuals.forEach(obj=>{obj.visible=map===\\'meadow\\';});";'+
+   'if(visualArmy.split(mapVisualSwitch).length!==2)throw Error("MAP2 switch anchor changed");'+
+   'visualArmy=visualArmy.replace(mapVisualSwitch,mapVisualSwitch+'+
+      '"\\n            scene.fog.density=map===\\'meadow\\'?.00065:.0046;'+
+      '\\n            scene.fog.color.setHex(map===\\'meadow\\'?0xb9b7a3:0xd9824c);'+
+      '\\n            scene.background.setHex(map===\\'meadow\\'?0xb9c5b6:0xd97736);");'+
    'const renderMark="            renderer.render(scene, camera);";'+
    'if(visualArmy.split(renderMark).length!==2)throw Error("MAP2 render anchor changed");'+
    'visualArmy=visualArmy.replace(renderMark,'+
