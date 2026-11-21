@@ -95,6 +95,15 @@ try{
  await switchMode('army');
  const army=await checkCanvas();
  assert.equal(await child().locator('#meadow-army-demo-btn').getAttribute('aria-pressed'),'true');
+ const nativeGrass=await page.evaluate(()=>{
+   const w=document.querySelector('#stage iframe')?.contentWindow;
+   return w?.ktkMeadowGrassVisualStatus?.()||null;
+ });
+ assert(nativeGrass,'Original G5.4 meadow should mount grass visual');
+ assert.equal(nativeGrass.count,2700);
+ assert.match(nativeGrass.meshName,/Meadow decorative grass/);
+ assert.equal(nativeGrass.visible,true);
+ report.checks.push('PASS_REAL_MEADOW_GRASS_2700_INSTANCES: '+JSON.stringify(nativeGrass));
  report.checks.push('PASS_ORIGINAL_140_ARMY_CHROMIUM_MODE_STILL_PLAYABLE: '+
   JSON.stringify(army));
  // AK-04b: unchanged historical field game, four authentic allied squads.
