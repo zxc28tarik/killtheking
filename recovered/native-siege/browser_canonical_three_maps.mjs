@@ -106,7 +106,7 @@ try{
    assert.equal(playing.v20Siege?.originalBattleEngine,true,'One original Krunker/G5.4 FPS');
    assert.equal(playing.v20Siege?.realGateVisible,true,'Gate 600HP remains closed at match start');
    assert.equal(playing.v20Siege?.realBridgeVisible,false,'Real moving tower bridge starts retracted');
-   assert(playing.v20Siege?.catapultArmVisualCount>1,'V20 sling is mounted ON actual projectile arm');
+   assert.equal(playing.v20Siege?.catapultArmVisualCount,3,'V20 leather sling and two tethers follow actual projectile arm');
    assert(playing.v19Siege?.gateDetails>=25,'Original native gate is visually dressed');
    assert(playing.v19Siege?.mortarStones>=35,'Real outer wall masonry detail visible');
    assert.equal(playing.v19Siege?.groupVisible,true);
