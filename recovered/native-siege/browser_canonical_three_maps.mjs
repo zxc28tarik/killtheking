@@ -222,6 +222,7 @@ try{
   viewportWidth:innerWidth,
   sameNativeGame:typeof window.krunkerArenaStatus==='function',
   v22:window.ktkUiV22Status?.(),
+  v23:window.ktkUiV23Status?.(),
   mapCardHeight:document.querySelector('#arena-map-controls>button').getBoundingClientRect().height,
   cardsFit:[...document.querySelectorAll('#arena-map-controls>button')].every(b=>b.getBoundingClientRect().width<=innerWidth),
   buttonsUnchanged:!!document.getElementById('native-siege-start')&&!!document.getElementById('play-btn')
