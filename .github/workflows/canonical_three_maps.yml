@@ -35,6 +35,7 @@ jobs:
           node --test recovered/native-siege/test_ak_native_08.mjs
           node --test recovered/native-siege/test_ak_native_09.mjs
           node --test recovered/native-siege/test_canonical_three_maps.mjs
+          node --test recovered/native-siege/test_native_army_match_finish.mjs
       - name: Build official candidate from original native AK09 (NOT isolated S3D1)
         run: |
           node recovered/native-siege/build_canonical_three_maps.mjs
