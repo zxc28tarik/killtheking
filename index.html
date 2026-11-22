@@ -7649,15 +7649,20 @@ const KTKNativeArmyMatchFinish=(function(){
     'body.ktk-native-army-results #meadow-army-hud',
     '{display:none!important;}',
     // The default FFA tips are not the G5.4 siege win criteria.
-    'body.ktk-native-army-results #match-results-overlay .text-center.mb-5 > p',
+    'body.ktk-native-army-results #match-results-overlay .text-center.mb-5 > p,',
+    'body.ktk-native-army-results #match-results-overlay > section > div.grid',
     '{display:none!important;}'
    ].join('\n');
    doc.head.appendChild(style);
   }
   doc.body.classList.add('ktk-native-army-results');
+  const description=doc.getElementById('match-results-duration-description');
+  if(description)description.textContent='SÜREDE SONA ERDİ';
  }
  function restoreHud(doc){
   doc?.body?.classList?.remove('ktk-native-army-results');
+  const description=doc?.getElementById?.('match-results-duration-description');
+  if(description)description.textContent='DAKİKALIK MAÇ';
  }
  return Object.freeze({acceptEarlyWin,decorate,showResults,restoreHud});
 })();
