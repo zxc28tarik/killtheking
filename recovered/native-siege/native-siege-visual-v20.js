@@ -187,6 +187,11 @@ const KTKNativeSiegeVisualV20=(()=>{
   for(const x of [-5.5,-2.75,0,2.75,5.5]){
    block(THREE,o.gate,x,-2.5,-2.87,.28,.19,.18,iron);gateTrim++;
   }
+  for(const y of [-2.1,2.15]){
+   for(const x of [-6.7,-4.7,-2.7,-.7,.7,2.7,4.7,6.7]){
+    block(THREE,o.gate,x,y,-2.91,.17,.17,.16,iron);gateTrim++;
+   }
+  }
 
   // Match the actual native moving ram's roof: timber shingles cover its
   // original broad metal slab; no mesh is appended to ram collision data.
@@ -228,6 +233,13 @@ const KTKNativeSiegeVisualV20=(()=>{
   for(const z of [-2,2]){
    block(THREE,o.catapult,0,2.65,z,3.35,.18,.18,rope);catTrim++;
   }
+  for(const x of [-1.63,1.63]){
+   const timberBrace=block(THREE,o.catapult,x,1.60,.25,.19,2.6,.18,timberMat);
+   timberBrace.rotation.x=x>0?.40:-.40;catTrim++;
+  }
+  for(const z of [-1.65,1.65]){
+   block(THREE,o.catapult,0,2.48,z,3.6,.17,.18,iron);catTrim++;
+  }
 
   // The same real climbable 8-m siege tower, not a replacement fake tower.
   // Only side faces are clad. The soldier ramp and bridge central lane remain
@@ -253,6 +265,12 @@ const KTKNativeSiegeVisualV20=(()=>{
   }
   for(const z of [-1.9,1.9]){
    block(THREE,o.tower,0,8.35,z,4.3,.16,.26,iron);towerTrim++;
+  }
+  for(const side of [-1,1]){
+   for(const z of [-1.40,1.40]){
+    const tie=block(THREE,o.tower,side*2.28,4.20,z,.18,7.35,.15,timberMat);
+    tie.rotation.x=z>0?.33:-.33;towerTrim++;
+   }
   }
 
   // Wheel ruts drawn on the terrain itself. Both are visually low,
