@@ -2,17 +2,17 @@
 
 **Kill the King** is a native single-engine historical browser FPS prototype with original fast Arena/TDM movement, genuine 140-soldier G5.4 Meadow Army combat and a third, same-engine Castle Siege map. The October Serbest Arena source is preserved in recovered/legacy/; the canonical three-map build is the default development game, not a production release.
 
-## 22 November 2026 — Canonical ONE original FPS with THREE battle maps (DRAFT)
+## 22 November 2026 — Canonical ONE original FPS with THREE battle maps (development baseline)
 
 **Important correction:** Older three-mode iframe HTML (FFA + Army + separate S3D1 Siege) is **an archive**, NOT the current canonical gameplay candidate. It gave the siege a different engine, camera and graphics and contradicted the approved requirement.
 
 **Current original-game basis:** Native AK09 (recovered/native-siege/KillTheKing_AK_NATIVE_09_original_game_siege_map.html) already contains **Arena/TDM, 140-soldier Meadow Army and 140-soldier Castle Siege** within the SAME original Three.js/FPS renderer, camera, weapons, G5.4 army and controls. The 22 November canonical builder transfers only Meadow V18 cosmetics (grass, surface, horizon and lighting) onto that native game, without altering the first 28 original scripts.
 
-**[Canonical ONE native FPS / THREE maps — GitHub CI artifact (DEVELOPMENT)](https://github.com/zxc28tarik/killtheking/actions/runs/45035743238/artifacts/14759696307)**. Unzip, open the HTML directly in Chrome/Edge. Builder: recovered/native-siege/build_canonical_three_maps.mjs. Manifest includes HTML SHA-256, original AK09 SHA-256 and game identity. This is **one game document, no iframe, no separate S3D1 gameplay engine**.
+**[Canonical ONE native FPS / THREE maps — GitHub CI artifact (DEVELOPMENT)](https://github.com/zxc28tarik/killtheking/actions/runs/45036335268/artifacts/14760235309)**. Unzip, open the HTML directly in Chrome/Edge. Builder: recovered/native-siege/build_canonical_three_maps.mjs. Manifest includes HTML SHA-256, original AK09 SHA-256 and game identity. This is **one game document, no iframe, no separate S3D1 gameplay engine**.
 
 **Current test status:** native AK06–AK09 regression + new canonical build/source tests PASS in GitHub CI. Original 28 scripts are byte-identical, all 29 embedded scripts parse. A fully manual real Windows GPU / 4–8 minute three-map acceptance of this new exact HTML remains OPEN. Do not call it published or publisher-ready until those gates pass.
 
-[Canonical integration and main-merge roadmap](docs/CANONICAL_MAIN_THREE_MAP_UNIFICATION_TR.md) · [Draft PR #51 to main](https://github.com/zxc28tarik/killtheking/pull/51) · [22 November successful canonical CI](https://github.com/zxc28tarik/killtheking/actions/runs/45035743238). The October main stays unchanged pending verified rollout.
+[Canonical integration and follow-up roadmap](docs/CANONICAL_MAIN_THREE_MAP_UNIFICATION_TR.md) · [PR #51 MERGED into main on 22 November](https://github.com/zxc28tarik/killtheking/pull/51) · [canonical native three-map Chromium/WebGL PASS](https://github.com/zxc28tarik/killtheking/actions/runs/45036335268). The default main/index.html now serves the verified native three-map development build. Windows hardware and full gameplay acceptance remain open.
 
 ### Historical, NOT canonical: standalone S3D1 launcher
 
