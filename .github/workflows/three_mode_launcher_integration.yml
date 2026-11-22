@@ -10,6 +10,7 @@ on:
       - 'recovered/army/integration/g54-meadow-horizon-visual.js'
       - 'recovered/army/integration/g54-meadow-surface-visual.js'
       - 'recovered/army/integration/g54-meadow-natural-lighting.js'
+      - 'recovered/army/integration/g54-meadow-nature-v19.js'
       - 'recovered/army/integration/test_meadow_natural_lighting.mjs'
       - 'recovered/army/integration/test_meadow_surface_visual.mjs'
       - 'recovered/army/integration/test_meadow_horizon_visual.mjs'
@@ -73,6 +74,7 @@ jobs:
           node --check recovered/army/integration/g54-meadow-horizon-visual.js
           node --check recovered/army/integration/g54-meadow-surface-visual.js
           node --check recovered/army/integration/g54-meadow-natural-lighting.js
+          node --check recovered/army/integration/g54-meadow-nature-v19.js
           node --check recovered/army/integration/test_meadow_natural_lighting.mjs
           node --check recovered/army/integration/test_meadow_surface_visual.mjs
           node --check recovered/army/integration/test_meadow_horizon_visual.mjs
