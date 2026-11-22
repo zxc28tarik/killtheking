@@ -1,0 +1,105 @@
+name: Canonical Kill the King - one FPS and three native maps
+on:
+  push:
+    branches:
+      - codex/canonical-native-three-maps
+      - main
+    paths:
+      - 'recovered/native-siege/**'
+      - 'recovered/army/integration/g54-meadow-*-visual.js'
+      - 'recovered/army/integration/g54-meadow-natural-lighting.js'
+      - '.github/workflows/canonical_three_maps.yml'
+  pull_request:
+    paths:
+      - 'recovered/native-siege/**'
+      - 'recovered/army/integration/g54-meadow-*-visual.js'
+      - 'recovered/army/integration/g54-meadow-natural-lighting.js'
+      - '.github/workflows/canonical_three_maps.yml'
+  workflow_dispatch:
+jobs:
+  canonical:
+    name: One native AK09 WebGL game, source and build validation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate source and native original controls
+        run: |
+          node --check recovered/native-siege/build_canonical_three_maps.mjs
+          node --check recovered/native-siege/test_canonical_three_maps.mjs
+          node --test recovered/native-siege/test_ak_native_06.mjs
+          node --test recovered/native-siege/test_ak_native_07.mjs
+          node --test recovered/native-siege/test_ak_native_08.mjs
+          node --test recovered/native-siege/test_ak_native_09.mjs
+          node --test recovered/native-siege/test_canonical_three_maps.mjs
+      - name: Build official candidate from original native AK09 (NOT isolated S3D1)
+        run: |
+          node recovered/native-siege/build_canonical_three_maps.mjs
+      - name: Verify canonical one-game release manifest
+        run: |
+          node --input-type=module -e '
+            import {readFileSync} from "node:fs";
+            import {createHash} from "node:crypto";
+            const p="recovered/native-siege/dist/KillTheKing_3_Harita_TEK_ORJINAL_OYUN_ADAY.html";
+            const h=readFileSync(p);
+            const m=JSON.parse(readFileSync(p+".build.json","utf8"));
+            if(m.kind!=="SINGLE_NATIVE_FPS_THREE_MAPS"||
+               !m.oneRendererOneMovementEngine||!m.oneLiveGameDocument||
+               m.oldIframeOrSeparateS3D1Runtime!==false||
+               m.totalScriptCount!==29||m.unchangedOriginalScriptCount!==28||
+               m.usesNativeAK09G54Siege!==true||
+               m.meadowVisibleGrassInstanced!==14700||
+               m.productionApproved!==false||
+               m.sha256!==createHash("sha256").update(h).digest("hex")||
+               m.bytes!==h.length)
+              throw Error("Native canonical three-map build/manifest mismatch");
+            console.log("PASS canonical native 3-map bundle:",m.bytes,m.sha256);'
+      - name: Archive actual single-engine HTML + manifest (development candidate)
+        uses: actions/upload-artifact@v4
+        with:
+          name: KillTheKing-CANONICAL-1-FPS-3-MAPS-NOT-FINAL
+          path: |
+            recovered/native-siege/dist/KillTheKing_3_Harita_TEK_ORJINAL_OYUN_ADAY.html
+            recovered/native-siege/dist/KillTheKing_3_Harita_TEK_ORJINAL_OYUN_ADAY.html.build.json
+          if-no-files-found: error
+
+  chromium:
+    name: Genuine Chromium software-WebGL on all THREE native battle choices
+    runs-on: ubuntu-24.04
+    timeout-minutes: 22
+    needs: canonical
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Build same single-engine test HTML
+        run: node recovered/native-siege/build_canonical_three_maps.mjs
+      - name: Install pinned Playwright and Chromium
+        run: |
+          npm install --no-save --no-package-lock playwright@1.58.2
+          if command -v google-chrome >/dev/null 2>&1; then
+            echo "KTK_CHROME_EXECUTABLE=$(command -v google-chrome)" >> "$GITHUB_ENV"
+          elif command -v google-chrome-stable >/dev/null 2>&1; then
+            echo "KTK_CHROME_EXECUTABLE=$(command -v google-chrome-stable)" >> "$GITHUB_ENV"
+          else
+            npx playwright install chromium
+          fi
+      - name: Test actual original 3-map game canvas and 70v70 siege in Chromium
+        env:
+          KTK_CANONICAL_BROWSER_REPORT: recovered/native-siege/canonical-browser-evidence
+        run: |
+          node --check recovered/native-siege/browser_canonical_three_maps.mjs
+          node recovered/native-siege/browser_canonical_three_maps.mjs             recovered/native-siege/dist/KillTheKing_3_Harita_TEK_ORJINAL_OYUN_ADAY.html
+      - name: Upload screenshots, actual status snapshots and errors
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: KillTheKing-CANONICAL-Native-3-Map-Software-WebGL-Evidence
+          path: |
+            recovered/native-siege/canonical-browser-evidence/
+            recovered/native-siege/dist/KillTheKing_3_Harita_TEK_ORJINAL_OYUN_ADAY.html.build.json
+          if-no-files-found: warn

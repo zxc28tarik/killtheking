@@ -5,6 +5,7 @@ Usage: python3 tools/build_offline.py --out dist/KillTheKing_Oyna.html
 """
 import argparse
 import re
+import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -36,8 +37,23 @@ window.addEventListener('error', function(event) {
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--out", default="dist/KillTheKing_Oyna.html")
+    parser.add_argument("--legacy", action="store_true",
+                        help="Only for reconstructing the archived October 2026 arena source")
     args = parser.parse_args()
-    source = (ROOT / "index.html").read_text(encoding="utf-8")
+    if not args.legacy:
+        # Main / release MUST match the same single native G5.4 FPS and three
+        # battle maps as the repo entrypoint; no old S3D1 three-iframe bundle.
+        canonical = ROOT / "recovered/native-siege/build_canonical_three_maps.mjs"
+        original = ROOT / "recovered/native-siege/KillTheKing_AK_NATIVE_09_original_game_siege_map.html"
+        out = (ROOT / args.out).resolve()
+        if not out.is_relative_to(ROOT):
+            raise RuntimeError("Refusing output outside repository")
+        subprocess.run(["node", str(canonical), str(original), str(out)],
+                       cwd=ROOT, check=True)
+        return
+
+    # Historical mode is explicitly opt-in. The canonical build above is the default.
+    source = (ROOT / "recovered/legacy/KillTheKing_October_Original_Source_Index.html").read_text(encoding="utf-8")
     count_js, count_css = 0, 0
 
     def embed_js(match):

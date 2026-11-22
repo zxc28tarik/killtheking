@@ -1,0 +1,66 @@
+name: G5.4 native shooter-protection and static-avatar cause audit
+on:
+  push:
+    branches:
+      - codex/recover-g5-4-army-source
+    paths:
+      - 'recovered/army/mirror/defense/**'
+      - '.github/workflows/g5_4_defense_exposure_gate.yml'
+  workflow_dispatch:
+jobs:
+  source-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate experiment and source-bound audit syntax
+        run: |
+          node --check recovered/army/mirror/defense/protection_counterfactual.mjs
+          node --check recovered/army/mirror/defense/merge_defense_counterfactual.mjs
+  battles:
+    needs: source-check
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    strategy:
+      fail-fast: false
+      matrix:
+        start: [0, 1, 2, 3, 4, 5, 6, 7]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run 4 actual original-engine variants per seed/order/player team
+        run: node recovered/army/mirror/defense/protection_counterfactual.mjs ${{ matrix.start }} 1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: g54-defense-real-cpu-${{ matrix.start }}
+          path: recovered/army/mirror/defense/dist/part_${{ matrix.start }}.json
+          if-no-files-found: error
+  merge-evidence:
+    needs: battles
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: g54-defense-real-cpu-*
+          path: recovered/army/mirror/defense/dist
+          merge-multiple: true
+      - name: Validate 32 actual CPU match data and create cause report
+        run: node recovered/army/mirror/defense/merge_defense_counterfactual.mjs
+      - name: Archive exact causal investigation (NOT a gameplay release)
+        uses: actions/upload-artifact@v4
+        with:
+          name: KillTheKing-G5-4-Protection-Avatar-32CPU-Audit-Not-Release
+          path: |
+            recovered/army/mirror/defense/dist/FULL_32_DEFENSE_COUNTERFACTUAL.json
+            recovered/army/mirror/defense/dist/DEFENSE_AVATAR_CAUSE_REPORT.md
+            recovered/army/mirror/defense/protection_counterfactual.mjs
+            recovered/army/mirror/defense/merge_defense_counterfactual.mjs
+          if-no-files-found: error

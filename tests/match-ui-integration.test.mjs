@@ -1,8 +1,9 @@
+// Historical modular October source regression; current native three-map entrypoint is verified by recovered/native-siege tests and CI.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 const source=readFileSync(new URL('../src/oyun.js',import.meta.url),'utf8');
-const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+const html=readFileSync(new URL('../recovered/legacy/KillTheKing_October_Original_Source_Index.html',import.meta.url),'utf8');
 
 test('legacy four-minute loop never silently resets at 00:00',()=>{
  assert.doesNotMatch(source,/if \(matchTimeSeconds <= 0\) matchTimeSeconds = 240/);

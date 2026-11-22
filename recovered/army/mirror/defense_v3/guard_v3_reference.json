@@ -1,0 +1,166 @@
+{
+  "format": "ktk-g54-bound-guard-v3-real-cpu-v1",
+  "sourceSHA256": {
+    "baseline": "307987855abc0973ea9177fdd659c39d1d02673c8381c0501be8b63c04ddf841",
+    "v2": "f911e9175f6ab9c23fc06b5e123fe94c018853f2fd813cb8dfd937f60e5907d4",
+    "v3": "5ba893b6e812943e77607ed1b288be93b1e2daeeb6fdf6569b54907a38db0826"
+  },
+  "fields": [
+    "winner",
+    "seconds",
+    "protectedPct",
+    "shooterDamage",
+    "secondGuard",
+    "near",
+    "uncovered",
+    "playerKilled",
+    "enemyKilled"
+  ],
+  "expectedV3": [
+    [
+      "red",
+      325.84,
+      44.3,
+      81,
+      0,
+      1429,
+      1794,
+      70,
+      52
+    ],
+    [
+      "blue",
+      282.96,
+      36.9,
+      78,
+      0,
+      1036,
+      1768,
+      70,
+      48
+    ],
+    [
+      "red",
+      243.44,
+      48,
+      89,
+      10,
+      886,
+      958,
+      70,
+      58
+    ],
+    [
+      "blue",
+      240.64,
+      68.1,
+      92,
+      6,
+      1273,
+      595,
+      70,
+      52
+    ],
+    [
+      "red",
+      318.56,
+      37.3,
+      88,
+      0,
+      1316,
+      2214,
+      70,
+      52
+    ],
+    [
+      "blue",
+      284.16,
+      40,
+      84,
+      0,
+      1181,
+      1774,
+      70,
+      56
+    ],
+    [
+      "blue",
+      288.56,
+      61.8,
+      73,
+      0,
+      1855,
+      1148,
+      63,
+      70
+    ],
+    [
+      "red",
+      319.84,
+      61,
+      79,
+      0,
+      1897,
+      1212,
+      66,
+      70
+    ],
+    [
+      "red",
+      288.72,
+      43.8,
+      86,
+      0,
+      1303,
+      1669,
+      70,
+      49
+    ],
+    [
+      "blue",
+      258.32,
+      43.1,
+      90,
+      0,
+      1146,
+      1515,
+      70,
+      51
+    ],
+    [
+      "red",
+      256.24,
+      34,
+      70,
+      0,
+      863,
+      1672,
+      70,
+      47
+    ],
+    [
+      "blue",
+      296.64,
+      33.3,
+      84,
+      0,
+      1060,
+      2121,
+      70,
+      53
+    ]
+  ],
+  "summary": {
+    "scenarios": 12,
+    "v3NaturalEndings": 12,
+    "v3CoveragePercent": 45.97,
+    "v3AverageSeconds": 283.66,
+    "v3PlayerWins": 2,
+    "coverageUpFromBaseline": 6,
+    "coverageDownFromBaseline": 6,
+    "identicalWinnersToBaseline": 12,
+    "identicalWinnersToV2": 11,
+    "releaseGate": "NOT_APPROVED",
+    "reason": "6 out of 12 coverage regressions; no true WebGL acceptance; 140 troops only; G8.4 unrecovered"
+  }
+}

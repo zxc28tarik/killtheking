@@ -1,0 +1,103 @@
+name: Kill the King - S3C3 Real 140 Soldier Courtyard Keep Capture
+on:
+  push:
+    branches:
+      - codex/s1-siege-castle-phase1
+    paths:
+      - 'recovered/siege/siege-capture-ai.js'
+      - 'recovered/siege/siege-real-army-bridge.js'
+      - 'recovered/siege/siege-real-army-overlay.js'
+      - 'recovered/siege/build_siege_capture_candidate.mjs'
+      - 'recovered/siege/test_siege_capture_ai.mjs'
+      - 'recovered/siege/browser_siege_capture_smoke.mjs'
+      - '.github/workflows/s3c3_siege_capture.yml'
+  workflow_dispatch:
+jobs:
+  source:
+    name: Real G5.4 soldier capture, contested zones and original suite
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Parse all new S3C3 modules
+        run: |
+          node --check recovered/siege/siege-capture-ai.js
+          node --check recovered/siege/siege-real-army-bridge.js
+          node --check recovered/siege/siege-real-army-overlay.js
+          node --check recovered/siege/build_siege_capture_candidate.mjs
+          node --check recovered/siege/test_siege_capture_ai.mjs
+          node --check recovered/siege/browser_siege_capture_smoke.mjs
+      - name: Genuine 140 soldier natural 240s match / real disputed zone logic
+        run: node --test recovered/siege/test_siege_capture_ai.mjs
+      - name: Original natural real 60s ladders / 32s gate / 52 old tests
+        run: |
+          node --test recovered/siege/test_siege_ladder_ai.mjs
+          node --test recovered/siege/test_siege_structure_combat.mjs
+          node --test recovered/siege/test_siege_real_army_bridge.mjs
+          node --test recovered/siege/test_siege_phase1.mjs recovered/siege/test_siege_traversal.mjs
+      - name: Original G5.4 and approved balance untouched
+        run: |
+          printf '307987855abc0973ea9177fdd659c39d1d02673c8381c0501be8b63c04ddf841  recovered/army/mirror/arena-army-battle-true-side-swap.js\n' | sha256sum --check -
+      - name: Produce independent offline S3C3 endgame 3D HTML
+        run: |
+          node recovered/siege/build_siege_capture_candidate.mjs \
+            recovered/siege/dist/KillTheKing_Kusatma_S3C3_Gercek_140_Asker_Kale_Ele_Gecirme_Aday.html
+          node --input-type=module -e "
+          import {readFileSync} from 'node:fs';
+          const p='recovered/siege/dist/KillTheKing_Kusatma_S3C3_Gercek_140_Asker_Kale_Ele_Gecirme_Aday.html';
+          const m=JSON.parse(readFileSync(p+'.build.json','utf8'));
+          if(m.realCaptureOnlyFromAliveG54SoldierPositions!==true ||
+             m.disputedZoneTimerFromS1FSM!==true ||
+             m.resultFromGenuineSoldierCountsAndHoldClock!==true ||
+             m.actualG54Native3DBallistics!==false ||
+             m.realFPSPlayerWeaponConnected!==false ||
+             m.productionSiegeApproved!==false)
+            throw Error('S3C3 status not source-honest about 3D FPS or game release');
+          console.log('PASS isolated S3C3 real 140 soldiers/contested zones candidate');
+          "
+      - name: Upload playable standalone 3D S3C3 siege game candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: KillTheKing-S3C3-140-G54-Real-Courtyard-Keep-Capture-NOT-Final
+          path: |
+            recovered/siege/dist/KillTheKing_Kusatma_S3C3_Gercek_140_Asker_Kale_Ele_Gecirme_Aday.html
+            recovered/siege/dist/KillTheKing_Kusatma_S3C3_Gercek_140_Asker_Kale_Ele_Gecirme_Aday.html.build.json
+          if-no-files-found: error
+  browser:
+    name: Actual Chromium SwiftShader real 140 soldiers and disputed-zone HUD
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    needs: source
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Reproduce exact S3C3 HTML candidate
+        run: node recovered/siege/build_siege_capture_candidate.mjs recovered/siege/dist/KillTheKing_Kusatma_S3C3_Gercek_140_Asker_Kale_Ele_Gecirme_Aday.html
+      - name: Install pinned Chromium
+        run: |
+          npm install --no-save --no-package-lock playwright@1.58.2
+          if command -v google-chrome >/dev/null 2>&1; then
+            echo "KTK_CHROME_EXECUTABLE=$(command -v google-chrome)" >> "$GITHUB_ENV"
+          elif command -v google-chrome-stable >/dev/null 2>&1; then
+            echo "KTK_CHROME_EXECUTABLE=$(command -v google-chrome-stable)" >> "$GITHUB_ENV"
+          else
+            npx playwright install chromium
+          fi
+      - name: Actual Chromium 3D native soldiers, capture HUD and no fake victory
+        env:
+          KTK_S3C3_REPORT_DIR: recovered/siege/browser-evidence-s3c3
+        run: |
+          node recovered/siege/browser_siege_capture_smoke.mjs \
+            recovered/siege/dist/KillTheKing_Kusatma_S3C3_Gercek_140_Asker_Kale_Ele_Gecirme_Aday.html
+      - name: Preserve genuine screenshot and runtime errors even if failing
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: KillTheKing-S3C3-Chromium-Real-140-Soldier-Capture-Software-WebGL
+          path: recovered/siege/browser-evidence-s3c3/
+          if-no-files-found: warn

@@ -1,0 +1,54 @@
+name: G5.4 endurance evidence — 8 real 600-second CPU battles
+on:
+  push:
+    branches:
+      - codex/recover-g5-4-army-source
+    paths:
+      - 'recovered/army/**'
+      - '.github/workflows/g5_4_endurance.yml'
+  workflow_dispatch:
+jobs:
+  audit:
+    name: Audit actual G5.4 engine (NOT G8.4 or GPU)
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test all historical G5.4 independent regression suites plus endurance audit
+        run: |
+          node --test \
+            recovered/army/test_g5_4_army_contract.mjs \
+            recovered/army/test_g5_4_passive_trace.mjs \
+            recovered/army/test_g5_4_commander_quality_audit.mjs \
+            recovered/army/test_g5_4_long_battle_diagnostics.mjs \
+            recovered/army/test_g5_4_battle_endurance_qa.mjs
+      - name: Reproduce 8 x 600s actual motor trials, DO NOT infer a winner
+        run: node recovered/army/g5_4_battle_endurance_qa.mjs recovered/army/dist/G5_4_ENDURANCE_EVIDENCE.json
+      - name: Put release blocker in GitHub job summary (not a unit test failure)
+        run: |
+          node - <<'JS'
+          const fs=require('node:fs');
+          const x=JSON.parse(fs.readFileSync('recovered/army/dist/G5_4_ENDURANCE_EVIDENCE.json','utf8'));
+          const s=x.summary;
+          const msg=[
+            '## G5.4 battle closure acceptance',
+            '- CPU simulations: **'+s.cases+' × 600 seconds**',
+            '- Natural terminal matches: **'+s.terminalMatches+'/'+s.cases+'**',
+            '- Unresolved after 600s: **'+s.unresolvedMatches+'/'+s.cases+'**',
+            '- Zero casualties during final 300s: **'+s.noCasualtiesFinal300s+'/'+s.cases+'**',
+            '- **RELEASE STATUS: '+(s.releaseReady?'ACCEPTED':'BLOCKED')+'**',
+            '- This workflow validates recovery and observation tooling. It does **NOT** validate G8.4, WebGL or 144 mirror battles.',
+            ''
+          ].join('\n');
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,msg);
+          if(!s.releaseReady)console.log('RELEASE BLOCKED — not equivalent to CI infrastructure failure');
+          JS
+      - name: Upload all evidence for inspection
+        uses: actions/upload-artifact@v4
+        with:
+          name: KillTheKing-G5-4-600s-8Match-Endurance-RELEASE-BLOCKED
+          path: recovered/army/dist/G5_4_ENDURANCE_EVIDENCE.json
+          if-no-files-found: error

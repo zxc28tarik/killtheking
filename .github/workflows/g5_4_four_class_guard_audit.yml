@@ -1,0 +1,99 @@
+name: G5.4 four-class guard-v3 protection/attack A-B (CPU ONLY)
+on:
+  push:
+    branches:
+      - codex/recover-g5-4-army-source
+    paths:
+      - 'recovered/army/mirror/defense_v4/**'
+      - '.github/workflows/g5_4_four_class_guard_audit.yml'
+  workflow_dispatch:
+jobs:
+  verify-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check source, roster, all four classes, blue/red human commands
+        run: |
+          node --check recovered/army/mirror/defense_v4/four_class_compare.mjs
+          node --check recovered/army/mirror/defense_v4/audit_four_class.mjs
+          node --test recovered/army/mirror/defense_v4/test_four_class_compare.mjs
+  native-match-pairs:
+    needs: verify-contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        start: [0, 4, 8, 12, 16, 20, 24, 28]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Play four baseline and four v3 REAL 140-soldier CPU battles
+        shell: bash
+        env:
+          START: ${{ matrix.start }}
+          KTK_PROTECT_OUT_DIR: replay
+        run: |
+          cd recovered/army/mirror/defense_v4
+          for i in $(seq "$START" "$((START+3))"); do
+            node four_class_compare.mjs "$i"
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: g54-four-class-matches-${{ matrix.start }}
+          path: recovered/army/mirror/defense_v4/replay/part_*.json
+          if-no-files-found: error
+  review-gate:
+    needs: native-match-pairs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: g54-four-class-matches-*
+          path: recovered/army/mirror/defense_v4/replay
+          merge-multiple: true
+      - name: Reject fabricated wins, missing/duplicated scenarios and source drift
+        run: node recovered/army/mirror/defense_v4/audit_four_class.mjs
+      - name: Summarize true coverage, firing opportunity, pace and outcome shifts
+        shell: bash
+        run: |
+          node --input-type=module -e '
+            import {readFileSync,writeFileSync} from "node:fs";
+            const p="recovered/army/mirror/defense_v4/replay/FULL_64_ACTUAL_G54_BATTLES.json";
+            const {summary:s}=JSON.parse(readFileSync(p,"utf8"));
+            const out=[
+              "# G5.4 — Four-class baseline vs experimental v3, NOT APPROVED","",
+              "32 matched scenarios (2 seeds × 4 classes × 2 orders × 2 human teams), **64 real CPU games**.",
+              "Historical G5.4 only. Manual shooting, GPU/WebGL, strict trait mirroring, G8.4 and 200/280 soldiers were not verified.","",
+              "| Class | Close protection baseline → v3 | Firing opportunity baseline → v3 | Mean battle seconds baseline → v3 | Wins baseline → v3 | Winner changes |",
+              "|---|---|---|---|---|---|",
+              ...Object.entries(s.byClass).map(([name,d])=>`| ${name} | ${d.baseProtectionPct}% → ${d.newProtectionPct}% | ${d.baselineFiringOpportunityPct}% → ${d.newFiringOpportunityPct}% | ${d.meanSecondsOld} → ${d.meanSecondsNew} | ${d.commanderWinsOld}/8 → ${d.commanderWinsNew}/8 | ${d.winnerChanged} |`),
+              "",
+              "Total natural endings baseline: "+s.naturalEndingsOld+"/32; v3: "+s.naturalEndingsNew+"/32.",
+              "Close protection increased in "+s.coverageImproved+"/32 and declined in "+s.coverageRegressed+"/32.",
+              "Mean duration baseline: "+s.averageDurationOld+"; v3: "+s.averageDurationNew+".",
+              "Winner changed in "+s.changedWinners+"/32.",
+              "",
+              "**RELEASE GATE: NOT APPROVED.** Never merge the experimental v3 merely because these CPU tests passed.",
+              ""];
+            const path="recovered/army/mirror/defense_v4/replay/G5_4_FOUR_CLASS_REPORT.md";
+            writeFileSync(path,out.join("\n"));console.log(out.join("\n"));'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: KillTheKing-G5-4-FourClass-64CPU-DIAGNOSTIC-NOT-RELEASE
+          path: |
+            recovered/army/mirror/defense_v4/replay/FULL_64_ACTUAL_G54_BATTLES.json
+            recovered/army/mirror/defense_v4/replay/G5_4_FOUR_CLASS_REPORT.md
+            recovered/army/mirror/defense_v4/four_class_compare.mjs
+            recovered/army/mirror/defense_v4/audit_four_class.mjs
+            recovered/army/mirror/defense_v4/test_four_class_compare.mjs
+          if-no-files-found: error

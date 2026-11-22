@@ -1,0 +1,36 @@
+{
+  "format": "killtheking-g5.4-long-battle-matrix-v1",
+  "trials": 8,
+  "totalSimulatedSeconds": 960,
+  "durationRange": [
+    120,
+    120
+  ],
+  "totalDecisions": 1673,
+  "totalOrderChanges": 339,
+  "totalShortReversals": 77,
+  "totalNativeStallWarnings": 0,
+  "totalStationaryWarnings": 28,
+  "totalFindingBufferOverflow": 0,
+  "reachedDestinationPauses": 13,
+  "unexplainedPauses": 15,
+  "stationaryClassifications": {
+    "possible-tactical-engagement": 4,
+    "possible-protective-screen": 13,
+    "needs-review": 11
+  },
+  "totalCasualties": {
+    "blue": 231,
+    "red": 190
+  },
+  "winCounts": {
+    "blue": 0,
+    "red": 0,
+    "draw": 0,
+    "noWinner": 8
+  },
+  "g8_4Recovered": false,
+  "realG8_5MirrorTrials": 0,
+  "gpuWebglVerified": false,
+  "limitations": "Historic G5.4 scripted CPU tests only; not full G8.4 or 144 G8.5 mirrored matches"
+}

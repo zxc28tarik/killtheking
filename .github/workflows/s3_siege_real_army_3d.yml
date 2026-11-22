@@ -1,0 +1,98 @@
+name: Kill the King - S3B Real G5.4 140 Moving Soldiers in 3D Siege
+on:
+  push:
+    branches:
+      - codex/s1-siege-castle-phase1
+    paths:
+      - 'recovered/siege/siege-real-army-bridge.js'
+      - 'recovered/siege/siege-real-army-overlay.js'
+      - 'recovered/siege/siege-preview.js'
+      - 'recovered/siege/siege-preview-template.html'
+      - 'recovered/siege/build_siege_real_army_candidate.mjs'
+      - 'recovered/siege/browser_siege_real_army_smoke.mjs'
+      - 'recovered/siege/test_siege_real_army_bridge.mjs'
+      - '.github/workflows/s3_siege_real_army_3d.yml'
+  workflow_dispatch:
+jobs:
+  real-army-build:
+    name: S3B pinned authentic army source, tests, offline WebGL candidate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify all S3B JavaScript source parses
+        run: |
+          node --check recovered/siege/siege-real-army-bridge.js
+          node --check recovered/siege/siege-real-army-overlay.js
+          node --check recovered/siege/build_siege_real_army_candidate.mjs
+          node --check recovered/siege/browser_siege_real_army_smoke.mjs
+      - name: Source-backed G5.4 native soldiers and S1/S2 physics regression
+        run: |
+          node --test recovered/siege/test_siege_real_army_bridge.mjs
+          node --test recovered/siege/test_siege_phase1.mjs recovered/siege/test_siege_traversal.mjs
+      - name: Package an entirely separate true G5.4 140-soldier 3D HTML
+        run: |
+          node recovered/siege/build_siege_real_army_candidate.mjs \
+            recovered/siege/dist/KillTheKing_Kusatma_S3_Gercek_140_Asker_Entegrasyon_Aday.html
+          node --input-type=module -e "
+          import {readFileSync} from 'node:fs';
+          const p='recovered/siege/dist/KillTheKing_Kusatma_S3_Gercek_140_Asker_Entegrasyon_Aday.html';
+          const m=JSON.parse(readFileSync(p+'.build.json','utf8'));
+          if(!m.authenticSoldiersAndCombatEngine||
+            m.gateStructureAttackFromActualSoldiers!==false||
+            m.ladderClimbByRealSoldierAI!==false||
+            m.realFPSPlayerWeaponConnected!==false||
+            m.productionSiegeApproved!==false)
+            throw Error('S3B game candidate mislabeled as production siege');
+          if(!readFileSync(p,'utf8').includes('S3 GERÇEK ORDU ADAYI'))
+            throw Error('Real 140-soldier preview header missing');
+          console.log('PASS authentic G5.4 S3B 3D source-provenanced output');
+          "
+      - name: Upload independent S3 real 140-soldier 3D candidate HTML
+        uses: actions/upload-artifact@v4
+        with:
+          name: KillTheKing-S3B-Real-G54-140-Soldier-3D-Castle-Candidate-NOT-Final-Siege
+          path: |
+            recovered/siege/dist/KillTheKing_Kusatma_S3_Gercek_140_Asker_Entegrasyon_Aday.html
+            recovered/siege/dist/KillTheKing_Kusatma_S3_Gercek_140_Asker_Entegrasyon_Aday.html.build.json
+          if-no-files-found: error
+  browser:
+    name: Actual Chromium moving G5.4 soldiers, commands and gate AABBs
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    needs: real-army-build
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Rebuild pinned real 140-soldier 3D candidate
+        run: node recovered/siege/build_siege_real_army_candidate.mjs recovered/siege/dist/KillTheKing_Kusatma_S3_Gercek_140_Asker_Entegrasyon_Aday.html
+      - name: Install pinned headless Chromium (software WebGL, NOT GPU acceptance)
+        run: |
+          npm install --no-save --no-package-lock playwright@1.58.2
+          if command -v google-chrome >/dev/null 2>&1; then
+            echo "KTK_CHROME_EXECUTABLE=$(command -v google-chrome)" >> "$GITHUB_ENV"
+          elif command -v google-chrome-stable >/dev/null 2>&1; then
+            echo "KTK_CHROME_EXECUTABLE=$(command -v google-chrome-stable)" >> "$GITHUB_ENV"
+          else
+            npx playwright install chromium
+          fi
+      - name: Real G5.4 native army 3D WebGL combat simulation, commands and sides
+        env:
+          KTK_S3_BROWSER_REPORT_DIR: recovered/siege/browser-evidence-s3
+        run: |
+          node recovered/siege/browser_siege_real_army_smoke.mjs \
+            recovered/siege/dist/KillTheKing_Kusatma_S3_Gercek_140_Asker_Entegrasyon_Aday.html
+      - name: Preserve actual scene screenshot and audit report even on fail
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: KillTheKing-S3B-Chromium-Real-G54-Army-Motion-SOFTWARE-WebGL
+          path: |
+            recovered/siege/browser-evidence-s3/
+            recovered/siege/dist/KillTheKing_Kusatma_S3_Gercek_140_Asker_Entegrasyon_Aday.html.build.json
+          if-no-files-found: warn

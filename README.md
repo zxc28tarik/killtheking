@@ -1,22 +1,42 @@
 # Kill the King — Krunker 1600
 
-**Kill the King** is the GitHub development home of the recovered **Krunker 1600: Kuşatma** browser FPS arena project. The latest accepted gameplay baseline is **Serbest Arena v1** with the original stylized graphics (not the discarded replacement art), four combat classes, six fighting bots, bot-vs-bot free-for-all behavior and improved impact feedback.
+**Kill the King** is a native single-engine historical browser FPS prototype with original fast Arena/TDM movement, genuine 140-soldier G5.4 Meadow Army combat and a third, same-engine Castle Siege map. The October Serbest Arena source is preserved in recovered/legacy/; the canonical three-map build is the default development game, not a production release.
 
-## Play locally
-1. Download the repository as ZIP and extract it.
-2. Open `index.html` in Chrome or Edge on a computer with WebGL enabled.
-3. Choose one of four classes and click **KUŞATMAYA GİR (BAŞLA)**; the game uses mouse pointer lock.
-4. WASD movement, space jumping, Shift/C sliding, mouse combat, F/V quick ability.
+## 22 November 2026 — Canonical ONE original FPS with THREE battle maps (DRAFT)
 
-The Three.js r128 engine and game CSS/JavaScript are committed locally. Chakra Petch uses a remote Google Fonts stylesheet when available and a fallback when offline. No font binary files are in this repository.
+**Important correction:** Older three-mode iframe HTML (FFA + Army + separate S3D1 Siege) is **an archive**, NOT the current canonical gameplay candidate. It gave the siege a different engine, camera and graphics and contradicted the approved requirement.
+
+**Current original-game basis:** Native AK09 (recovered/native-siege/KillTheKing_AK_NATIVE_09_original_game_siege_map.html) already contains **Arena/TDM, 140-soldier Meadow Army and 140-soldier Castle Siege** within the SAME original Three.js/FPS renderer, camera, weapons, G5.4 army and controls. The 22 November canonical builder transfers only Meadow V18 cosmetics (grass, surface, horizon and lighting) onto that native game, without altering the first 28 original scripts.
+
+**[Canonical ONE native FPS / THREE maps — GitHub CI artifact (DEVELOPMENT)](https://github.com/zxc28tarik/killtheking/actions/runs/45035743238/artifacts/14759696307)**. Unzip, open the HTML directly in Chrome/Edge. Builder: recovered/native-siege/build_canonical_three_maps.mjs. Manifest includes HTML SHA-256, original AK09 SHA-256 and game identity. This is **one game document, no iframe, no separate S3D1 gameplay engine**.
+
+**Current test status:** native AK06–AK09 regression + new canonical build/source tests PASS in GitHub CI. Original 28 scripts are byte-identical, all 29 embedded scripts parse. A fully manual real Windows GPU / 4–8 minute three-map acceptance of this new exact HTML remains OPEN. Do not call it published or publisher-ready until those gates pass.
+
+[Canonical integration and main-merge roadmap](docs/CANONICAL_MAIN_THREE_MAP_UNIFICATION_TR.md) · [Draft PR #51 to main](https://github.com/zxc28tarik/killtheking/pull/51) · [22 November successful canonical CI](https://github.com/zxc28tarik/killtheking/actions/runs/45035743238). The October main stays unchanged pending verified rollout.
+
+### Historical, NOT canonical: standalone S3D1 launcher
+
+The old [three-iframe S3D1 bundle](https://github.com/zxc28tarik/killtheking/actions/runs/44524696649/artifacts/14528493467) is retained for regression/history. Its Siege is a separate engine and **must not be sent as the latest normal Kill the King game**.
+
+## Play the current canonical game
+1. Open **index.html** at the root of the repository in Chrome or Edge, or use GitHub Pages when enabled. It is the same exact native game as the CI-built downloadable HTML and is fully self-contained (offline play).
+2. Pick original Arena/TDM, 140-soldier Meadow Army or 140-soldier Castle Siege **in the same game menu**, and click **OYUNA GİR (BAŞLA)**.
+3. The original camera, classes, WASD/slide-hop and combat are shared. The siege map offers 140 G5.4 actors, siege equipment commands F6–F9, and F10 to expand/collapse the command HUD.
+4. The old October Arena can still be compiled explicitly with `python3 tools/build_offline.py --legacy --out dist/Oct_Archive.html`; its historic source is stored in `recovered/legacy/`.
+
+Current/default offline build: `python3 tools/build_offline.py --out dist/KillTheKing_Oyna.html`, with resulting file identical to **index.html**. To verify the source-to-root match run `node tools/sync_canonical_entrypoint.mjs --check`. The normal CI workflow enforces this check.
+
+**Acceptance limit:** Chromium software-WebGL three-map smoke and original-source regression tests passed. Real Windows graphics hardware and human-operated long battles are not yet accepted as production-ready.
 
 ## Development structure
-- `index.html` — game entrypoint
-- `src/oyun.js` — preserved core gameplay plus subsequent fixes
+- `index.html` — **canonical complete offline FPS / three maps**, generated deterministically from native AK09 plus Meadow visual upgrades
+- `recovered/native-siege/build_canonical_three_maps.mjs` — source of truth for the current game bundle; original 28 combat scripts unchanged
+- `src/oyun.js` — archived modular October core (legacy source and unit tests)
 - `styles/game.css` — original style, compiled utility CSS and impact CSS combined
 - `vendor/three-r128.js` — original version of Three.js (MIT)
 - `tests/` — Node regression checks
-- `.github/workflows/ci.yml` — GitHub Actions checks
+- `.github/workflows/ci.yml` — regression + exact index/release identity check
+- `.github/workflows/canonical_three_maps.yml` — native 140 soldiers, one-engine source and actual Chromium software-WebGL 3-map acceptance
 - `docs/ROADMAP.md` — comprehensive prioritized plan
 - `docs/ACTIVE_DEVELOPMENT_PLAN.md` — **current checked-off P1–P2 action plan**, priorities, dependencies and acceptance gates
 - `docs/DEVLOG.md` — verified changes, evidence and limitations
