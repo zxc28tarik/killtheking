@@ -146,6 +146,22 @@ try{
    assert(finished.matchResult?.seconds>0&&finished.matchResult?.seconds<=120);
    assert(['castle-capture','elimination','time-limit'].includes(finished.matchResult?.battleReason));
   });
+  await pass('battle HUD does not overlap native win/results overlay',async()=>{
+   const v=await page.evaluate(()=>{
+    const display=id=>getComputedStyle(document.getElementById(id)).display;
+    const hint=document.querySelector('#match-results-overlay .text-center.mb-5 > p');
+    return {hud:display('hud'),siege:display('native-siege-panel'),
+      army:display('meadow-army-hud'),hint:hint?getComputedStyle(hint).display:null,
+      results:document.getElementById('match-results-overlay').classList.contains('hidden'),
+      body:document.body.classList.contains('ktk-native-army-results')};
+   });
+   assert.equal(v.body,true);
+   assert.equal(v.results,false);
+   assert.equal(v.hud,'none');
+   assert.equal(v.siege,'none');
+   assert.equal(v.army,'none');
+   assert.equal(v.hint,'none');
+  });
   await page.screenshot({path:out+'/siege-results.png',timeout:40000});
   await page.click('#match-replay-btn');
   await page.waitForFunction(()=>{
@@ -155,6 +171,16 @@ try{
     s?.ramHits===0&&s?.catapultHits===0&&s?.done===false;
   },{timeout:35000});
   const restarted=await snap('replay-native-siege');
+  await pass('replay restores the original in-game HUD without overlay bleed',async()=>{
+   const v=await page.evaluate(()=>({
+    isResultsBody:document.body.classList.contains('ktk-native-army-results'),
+    hudDisplay:getComputedStyle(document.getElementById('hud')).display,
+    siegeDisplay:getComputedStyle(document.getElementById('native-siege-panel')).display
+   }));
+   assert.equal(v.isResultsBody,false);
+   assert.notEqual(v.hudDisplay,'none');
+   assert.notEqual(v.siegeDisplay,'none');
+  });
   await pass('replay resets genuine gate/machine state without duplicate soldiers',()=>{
    assert.equal(restarted.siege?.realSoldiers,140);
    assert.equal(restarted.siege?.gateHp,600);
