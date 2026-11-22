@@ -39,6 +39,7 @@ async function snap(label){
    winner:status.meadowBattle?.winner??null,actorTotal:status.meadowBattle?.total??null,
    canvas:!!document.querySelector('canvas'),iframeCount:document.querySelectorAll('iframe').length,
    siege,layout:window.ktkSiegeExpandedMapStatus?.()||null,
+   fortification:window.ktkSiegeFortificationStatus?.()||null,
    visualGate:window.ktkSiegeVisualV19Status?.()||null,
    v20:window.ktkSiegeVisualV20Status?.()||null,
    v21Ui:window.ktkUiV21Status?.()||null};
@@ -85,6 +86,15 @@ try{
   assert.equal(started.layout?.deployment?.playerOutside,true);
   assert.equal(started.siege?.defenderInsideAtSpawn,70);
   assert.equal(started.siege?.attackerOutsideAtSpawn,70);
+  assert.equal(started.fortification?.activated,true,'Real siege defense walls are enabled');
+  assert.equal(started.fortification?.realCollisionBoxes,19,'All 19 fighting structures exist physically');
+  assert.equal(started.fortification?.spawnIntrusions,0,'All 140 authentic G5.4 actors have legal spawn clearance');
+  assert(started.fortification?.defenderRearBowReserve>=10,'Rear line is defended by living original red bow reserve');
+  assert.equal(started.fortification?.realDefensiveLayers,5,'Bastions, outworks, inner dogleg and rear line');
+  assert.equal(started.fortification?.activeProjectileCover,true,
+    'The existing G5.4 first-contact projectile world sees physical defenses');
+  assert(Object.values(started.fortification.corridors).every(Boolean),
+    'Gate, ram, tower, catapult and genuine two-sided breach remain passable');
   assert.equal(started.v21Ui?.installed,true,'New UI loaded on live original 140-soldier siege');
   assert.equal(started.v21Ui?.renderOnly,true,'Only historical visual layer changed');
   assert(started.v21Ui?.originalSiegeButtons>=4,'Original equipment controls remain');
@@ -126,6 +136,10 @@ try{
    await pass('healthy game state at '+((steps+got)*.05).toFixed(1)+' s',()=>{
     assert.equal(t.iframeCount,0);
     assert.equal(t.layout?.activated,true,'Original siege-only outer wall remains active');
+    assert.equal(t.fortification?.realCollisionBoxes,19);
+    assert.equal(t.fortification?.activeProjectileCover,true);
+    assert(Object.values(t.fortification.corridors).every(Boolean,
+      'Real siege routes must remain clear throughout battle'));
     assert.equal(t.layout?.deployment?.redInside,70,'Original defender deployment is retained');
     assert(t.siege?.gateHp>=0&&t.siege?.gateHp<=600);
     assert(t.siege?.ramHp>=0&&t.siege?.ramHp<=340);
@@ -228,6 +242,9 @@ try{
    assert.equal(restarted.siege?.realSoldiers,140);
    assert.equal(restarted.layout?.deployment?.redInside,70);
    assert.equal(restarted.layout?.deployment?.blueOutside,70);
+   assert.equal(restarted.fortification?.realCollisionBoxes,19);
+   assert.equal(restarted.fortification?.activated,true);
+   assert.equal(restarted.fortification?.activeProjectileCover,true);
    assert.equal(restarted.siege?.gateHp,600);
    assert.equal(restarted.siege?.gateOpen,false);
    assert.equal(restarted.siege?.ramHits,0);
