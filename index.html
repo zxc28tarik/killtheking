@@ -11966,6 +11966,7 @@ const KTKNativeArmyMatchFinish=(function(){
         }));
 
         function resetFreeForAllRound() {
+            KTKNativeArmyMatchFinish.restoreHud(document);
             hideLiveScoreboard();
             scoreboardRefreshSeconds = 0;
             ArenaTelemetry.reset(arenaTelemetry);
@@ -12137,6 +12138,7 @@ const KTKNativeArmyMatchFinish=(function(){
                 menuOverlay.classList.add('hidden');
                 armyBattleHud.classList.add('hidden');
                 matchResultsOverlay.classList.remove('hidden');
+                KTKNativeArmyMatchFinish.showResults(document);
                 if(document.pointerLockElement===canvas&&document.exitPointerLock)
                     document.exitPointerLock();
                 return;
@@ -12259,6 +12261,7 @@ const KTKNativeArmyMatchFinish=(function(){
             setTimeout(() => URL.revokeObjectURL(url), 1000);
         });
         document.getElementById('match-menu-btn').addEventListener('click', () => {
+            KTKNativeArmyMatchFinish.restoreHud(document);
             arenaMatch.phase = 'menu';
             ArenaMatch.configure(arenaMatch, arenaMatch.durationSeconds);
             matchTimeSeconds = arenaMatch.remaining;
