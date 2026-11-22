@@ -29,7 +29,7 @@ Başlangıç: 22 Kasım 2026. Sıradaki arayüz kalite aşaması; V21 ve V22 ona
 - [x] `recovered/native-siege/test_native_ui_v23.mjs` arma, kimlik, tekrar kurulum ve korunan 28 script doğrulaması.
 - [x] `recovered/native-siege/browser_canonical_three_maps.mjs` gerçek dört sınıf ve özgün vektör görseli, üç oyun modu, savaş HUD, 390px testleri.
 - [x] Kanonik kök `index.html` otomatik senkronizasyonu ve 140 askerli kuşatma testi iş akışına V23 ekleme.
-- [ ] V23 son commit için GitHub CI, Chromium/SwiftShader üç harita, 140 asker kuşatma ve replay kontrolü; başarısız testler düzeltilene kadar birleştirme yapılmaz.
+- [x] V23 son uygulama `bd4a7f7` üzerinde üç GitHub Actions akışı PASS (22.11.2026): genel regresyon `45069033538`, gerçek 3-harita Chromium/SwiftShader (4 arma ve 390px menü dahil) `45069033534`, 140 asker hızlandırılmış oyun-zamanı kuşatma/replay `45069033531`.
 - [ ] `main` birleştirmesinden sonra aynı üç iş akışı tekrar PASS.
 - [ ] Kullanıcının Windows üzerinde gerçek GPU estetik kabulü.
 
@@ -43,3 +43,8 @@ Başlangıç: 22 Kasım 2026. Sıradaki arayüz kalite aşaması; V21 ve V22 ona
 - İlk V23 browser testi `45068499926` dört karttan üçünü tanıdı; bu, oyun hatası değil süsleme eşleştirme eksikliğiydi.
 - Gerçek kart başlıkları `ŞÖVALYE`, `PİYADE (MIZRAK)`, `OKÇU (UZUN YAY)`, `TÜFEKÇİ (1600)` olarak Chromium konsolundan doğrulandı.
 - Şövalye için özgün kalkan arması eklendi ve test fixture'ı tam gerçek isimlere güncellendi. Tüm sınıf isimleri Türkçe harf kurallarıyla tanınır.
+
+## V23 son kabul notu
+- Şövalye, Piyade, Okçu ve Tüfekçi rozetleri gerçek Chromium'da dörtte dört doğrulandı. Üç haritanın oyun motoru ve 140 asker verisi değişmedi.
+- İlk Chromium turundaki `3/4` arma teşhis edildi ve gerçek **ŞÖVALYE** başlığıyla düzeltildi. Sonraki turdaki mobil rapor `v23` alanı eksikliği giderildi; güncel `bd4a7f7` üç ana testte PASS.
+- Bu kabul, gerçek Windows ekran kartında estetik değerlendirme veya FPS/performans optimizasyonu anlamına gelmez.
