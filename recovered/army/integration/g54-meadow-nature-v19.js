@@ -28,7 +28,7 @@ const KTKMeadowNatureV19=(function(){
    new THREE.MeshStandardMaterial({color:0xffffff,roughness:1,side:THREE.DoubleSide}),trees*3);
   let minTreeClearance=Infinity;
   for(let i=0;i<trees;i++){
-   const side=i%4,t=(hash(i,1)*1.98-.99)*half,off=24+hash(i,2)*184;
+   const side=i%4,t=(hash(i,1)*1.98-.99)*half,off=i<64?(-half*.34+hash(i,2)*half*.13):(24+hash(i,2)*184);
    const x=side<2?t:(side===2?half+off:-(half+off));
    const z=side<2?(side===0?half+off:-(half+off)):t;
    minTreeClearance=Math.min(minTreeClearance,Math.max(Math.abs(x),Math.abs(z))-half);
@@ -56,7 +56,7 @@ const KTKMeadowNatureV19=(function(){
   meshes.forEach(m=>{m.instanceMatrix.needsUpdate=true;if(m.instanceColor)m.instanceColor.needsUpdate=true;});
   let disposed=false;
   return {root,treeCount:trees,bushCount:shrubs,flowerCount:flowers,batchCount:meshes.length,
-   minTreeClearance,visualOnly:true,
+   minTreeClearance,nearEdgeTrees:64,outerTrees:186,visualOnly:true,
    dispose(){if(disposed)return;disposed=true;scene.remove(root);resources.forEach(o=>o.dispose());}};
  }
  return Object.freeze({build});
