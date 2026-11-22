@@ -60,7 +60,13 @@ test('launcher embeds only the real main menu controller; source games are inert
  for(let i=0;i<3;i++)assert(scr[i][0].includes('application/octet-stream'));
  assert(scr[3][1].includes('stage.replaceChildren()'));
  assert(scr[3][1].includes('window.confirm('));
- assert(scr[3][1].includes('frame.srcdoc=original.replace('));
+ assert(scr[3][1].includes('frame.srcdoc=visualArmy.replace('));
+ assert(scr[3][1].includes('frame.srcdoc=original'));
+ assert(scr[3][1].includes('KTKMeadowSurfaceVisual.apply(THREE,grassGround,spec)')===false);
+ assert(scr[3][1].includes('surfaceB64'));
+ assert(scr[3][1].includes('horizonB64'));
+ assert(scr[3][1].includes('MAP2 ground surface anchor changed'));
+ assert(scr[3][1].includes('MAP2 horizon ground anchor changed'));
  assert(scr[3][1].includes('if(mode==="army")'));
  assert(!scr[3][1].includes('window.eval('));
  assert(!scr[3][1].includes('new Function('));
