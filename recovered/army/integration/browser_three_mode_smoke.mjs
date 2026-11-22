@@ -138,6 +138,26 @@ try{
  assert.ok(skyCoverage.skyRadius>skyCoverage.meadowHalf*2.5,
    'Sky dome radius must contain the entire square meadow, not intersect soldiers');
  report.checks.push('PASS_MAP2_SKY_DOME_WITHOUT_GHOST_FOREGROUND: '+JSON.stringify(skyCoverage));
+ const meadowLight=await page.evaluate(()=>{
+   const w=document.querySelector('#stage iframe')?.contentWindow;
+   return w?.ktkMeadowLightStatus||null;
+ });
+ assert(meadowLight,'Natural field lighting must be applied on real G5.4 meadow');
+ assert.equal(meadowLight.name,'warm-daylight');
+ assert.ok(meadowLight.exposure<=.95,'Meadow should avoid washed-out sky and ground');
+ assert.ok(meadowLight.fogDensity<.00075,'Distant rolling hills should stay visible');
+ report.checks.push('PASS_MAP2_NATURAL_LIGHTING: '+JSON.stringify(meadowLight));
+ const sunlightChoices=await page.evaluate(()=>{
+   const w=document.querySelector('#stage iframe')?.contentWindow;
+   w.setAtmosphere(1);
+   const day=w.ktkMeadowLightStatus.name;
+   w.setAtmosphere(2);
+   const night=w.ktkMeadowLightStatus.name;
+   w.setAtmosphere(0);
+   return {day,night,restored:w.ktkMeadowLightStatus.name};
+ });
+ assert.deepEqual(sunlightChoices,{day:'clear-day',night:'blue-hour',restored:'warm-daylight'});
+ report.checks.push('PASS_MAP2_ORIGINAL_H_DAY_CYCLE: '+JSON.stringify(sunlightChoices));
  report.checks.push('PASS_ORIGINAL_140_ARMY_CHROMIUM_MODE_STILL_PLAYABLE: '+
   JSON.stringify(army));
  // AK-04b: unchanged historical field game, four authentic allied squads.
