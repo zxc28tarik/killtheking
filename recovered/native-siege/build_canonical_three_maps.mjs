@@ -140,6 +140,16 @@ export function buildCanonical(original){
   "\n            KTKNativeArmyMatchFinish.restoreHud(document);",
   'restore HUD when leaving results for main menu');
 
+ // The original match-duration UI is still used by all three maps.
+ // In an early genuine G5.4 victory, pointerlockchange calls
+ // syncMatchDurationControls() again; never overwrite actual elapsed time.
+ body=one(body,
+  "            matchDurationLabel.textContent = ArenaMatch.clock(arenaMatch.durationSeconds);",
+  "            matchDurationLabel.textContent = ArenaMatch.clock(\n"+
+  "              meadowBattleMode&&arenaMatch.phase==='results'&&arenaMatch.result?.battleOutcome\n"+
+  "                ? arenaMatch.result.seconds:arenaMatch.durationSeconds);",
+  'early G5.4 result duration survives pointer unlock');
+
  body=one(body,'            renderer.render(scene, camera);',
    "            if(arenaMap==='meadow'&&meadowDenseGrass){\n"+
    '              ArenaMeadowGrass.updateNearbyTufts(THREE,meadowDenseGrass,meadowSpec,player.pos.x,player.pos.z);\n'+
@@ -148,7 +158,11 @@ export function buildCanonical(original){
  new vm.Script(body,{filename:'canonical-native-ak09-game.js'});
  const last=matches[28], opener=last[0].slice(0,last[0].indexOf(last[1]));
  const entire=opener+body+last[0].slice(opener.length+last[1].length);
- const output=original.slice(0,last.index)+entire+original.slice(last.index+last[0].length);
+ let output=original.slice(0,last.index)+entire+original.slice(last.index+last[0].length);
+ output=one(output,
+  '<span id="match-duration-label">04:00</span> DAKİKALIK MAÇ',
+  '<span id="match-duration-label">04:00</span> <span id="match-results-duration-description">DAKİKALIK MAÇ</span>',
+  'native result duration label');
  const oldScripts=extractedScripts(original),newScripts=extractedScripts(output);
  if(newScripts.length!==29||oldScripts.length!==29)
    throw Error('Canonical script count changed');
