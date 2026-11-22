@@ -135,7 +135,7 @@ export function buildCanonical(original){
   originalAK09SourceSha256:sha(original),originalAK09LastScriptSha256:before,
   unchangedOriginalScriptCount:28,totalScriptCount:29,
   usesNativeAK09G54Siege:true,
-  140G54TroopsInArmyAndSiege:true,
+  nativeArmyAndSiegeTroops:140,
   meadowVisibleGrassInstanced:14700,
   meadowInteriorWalkableHillsAdded:false,
   sourceBytePreservedInRepository:true,
