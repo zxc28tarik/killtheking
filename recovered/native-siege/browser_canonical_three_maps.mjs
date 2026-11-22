@@ -35,6 +35,26 @@ try{
   page.setDefaultTimeout(30000);
   await page.goto(pathToFileURL(game).href,{waitUntil:'load',timeout:60000});
   await page.waitForFunction(()=>typeof window.krunkerArenaStatus==='function',{timeout:30000});
+  const uiBoot=await page.evaluate(()=>({
+   ...window.ktkUiV21Status?.(),
+   selectedMapCount:document.querySelectorAll('#arena-map-controls>button').length,
+   menuPanelBorder:getComputedStyle(document.querySelector('#menu-overlay>div')).borderTopWidth,
+   menuPanelBackground:getComputedStyle(document.querySelector('#menu-overlay>div')).backgroundImage,
+   selectorDisplay:getComputedStyle(document.getElementById('arena-map-controls')).display,
+   primaryButtonBackground:getComputedStyle(document.getElementById('play-btn')).backgroundImage,
+   originalModeButtons:document.querySelectorAll('#match-mode-controls button').length
+  }));
+  assert.equal(uiBoot.installed,true,'V21 shared visual design installed in the original game');
+  assert.equal(uiBoot.originalMapButtons,3,'Three real original map controls remain');
+  assert.equal(uiBoot.selectedMapCount,3,'Do not substitute isolated menu buttons');
+  assert.equal(uiBoot.originalSiegeButtons,4,'Exactly 4 real equipment commands');
+  assert(uiBoot.originalArmyOrderButtons>=7,'Real G5.4 tactical order elements remain');
+  assert.equal(uiBoot.actualSiegeDisabled,true,'Cannot visually unlock real gate assault');
+  assert.equal(uiBoot.selectorDisplay,'grid','Map selection is three equal visual cards');
+  assert.equal(uiBoot.menuPanelBorder,'3px','Menu now has historic bronze top molding');
+  assert(uiBoot.menuPanelBackground.includes('gradient'),'Premium background surface is applied');
+  assert(uiBoot.primaryButtonBackground.includes('gradient'),'Main PLAY action uses the same bronze/gold system');
+  assert.equal(uiBoot.originalModeButtons,2,'FFA/TDM modes unchanged');
   const boot=await page.evaluate(()=>window.krunkerArenaStatus());
   assert.equal(boot.matchPhase,'menu','Boot is native match menu');
   if(mode.button)await page.click(mode.button);
@@ -67,6 +87,7 @@ try{
     v19Groves:window.ktkMeadowGrovesV19Status?.(),
     v19Siege:window.ktkSiegeVisualV19Status?.(),
     v20Siege:window.ktkSiegeVisualV20Status?.(),
+    v21Ui:window.ktkUiV21Status?.(),
     v19Hud:{
      armyClass:document.body.classList.contains('ktk-native-battle-ui'),
      orderPanelCompact:document.getElementById('meadow-army-hud').classList.contains('ktk-siege-slim'),
@@ -74,6 +95,10 @@ try{
      armyPanelRect:document.getElementById('meadow-army-hud').getBoundingClientRect().toJSON()
     }};
   });
+  assert.equal(playing.v21Ui?.installed,true,'V21 remains installed during real FPS battles');
+  assert.equal(playing.v21Ui?.originalSiegeButtons,4,'F6-F9 real siege commands not replaced');
+  assert.equal(playing.v21Ui?.originalMapButtons,3,'No new menu or mode runtime');
+  assert.equal(playing.v21Ui?.renderOnly,true,'No game logic rebindings in UI');
   assert.equal(playing.canvas,true,'Actual game canvas available');
   assert.equal(playing.iframeCount,0,'Still the same original game document');
   assert.equal(playing.meadowBattleMode,mode.army,'In-game army authority');
@@ -117,6 +142,20 @@ try{
    assert.equal(playing.siege?.realSoldiers,140,'Genuine 140 native G5.4 siege soldiers');
    assert.equal(playing.siege?.nativeOriginalKrunkerFPSMovement,true);
   }
+  if(mode.name==='siege'){
+   const skin=await page.evaluate(()=>({
+    gradient:getComputedStyle(document.getElementById('native-siege-panel')).backgroundImage,
+    border:getComputedStyle(document.getElementById('native-siege-panel')).borderTopWidth,
+    realAssaultDisabled:document.getElementById('native-siege-assault-order').disabled,
+    armyGradient:getComputedStyle(document.getElementById('meadow-army-hud')).backgroundImage,
+    resultGradient:getComputedStyle(document.querySelector('#match-results-overlay>section')).backgroundImage
+   }));
+   assert(skin.gradient.includes('gradient'),'Actual active siege panel is textured');
+   assert.equal(skin.border,'3px','Genuine original siege panel now has bronze top molding');
+   assert.equal(skin.realAssaultDisabled,true,'Assault button remains locked until real breach');
+   assert(skin.armyGradient.includes('gradient'),'Real army commands have same design system');
+   assert(skin.resultGradient.includes('gradient'),'Actual result card also shares this design');
+  }
   await page.screenshot({path:evidence+'/'+mode.name+'-playing.png',timeout:30000});
   if(mode.army){
    // Same native F10 controls, no additional overlay/mode or input engine.
@@ -133,6 +172,29 @@ try{
   console.log('PASS_NATIVE_'+mode.name.toUpperCase(),JSON.stringify(playing).slice(0,600));
   await page.close();
  }
+ // UI responsiveness evidence: screenshot real menu on compact smartphone viewport.
+ const compact=await browser.newPage({viewport:{width:390,height:844}});
+ const compactErrors=[];
+ compact.on('pageerror',e=>compactErrors.push(String(e)));
+ await compact.goto(pathToFileURL(game).href,{waitUntil:'load',timeout:60000});
+ await compact.waitForFunction(()=>!!window.ktkUiV21Status?.().installed,{timeout:30000});
+ const mobileUi=await compact.evaluate(()=>({
+  selectedCount:document.querySelectorAll('#arena-map-controls>button').length,
+  mapDisplay:getComputedStyle(document.getElementById('arena-map-controls')).gridTemplateColumns,
+  menuWidth:document.querySelector('#menu-overlay>div').getBoundingClientRect().width,
+  viewportWidth:innerWidth,
+  sameNativeGame:typeof window.krunkerArenaStatus==='function',
+  buttonsUnchanged:!!document.getElementById('native-siege-start')&&!!document.getElementById('play-btn')
+ }));
+ assert.equal(mobileUi.selectedCount,3,'Small-screen menu retains three battle choices');
+ assert.equal(mobileUi.sameNativeGame,true);
+ assert.equal(mobileUi.buttonsUnchanged,true);
+ assert(mobileUi.menuWidth<=mobileUi.viewportWidth,'Mobile original menu fits screen');
+ await compact.locator('#arena-map-controls').scrollIntoViewIfNeeded();
+ await compact.screenshot({path:evidence+'/v21-mobile-menu.png',timeout:30000});
+ report.mobileUi=mobileUi;
+ report.errors.push(...compactErrors.map(x=>'mobile: '+x));
+ await compact.close();
  assert.equal(report.errors.length,0,'No JS/console errors');
  console.log('PASS_CANONICAL_ONE_FPS_3_MAPS_REAL_SOFTWARE_WEBGL');
 }catch(e){
