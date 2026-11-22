@@ -15,7 +15,7 @@ const UI=vm.runInContext('KTKNativeUiV23',context);
 function makeFixture(){
  const classes=new Set(['ktk-ui-v21','ktk-ui-v22']);
  const nodes=new Map();
- const roles=['TÜFEKÇİ (1600)','OKÇU (1600)','MIZRAKLI','KILIÇLI'];
+ const roles=['ŞÖVALYE','PİYADE (MIZRAK)','OKÇU (UZUN YAY)','TÜFEKÇİ (1600)'];
  const cards=roles.map(title=>{
   const attributes=new Map();
   return {
@@ -51,7 +51,7 @@ test('V23 decorates exactly the four original class cards, with readable weapon 
  assert.equal(f.doc.getElementById('arena-map-controls'),originalMap);
  assert.deepEqual(f.cards,originalCards);
  assert.deepEqual(f.cards.map(c=>c.getAttribute('data-ktk-v23-role')),
-  ['musket','archer','pike','sword']);
+  ['knight','pike','archer','musket']);
  const st=UI.status(f.doc);
  assert.equal(st.installed,true);
  assert.equal(st.classCards,4);
@@ -65,7 +65,7 @@ test('V23 decorates exactly the four original class cards, with readable weapon 
  assert.equal(st.noAdditionalInputs,true);
  const css=f.getCSS();
  for(const x of ['#menu-overlay .class-card','data-ktk-v23-role="musket"',
-  'data-ktk-v23-role="archer"','data-ktk-v23-role="pike"','data-ktk-v23-role="sword"',
+  'data-ktk-v23-role="archer"','data-ktk-v23-role="pike"','data-ktk-v23-role="knight"','data-ktk-v23-role="sword"',
   'data:image/svg+xml,','#arena-map-controls>button[aria-pressed="true"]',
   '#meadow-army-hud','#native-siege-panel','#army-tactical-overlay',
   '#match-live-scoreboard','#match-results-overlay','prefers-reduced-motion:reduce',
@@ -77,6 +77,8 @@ test('V23 decorates exactly the four original class cards, with readable weapon 
   'No extra render ticks, callbacks or input listeners');
 });
 test('V23 role headings are independent from incidental description text',()=>{
+ assert.equal(UI.roleFor('Şövalye'), 'knight');
+ assert.equal(UI.roleFor('ŞÖVALYE'), 'knight');
  assert.equal(UI.roleFor('OKÇU'), 'archer');
  assert.equal(UI.roleFor('KARGILI'), 'pike');
  assert.equal(UI.roleFor('TÜFEKÇİ'), 'musket');
