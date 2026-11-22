@@ -144,6 +144,19 @@ const KTKNativeSiegeVisualV20=(()=>{
    color:0x8c342d,side:THREE.DoubleSide,roughness:.93});
 
   let stoneTrim=0,gateTrim=0,ramTrim=0,catTrim=0,towerTrim=0,tracks=0;
+  // The first-person camera exposed the native ram's oversized flat grey
+  // metal roof. This is the ORIGINAL 3.6x5.5 siege mesh, not a new canopy.
+  // Retain its place in the original moving ram group and reduce its bulky
+  // visible thickness; match the timber shingles instead of bare steel.
+  const originalRamRoof=o.ram.children.find(mesh=>{
+   const p=mesh.geometry?.parameters;
+   return p&&Math.abs(p.width-3.6)<.001&&
+    Math.abs(p.height-.35)<.001&&Math.abs(p.depth-5.5)<.001;
+  });
+  if(!originalRamRoof)throw Error('V20: authentic ram canopy mesh missing');
+  originalRamRoof.material=timberMat;
+  originalRamRoof.scale.y=.48;
+  originalRamRoof.position.y=2.49;
 
   // Original southern gate occupies X [-8,8], wall faces are Z=-44.5.
   // Relief details sit against the EXISTING solid wall, never pretending
@@ -159,6 +172,11 @@ const KTKNativeSiegeVisualV20=(()=>{
    stoneTrim+=2;
   }
   block(THREE,parts,0,7.34,-44.64,17.2,.68,.74,lightStone);stoneTrim++;
+  // The historic original castle guard-wall above the main curtain is
+  // still rendered by the original engine. Cover its exposed outer face,
+  // avoiding the untextured dark-grey billboard seen in first-person QA.
+  // This 8cm relief does not add to collider/nav/weapon target lists.
+  block(THREE,parts,0,9.5,-44.81,91.9,4.93,.08,borderMat);stoneTrim++;
   for(let i=0;i<9;i++){
    const x=-7.25+i*1.81;
    block(THREE,parts,x,7.78,-44.70,1.75,.22,.48,borderMat);
@@ -291,6 +309,7 @@ const KTKNativeSiegeVisualV20=(()=>{
   }
   const result={
    installed:true,textureMaps:5,
+   originalRamRoofReskinned:true,guardWallStoneCladding:true,
    wallTrimCount:stoneTrim,gateTrimCount:gateTrim,
    ramTrimCount:ramTrim,catapultTrimCount:catTrim,
    towerTrimCount:towerTrim,groundWheelTracks:tracks,
