@@ -86,7 +86,8 @@ try{
   if(mode.name==='army'){
    assert.equal(playing.v19Groves?.trees,180,'Native 180 meadow periphery trees');
    assert.equal(playing.v19Groves?.drawBatches,3,'Only three instanced forest draw batches');
-   assert(playing.v19Groves?.minDistanceFromCenter>200,'No decorative groves in central army positions');
+   assert(playing.v19Groves?.minDistanceFromCenter>240,'No decorative groves in central army positions');
+   assert(playing.v19Groves?.minDistanceFromCenter<540,'Distant groves still actually readable from player');
    assert.equal(playing.v19Groves?.visible,true,'Meadow-only groves visible when selected');
    assert.equal(playing.v19Groves?.noColliders,true,'No invented tree colliders');
   }
