@@ -53,14 +53,24 @@ jobs:
           # Always regenerate from the CURRENT remote branch head. This
           # prevents a stale generated 1.4MB index from conflicting with
           # another in-flight CI-generated index.html change.
-          git fetch origin "$GITHUB_REF_NAME"
-          git reset --hard "origin/$GITHUB_REF_NAME"
-          node tools/sync_canonical_entrypoint.mjs --write
-          node tools/sync_canonical_entrypoint.mjs --check
-          git add index.html
-          if git diff --cached --quiet; then
-            echo "Root index already exactly canonical"
-          else
+          # A source/test commit may arrive during the previous run.
+          # Retry against the newest remote HEAD without force-pushing or
+          # touching any original game source scripts.
+          for attempt in 1 2 3 4 5; do
+            git fetch origin "$GITHUB_REF_NAME"
+            git reset --hard "origin/$GITHUB_REF_NAME"
+            node tools/sync_canonical_entrypoint.mjs --write
+            node tools/sync_canonical_entrypoint.mjs --check
+            git add index.html
+            if git diff --cached --quiet; then
+              echo "Root index already exactly canonical"
+              exit 0
+            fi
             git commit -m "build: synchronize default index.html with tested native three-map FPS"
-            git push origin HEAD:"$GITHUB_REF_NAME"
-          fi
+            if git push origin HEAD:"$GITHUB_REF_NAME"; then
+              exit 0
+            fi
+            echo "Remote HEAD advanced during index commit; retry $attempt/5"
+          done
+          echo "::error::Canonical index sync conflicted with concurrent commits after 5 retries"
+          exit 1
