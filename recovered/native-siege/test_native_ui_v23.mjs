@@ -81,6 +81,9 @@ test('V23 role headings are independent from incidental description text',()=>{
  assert.equal(UI.roleFor('KARGILI'), 'pike');
  assert.equal(UI.roleFor('TÜFEKÇİ'), 'musket');
  assert.equal(UI.roleFor('KILIÇLI'), 'sword');
+ assert.equal(UI.roleFor('Kılıçlı'), 'sword');
+ assert.equal(UI.roleFor('Mızraklı'), 'pike');
+ assert.equal(UI.roleFor('Tüfekçi'), 'musket');
  assert.equal(UI.roleFor('Bilinmeyen'), '');
 });
 test('V23 rejects alternative runtime instead of replacing existing UI',()=>{
