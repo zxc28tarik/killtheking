@@ -78,6 +78,8 @@ test('V21 UI installs once, only visual styles and preserved DOM control IDs',()
   '#army-tactical-overlay>div','max-height:calc(100dvh - 28px)',
   'prefers-reduced-motion:no-preference','prefers-reduced-motion:reduce'])
   assert(uiSource.includes(finish),'V21 finishing style missing: '+finish);
+ assert(!/\\b(?:addEventListener|requestAnimationFrame|setInterval)\\s*\\(/.test(uiSource),
+  'UI finishing skin must not introduce input listeners, frames or timers');
  assert(!/pointer-events:\s*none/.test(css),'Never make original clickable panels inert');
 });
 test('V21 builder keeps 28 original scripts, one original renderer, 3 original playable modes',()=>{
