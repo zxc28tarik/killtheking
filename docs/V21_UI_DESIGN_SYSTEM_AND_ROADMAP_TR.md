@@ -72,7 +72,7 @@ Karar tarihi: 22 Kasım 2026. Kullanıcı tarafından istenen kapsamlı panel/HU
 - [x] Sonuç paneli ve taktik harita için küçük ekran/dikey yükseklik taşma koruması.
 - [x] Sonuç ekranında yalnız azaltılmış hareket ayarı kapalıyken kısa, hafif geçiş.
 - [x] Korunan ilk 28 kaynak script, 3 harita, aynı tek FPS motoru ve F6–F10: yalnız V21 dekoratif CSS güncellendi; JS davranışı eklenmedi.
-- [ ] Bu yeni dal için GitHub CI / Chromium / 140 asker uzun kuşatma sonuçları tamamlanınca kontrol edilip işaretlenecek.
+- [x] V21-E PR #57 son `6b6891062` sürümü için üç GitHub kabul akışı PASS (22.11.2026): genel oyun `45060727871`, üç harita Chromium/WebGL `45060727858`, 140 asker hızlandırılmış oyun-zamanı kuşatma ve replay `45060727909`. Testlerin Windows gerçek GPU/FPS ölçümü olmadığını koru.
 - [ ] Kullanıcının Windows fiziksel GPU üzerinde görsel kabulü hâlâ gerekli.
 
 **Kapsam dışı:** FPS optimizasyonu ve yeni bağımsız mod/oyun motoru. UI-E doğrulanmadan main üzerine birleştirilmez.
