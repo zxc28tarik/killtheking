@@ -299,6 +299,8 @@ try{
    return doc?.defaultView?.ktkSiegeCinematicStatus?.()||null;
  });
  assert.equal(wide?.wide,true,'cinematic siege view should open');
+ const wideHudHidden=await child().locator('#ak02-g54-commander-hud').evaluate(node=>getComputedStyle(node).display==='none');
+ assert.equal(wideHudHidden,true,'large command HUD should not obscure the cinematic battlefield');
  await page.waitForTimeout(250);
  await page.screenshot({path:resolve(dir,'three-map3-v22-wide-cinematic.png'),fullPage:true});
  await child().locator('#siege-scene-toggle').click();
@@ -307,6 +309,8 @@ try{
    return doc?.defaultView?.ktkSiegeCinematicStatus?.().wide;
  });
  assert.equal(tacticalRestored,false,'original tactical controls should remain available');
+ const restoredHudVisible=await child().locator('#ak02-g54-commander-hud').evaluate(node=>getComputedStyle(node).display!=='none');
+ assert.equal(restoredHudVisible,true,'original army command HUD must return after cinematic view');
  report.checks.push('PASS_MAP3_V22_CINEMATIC_BATTLEFIELD_TOGGLE');
  report.checks.push('PASS_MAP3_V21_NATURE_REAL_SIEGE:'+JSON.stringify(siege.scene.siegeNatureV21));
  assert.equal(siege.army.authentic140Soldiers,140);
