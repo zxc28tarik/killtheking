@@ -37,7 +37,9 @@ Tarih: 22 Kasım 2026 · Çalışma dalı: codex/canonical-native-three-maps · 
 ### KTK-MAIN-04: Bağımsız doğrulama
 - [x] Node: native AK06-AK09 + canonical build testleri / SHA / 29 script / menü kimliği GitHub Actions #45035743238 PASS.
 - [x] Chromium yazılımsal WebGL: native Arena, Meydan ve Kuşatma ayrı gerçek menü başlatmalarında açıldı; native FFA 6 bot, Meydan 140 ordu durumuyla ve kuşatma 140 canlı G5.4 askeriyle doğrulandı. Sayfa/konsol hataları yok. GitHub #45036335268 PASS.
-- [ ] Aynı tarayıcı sekmesinde gerçek UI geçişlerinin uzun regresyonu ve dinamik maç sonu/tekrar oynama kabulü.
+- [x] Gerçek Chromium/WebGL'de özgün F6/F7/F8 ile 140 G5.4 askerlik kuşatma, 65,4 saniyelik hızlandırılmış oyun zamanı, 15 saniye fiziksel kale ele geçirme, erken sonuç, doğru kazanan/geçen süre, sonuç HUD gizleme ve yeniden maç temizliği PASS (#45040457722).
+- [ ] Aynı sekmede haritalar arası *uzun* gerçek geçişler ve tüm F6–F10 UI kombinasyonları (mevcut testler ayrı gerçek menü açılışları + kısa aynı-oturum geçişleri).
+- [ ] Normal hızda insanın yönettiği gerçek 4–8 dk maç ve Windows GPU kabulü.
 - [ ] Windows/Chrome/Edge gerçek GPU: manuel 4–8 dakika, ESC/işaretçi kilidi, F6–F10, silah/çarpışma, 1% low, ses.
 - [x] Eski S3D1 üç iframe çıktısı arşiv olarak belgelendi; README, index.html ve varsayılan Python build yeni native oyuna bağlandı.
 
@@ -77,3 +79,10 @@ Tarih: 22 Kasım 2026 · Çalışma dalı: codex/canonical-native-three-maps · 
 - Main CI/regresyon takibi: https://github.com/zxc28tarik/killtheking/actions/runs/45037651090
 - Main gerçek yazılım WebGL kontrolü: https://github.com/zxc28tarik/killtheking/actions/runs/45037651080
 - **Kalan önemli test:** Windows GPU 1%-low FPS, 4–8 dakikalık oyuncu oturumu, maç bitişi/yeniden başlatma, gerçek kullanıcının ESC/fare kilidi ve HUD görsel/UX kabulü.
+
+## KTK-SIEGE-SESSION-02 — 22 Kasım uzun savaş düzeltmesi
+- Gerçek hata: özgün ordunun erken zaferi ArenaMatch sonuç fazını beklemiyordu. Kuşatma sonucunda Error: Match is not finished veriyordu. Native adaptörle düzeltildi.
+- Kazanan, geçen süre, maç sonu HUD ve FFA tablosu doğru kapsamda düzeltildi. Yeniden başlatma temizliği gerçek Chromium/WebGL ile PASS.
+- Ayrıntılı QA: docs/KTK_NATIVE_SIEGE_LONG_SESSION_RESULT_QA_TR.md
+- Kanıt: https://github.com/zxc28tarik/killtheking/actions/runs/45040457722
+- **Hâlâ yapılmadı:** Windows gerçek GPU, insanla 4–8 dk oynama, final yayın kabulü.
