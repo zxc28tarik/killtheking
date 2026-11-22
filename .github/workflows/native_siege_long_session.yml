@@ -8,11 +8,15 @@ on:
       - 'recovered/native-siege/browser_siege_long_session.mjs'
       - '.github/workflows/native_siege_long_session.yml'
       - 'recovered/native-siege/build_canonical_three_maps.mjs'
+      - 'recovered/native-siege/native-army-match-finish.js'
+      - 'recovered/native-siege/test_native_army_match_finish.mjs'
   pull_request:
     paths:
       - 'recovered/native-siege/browser_siege_long_session.mjs'
       - '.github/workflows/native_siege_long_session.yml'
       - 'recovered/native-siege/build_canonical_three_maps.mjs'
+      - 'recovered/native-siege/native-army-match-finish.js'
+      - 'recovered/native-siege/test_native_army_match_finish.mjs'
   workflow_dispatch:
 jobs:
   webgl-native-siege-endurance:
