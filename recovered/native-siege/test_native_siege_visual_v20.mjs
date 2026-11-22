@@ -25,7 +25,7 @@ class Vector {constructor(){this.x=0;this.y=0;this.z=0;}
 class Object3D{
  constructor(){this.children=[];this.position=new Vector();this.rotation=new Vector();
   this.scale=new Vector();this.visible=true;this.userData={};}
- add(x){this.children.push(x);}
+ add(x){x.parent=this;this.children.push(x);}
 }
 class Mesh extends Object3D{
  constructor(geometry,material){super();this.geometry=geometry;this.material=material;}
@@ -33,7 +33,7 @@ class Mesh extends Object3D{
 class Geometry{constructor(...args){this.args=args;}}
 class Material{constructor(opts){this.opts=opts;this.color={setHex:()=>{}};}}
 class CanvasTexture{constructor(canvas){this.canvas=canvas;this.repeat={set:(x,y)=>{this.rx=x;this.ry=y}};}}
-const THREE={Group:Object3D,Mesh,CanvasTexture,CanvasTexture,
+const THREE={Group:Object3D,Mesh,CanvasTexture,
  BoxGeometry:Geometry, CylinderGeometry:Geometry, TorusGeometry:Geometry,
  PlaneGeometry:Geometry,SphereGeometry:Geometry,
  MeshStandardMaterial:Material,MeshBasicMaterial:Material,
@@ -94,7 +94,7 @@ test('large visual upgrade is children of genuine breakable siege equipment and 
  assert(d.tower.children.length>=out.towerTrimCount);
  assert.equal(parts.children.length,out.wallTrimCount+out.groundWheelTracks);
  d.gate.visible=false;
- assert(d.gate.children.every(x=>x.parent===undefined||true),'All metal rings stay parented');
+ assert(d.gate.children.every(x=>x.parent===d.gate),'All metal rings are children of the real destructible gate');
  assert.equal(oldActorLists.colliders.length,0);
  assert.equal(oldActorLists.worldMeshes.length,0);
  assert.equal(oldActorLists.nav.length,0);
