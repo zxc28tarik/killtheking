@@ -47,7 +47,11 @@ try{
   assert.equal(uiBoot.installed,true,'V21 shared visual design installed in the original game');
   assert.equal(uiBoot.originalMapButtons,3,'Three real original map controls remain');
   assert.equal(uiBoot.selectedMapCount,3,'Do not substitute isolated menu buttons');
-  assert.equal(uiBoot.originalSiegeButtons,4,'Exactly 4 real equipment commands');
+  assert(uiBoot.originalSiegeButtons>=4,'Original commands plus existing F10 panel control');
+  const equipmentIds=await page.evaluate(()=>['native-siege-tower-order','native-siege-ram-order',
+   'native-siege-cat-order','native-siege-assault-order'].every(id=>
+   document.getElementById(id)?.closest('#native-siege-panel')));
+  assert.equal(equipmentIds,true,'Real F6-F9 equipment commands unchanged');
   assert(uiBoot.originalArmyOrderButtons>=7,'Real G5.4 tactical order elements remain');
   assert.equal(uiBoot.actualSiegeDisabled,true,'Cannot visually unlock real gate assault');
   assert.equal(uiBoot.selectorDisplay,'grid','Map selection is three equal visual cards');
@@ -96,7 +100,7 @@ try{
     }};
   });
   assert.equal(playing.v21Ui?.installed,true,'V21 remains installed during real FPS battles');
-  assert.equal(playing.v21Ui?.originalSiegeButtons,4,'F6-F9 real siege commands not replaced');
+  assert(playing.v21Ui?.originalSiegeButtons>=4,'F6-F9 real siege commands and existing panel control');
   assert.equal(playing.v21Ui?.originalMapButtons,3,'No new menu or mode runtime');
   assert.equal(playing.v21Ui?.renderOnly,true,'No game logic rebindings in UI');
   assert.equal(playing.canvas,true,'Actual game canvas available');
