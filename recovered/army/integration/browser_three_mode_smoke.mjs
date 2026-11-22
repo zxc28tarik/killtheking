@@ -244,7 +244,10 @@ try{
    }));
    w.__ktkDiagTransparent=transparent;
    w.__ktkDiagSky=sky;
-   return {transparent:transparent.length,sky:sky.length,top};
+   const byOpacity=Object.entries(transparent.reduce((acc,o)=>{
+     const key=String(o.material.opacity);acc[key]=(acc[key]||0)+1;return acc;
+   },{}));
+   return {transparent:transparent.length,sky:sky.length,byOpacity,top};
  });
  report.checks.push('DIAGNOSTIC_MAP2_SCENE_MESH_LAYERS: '+JSON.stringify(diagnostic));
  await page.evaluate(()=>{
@@ -252,6 +255,18 @@ try{
    w.__ktkDiagTransparent.forEach(o=>o.visible=false);
  });
  await page.screenshot({path:resolve(dir,'map2-no-transparent-diagnostic.png'),fullPage:true});
+ await page.evaluate(()=>{
+   const w=document.querySelector('#stage iframe').contentWindow;
+   w.__ktkDiagTransparent.forEach(o=>o.visible=true);
+   w.__ktkDiagTransparent.filter(o=>Math.abs(o.material.opacity-.85)<.001).forEach(o=>o.visible=false);
+ });
+ await page.screenshot({path:resolve(dir,'map2-no-box-cloud-material.png'),fullPage:true});
+ await page.evaluate(()=>{
+   const w=document.querySelector('#stage iframe').contentWindow;
+   w.__ktkDiagTransparent.forEach(o=>o.visible=true);
+   w.__ktkDiagTransparent.filter(o=>Math.abs(o.material.opacity-.85)>=.001).forEach(o=>o.visible=false);
+ });
+ await page.screenshot({path:resolve(dir,'map2-no-other-transparencies.png'),fullPage:true});
  await page.evaluate(()=>{
    const w=document.querySelector('#stage iframe').contentWindow;
    w.__ktkDiagTransparent.forEach(o=>o.visible=true);
