@@ -38,7 +38,8 @@ async function snap(label){
    blue:status.meadowBattle?.blue??null,red:status.meadowBattle?.red??null,
    winner:status.meadowBattle?.winner??null,actorTotal:status.meadowBattle?.total??null,
    canvas:!!document.querySelector('canvas'),iframeCount:document.querySelectorAll('iframe').length,
-   siege,visualGate:window.ktkSiegeVisualV19Status?.()||null};
+   siege,visualGate:window.ktkSiegeVisualV19Status?.()||null,
+   v20:window.ktkSiegeVisualV20Status?.()||null};
  });
  results.trace.push({label,...v});
  console.log('SIEGE_STEP',label,JSON.stringify({phase:v.phase,remaining:v.secondsRemaining,
@@ -118,6 +119,11 @@ try{
     assert(t.siege?.ramHits>=0&&t.siege?.catapultHits>=0);
     assert(t.siege?.captureHeldSeconds>=0);
     assert(t.secondsRemaining>=0);
+    assert.equal(t.v20?.installed,true,'V20 loaded on actual G5.4 siege');
+    assert.equal(t.v20?.textureMaps,5,'Material textures survive 140 soldiers + projectiles');
+    assert.equal(t.v20?.noColliders,true,'V20 visual details do not alter real passage');
+    assert.equal(t.v20?.realGateVisible,!t.siege?.gateOpen,'Gate ring iron follows actual breach');
+    assert(t.v20?.towerVisualCount>=40,'Tower visual skin remains attached to true moving tower');
     assert.equal(t.visualGate?.mortarStones,50,'Native castle masonry still rendered');
     assert.equal(t.visualGate?.gateDetails,32,'Gate has original mesh children');
     assert.equal(t.visualGate?.gateVisible,!t.siege?.gateOpen,
@@ -210,6 +216,8 @@ try{
    assert.equal(restarted.siege?.catapultDestroyed,false);
    assert.equal(restarted.siege?.done,false);
    assert.equal(restarted.visualGate?.gateVisible,true,'Restored original native gate shows its dressing');
+   assert.equal(restarted.v20?.realGateVisible,true,'V20 ironwork returns on real gate replay');
+   assert.equal(restarted.v20?.realBridgeVisible,false,'V20 preserved default retracted siege bridge');
   });
  }else{
   results.acceptanceLimit='Accelerated 120 in-game seconds completed without results; real manual 4–8 min acceptance still required.';

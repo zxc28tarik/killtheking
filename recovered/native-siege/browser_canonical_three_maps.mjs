@@ -66,6 +66,7 @@ try{
     grass:window.ktkMeadowGrassVisualStatus?.(),
     v19Groves:window.ktkMeadowGrovesV19Status?.(),
     v19Siege:window.ktkSiegeVisualV19Status?.(),
+    v20Siege:window.ktkSiegeVisualV20Status?.(),
     v19Hud:{
      armyClass:document.body.classList.contains('ktk-native-battle-ui'),
      orderPanelCompact:document.getElementById('meadow-army-hud').classList.contains('ktk-siege-slim'),
@@ -92,6 +93,22 @@ try{
    assert.equal(playing.v19Groves?.noColliders,true,'No invented tree colliders');
   }
   if(mode.name==='siege'){
+   assert.equal(playing.v20Siege?.installed,true,'V20 decor must run on the same original siege scene');
+   assert.equal(playing.v20Siege?.textureMaps,5,'Five authentic stone/wood/ground original materials textured');
+   assert.equal(playing.v20Siege?.originalRamRoofReskinned,true,'Actual bulky original grey ram roof becomes timber');
+   assert.equal(playing.v20Siege?.guardWallStoneCladding,true,'Giant grey original castle guard wall becomes textured stone');
+   assert(playing.v20Siege?.wallTrimCount>=45,'Detailed real southern castle curtain');
+   assert(playing.v20Siege?.gateTrimCount>=25,'Original 600HP gate hardware and hinge rings');
+   assert(playing.v20Siege?.ramTrimCount>=28,'Moving ram has a timber shingle roof');
+   assert(playing.v20Siege?.catapultTrimCount>=14,'Real catapult owns the sling and framing');
+   assert(playing.v20Siege?.towerTrimCount>=40,'Climbable real tower clad with timber, iron and banners');
+   assert.equal(playing.v20Siege?.groundWheelTracks,4,'Native attack approach has wheel ruts');
+   assert.equal(playing.v20Siege?.noColliders,true,'V20 did not invent impassable terrain');
+   assert.equal(playing.v20Siege?.noProjectileTargets,true,'V20 cosmetics are not bullet targets');
+   assert.equal(playing.v20Siege?.originalBattleEngine,true,'One original Krunker/G5.4 FPS');
+   assert.equal(playing.v20Siege?.realGateVisible,true,'Gate 600HP remains closed at match start');
+   assert.equal(playing.v20Siege?.realBridgeVisible,false,'Real moving tower bridge starts retracted');
+   assert.equal(playing.v20Siege?.catapultArmVisualCount,3,'V20 leather sling and two tethers follow actual projectile arm');
    assert(playing.v19Siege?.gateDetails>=25,'Original native gate is visually dressed');
    assert(playing.v19Siege?.mortarStones>=35,'Real outer wall masonry detail visible');
    assert.equal(playing.v19Siege?.groupVisible,true);
