@@ -1,3 +1,4 @@
+// Historical modular October source regression; current native three-map entrypoint is verified by recovered/native-siege tests and CI.
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 const require = createRequire(import.meta.url);
@@ -48,7 +49,7 @@ test('stationary horizontal segment inside cylinder still hits', () => {
 });
 test('arrow source uses collision resolver and removes frame-end-only overlap loops', () => {
     const js=fs.readFileSync(path.join(__dirname,'../src/oyun.js'),'utf8');
-    const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
+    const html=fs.readFileSync(path.join(__dirname,'../recovered/legacy/KillTheKing_October_Original_Source_Index.html'),'utf8');
     assert.match(js,/ArenaArrowCollision\.sweep\(prevPos, arr\.mesh\.position/);
     assert.match(html,/src\/arrow-collision\.js/);
     assert.ok(html.indexOf('src/arrow-collision.js') < html.indexOf('src/oyun.js'));
