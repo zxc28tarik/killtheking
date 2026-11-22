@@ -539,7 +539,7 @@ window.addEventListener('error', function(event) {
     <div id="match-results-overlay" class="hidden fixed inset-0 z-40 bg-slate-950/95 backdrop-blur-lg flex items-center justify-center p-4 overflow-y-auto">
         <section class="w-full max-w-2xl rounded-xl border-2 border-amber-500/70 bg-slate-900/95 p-5 sm:p-8 shadow-2xl my-auto">
             <div class="text-center mb-5">
-                <div class="text-xs font-black tracking-widest text-sky-300 krunker-text"><span id="match-results-mode-label">SERBEST ARENA</span> • <span id="match-duration-label">04:00</span> DAKİKALIK MAÇ</div>
+                <div class="text-xs font-black tracking-widest text-sky-300 krunker-text"><span id="match-results-mode-label">SERBEST ARENA</span> • <span id="match-duration-label">04:00</span> <span id="match-results-duration-description">DAKİKALIK MAÇ</span></div>
                 <h2 id="match-winner-title" class="text-2xl sm:text-4xl font-black text-amber-400 krunker-text mt-3">MAÇ SONUCU</h2>
                 <div id="match-team-results" class="hidden mt-3 p-2 rounded border border-sky-500/50 font-extrabold text-base text-sky-200 krunker-text"></div>
                 <p class="text-sm text-slate-300 mt-2">En fazla öldürme kazanır. Eşitlikte daha az ölüm öne geçer.</p>
@@ -11959,7 +11959,9 @@ const KTKNativeArmyMatchFinish=(function(){
                 button.classList.toggle('selected', selected);
                 button.setAttribute('aria-pressed', String(selected));
             });
-            matchDurationLabel.textContent = ArenaMatch.clock(arenaMatch.durationSeconds);
+            matchDurationLabel.textContent = ArenaMatch.clock(
+              meadowBattleMode&&arenaMatch.phase==='results'&&arenaMatch.result?.battleOutcome
+                ? arenaMatch.result.seconds:arenaMatch.durationSeconds);
         }
 
         matchDurationButtons.forEach(button => button.addEventListener('click', () => {
