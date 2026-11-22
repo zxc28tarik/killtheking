@@ -123,6 +123,22 @@ export function buildCanonical(original){
   "                KTKNativeArmyMatchFinish.decorate(arenaMatch,result,summary,nativeSiegeMode,\n"+
   "                  !!(nativeSiegeMode&&nativeSiegeEquipment?.win));",
   'real G5.4 winner and elapsed time metadata');
+ // Hide the in-game HUD only on real G5.4 victory/timeout overlay, and
+ // restore it before the normal reset/replay or main-menu transition.
+ body=one(body,
+  "                armyBattleHud.classList.add('hidden');\n"+
+  "                matchResultsOverlay.classList.remove('hidden');",
+  "                armyBattleHud.classList.add('hidden');\n"+
+  "                matchResultsOverlay.classList.remove('hidden');\n"+
+  "                KTKNativeArmyMatchFinish.showResults(document);",
+  'native result UI suppression');
+ body=append(body,"        function resetFreeForAllRound() {",
+  "\n            KTKNativeArmyMatchFinish.restoreHud(document);",
+  'restore HUD on rematch');
+ body=append(body,
+  "        document.getElementById('match-menu-btn').addEventListener('click', () => {",
+  "\n            KTKNativeArmyMatchFinish.restoreHud(document);",
+  'restore HUD when leaving results for main menu');
 
  body=one(body,'            renderer.render(scene, camera);',
    "            if(arenaMap==='meadow'&&meadowDenseGrass){\n"+
@@ -143,7 +159,8 @@ export function buildCanonical(original){
  for(const key of ['id="native-siege-start"','meadowBattleMode = false','nativeSiegeMode = false',
    'window.ktkNativeSiegeMapStatus=','KTKMeadowHorizon.build','KTKMeadowSurfaceVisual.apply',
    'KTKMeadowNaturalLighting.apply','ArenaMeadowGrass.createNearbyTufts',
-   'KTKNativeArmyMatchFinish.acceptEarlyWin','KTKNativeArmyMatchFinish.decorate'])
+   'KTKNativeArmyMatchFinish.acceptEarlyWin','KTKNativeArmyMatchFinish.decorate',
+   'KTKNativeArmyMatchFinish.showResults','KTKNativeArmyMatchFinish.restoreHud'])
    if(!output.includes(key))throw Error('Missing canonical marker: '+key);
  const manifest={
   product:'Kill the King',kind:'SINGLE_NATIVE_FPS_THREE_MAPS',
