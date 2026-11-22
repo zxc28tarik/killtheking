@@ -30,8 +30,8 @@
 - [x] `recovered/native-siege/test_native_ui_v24.mjs` bağımsız üç harita gravürü, dört mevcut arma, CSS/DOM, tek kurulum, erişilebilirlik, script bütünlüğü doğrular.
 - [x] Gerçek Chromium 3 harita ve 390px tarayıcı kabulüne V24 stil, 3 bağımsız gravür, 4 arma ve savaş paneli sözleşmeleri eklendi.
 - [x] Otomatik kanonik `index.html` senkronizasyonu ve 140 asker uzun süreli kuşatma regresyon akışında V24 izlenir.
-- [ ] PR branch HEAD için genel oyun testleri, üç harita gerçek Chromium/SwiftShader ve 140 asker uzun kuşatma/replay PASS.
-- [ ] PR birleştirme sonrası `main` için aynı üç kabul akışı PASS.
+- [x] PR #60 son uygulama `f1ac994a8` için üç GitHub Actions akışı PASS (23.11.2026): genel oyun `45078996183`; özgün üç haritanın gerçek Chromium/SwiftShader kabulü `45078996237`; 140 asker uzun kuşatma ve replay `45078996188`.
+- [x] PR #60 `ee068c51` olarak `main` dalına birleştirildi (23.11.2026). Aynı merge SHA için üç test PASS: genel oyun `45079202713`, üç harita Chromium/WebGL `45079202655`, 140 asker uzun kuşatma ve tekrar oynama `45079202648`.
 - [ ] Kullanıcının fiziksel Windows ekran kartında oynanış ve görsel kabulü tamamlanmadı.
 
 ## Kayıtlar
@@ -47,3 +47,8 @@
 - Üç SVG harita gravürü **arka planın ön yüzeyine** alındı. Mat koyu malzeme gradyanı önce çizimi kapatabiliyordu; yeni tarayıcı/kaynak testleri sadece URL varlığını değil, görselin CSS katmanında gerçekten en önde boyanmasını da kontrol ediyor.
 - Bu adım orijinal harita geometrisi, malzemeler, asker/atış veya render performansını değiştirmez.
 - Üretilen `index.html` yalnız resmi kaynak derleyiciden gelir. Hızlı ardışık commitlerde oluşan CI non-fast-forward çakışmasına karşı güvenli en fazla beş denemelik senkronizasyon eklendi; asla force-push yok.
+
+## V24 ana dal kapanış
+- V24 mühendislik ve sunum katmanı testleri tamamlandı. Üç farklı gravür, orijinal dört sınıf arması, mevcut sınıf/harita seçimleri, F6–F10 komutları, tek HTML ve 28 korunan özgün script korunuyor.
+- PR dalındaki ilk birkaç CI hatası, kod commit'i ardından kanonik `index.html` senkronizasyonu henüz güncellenmediği için geçici oluştu. Eşzamanlı commit çakışması için güvenli retry eklendi; **son PR ve ana dal testleri yeşil**.
+- Kullanıcının Windows fiziksel GPU estetik kabulü hâlâ açık; CI/SwiftShader testi buna eşdeğer değildir. FPS/perf optimizasyonu ve pitch deck üzerinde çalışılmadı.
