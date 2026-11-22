@@ -156,3 +156,11 @@ Tarih: 21 Kasım 2026. Durum: uygulama başladı; gerçek tarayıcı kabul testi
 - [x] GitHub Actions **run 45037020355**: tek offline HTML paketleme ve özgün kaynak korunumu **PASS**, gerçek Chromium SwiftShader üç-mod/motor kontrolü **PASS**. Bot/oyun kontrolleri korunuyor.
 - [x] Gerçek tarayıcı raporunda: `treeCount:460`, `groveTrees:260`, `deepCenterTrees:0`, `batchCount:6`, `visible:true`. Ekran görüntüsünde ağaçlar savaş alanının kenarlarında belirgin.
 - [ ] Estetik kabul kullanıcının kendi GPU'sunda yapılmalı. Hedef gerçekçi orman değil, mevcut oyunun stiline uyumlu stilize dış doğa kuşağıdır.
+
+## V21 — Meydan orman zemini + Kale dış çevre bitki örtüsü
+- [x] V20'nin 18 orman kümesinin çevresine **460 yere sıfır yaprak örtüsü parçası ve 320 yosun geçişi**, toplam **780 yeni orman zemin detayı** eklendi. İki InstancedMesh çizim grubu kullanılır. Yollar, zemin yüksekliği, asker fiziği ve navigasyon etkilenmez.
+- [x] Kale Kuşatması'nın gerçek oyun sahnesi olan `recovered/siege/siege-preview.js` içine **80 görsel ağaç, 220 çalı, 430 alçak ot, 96 taş** dış çevre dekorasyonu eklendi. Beş instanced çizim grubu; kuşatma kapısı, surlar, asıl asker yolları ve oyuncu çarpışmaları değişmedi.
+- [x] İki haritanın görsel bileşenleri doğrudan üç modlu çevrimdışı HTML içinde; özgün FFA ve G5.4 ordu arşivi değişmedi.
+- [x] GitHub Actions **45037653280** paketleme / kaynak koruma PASS, gerçek Chromium SwiftShader üç mod kabulü PASS. Tarayıcıda `forestFloorPatches:780`, `batchCount:8`, Kale için `trees:80,shrubs:220,grass:430,stones:96,batches:5` doğrulandı. Ekran görüntüleri ve HTML artifact üretildi.
+- [ ] Kale dış bitkileri sınırlı kamera açısında, büyük HUD panelleri arkasında gizlenebilir; daha iyi objektif görsel karşılaştırma için harita kamerasından ayrıca görüntü gerekir.
+- [ ] Yeni ağaç ve taşlar yalnız görseldir; fiziksel engel olarak kabul edilmez. Gerçek oynanış mekaniğini bozmayacak şekilde bırakıldı.
