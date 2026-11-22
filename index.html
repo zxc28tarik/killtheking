@@ -9543,12 +9543,14 @@ const KTKSiegeFortificationV26=(()=>{
           THREE,nativeSiegeParts,nativeSiegeMesh,nativeSiegeAabb,
           {stone:nativeSiegeStone,wood:nativeSiegeWood});
         nativeSiegeWallBoxes.push(...nativeSiegeDefenseV26.wallBoxes);
+        let nativeSiegeDefenseSpawnIntrusions=null;
         window.ktkSiegeFortificationStatus=()=>({
           installed:true,
           activated:nativeSiegeCastleEnabled,
           realDefensiveLayers:nativeSiegeDefenseV26.defensiveLayers,
           realCollisionBoxes:nativeSiegeDefenseV26.solidDefenseCount,
           frontBastions:nativeSiegeDefenseV26.frontBastions,
+          spawnIntrusions:nativeSiegeDefenseSpawnIntrusions,
           antiRushObstacles:nativeSiegeDefenseV26.antiRushObstacles,
           secondLineBlocks:nativeSiegeDefenseV26.secondLineBlocks,
           entranceChokeWidth:nativeSiegeDefenseV26.gateChokeWidth,
@@ -13144,6 +13146,14 @@ const KTKSiegeFortificationV26=(()=>{
                        nativeSiegeDeploymentEvidence.blueOutside!==70||
                        !nativeSiegeDeploymentEvidence.playerOutside)
                       throw Error('AK25: real G5.4 70v70 must start on opposite castle sides');
+                    // AK26: reject actual soldiers starting inside a wall.
+                    // Read authentic post-deployment G5.4 positions only.
+                    nativeSiegeDefenseSpawnIntrusions=meadowBattleState.soldiers.filter(u=>
+                      nativeSiegeDefenseV26.wallBoxes.some(b=>
+                        u.x>b.minX-.65&&u.x<b.maxX+.65&&
+                        u.z>b.minZ-.65&&u.z<b.maxZ+.65)).length;
+                    if(nativeSiegeDefenseSpawnIntrusions)
+                      throw Error('AK26: genuine G5.4 soldiers spawned in defensive stone');
                 }
                 if(nativeSiegeMode)nativeSiegeResetEquipment();
                 meadowArmySelectedOrder='hold';
