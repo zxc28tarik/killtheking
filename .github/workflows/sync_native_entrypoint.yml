@@ -41,5 +41,10 @@ jobs:
             echo "Root index already exactly canonical"
           else
             git commit -m "build: synchronize default index.html with tested native three-map FPS"
-            git push origin HEAD:${{ github.ref_name }}
+            # Feature development can advance while the runner builds its
+            # 1.35 MB HTML. Rebase the generated file on the latest branch
+            # instead of attempting a stale non-fast-forward push.
+            git fetch origin "$GITHUB_REF_NAME"
+            git rebase "origin/$GITHUB_REF_NAME"
+            git push origin HEAD:"$GITHUB_REF_NAME"
           fi
