@@ -40,6 +40,7 @@ async function snap(label){
    canvas:!!document.querySelector('canvas'),iframeCount:document.querySelectorAll('iframe').length,
    siege,layout:window.ktkSiegeExpandedMapStatus?.()||null,
    fortification:window.ktkSiegeFortificationStatus?.()||null,
+   defenderDoctrine:window.ktkSiegeDefenderDoctrineStatus?.()||null,
    visualGate:window.ktkSiegeVisualV19Status?.()||null,
    v20:window.ktkSiegeVisualV20Status?.()||null,
    v21Ui:window.ktkUiV21Status?.()||null};
@@ -76,6 +77,14 @@ try{
   assert.equal(started.siege?.nativeOriginalKrunkerFPSMovement,true);
   assert.equal(started.iframeCount,0);
   assert.equal(started.siege.gateHp,600);
+  assert.equal(started.defenderDoctrine?.active,true);
+  assert.equal(started.defenderDoctrine?.originalG54,true);
+  assert.equal(started.defenderDoctrine?.phase,'garrison');
+  assert.equal(started.defenderDoctrine?.rearArchersAnchored,true);
+  assert(started.defenderDoctrine?.originalRearArcherCount>=10);
+  assert.equal(started.defenderDoctrine?.totalRealSoldiers,140);
+  assert.equal(started.defenderDoctrine?.realDefensiveLeases,1);
+  assert.equal(started.defenderDoctrine?.noSoldierTeleports,true);
   assert.equal(started.siege.gateOpen,false);
   assert(started.layout?.castleAreaFactor>=4,'4x actual physical castle');
   assert(started.layout?.mapAreaFactor>=8,'8x actual siege terrain');
@@ -137,6 +146,11 @@ try{
     assert.equal(t.iframeCount,0);
     assert.equal(t.layout?.activated,true,'Original siege-only outer wall remains active');
     assert.equal(t.fortification?.realCollisionBoxes,19);
+    assert.equal(t.defenderDoctrine?.active,true);
+    assert.equal(t.defenderDoctrine?.totalRealSoldiers,140);
+    assert(t.defenderDoctrine?.orders>=0);
+    assert(t.defenderDoctrine?.rejected>=0);
+    assert.equal(t.defenderDoctrine?.noBlueOrderOverrides,true);
     assert.equal(t.fortification?.activeProjectileCover,true);
     assert(Object.values(t.fortification.corridors).every(Boolean,
       'Real siege routes must remain clear throughout battle'));
@@ -243,6 +257,10 @@ try{
    assert.equal(restarted.layout?.deployment?.redInside,70);
    assert.equal(restarted.layout?.deployment?.blueOutside,70);
    assert.equal(restarted.fortification?.realCollisionBoxes,19);
+   assert.equal(restarted.defenderDoctrine?.phase,'garrison',
+    'Genuine replay resets red commander to gate-closed garrison phase');
+   assert.equal(restarted.defenderDoctrine?.rearArchersAnchored,true);
+   assert.equal(restarted.defenderDoctrine?.totalRealSoldiers,140);
    assert.equal(restarted.fortification?.activated,true);
    assert.equal(restarted.fortification?.activeProjectileCover,true);
    assert.equal(restarted.siege?.gateHp,600);
