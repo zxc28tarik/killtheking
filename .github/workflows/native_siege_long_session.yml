@@ -29,6 +29,7 @@ jobs:
           node --test recovered/native-siege/test_ak_native_07.mjs
           node --test recovered/native-siege/test_ak_native_09.mjs
           node --test recovered/native-siege/test_canonical_three_maps.mjs
+          node --test recovered/native-siege/test_native_army_match_finish.mjs
       - name: Build exactly the production-candidate native game without gameplay changes
         run: |
           node recovered/native-siege/build_canonical_three_maps.mjs
