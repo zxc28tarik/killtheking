@@ -58,3 +58,9 @@ Karar tarihi: 22 Kasım 2026. Kullanıcı tarafından istenen kapsamlı panel/HU
 - QA sırasında V19 kompakt kuşatma stilinin önemli CSS önceliği yeni paneli bastırdığı bulundu ve battle UI özgül seçicilerle düzeltildi. Eski F10 panel düğmesi dört kuşatma emrinden ayrı tutuldu.
 - GitHub Actions generated `index.html` eşzamanlı güncelleme çakışmasını gidermek için otomatik senkronizasyon son uzak dal HEAD'inden yeniden derleniyor ve workflow aynı dalda sıraya alınıyor; **bu bir FPS optimizasyonu değil, dosya teslimi QA düzeltmesidir.**
 - Tam 3 harita WebGL ve 140 asker uzun savaş akışı son güncel commit'te PASS olunca checklist'teki QA tamamlanacak. Fiziksel Windows/GPU testleri açık.
+
+## Son görsel kalite inceleme — V21-UI-A/B/C
+- Chromium 1000×680 menü ekranında Kill the King serif başlık, üç gerçek harita seçim kartı, dört orijinal sınıf kartı ve eskitilmiş bronz çerçeveli panel düzeni incelendi.
+- Gerçek Kale 70v70 screenshot'unda özgün F10 kompakt emir paneli ve sağdaki kuşatma paneli 3B kapı/koçbaşı görünümünü kapatmadan korunuyor. Meydan'ın aynı HUD kimliğiyle çalıştığı doğrulandı.
+- Son görsel rötuş: menü grafik kalitesi seçiminin açık/okunaksız kutusunu koyu koyu-taş metin kontrastına çevirmek; eski parlak turuncu/mavi prototip kimlik rozetlerini mat bronz-ivory paletine almak.
+- Kullanıcının kararı değişmedi: FPS/perf optimizasyonu sona bırakıldı. Fiziksel Windows GPU doğrulaması yapılmış sayılamaz.
