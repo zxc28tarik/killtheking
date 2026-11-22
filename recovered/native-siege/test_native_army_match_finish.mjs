@@ -85,10 +85,11 @@ test('replay clears prior blue winner and genuinely restarts the normal match',(
 });
 test('army result presentation hides HUD, excludes old FFA advice and restores for replay',()=>{
  const styles=new Map(),classes=new Set();
+ const description={textContent:'DAKİKALIK MAÇ'};
  const doc={
   body:{classList:{add:x=>classes.add(x),remove:x=>classes.delete(x)}},
   head:{appendChild:el=>styles.set(el.id,el)},
-  getElementById:id=>styles.get(id)||null,
+  getElementById:id=>id==='match-results-duration-description'?description:styles.get(id)||null,
   createElement:tag=>{assert.equal(tag,'style');return {id:null,textContent:''}}
  };
  adapter.showResults(doc);
@@ -97,10 +98,13 @@ test('army result presentation hides HUD, excludes old FFA advice and restores f
  const css=styles.values().next().value.textContent;
  for(const selector of ['#hud','#native-siege-panel','#meadow-army-hud','#match-results-overlay'])
   assert(css.includes(selector),selector);
+ assert(css.includes('> section > div.grid'),'FFA scoreboard heading hidden');
+ assert.equal(description.textContent,'SÜREDE SONA ERDİ');
  adapter.showResults(doc);
  assert.equal(styles.size,1,'idempotent result visual layer');
  adapter.restoreHud(doc);
  assert.equal(classes.size,0,'same original HUD restored for next match');
+ assert.equal(description.textContent,'DAKİKALIK MAÇ');
 });
 
 test('canonical build has exact original 28 engine scripts with only final native outcome fix',()=>{
@@ -114,6 +118,8 @@ test('canonical build has exact original 28 engine scripts with only final nativ
  assert.match(scripts[28],/KTKNativeArmyMatchFinish\.decorate\(arenaMatch,result,summary,nativeSiegeMode/);
  assert.match(scripts[28],/KTKNativeArmyMatchFinish\.showResults\(document\)/);
  assert.match(scripts[28],/KTKNativeArmyMatchFinish\.restoreHud\(document\)/);
+ assert(html.includes('id="match-results-duration-description"'));
+ assert(scripts[28].includes('matchDurationLabel.textContent = ArenaMatch.clock('));
  assert.equal(manifest.oneLiveGameDocument,true);
  assert.equal(manifest.originalAK09SourceSha256,createHash('sha256').update(original).digest('hex'));
 });
