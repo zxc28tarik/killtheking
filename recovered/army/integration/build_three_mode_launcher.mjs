@@ -113,11 +113,13 @@ export function addCastleThirdMode(twoModeHtml, siegeHtml){
  const addonB64=Buffer.from(fieldArmyAddon(),'utf8').toString('base64');
  const horizonB64=Buffer.from(readFileSync(resolve(base,'g54-meadow-horizon-visual.js'),'utf8'),'utf8').toString('base64');
  const surfaceB64=Buffer.from(readFileSync(resolve(base,'g54-meadow-surface-visual.js'),'utf8'),'utf8').toString('base64');
+ const meadowLightingB64=Buffer.from(readFileSync(resolve(base,'g54-meadow-natural-lighting.js'),'utf8'),'utf8').toString('base64');
  const runtimeLoad='stage.appendChild(frame);'+
    'const original=decode("ktk-source-"+mode);'+
    'const ak04b='+JSON.stringify(addonB64)+';'+
    'const horizonB64='+JSON.stringify(horizonB64)+';'+
    'const surfaceB64='+JSON.stringify(surfaceB64)+';'+
+   'const meadowLightingB64='+JSON.stringify(meadowLightingB64)+';'+
    'if(mode==="army"){'+
      'if(original.split("</body>").length!==2)throw Error("AK04b original body changed");'+
    // MAP2 native grass enhancement. The historical G5.4 HTML remains
@@ -155,10 +157,11 @@ export function addCastleThirdMode(twoModeHtml, siegeHtml){
    // Install visual-only hills as a local symbol in the original game script.
    // MAP2 interior surface: physically flat, spatially varied grass colors.
    'const surfaceScript=new TextDecoder("utf-8",{fatal:true}).decode(Uint8Array.from(atob(surfaceB64),c=>c.charCodeAt(0)));'+
+   'const meadowLightingScript=new TextDecoder("utf-8",{fatal:true}).decode(Uint8Array.from(atob(meadowLightingB64),c=>c.charCodeAt(0)));'+
    'const horizonScript=new TextDecoder("utf-8",{fatal:true}).decode(Uint8Array.from(atob(horizonB64),c=>c.charCodeAt(0)));'+
    'const horizonFunction="        function buildMeadowSquare() {";'+
    'if(visualArmy.split(horizonFunction).length!==2)throw Error("MAP2 horizon function anchor changed");'+
-   'visualArmy=visualArmy.replace(horizonFunction,surfaceScript+"\\n"+horizonScript+"\\n"+horizonFunction);'+
+   'visualArmy=visualArmy.replace(horizonFunction,meadowLightingScript+"\\n"+surfaceScript+"\\n"+horizonScript+"\\n"+horizonFunction);'+
    'const surfaceAnchor="            grassGround.rotation.x=-Math.PI/2;";'+
    'if(visualArmy.split(surfaceAnchor).length!==2)throw Error("MAP2 ground surface anchor changed");'+
    'visualArmy=visualArmy.replace(surfaceAnchor,surfaceAnchor+'+
@@ -194,6 +197,17 @@ export function addCastleThirdMode(twoModeHtml, siegeHtml){
    'if(visualArmy.split(smokeMark).length!==2)throw Error("MAP2 musket smoke anchor changed");'+
    'visualArmy=visualArmy.replace(smokeMark,'+
      '"                spawnSmokeCloud(meadowBattleMode?camera.position.clone().addScaledVector(dir,5):camera.position,dir,meadowBattleMode?8:22,meadowBattleMode?1.0:3.0);");'+
+   // Keep [H] atmospheric selection working. Native castle lighting is intact.
+   'const lightMarker="            renderer.toneMappingExposure = atmo.exposure;";'+
+   'if(visualArmy.split(lightMarker).length!==2)throw Error("MAP2 lighting hook anchor changed");'+
+   'visualArmy=visualArmy.replace(lightMarker,lightMarker+'+
+     '"\\n            if(window.__ktkMeadowLightActive) window.ktkMeadowLightStatus=KTKMeadowNaturalLighting.apply(THREE,{scene,renderer,sunLight,hemiLight,skyDomeMesh,sunDiscMesh,sunHaloMesh,createSkyGradientTexture},currentAtmosphereIdx);");'+
+   'const switchLightingAnchor="            arenaMap=map;";'+
+   'if(visualArmy.split(switchLightingAnchor).length!==2)throw Error("MAP2 light switch anchor changed");'+
+   'const q=String.fromCharCode(39);'+
+   'visualArmy=visualArmy.replace(switchLightingAnchor,switchLightingAnchor+'+
+     '"\\n            window.__ktkMeadowLightActive=map==="+q+"meadow"+q+";"+'+
+     '"\\n            window.setAtmosphere(currentAtmosphereIdx);");'+
    'const renderMark="            renderer.render(scene, camera);";'+
    'if(visualArmy.split(renderMark).length!==2)throw Error("MAP2 render anchor changed");'+
    'visualArmy=visualArmy.replace(renderMark,'+
