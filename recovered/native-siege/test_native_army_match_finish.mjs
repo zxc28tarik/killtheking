@@ -83,6 +83,26 @@ test('replay clears prior blue winner and genuinely restarts the normal match',(
  assert.equal(match.remaining,240);
  assert.equal(adapter.acceptEarlyWin(match,null),false);
 });
+test('army result presentation hides HUD, excludes old FFA advice and restores for replay',()=>{
+ const styles=new Map(),classes=new Set();
+ const doc={
+  body:{classList:{add:x=>classes.add(x),remove:x=>classes.delete(x)}},
+  head:{appendChild:el=>styles.set(el.id,el)},
+  getElementById:id=>styles.get(id)||null,
+  createElement:tag=>{assert.equal(tag,'style');return {id:null,textContent:''}}
+ };
+ adapter.showResults(doc);
+ assert.equal(classes.has('ktk-native-army-results'),true);
+ assert.equal(styles.size,1);
+ const css=styles.values().next().value.textContent;
+ for(const selector of ['#hud','#native-siege-panel','#meadow-army-hud','#match-results-overlay'])
+  assert(css.includes(selector),selector);
+ adapter.showResults(doc);
+ assert.equal(styles.size,1,'idempotent result visual layer');
+ adapter.restoreHud(doc);
+ assert.equal(classes.size,0,'same original HUD restored for next match');
+});
+
 test('canonical build has exact original 28 engine scripts with only final native outcome fix',()=>{
  const {html,manifest}=buildCanonical(original);
  const scripts=extractedScripts(html);
@@ -92,6 +112,8 @@ test('canonical build has exact original 28 engine scripts with only final nativ
    '497c945c059b541fcf76231e7d9ff2983dd8b235e98d7b78b93e9ed52235c348');
  assert.match(scripts[28],/KTKNativeArmyMatchFinish\.acceptEarlyWin\(arenaMatch,nativeArmyWinner\)/);
  assert.match(scripts[28],/KTKNativeArmyMatchFinish\.decorate\(arenaMatch,result,summary,nativeSiegeMode/);
+ assert.match(scripts[28],/KTKNativeArmyMatchFinish\.showResults\(document\)/);
+ assert.match(scripts[28],/KTKNativeArmyMatchFinish\.restoreHud\(document\)/);
  assert.equal(manifest.oneLiveGameDocument,true);
  assert.equal(manifest.originalAK09SourceSha256,createHash('sha256').update(original).digest('hex'));
 });
