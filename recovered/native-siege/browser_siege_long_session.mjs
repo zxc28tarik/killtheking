@@ -88,6 +88,8 @@ try{
   assert.equal(started.siege?.attackerOutsideAtSpawn,70);
   assert.equal(started.fortification?.activated,true,'Real siege defense walls are enabled');
   assert.equal(started.fortification?.realCollisionBoxes,19,'All 19 fighting structures exist physically');
+  assert.equal(started.fortification?.spawnIntrusions,0,'All 140 authentic G5.4 actors have legal spawn clearance');
+  assert(started.fortification?.defenderRearBowReserve>=10,'Rear line is defended by living original red bow reserve');
   assert.equal(started.fortification?.realDefensiveLayers,5,'Bastions, outworks, inner dogleg and rear line');
   assert.equal(started.fortification?.activeProjectileCover,true,
     'The existing G5.4 first-contact projectile world sees physical defenses');
