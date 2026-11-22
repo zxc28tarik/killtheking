@@ -1,6 +1,6 @@
 # Kill the King — Krunker 1600
 
-**Kill the King** is the GitHub development home of the recovered **Krunker 1600: Kuşatma** browser FPS arena project. The latest accepted gameplay baseline is **Serbest Arena v1** with the original stylized graphics (not the discarded replacement art), four combat classes, six fighting bots, bot-vs-bot free-for-all behavior and improved impact feedback.
+**Kill the King** is a native single-engine historical browser FPS prototype with original fast Arena/TDM movement, genuine 140-soldier G5.4 Meadow Army combat and a third, same-engine Castle Siege map. The October Serbest Arena source is preserved in recovered/legacy/; the canonical three-map build is the default development game, not a production release.
 
 ## 22 November 2026 — Canonical ONE original FPS with THREE battle maps (DRAFT)
 
@@ -29,12 +29,14 @@ Current/default offline build: `python3 tools/build_offline.py --out dist/KillTh
 **Acceptance limit:** Chromium software-WebGL three-map smoke and original-source regression tests passed. Real Windows graphics hardware and human-operated long battles are not yet accepted as production-ready.
 
 ## Development structure
-- `index.html` — game entrypoint
-- `src/oyun.js` — preserved core gameplay plus subsequent fixes
+- `index.html` — **canonical complete offline FPS / three maps**, generated deterministically from native AK09 plus Meadow visual upgrades
+- `recovered/native-siege/build_canonical_three_maps.mjs` — source of truth for the current game bundle; original 28 combat scripts unchanged
+- `src/oyun.js` — archived modular October core (legacy source and unit tests)
 - `styles/game.css` — original style, compiled utility CSS and impact CSS combined
 - `vendor/three-r128.js` — original version of Three.js (MIT)
 - `tests/` — Node regression checks
-- `.github/workflows/ci.yml` — GitHub Actions checks
+- `.github/workflows/ci.yml` — regression + exact index/release identity check
+- `.github/workflows/canonical_three_maps.yml` — native 140 soldiers, one-engine source and actual Chromium software-WebGL 3-map acceptance
 - `docs/ROADMAP.md` — comprehensive prioritized plan
 - `docs/ACTIVE_DEVELOPMENT_PLAN.md` — **current checked-off P1–P2 action plan**, priorities, dependencies and acceptance gates
 - `docs/DEVLOG.md` — verified changes, evidence and limitations
