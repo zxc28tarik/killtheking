@@ -128,6 +128,15 @@ try{
  assert.equal(meadowSurface.minWorldHeight,0);
  assert.equal(meadowSurface.unchangedPhysics,true);
  report.checks.push('PASS_MAP2_NATURAL_TURF_COLORING: '+JSON.stringify(meadowSurface));
+ const skyCoverage=await page.evaluate(()=>{
+   const w=document.querySelector('#stage iframe')?.contentWindow;
+   return w?.ktkMeadowSkyVisualStatus?.()||null;
+ });
+ assert(skyCoverage,'Sky dome must report current map coverage');
+ assert.equal(skyCoverage.mode,'meadow');
+ assert.ok(skyCoverage.skyRadius>skyCoverage.meadowHalf*2.5,
+   'Sky dome radius must contain the entire square meadow, not intersect soldiers');
+ report.checks.push('PASS_MAP2_SKY_DOME_WITHOUT_GHOST_FOREGROUND: '+JSON.stringify(skyCoverage));
  report.checks.push('PASS_ORIGINAL_140_ARMY_CHROMIUM_MODE_STILL_PLAYABLE: '+
   JSON.stringify(army));
  // AK-04b: unchanged historical field game, four authentic allied squads.
