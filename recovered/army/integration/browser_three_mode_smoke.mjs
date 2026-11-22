@@ -226,18 +226,6 @@ try{
  await page.screenshot({path:resolve(dir,'three-main-mode-2-army.png'),fullPage:true});
  // V17 diagnostic only: three screenshots from the same rendered scene.
  // No gameplay source is changed; flags are restored before mode switch.
- await page.evaluate(()=>{
-   const w=document.querySelector('#stage iframe')?.contentWindow;
-   if(!w?.THREE?.WebGLRenderer)throw Error('THREE not exposed for visual diagnostics');
-   const proto=w.THREE.WebGLRenderer.prototype;
-   if(!proto.__ktkProbeRender){
-     proto.__ktkProbeRender=proto.render;
-     proto.render=function(scene,camera){
-       w.__ktkVisualProbeScene=scene;
-       return proto.__ktkProbeRender.apply(this,arguments);
-     };
-   }
- });
  await page.waitForFunction(()=>!!document.querySelector('#stage iframe')?.contentWindow?.__ktkVisualProbeScene);
  const diagnostic=await page.evaluate(()=>{
    const w=document.querySelector('#stage iframe').contentWindow;
