@@ -105,25 +105,6 @@ footer{font-size:11px;color:#c9c0a7;background:#191b19;padding:8px 18px;border-t
   </aside>
 </main>
 <footer>Bu önizleme FFA/TDM veya G5.4 ordu oyunlarını değiştirmez. Gerçek 140 askerli kuşatma, FPS/TPS ve komuta sistemi sonraki S2–S5 aşamalarında entegre edilecektir.</footer>
-<script>
-(function(){
- const button=document.getElementById('siege-scene-toggle');
- if(!button)return;
- const apply=wide=>{
-   document.body.classList.toggle('siege-cinematic',wide);
-   button.setAttribute('aria-pressed',String(wide));
-   button.textContent=wide?'Kontrolleri göster':'Geniş savaş görünümü';
-   window.dispatchEvent(new Event('resize'));
- };
- button.addEventListener('click',()=>apply(!document.body.classList.contains('siege-cinematic')));
- document.addEventListener('keydown',event=>{
-   if(event.code!=='F7'||event.repeat||event.altKey||event.ctrlKey)return;
-   event.preventDefault();
-   apply(!document.body.classList.contains('siege-cinematic'));
- });
- window.ktkSiegeCinematicStatus=()=>({available:true,wide:document.body.classList.contains('siege-cinematic')});
-})();
-</script>
 <!-- KTK_THREE_JS -->
 <!-- KTK_SIEGE_MAP_JS -->
 <!-- KTK_SIEGE_OBJECTIVES_JS -->
