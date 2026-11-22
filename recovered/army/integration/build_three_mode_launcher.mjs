@@ -188,10 +188,6 @@ export function addCastleThirdMode(twoModeHtml, siegeHtml){
    'const oldSkyScale="                map==="+quote+"meadow"+quote+"?8:1);";'+
    'if(visualArmy.split(oldSkyScale).length!==2)throw Error("MAP2 original sky scale anchor changed");'+
    'visualArmy=visualArmy.replace(oldSkyScale,oldSkyScale.replace("?8:1);","?Math.max(8,meadowSpec.half/90):1);"));'+
-   // TEMPORARY V17 QA probe: capture scene identity without changing physics.
-   'const probeMarker="        const meadowMapData={";'+
-   'if(visualArmy.split(probeMarker).length!==2)throw Error("MAP2 probe scene anchor changed");'+
-   'visualArmy=visualArmy.replace(probeMarker,"        window.__ktkVisualProbeScene=scene;\\n"+probeMarker);'+
    // V17: 22 near-camera volumetric puffs were covering the entire view.
    // Narrow ONLY native 70v70 field musket smoke; FFA is preserved unchanged.
    'const smokeMark="                spawnSmokeCloud(camera.position, dir, 22, 3.0);";'+
