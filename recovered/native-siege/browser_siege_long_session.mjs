@@ -34,7 +34,7 @@ async function snap(label){
   let siege=null;
   try{siege=window.ktkNativeSiegeMapStatus?.()||null;}catch(e){siege={error:String(e)}}
   return {phase:status.matchPhase,map:status.map,army:status.meadowBattleMode,
-   secondsRemaining:status.matchRemaining,matchResult:status.matchResults?.winner??null,
+   secondsRemaining:status.matchRemaining,matchResult:status.matchResults?{winnerId:status.matchResults.winnerId,seconds:status.matchResults.seconds,battleReason:status.matchResults.battleReason,playerWon:status.matchResults.playerWon}:null,
    blue:status.meadowBattle?.blue??null,red:status.meadowBattle?.red??null,
    winner:status.meadowBattle?.winner??null,actorTotal:status.meadowBattle?.total??null,
    canvas:!!document.querySelector('canvas'),iframeCount:document.querySelectorAll('iframe').length,
@@ -140,9 +140,20 @@ try{
  // Returning to menu is only possible after the match results. If combat has
  // not ended, document the ongoing scenario rather than faking a victory.
  if(finished.phase==='results'){
+  await pass('genuine native army result reports actual winner and elapsed time',()=>{
+   assert(finished.matchResult?.winnerId==='g54:blue'||finished.matchResult?.winnerId==='g54:red');
+   assert(Number.isFinite(finished.matchResult?.seconds));
+   assert(finished.matchResult?.seconds>0&&finished.matchResult?.seconds<=120);
+   assert(['castle-capture','elimination','time-limit'].includes(finished.matchResult?.battleReason));
+  });
   await page.screenshot({path:out+'/siege-results.png',timeout:40000});
   await page.click('#match-replay-btn');
-  await page.waitForFunction(()=>window.krunkerArenaStatus().matchPhase==='playing',{timeout:35000});
+  await page.waitForFunction(()=>{
+   const a=window.krunkerArenaStatus();
+   const s=window.ktkNativeSiegeMapStatus?.();
+   return a.matchPhase==='playing'&&s?.gateHp===600&&s?.gateOpen===false&&
+    s?.ramHits===0&&s?.catapultHits===0&&s?.done===false;
+  },{timeout:35000});
   const restarted=await snap('replay-native-siege');
   await pass('replay resets genuine gate/machine state without duplicate soldiers',()=>{
    assert.equal(restarted.siege?.realSoldiers,140);
