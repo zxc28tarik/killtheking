@@ -192,6 +192,12 @@ export function addCastleThirdMode(twoModeHtml, siegeHtml){
    'const probeMarker="        const meadowMapData={";'+
    'if(visualArmy.split(probeMarker).length!==2)throw Error("MAP2 probe scene anchor changed");'+
    'visualArmy=visualArmy.replace(probeMarker,"        window.__ktkVisualProbeScene=scene;\\n"+probeMarker);'+
+   // V17: 22 near-camera volumetric puffs were covering the entire view.
+   // Narrow ONLY native 70v70 field musket smoke; FFA is preserved unchanged.
+   'const smokeMark="                spawnSmokeCloud(camera.position, dir, 22, 3.0);";'+
+   'if(visualArmy.split(smokeMark).length!==2)throw Error("MAP2 musket smoke anchor changed");'+
+   'visualArmy=visualArmy.replace(smokeMark,'+
+     '"                spawnSmokeCloud(meadowBattleMode?camera.position.clone().addScaledVector(dir,5):camera.position,dir,meadowBattleMode?8:22,meadowBattleMode?1.0:3.0);");'+
    'const renderMark="            renderer.render(scene, camera);";'+
    'if(visualArmy.split(renderMark).length!==2)throw Error("MAP2 render anchor changed");'+
    'visualArmy=visualArmy.replace(renderMark,'+
