@@ -282,6 +282,11 @@ try{
  assert.equal(siege.scene.siegeNatureV21.grass,430);
  assert.equal(siege.scene.siegeNatureV21.stones,96);
  assert.equal(siege.scene.siegeNatureV21.batches,5);
+ assert.equal(siege.scene.siegeHorizonV22.mounds,44);
+ assert.equal(siege.scene.siegeHorizonV22.edgeGround,true);
+ assert.equal(siege.scene.siegeHorizonV22.batches,1);
+ assert.equal(siege.scene.siegeHorizonV22.visualOnly,true);
+ report.checks.push('PASS_MAP3_V22_DISTANT_VALLEY_AND_HILLS');
  const cinematicStart=await page.evaluate(()=>{
    const doc=document.querySelector('#stage iframe')?.contentDocument;
    return doc?.defaultView?.ktkSiegeCinematicStatus?.()||null;
