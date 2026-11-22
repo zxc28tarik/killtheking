@@ -95,6 +95,8 @@ try{
   if(mode.name==='siege'){
    assert.equal(playing.v20Siege?.installed,true,'V20 decor must run on the same original siege scene');
    assert.equal(playing.v20Siege?.textureMaps,5,'Five authentic stone/wood/ground original materials textured');
+   assert.equal(playing.v20Siege?.originalRamRoofReskinned,true,'Actual bulky original grey ram roof becomes timber');
+   assert.equal(playing.v20Siege?.guardWallStoneCladding,true,'Giant grey original castle guard wall becomes textured stone');
    assert(playing.v20Siege?.wallTrimCount>=45,'Detailed real southern castle curtain');
    assert(playing.v20Siege?.gateTrimCount>=25,'Original 600HP gate hardware and hinge rings');
    assert(playing.v20Siege?.ramTrimCount>=28,'Moving ram has a timber shingle roof');
