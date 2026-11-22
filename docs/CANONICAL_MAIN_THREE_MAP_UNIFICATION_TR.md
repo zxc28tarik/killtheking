@@ -36,15 +36,17 @@ Tarih: 22 Kasım 2026 · Çalışma dalı: codex/canonical-native-three-maps · 
 
 ### KTK-MAIN-04: Bağımsız doğrulama
 - [x] Node: native AK06-AK09 + canonical build testleri / SHA / 29 script / menü kimliği GitHub Actions #45035743238 PASS.
-- [ ] Chromium yazılımsal WebGL: normal arena -> Meydan 140 -> kuşatma 140 -> normal kale; 3D ve UI; sıfır sayfa/konsol hatası.
+- [x] Chromium yazılımsal WebGL: native Arena, Meydan ve Kuşatma ayrı gerçek menü başlatmalarında açıldı; native FFA 6 bot, Meydan 140 ordu durumuyla ve kuşatma 140 canlı G5.4 askeriyle doğrulandı. Sayfa/konsol hataları yok. GitHub #45036335268 PASS.
+- [ ] Aynı tarayıcı sekmesinde gerçek UI geçişlerinin uzun regresyonu ve dinamik maç sonu/tekrar oynama kabulü.
 - [ ] Windows/Chrome/Edge gerçek GPU: manuel 4–8 dakika, ESC/işaretçi kilidi, F6–F10, silah/çarpışma, 1% low, ses.
-- [ ] Eski S3D1 üç iframe çıktısı varsayılan oynanabilir oyun olarak dağıtılmayacak.
+- [x] Eski S3D1 üç iframe çıktısı arşiv olarak belgelendi; README, index.html ve varsayılan Python build yeni native oyuna bağlandı.
 
 ### KTK-MAIN-05: Ana dalı toparlama
 - [ ] Ana dala hedeflenen PR; kanonik HTML ve testler doğrulandıktan sonra birleştirme.
 - [x] Geliştirme dalındaki README son kanonik tek HTML/artifact adresini gösteriyor; eski iframe paketi arşiv olarak işaretlendi.
-- [ ] GitHub Pages / varsayılan index.html girişini de kanonik çıktıyla eşitle; main güncellense bile Ekim oyununun varsayılan açılmasını önle.
-- [ ] Main üzerinde kanonik tek HTML + SHA + manifesti üreten ana CI/release yolunu etkinleştir.
+- [x] Varsayılan index.html kanonik HTML ile senkronlandı (GitHub Actions sync); aynı 29 scriptli, sıfır iframe'li kaynak. Gerçek GitHub Pages yayını ayrıca doğrulanacak.
+- [x] tools/build_offline.py artık varsayılan olarak kanonik oyunu ve SHA manifestini üretiyor; eski Ekim sürümü yalnız --legacy ile üretiliyor. CI root index ve indirilen HTML'nin birebir aynı olmasını kontrol ediyor.
+- [ ] Main'e merge sonrası main CI ve indirilebilir artifact kontrol edilecek.
 - [ ] Yeni işler: güncel main'den kısa ömürlü özellik dalları, PR, test ve zamanında merge.
 - [ ] G8.4 / 200–280 asker / donanım FPS henüz kabul edilmediyse tamamlandı yazılmayacak.
 
@@ -62,3 +64,10 @@ Tarih: 22 Kasım 2026 · Çalışma dalı: codex/canonical-native-three-maps · 
 - İndirilebilir artifact #14759696307: tek özgün FPS/3 harita HTML + SHA manifesti.
 - Sıfır iframe; 29 script, 28 özgün kaynak scripti korunmuş; AI/hasar/klavye değişiklikleri yapılmadı.
 - DİKKAT: Bu yeni çıktının gerçek 3 haritalı Chromium/WebGL ve Windows GPU ile uzun oynanış kabulü henüz yapılmadı. CI PASS ≠ kullanıcı yayın onayı.
+
+## Kanıtlı güncel teslim yolu
+- Native aynı-motor WebGL gerçek üç harita başarı: https://github.com/zxc28tarik/killtheking/actions/runs/45036335268
+- Root HTML senkron iş akışı: https://github.com/zxc28tarik/killtheking/actions/runs/45037130874
+- Kök index.html SHA-256: 82590f78165e8e4d9ffc77cf13add7fc2626d79b479548d35f203ac21937caec (kanonik üretici)
+- Eski October kaynak testi arşivde: recovered/legacy/KillTheKing_October_Original_Source_Index.html. Bu testleri, güncel index.html ile karıştırma.
+- Windows gerçek donanım FPS, farenin ESC/pointer lock davranışı, insan oynanışı ve son görsel/publisher kalite kabulü açık.
