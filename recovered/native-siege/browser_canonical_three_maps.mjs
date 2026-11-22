@@ -38,8 +38,9 @@ try{
   const uiBoot=await page.evaluate(()=>({
    ...window.ktkUiV21Status?.(),
    v22:window.ktkUiV22Status?.(),
-  v23:window.ktkUiV23Status?.(),
    v23:window.ktkUiV23Status?.(),
+   v24:window.ktkUiV24Status?.(),
+   mapEtchings:[...document.querySelectorAll('#arena-map-controls>button')].map(b=>getComputedStyle(b).backgroundImage),
    heraldry:[...document.querySelectorAll('#menu-overlay .class-card')].map(card=>({
     role:card.getAttribute('data-ktk-v23-role'),
     heading:card.querySelector('h3,h4,strong')?.textContent.trim()||card.textContent.trim().slice(0,100),
@@ -64,6 +65,14 @@ try{
   assert.equal(uiBoot.v23?.classCards,4,'Original four class choices remain');
   console.log('V23_REAL_CLASS_HEADINGS',JSON.stringify(uiBoot.heraldry.map(({role,heading})=>({role,heading}))));
   assert.equal(uiBoot.v23?.roleCards,4,'Each real player class has a matching heraldic crest');
+  assert.equal(uiBoot.v24?.installed,true,'War Council V24 is installed in native menu');
+  assert.equal(uiBoot.v24?.maps,3,'V24 retains the three native map controls');
+  assert.equal(uiBoot.v24?.heraldryCards,4,'All four genuine class crests survived V24');
+  assert.equal(uiBoot.v24?.cosmeticOnly,true,'V24 cannot affect original game state');
+  assert.equal(uiBoot.mapEtchings.length,3);
+  assert(uiBoot.mapEtchings.every(image=>image.includes('data:image/svg+xml,')),
+   'Three original War Council map silhouette etchings are actually rendered');
+  assert.equal(new Set(uiBoot.mapEtchings).size,3,'Three maps have distinct native decorative motifs');
   assert.equal(uiBoot.heraldry.filter(c=>c.role&&c.crest.includes('data:image/svg+xml')).length,4,
    'All four existing class cards use original vector crests');
   assert.equal(uiBoot.originalMapButtons,3,'Three real original map controls remain');
@@ -120,6 +129,7 @@ try{
     v21Ui:window.ktkUiV21Status?.(),
     v22Ui:window.ktkUiV22Status?.(),
     v23Ui:window.ktkUiV23Status?.(),
+    v24Ui:window.ktkUiV24Status?.(),
     v19Hud:{
      armyClass:document.body.classList.contains('ktk-native-battle-ui'),
      orderPanelCompact:document.getElementById('meadow-army-hud').classList.contains('ktk-siege-slim'),
@@ -133,6 +143,9 @@ try{
   assert.equal(playing.v23Ui?.installed,true,'V23 remains in native battle UI');
   assert.equal(playing.v23Ui?.cosmeticOnly,true,'Class heraldry never changes game state');
   assert.equal(playing.v23Ui?.originalSiegeControls>=4,true,'Original siege orders retained');
+  assert.equal(playing.v24Ui?.installed,true,'V24 remains present in real native FPS battle');
+  assert.equal(playing.v24Ui?.originalSiegeOrders>=4,true,'V24 preserves genuine F6–F9 equipment orders');
+  assert.equal(playing.v24Ui?.noGameplayHooks,true,'V24 is cosmetic with no new game loops');
   assert(playing.v21Ui?.originalSiegeButtons>=4,'F6-F9 real siege commands and existing panel control');
   assert.equal(playing.v21Ui?.originalMapButtons,3,'No new menu or mode runtime');
   assert.equal(playing.v21Ui?.renderOnly,true,'No game logic rebindings in UI');
@@ -214,7 +227,7 @@ try{
  const compactErrors=[];
  compact.on('pageerror',e=>compactErrors.push(String(e)));
  await compact.goto(pathToFileURL(game).href,{waitUntil:'load',timeout:60000});
- await compact.waitForFunction(()=>!!window.ktkUiV23Status?.().installed,null,{timeout:30000});
+ await compact.waitForFunction(()=>!!window.ktkUiV24Status?.().installed,null,{timeout:30000});
  const mobileUi=await compact.evaluate(()=>({
   selectedCount:document.querySelectorAll('#arena-map-controls>button').length,
   mapDisplay:getComputedStyle(document.getElementById('arena-map-controls')).gridTemplateColumns,
@@ -223,6 +236,8 @@ try{
   sameNativeGame:typeof window.krunkerArenaStatus==='function',
   v22:window.ktkUiV22Status?.(),
   v23:window.ktkUiV23Status?.(),
+  v24:window.ktkUiV24Status?.(),
+  mapEtchings:[...document.querySelectorAll('#arena-map-controls>button')].map(b=>getComputedStyle(b).backgroundImage),
   mapCardHeight:document.querySelector('#arena-map-controls>button').getBoundingClientRect().height,
   cardsFit:[...document.querySelectorAll('#arena-map-controls>button')].every(b=>b.getBoundingClientRect().width<=innerWidth),
   buttonsUnchanged:!!document.getElementById('native-siege-start')&&!!document.getElementById('play-btn')
@@ -233,11 +248,15 @@ try{
  assert.equal(mobileUi.v22?.installed,true,'V22 present on 390px display');
  assert.equal(mobileUi.v23?.installed,true,'V23 readable on 390px display');
  assert.equal(mobileUi.v23?.classCards,4,'Four original soldier class cards on mobile');
+ assert.equal(mobileUi.v24?.installed,true,'War Council V24 at 390px');
+ assert.equal(mobileUi.v24?.originalClassCards,4,'Four original class cards at 390px');
+ assert(mobileUi.mapEtchings.every(x=>x.includes('data:image/svg+xml,')),
+  '390px map silhouettes remain rendered on all three native cards');
  assert.equal(mobileUi.cardsFit,true,'Three map choices fit mobile viewport');
  assert(mobileUi.mapCardHeight>=40,'Map choices remain legible/tappable');
  assert(mobileUi.menuWidth<=mobileUi.viewportWidth,'Mobile original menu fits screen');
  await compact.locator('#arena-map-controls').scrollIntoViewIfNeeded();
- await compact.screenshot({path:evidence+'/v23-mobile-menu.png',timeout:30000});
+ await compact.screenshot({path:evidence+'/v24-mobile-menu.png',timeout:30000});
  report.mobileUi=mobileUi;
  report.errors.push(...compactErrors.map(x=>'mobile: '+x));
  await compact.close();
