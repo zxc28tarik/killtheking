@@ -31,8 +31,9 @@ PR: https://github.com/zxc28tarik/killtheking/pull/54
 ## Kanıt kapıları
 - [x] Kaynak ve sahte Three.js (mock) Node regresyonları eklendi: `test_native_visual_v19.mjs`.
 - [x] Gerçek Chromium/WebGL üç harita testi V19 için ağaç, duvar/kapı, HUD görünürlüğü, oyun içi F10 aç/kapat kontrolleriyle genişletildi.
-- [ ] Son V19 commit'inde GitHub 3-map Chromium/WebGL PASS raporu ve gerçek ekran görüntüsü incelenecek.
-- [ ] Orijinal 140 asker kuşatma/erken zafer/yeniden başlatma uzun testinin V19 ile yeniden PASS olması doğrulanacak.
+- [x] V19b son kaynakta 3 harita gerçek Chromium/yazılımsal WebGL PASS, hata sayısı 0; gerçek ekran görüntüsü incelendi: [run #45044651947](https://github.com/zxc28tarik/killtheking/actions/runs/45044651947). Meydan çevresindeki 180 ağaç merkezi alandan en az **367 metre** uzakta; uzaktaki ağaçlık sıra artık merkez kamerada görünür; Arena'da gizlidir.
+- [x] Özgün G5.4 140 asker/koçbaşı/mancınık erken zafer, kapı dekorunun gerçek kapıyla beraber yıkılması ve yeni maçta geri gelmesi, uzun hızlandırılmış WebGL testinde PASS: [run #45044652074](https://github.com/zxc28tarik/killtheking/actions/runs/45044652074).
+- [x] Normal ana oyun 175 regresyon kontrolü ve çevrim dışı root HTML senkronizasyonu PASS: [run #45044651988](https://github.com/zxc28tarik/killtheking/actions/runs/45044651988).
 - [ ] Gerçek Windows Chrome/Edge GPU ile FPS, 1%-low, 4–8 dakika insan oynanışı ve görsel kabul.
 - [ ] Gerçek yürünebilir iç tepeler ve vadiler: bunun için asker Y, G5.4 nav, bot ve kurşun/ok arazi kesişimi ayrı kabul gerektirir.
 
@@ -45,3 +46,8 @@ PR: https://github.com/zxc28tarik/killtheking/pull/54
 
 ## Takip
 Bir sonraki görsel geçiş: Uzaktan gerçek ağaç siluetleri ve kapı malzemelerinin ekran görüntüsüyle yorumlanması, ardından gerçek 3B iç tepe/yer yüksekliğinin asker fiziğine ve mermi hattına birlikte bağlanması. Oyuncu doğrulanmış hareket/AI dengesi bozulmadan.
+
+## V19b görsel ekran incelemesi
+- 1000×680 gerçek yazılımsal WebGL görüntüsünde Meydan komuta HUD'u 310×108 piksel ve ekranın sol üstünde; 500 piksel yüksekliğindeki eski panel artık oyun görüşünü kaplamıyor.
+- Meydan çevre ağaçları 180 adet/3 instanced çizim, en yakın mesafe 367 m. Yalnız uzakta bir orman hattı gibi algılanıyor, engel/çarpışma unsuru değil.
+- Kale ön cephesinin taş derzleri ve kapı plakaları görüntüde mevcut. Devam eden görsel kalite çalışmasında silah/koçbaşı ön plandaki kaba siluet de ayrıca ele alınmalı; V19 onu kaldırmadı.
