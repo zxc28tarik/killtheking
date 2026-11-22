@@ -42,12 +42,12 @@ Tarih: 22 Kasım 2026 · Çalışma dalı: codex/canonical-native-three-maps · 
 - [x] Eski S3D1 üç iframe çıktısı arşiv olarak belgelendi; README, index.html ve varsayılan Python build yeni native oyuna bağlandı.
 
 ### KTK-MAIN-05: Ana dalı toparlama
-- [ ] Ana dala hedeflenen PR; kanonik HTML ve testler doğrulandıktan sonra birleştirme.
+- [x] PR #51 ana dalda birleştirildi: 71f80717b08bd7f46f2a5148f19d73f5a7b138af (22 Kasım 2026). Geliştirme baseline'ı; Windows donanımda final ürün kabulü değil.
 - [x] Geliştirme dalındaki README son kanonik tek HTML/artifact adresini gösteriyor; eski iframe paketi arşiv olarak işaretlendi.
 - [x] Varsayılan index.html kanonik HTML ile senkronlandı (GitHub Actions sync); aynı 29 scriptli, sıfır iframe'li kaynak. Gerçek GitHub Pages yayını ayrıca doğrulanacak.
 - [x] tools/build_offline.py artık varsayılan olarak kanonik oyunu ve SHA manifestini üretiyor; eski Ekim sürümü yalnız --legacy ile üretiliyor. CI root index ve indirilen HTML'nin birebir aynı olmasını kontrol ediyor.
 - [ ] Main'e merge sonrası main CI ve indirilebilir artifact kontrol edilecek.
-- [ ] Yeni işler: güncel main'den kısa ömürlü özellik dalları, PR, test ve zamanında merge.
+- [x] Bundan sonra yeni işler için güncel main'den kısa özellik dalları ve PR yaklaşımı başladı (postmerge dokümantasyon dalı).
 - [ ] G8.4 / 200–280 asker / donanım FPS henüz kabul edilmediyse tamamlandı yazılmayacak.
 
 ## Nihai kalite ölçütü
@@ -59,7 +59,7 @@ Tarih: 22 Kasım 2026 · Çalışma dalı: codex/canonical-native-three-maps · 
 - recovered/army/integration/build_three_mode_launcher.mjs (eski tarihî alternatif, kanonik değil)
 
 ## 22 Kasım kanonik derleme ilk teknik kabulü
-- PR #51: https://github.com/zxc28tarik/killtheking/pull/51 (taslak; main henüz birleştirilmedi).
+- PR #51: https://github.com/zxc28tarik/killtheking/pull/51 (MERGED into main, 22 Kasım 2026).
 - GitHub Actions #45035743238 PASS: https://github.com/zxc28tarik/killtheking/actions/runs/45035743238
 - İndirilebilir artifact #14759696307: tek özgün FPS/3 harita HTML + SHA manifesti.
 - Sıfır iframe; 29 script, 28 özgün kaynak scripti korunmuş; AI/hasar/klavye değişiklikleri yapılmadı.
@@ -71,3 +71,9 @@ Tarih: 22 Kasım 2026 · Çalışma dalı: codex/canonical-native-three-maps · 
 - Kök index.html SHA-256: 82590f78165e8e4d9ffc77cf13add7fc2626d79b479548d35f203ac21937caec (kanonik üretici)
 - Eski October kaynak testi arşivde: recovered/legacy/KillTheKing_October_Original_Source_Index.html. Bu testleri, güncel index.html ile karıştırma.
 - Windows gerçek donanım FPS, farenin ESC/pointer lock davranışı, insan oynanışı ve son görsel/publisher kalite kabulü açık.
+
+## 22 Kasım — Main'e geçiş
+- Native asıl FPS üç harita ve default offline HTML aynı sürümdür. Main merge 71f80717b08bd7f46f2a5148f19d73f5a7b138af.
+- Main CI/regresyon takibi: https://github.com/zxc28tarik/killtheking/actions/runs/45037651090
+- Main gerçek yazılım WebGL kontrolü: https://github.com/zxc28tarik/killtheking/actions/runs/45037651080
+- **Kalan önemli test:** Windows GPU 1%-low FPS, 4–8 dakikalık oyuncu oturumu, maç bitişi/yeniden başlatma, gerçek kullanıcının ESC/fare kilidi ve HUD görsel/UX kabulü.
