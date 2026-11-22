@@ -9,6 +9,7 @@ import {dirname,resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {createHash} from 'node:crypto';
 import vm from 'node:vm';
+import {applyNativeSiegeExpansionV25} from './siege-expansion-patch-v25.mjs';
 
 const HERE=dirname(fileURLToPath(import.meta.url));
 const sha=s=>createHash('sha256').update(s).digest('hex');
@@ -46,6 +47,7 @@ export function buildCanonical(original){
  if(matches.length!==29)throw Error('Native original source expected exactly 29 script blocks, got '+matches.length);
  let body=matches[28][1];
  const before=sha(body);
+ body=applyNativeSiegeExpansionV25(body);
  const scriptPrelude=[
   addon('g54-meadow-natural-lighting.js'),
   addon('g54-meadow-surface-visual.js'),
@@ -56,7 +58,8 @@ export function buildCanonical(original){
   readFileSync(resolve(HERE,'native-ui-v21.js'),'utf8'),
   readFileSync(resolve(HERE,'native-ui-v22.js'),'utf8'),
   readFileSync(resolve(HERE,'native-ui-v23.js'),'utf8'),
-  readFileSync(resolve(HERE,'native-ui-v24.js'),'utf8')
+  readFileSync(resolve(HERE,'native-ui-v24.js'),'utf8'),
+  readFileSync(resolve(HERE,'native-siege-expansion-v25.js'),'utf8')
  ].join('\n');
  body=one(body,'        function buildMeadowSquare() {',
    scriptPrelude+'\n        KTKBattlefieldVisualV19.installHud(document);'+
@@ -259,7 +262,8 @@ export function buildCanonical(original){
    'KTKNativeUiV21.install','ktkUiV21Status',
    'KTKNativeUiV22.install','ktkUiV22Status',
    'KTKNativeUiV23.install','ktkUiV23Status',
-   'KTKNativeUiV24.install','ktkUiV24Status'])
+   'KTKNativeUiV24.install','ktkUiV24Status',
+   'KTKSiegeExpansionV25.install','ktkSiegeExpandedMapStatus'])
    if(!output.includes(key))throw Error('Missing canonical marker: '+key);
  const manifest={
   product:'Kill the King',kind:'SINGLE_NATIVE_FPS_THREE_MAPS',
@@ -279,6 +283,8 @@ export function buildCanonical(original){
   nativeUiV22:{design:'historical-war-room',modes:3,renderOnly:true,originalControls:true},
   nativeUiV23:{design:'class-heraldry-and-command',modes:3,decorativeOnly:true,originalControls:true},
   nativeUiV24:{design:'historical-war-council-etchings',modes:3,decorativeOnly:true,originalControls:true},
+  nativeSiegeV25:{castleAreaFactor:224*228.5/(110*110),mapAreaFactor:(624*624)/(220*220),
+    attackerTeam:'blue',defenderTeam:'red',nativeSoldiers:140,originalEngine:true,realOuterWall:true},
   meadowInteriorWalkableHillsAdded:false,
   sourceBytePreservedInRepository:true,
   userWindowsGPUAccepted:false,productionApproved:false,
