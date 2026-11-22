@@ -128,6 +128,19 @@ try{
  assert.equal(meadowSurface.minWorldHeight,0);
  assert.equal(meadowSurface.unchangedPhysics,true);
  report.checks.push('PASS_MAP2_NATURAL_TURF_COLORING: '+JSON.stringify(meadowSurface));
+ const natureV19=await page.evaluate(()=>{
+  const w=document.querySelector('#stage iframe')?.contentWindow;
+  return w?.ktkMeadowNatureStatus?.()||null;
+ });
+ assert(natureV19,'V19 live meadow nature scene must exist');
+ assert.equal(natureV19.treeCount,250);
+ assert.equal(natureV19.bushCount,860);
+ assert.equal(natureV19.flowerCount,1050);
+ assert.equal(natureV19.batchCount,4);
+ assert.ok(natureV19.minTreeClearance>=20,'trees must stay outside native square battlefield');
+ assert.equal(natureV19.visualOnly,true);
+ assert.equal(natureV19.visible,true);
+ report.checks.push('PASS_MAP2_V19_REAL_NATURE: '+JSON.stringify(natureV19));
  const skyCoverage=await page.evaluate(()=>{
    const w=document.querySelector('#stage iframe')?.contentWindow;
    return w?.ktkMeadowSkyVisualStatus?.()||null;
