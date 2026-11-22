@@ -44,7 +44,8 @@ test('pure deterministic meadow groves: 180 trees, three instanced visual batche
  assert.equal(a.trees,180);
  assert.equal(a.drawBatches,3);
  assert.equal(a.noColliders,true);
- assert(a.minDistanceFromCenter>200,'Grove belongs to outer periphery, not active central battle');
+ assert(a.minDistanceFromCenter>240,'Groves stay outside active central 140-soldier combat');
+ assert(a.minDistanceFromCenter<540,'Trees must be visible in ordinary FPS battlefield view');
  assert.equal(scene.children.length,1);
  assert.equal(a.group.children.length,3);
  assert(a.group.children.every(x=>x instanceof InstancedMesh));
