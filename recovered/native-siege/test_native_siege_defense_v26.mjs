@@ -80,8 +80,8 @@ test('AK26 physically safeguards original ram, catapult, tower, G5.4 breakthroug
 test('AK26 collision boxes are grounded and joined to native castle without altering attack equipment',()=>{
  const {v}=installed();
  const x=v.featureBoxes.find(e=>e.name==='east-bastion-throat');
- assert(x.box.minZ< -44.5 && x.box.maxZ> -39.5,
-  'Real bastion intersects original southern stone curtain');
+ assert(x.box.minZ< -39.5 && x.box.maxZ> -44.5,
+  'Real bastion overlaps the original south wall thickness rather than floating away');
  const gate=v.featureBoxes.find(e=>e.name==='inner-gate-dogleg');
  assert.equal(gate.h,5);
  assert(gate.z>-42,'Functional anti-rush position belongs BEHIND original 600HP gate');
