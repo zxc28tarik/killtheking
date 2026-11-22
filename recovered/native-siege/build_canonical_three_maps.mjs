@@ -59,18 +59,17 @@ export function buildCanonical(original){
  const grassMark='            meadowNearGrass=null;\n            const leafMat=';
  body=one(body,grassMark,
    '            meadowNearGrass=ArenaMeadowGrass.createInstancedTufts(THREE,spec,2700);\n'+
+   '            meadowNearGrass.geometry.scale(.40,.40,.40);\n'+
    '            scene.add(meadowNearGrass);\n'+
    '            meadowDenseGrass=ArenaMeadowGrass.createNearbyTufts(THREE,12000);\n'+
+   '            meadowDenseGrass.geometry.scale(.40,.40,.40);\n'+
    '            scene.add(meadowDenseGrass);\n'+
    '            window.ktkMeadowGrassVisualStatus=()=>({'+
    'count:meadowNearGrass.count,nearbyCount:meadowDenseGrass.count,'+
    'visible:meadowNearGrass.visible,nearbyVisible:meadowDenseGrass.visible,'+
    'lastTileX:meadowDenseGrass.userData.lastTileX});\n'+
    '            const leafMat=','native instanced grass');
- body=one(body,'   const size=.46+.3*rng(),height=.34+.44*rng();',
-   '   const size=.17+.11*rng(),height=.13+.20*rng();','small near grass');
- body=one(body,'   const height=.3+.4*rng(),width=.43+.3*rng(),angle=2*Math.PI*rng();',
-   '   const height=.12+.18*rng(),width=.17+.13*rng(),angle=2*Math.PI*rng();','small far grass');
+ // Geometry-level scaling keeps all 28 native utility scripts byte identical.
 
  body=append(body,'            grassGround.rotation.x=-Math.PI/2;',
    '\n            const meadowSurfaceStatus=KTKMeadowSurfaceVisual.apply(THREE,grassGround,spec);'+
