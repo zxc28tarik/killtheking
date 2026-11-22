@@ -25,6 +25,9 @@ const KTKSiegeFortificationV26=(()=>{
   // wings, flanking the SOUTH approach without obstructing the 3 machines.
   {name:'west-flanking-bastion',role:'front-bastion',x:-57,z:-57,w:23,d:17,h:10},
   {name:'east-flanking-bastion',role:'front-bastion',x:57,z:-57,w:23,d:17,h:10},
+  // Real stone throats join projecting bastions into the existing south curtain.
+  {name:'west-bastion-throat',role:'front-bastion',x:-57,z:-46,w:23,d:12,h:9},
+  {name:'east-bastion-throat',role:'front-bastion',x:57,z:-46,w:23,d:12,h:9},
   {name:'west-bastion-return',role:'front-bastion',x:-76,z:-65,w:22,d:5,h:6.5},
   {name:'east-bastion-return',role:'front-bastion',x:76,z:-65,w:22,d:5,h:6.5},
   {name:'west-approach-traverse',role:'approach-control',x:-81,z:-90,w:44,d:5,h:3.2},
@@ -125,7 +128,7 @@ const KTKSiegeFortificationV26=(()=>{
    roof.rotation.y=Math.PI/4;
    root.add(roof);
   }
-  // 17 real collision boxes create a layered assault: external outworks,
+  // 19 real collision boxes create a layered assault: external outworks,
   // long approach, dogleg once the 600 HP native gate is breached, then
   // physically flanked inner-bastion and second defensive line.
   return Object.freeze({
