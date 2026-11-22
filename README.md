@@ -2,19 +2,21 @@
 
 **Kill the King** is the GitHub development home of the recovered **Krunker 1600: Kuşatma** browser FPS arena project. The latest accepted gameplay baseline is **Serbest Arena v1** with the original stylized graphics (not the discarded replacement art), four combat classes, six fighting bots, bot-vs-bot free-for-all behavior and improved impact feedback.
 
-## November 2026 — Three modes of ONE Kill the King game (DRAFT candidate)
+## 22 November 2026 — Canonical ONE original FPS with THREE battle maps (DRAFT)
 
-**User decision:** Castle Siege is the **third playable game mode**, not a separate game or a replacement for the original arena. The integrated **single offline HTML** has a shared top-level mode menu:
+**Important correction:** Older three-mode iframe HTML (FFA + Army + separate S3D1 Siege) is **an archive**, NOT the current canonical gameplay candidate. It gave the siege a different engine, camera and graphics and contradicted the approved requirement.
 
-1. **Serbest Arena / TDM** — preserved original FFA graphics, bots and bow restrictions
-2. **140 Askerli Ordu Savaşı** — preserved genuine G5.4 70v70 army and commander gameplay
-3. **Kale Kuşatması** — 140 genuine G5.4 soldiers, natural gate break, two true soldier-built ladders, courtyard/keep capture, S3D1 100 HP FPS/TPS human and four weapons
+**Current original-game basis:** Native AK09 (recovered/native-siege/KillTheKing_AK_NATIVE_09_original_game_siege_map.html) already contains **Arena/TDM, 140-soldier Meadow Army and 140-soldier Castle Siege** within the SAME original Three.js/FPS renderer, camera, weapons, G5.4 army and controls. The 22 November canonical builder transfers only Meadow V18 cosmetics (grass, surface, horizon and lighting) onto that native game, without altering the first 28 original scripts.
 
-**[Download the one-file three-mode candidate from successful GitHub CI #44524696649](https://github.com/zxc28tarik/killtheking/actions/runs/44524696649/artifacts/14528493467)**. Extract `KillTheKing_3_Mod_Arena_Ordu_Kusatma_Oyna.html` and open in Chrome or Edge. It needs no server or Internet. SHA-256 `5fcd3f11076414cc23f2cc7201ef6cbe406c86149ccf9ccdd646c59735039685`, 4,258,277 bytes.
+**[Canonical ONE native FPS / THREE maps — GitHub CI artifact (DEVELOPMENT)](https://github.com/zxc28tarik/killtheking/actions/runs/45035743238/artifacts/14759696307)**. Unzip, open the HTML directly in Chrome/Edge. Builder: recovered/native-siege/build_canonical_three_maps.mjs. Manifest includes HTML SHA-256, original AK09 SHA-256 and game identity. This is **one game document, no iframe, no separate S3D1 gameplay engine**.
 
-**Actual Chromium software-WebGL acceptance:** all three modes launched in one document and switched back to FFA, zero JavaScript errors; original FFA six bots, native Army 140 soldiers, Siege 140 soldiers/100 HP. Source checks show the previous two games were not altered. Only the launcher menu is shared; each mode is safely isolated in its own iframe, so **Siege still needs visual/character/FPS-movement parity with the other two modes**. Native 3D projectile physics, blue siege defense AI, Windows hardware GPU/manual player QA and final release are OPEN.
+**Current test status:** native AK06–AK09 regression + new canonical build/source tests PASS in GitHub CI. Original 28 scripts are byte-identical, all 29 embedded scripts parse. A fully manual real Windows GPU / 4–8 minute three-map acceptance of this new exact HTML remains OPEN. Do not call it published or publisher-ready until those gates pass.
 
-**[Third-mode design and verification report](docs/KILLTHEKING_THREE_MODE_MAIN_MENU_TR.md)** · [Siege roadmap](docs/SIEGE_CASTLE_DEVELOPMENT_PLAN_TR.md) · [Draft PR #50](https://github.com/zxc28tarik/killtheking/pull/50). Main has not been merged; this is not a published final release.
+[Canonical integration and main-merge roadmap](docs/CANONICAL_MAIN_THREE_MAP_UNIFICATION_TR.md) · [Draft PR #51 to main](https://github.com/zxc28tarik/killtheking/pull/51) · [22 November successful canonical CI](https://github.com/zxc28tarik/killtheking/actions/runs/45035743238). The October main stays unchanged pending verified rollout.
+
+### Historical, NOT canonical: standalone S3D1 launcher
+
+The old [three-iframe S3D1 bundle](https://github.com/zxc28tarik/killtheking/actions/runs/44524696649/artifacts/14528493467) is retained for regression/history. Its Siege is a separate engine and **must not be sent as the latest normal Kill the King game**.
 
 ## Play locally
 1. Download the repository as ZIP and extract it.
