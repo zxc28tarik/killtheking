@@ -299,6 +299,8 @@ try{
    return doc?.defaultView?.ktkSiegeCinematicStatus?.()||null;
  });
  assert.equal(wide?.wide,true,'cinematic siege view should open');
+ await page.waitForTimeout(250);
+ await page.screenshot({path:resolve(dir,'three-map3-v22-wide-cinematic.png'),fullPage:true});
  await child().locator('#siege-scene-toggle').click();
  const tacticalRestored=await page.evaluate(()=>{
    const doc=document.querySelector('#stage iframe')?.contentDocument;
