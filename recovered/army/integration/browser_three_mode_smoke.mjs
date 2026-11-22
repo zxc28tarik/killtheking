@@ -137,7 +137,9 @@ try{
  assert.equal(natureV19.bushCount,860);
  assert.equal(natureV19.flowerCount,1050);
  assert.equal(natureV19.batchCount,4);
- assert.ok(natureV19.minTreeClearance>=20,'trees must stay outside native square battlefield');
+ assert.equal(natureV19.nearEdgeTrees,64);
+ assert.equal(natureV19.outerTrees,186);
+ assert.ok(natureV19.minTreeClearance<0,'wooded edge should be visible from inside meadow');
  assert.equal(natureV19.visualOnly,true);
  assert.equal(natureV19.visible,true);
  report.checks.push('PASS_MAP2_V19_REAL_NATURE: '+JSON.stringify(natureV19));
