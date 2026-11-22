@@ -18,26 +18,26 @@ Karar tarihi: 22 Kasım 2026. Kullanıcı tarafından istenen kapsamlı panel/HU
 
 ### V21-UI-A — ortak tasarım sistemi
 - [x] Tasarım ilkeleri GitHub'da kalıcı kaydedildi.
-- [ ] Ana CSS tokenleri: renk, kenar, radius, gölge, tipografi/spacing ölçeği.
-- [ ] Yeniden kullanılabilir buton stilleri ve durumları.
-- [ ] Tarihî-war stili menü başlığı ve arayüz kimliği, orijinal tıklama/id'ler korunur.
-- [ ] 1000×680 ve 390×844 ekran boyutlarında taşma/okunurluk.
+- [x] Ana CSS tokenleri: renk, kenar, radius, gölge, tipografi/spacing ölçeği.
+- [x] Yeniden kullanılabilir buton stilleri ve durumları.
+- [x] Tarihî-war stili menü başlığı ve arayüz kimliği, orijinal tıklama/id'ler korunur.
+- [x] 1000×680 ve 390×844 ekran boyutlarında taşma/okunurluk.
 
 ### V21-UI-B — gerçek oyun içi HUD
-- [ ] Üst radar/süre/durum HUD'ları aynı stil ailesine alınır.
-- [ ] Sağlık/cephane/roller net ve kontrastlı; çapraz nişangah aynı mekanikle.
-- [ ] Meydan G5.4 komut paneli, F10 genişle/daralt ve formasyon/ateş düğmeleri.
-- [ ] Kale gerçek kuşatma F6 kule, F7 koçbaşı, F8 mancınık, F9 taarruz emirleri, aktif/pasif görselleştirme.
-- [ ] Taktik harita, canlı skor, maç sonuçlarının aynı panel sistemi.
+- [x] Üst radar/süre/durum HUD'ları aynı stil ailesine alınır.
+- [x] Sağlık/cephane/roller net ve kontrastlı; çapraz nişangah aynı mekanikle.
+- [x] Meydan G5.4 komut paneli, F10 genişle/daralt ve formasyon/ateş düğmeleri.
+- [x] Kale gerçek kuşatma F6 kule, F7 koçbaşı, F8 mancınık, F9 taarruz emirleri, aktif/pasif görselleştirme.
+- [x] Taktik harita, canlı skor, maç sonuçlarının aynı panel sistemi.
 
 ### V21-UI-C — menü ve sonuç
-- [ ] Gerçek üç harita/oyun modu seçimi, sınıf kartları ve başlangıç eylemi.
-- [ ] Sonuç ekranı ve ana menüye/tekrar oyna butonları.
-- [ ] Kontrol ve yardım bilgisi düzgün hiyerarşi, kullanıcıyı sahte statlarla yanıltmama.
+- [x] Gerçek üç harita/oyun modu seçimi, sınıf kartları ve başlangıç eylemi.
+- [x] Sonuç ekranı ve ana menüye/tekrar oyna butonları.
+- [x] Kontrol ve yardım bilgisi düzgün hiyerarşi, kullanıcıyı sahte statlarla yanıltmama.
 
 ### V21-UI-D — son görsel rötuş
-- [ ] İkon, klavye focus görselliği, ince motion/fade ve prefers-reduced-motion.
-- [ ] Farklı çözünürlüklerde ekran üstüne taşma ve kontrol çakışmalarını giderme.
+- [x] İkon, klavye focus görselliği, ince motion/fade ve prefers-reduced-motion.
+- [x] Farklı çözünürlüklerde ekran üstüne taşma ve kontrol çakışmalarını giderme.
 - [ ] Resmi GitHub kaynak/Node doğrulaması; gerçek Chromium/SwiftShader üç harita kabulü; 140 asker uzun kuşatma tekrarı.
 - [ ] Kullanıcının fiziksel Windows GPU estetik kabulü, henüz yapılmadı.
 
@@ -51,3 +51,10 @@ Karar tarihi: 22 Kasım 2026. Kullanıcı tarafından istenen kapsamlı panel/HU
 
 ## Görsel harita dalı notu
 `codex/visual-meadow-siege-pass1` dalında ana sürüme taşınması gereken zengin orman/kuşatma çevresi çalışmaları mevcuttur (Meydan: 460 ağaç, 18 koruluk, 780 orman zemini detayı; Kale: 80 ağaç, 44 dış tepe). Önceki V21 scenery **yalnız yerel aday HTML** üzerinde geliştirildi; otomatik `main` parçası değildir. UI çalışmalarında bu geliştirmelerin kaybolmamasına dikkat edilecek. Ayrı motorlu/iframe eski sürüm doğrudan ana oyunun yerine konulmayacak.
+
+## V21-UI ilk uygulama notları
+- `native-ui-v21.js`: gerçek tek AK09 oyununun menü/HUD/komut/sonuç panellerinde 72 ortak CSS kuralı ve V19 kompakt görünümüne özel yüksek öncelikli 3 düzeltici kural. Destek: `prefers-reduced-motion` ve 390 px mobil görünüm.
+- `build_canonical_three_maps.mjs`: aynı 29. script'e `KTKNativeUiV21.install` ve UI durumu eklendi. Önceki 28 script hâlâ bayt-eşit. Resmî gerçek Chrome testlerinde menü, gerçek F6–F9 emir kimlikleri, F10 düzen, üç harita ve 390 px ekran ölçümleri kontrol ediliyor.
+- QA sırasında V19 kompakt kuşatma stilinin önemli CSS önceliği yeni paneli bastırdığı bulundu ve battle UI özgül seçicilerle düzeltildi. Eski F10 panel düğmesi dört kuşatma emrinden ayrı tutuldu.
+- GitHub Actions generated `index.html` eşzamanlı güncelleme çakışmasını gidermek için otomatik senkronizasyon son uzak dal HEAD'inden yeniden derleniyor ve workflow aynı dalda sıraya alınıyor; **bu bir FPS optimizasyonu değil, dosya teslimi QA düzeltmesidir.**
+- Tam 3 harita WebGL ve 140 asker uzun savaş akışı son güncel commit'te PASS olunca checklist'teki QA tamamlanacak. Fiziksel Windows/GPU testleri açık.
