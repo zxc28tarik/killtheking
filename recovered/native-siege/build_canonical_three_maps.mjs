@@ -53,12 +53,15 @@ export function buildCanonical(original){
   readFileSync(resolve(HERE,'native-army-match-finish.js'),'utf8'),
   readFileSync(resolve(HERE,'native-battlefield-visual-v19.js'),'utf8'),
   readFileSync(resolve(HERE,'native-siege-visual-v20.js'),'utf8'),
-  readFileSync(resolve(HERE,'native-ui-v21.js'),'utf8')
+  readFileSync(resolve(HERE,'native-ui-v21.js'),'utf8'),
+  readFileSync(resolve(HERE,'native-ui-v22.js'),'utf8')
  ].join('\n');
  body=one(body,'        function buildMeadowSquare() {',
    scriptPrelude+'\n        KTKBattlefieldVisualV19.installHud(document);'+
    '\n        KTKNativeUiV21.install(document);'+
    '\n        window.ktkUiV21Status=()=>KTKNativeUiV21.status(document);'+
+   '\n        KTKNativeUiV22.install(document);'+
+   '\n        window.ktkUiV22Status=()=>KTKNativeUiV22.status(document);'+
    '\n        function buildMeadowSquare() {','visual module install');
 
  body=append(body,
@@ -247,7 +250,8 @@ export function buildCanonical(original){
    'KTKBattlefieldVisualV19.addMeadowGroves','KTKBattlefieldVisualV19.dressSiegeGate',
    'KTKBattlefieldVisualV19.setBattleUi',
    'KTKNativeSiegeVisualV20.install','ktkSiegeVisualV20Status',
-   'KTKNativeUiV21.install','ktkUiV21Status'])
+   'KTKNativeUiV21.install','ktkUiV21Status',
+   'KTKNativeUiV22.install','ktkUiV22Status'])
    if(!output.includes(key))throw Error('Missing canonical marker: '+key);
  const manifest={
   product:'Kill the King',kind:'SINGLE_NATIVE_FPS_THREE_MAPS',
@@ -264,6 +268,7 @@ export function buildCanonical(original){
   castleSiegeVisualV20:{texturedMaterials:5,cosmeticOnly:true,includesNativeTower:true},
   armyAndSiegeCompactHudDefault:true,
   unifiedNativeUiV21:{design:'period-war-bronze',modes:3,renderOnly:true,originalControls:true},
+  nativeUiV22:{design:'historical-war-room',modes:3,renderOnly:true,originalControls:true},
   meadowInteriorWalkableHillsAdded:false,
   sourceBytePreservedInRepository:true,
   userWindowsGPUAccepted:false,productionApproved:false,
