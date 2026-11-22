@@ -20,7 +20,7 @@ Bu aşama orijinal Arena/Meydan/Kale Kuşatması haritalarını tek HTML'de tuta
 ## V20-B — Orijinal kuşatma makineleri
 
 - [x] Canlı ve fiziksel 340 HP koçbaşının özgün büyük, düz metal çatısının üstüne ahşap kiremit sırası, enlemesine metal sırt kirişleri, yan destekler ve tekerlek göbekleri.
-- [x] Canlı 280 HP mancınığın şasisinde çapraz ahşap destek, demir sabitleme ve tekerlek detayları; deri taş kesesi **gerçek dönen mancınık koluna çocuk mesh** olarak bağlandı. Orijinal fırlatma/hasar hesaplaması hiç değişmedi.
+- [x] Canlı 280 HP mancınığın şasisinde çapraz ahşap destek, demir sabitleme ve tekerlek detayları; deri taş kesesi ve onu taşıyan iki halat **gerçek dönen mancınık koluna üç çocuk mesh** olarak bağlandı. Orijinal fırlatma/hasar hesaplaması hiç değişmedi.
 - [x] Mevcut orijinal 8 metre çıkılabilir kuşatma kulesinin yalnız x ekseni yan panellerinde kaplama tahtaları, ahşap çapraz kirişler, bayrak ve metal sırt detayı eklendi. **Merkez çıkış rampası ve açılan gerçek köprü açık**; yeni yürüme engeli yaratılmadı.
 - [x] Görsel parça bazında mevcut koçbaşı/mancınık/kule grubuna bağlama: vurulunca çöken gerçek araçla birlikte yıkılır, ayrı bir yapay zeka veya makine oluşmaz.
 
@@ -48,3 +48,6 @@ Bu aşama orijinal Arena/Meydan/Kale Kuşatması haritalarını tek HTML'de tuta
 - `recovered/native-siege/browser_siege_long_session.mjs`
 
 **Not:** Bu bir performans optimizasyonu değildir. Texture ve materyal maliyeti FPS açısından şimdilik düşürülmüyor.
+
+## V20 QA ara notu
+İlk PR #55 denemesinde gerçek Chromium kaynak-oynanış doğrulaması Arena ve Meydan için PASS verdi. Kale testi, mancınığın döner koluna yalnız kese mesh'i bağlı olmasına karşın iki ek kayış bekleyen doğrulama nedeniyle durdu. Kese ve iki gerçek kola bağlı halat eklendi. İlk gerçek 140 asker uzun kuşatma akışı PASS verdi; yeni üçlü parça/HTML senkronu yeniden doğrulanacak. Otomatik GitHub Actions commit'i ile feature commit'lerinin sırası nedeniyle geçici `index.html outdated` kontrol hataları görüldü. Son senkronize branch root üzerinden final PR CI sonucu beklenecek. PASS tamamlanmadan ana dala birleştirilmeyecek.
