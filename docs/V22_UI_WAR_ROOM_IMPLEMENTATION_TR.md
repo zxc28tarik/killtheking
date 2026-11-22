@@ -29,7 +29,7 @@ Başlangıç: 22 Kasım 2026. V21-A/B/C/D/E üstüne kurulan **orijinal tek FPS 
 - [x] Kanonik Chromium 3 harita/390px UI kabulüne V22 kontrolleri eklendi.
 - [x] GitHub üç haritalı/140 asker ve otomatik kök HTML senkronizasyon iş akışına bağlandı.
 - [x] PR #58 son uygulama `b65d59e1d` için GitHub Actions PASS (22.11.2026): genel oyun `45066984657`, kanonik kaynak/3 harita gerçek Chromium/SwiftShader `45066984661`, 140 asker hızlandırılmış oyun-zamanı uzun kuşatma ve replay `45066984671`. Testleri üretim Windows fiziksel GPU kabulü olarak sunma.
-- [ ] Birleştirme sonrasında `main` üstünde QA doğrula.
+- [x] PR #58 `02d63a7b` ile `main` dalına birleştirildi (22.11.2026). Aynı merge SHA için üç GitHub Actions akışı PASS: genel oyun `45067270845`, gerçek üç harita Chromium/SwiftShader `45067270854`, 140 asker uzun kuşatma ve replay `45067270931`. Önceki ana dalın zamanlamaya bağlı 140-asker snapshot hatası aynı test üzerinde tekrar oluşmadı.
 - [ ] Kullanıcının fiziksel Windows GPU üzerinde tasarım ve oynanış kabulü açık.
 
 ## Modüller
