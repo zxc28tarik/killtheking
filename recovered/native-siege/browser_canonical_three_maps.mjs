@@ -132,6 +132,7 @@ try{
     v22Ui:window.ktkUiV22Status?.(),
     v23Ui:window.ktkUiV23Status?.(),
     v24Ui:window.ktkUiV24Status?.(),
+    expandedSiege:window.ktkSiegeExpandedMapStatus?.(),
     v19Hud:{
      armyClass:document.body.classList.contains('ktk-native-battle-ui'),
      orderPanelCompact:document.getElementById('meadow-army-hud').classList.contains('ktk-siege-slim'),
@@ -169,7 +170,29 @@ try{
    assert.equal(playing.v19Groves?.visible,true,'Meadow-only groves visible when selected');
    assert.equal(playing.v19Groves?.noColliders,true,'No invented tree colliders');
   }
+  if(mode.name!=='siege'){
+   assert.equal(playing.expandedSiege?.activated,false,
+    'AK25 enlarged fortress must remain invisible/uncollidable in FFA and Meadow');
+  }
   if(mode.name==='siege'){
+   assert(playing.expandedSiege,'AK25 expanded siege layout status exists in the same game');
+   assert.equal(playing.expandedSiege.activated,true,'Physical outer fort active only in siege');
+   assert(playing.expandedSiege.castleAreaFactor>=4,'Castle footprint at least 4x original');
+   assert(playing.expandedSiege.mapAreaFactor>=8,'Siege terrain/nav area at least 8x original');
+   assert.equal(playing.expandedSiege.castleWidth,224);
+   assert.equal(playing.expandedSiege.fieldSide,624);
+   assert(playing.expandedSiege.fortressSolidCount>=14,'Outer fort has physical wall and barracks colliders');
+   assert.equal(playing.expandedSiege.northPosternWidth,16,
+    'New rear bailey accessible from original inner castle through real postern');
+   const start=playing.expandedSiege.deployment;
+   assert.equal(start?.redInside,70,'All 70 red G5.4 defenders spawn WITHIN the castle');
+   assert.equal(start?.blueOutside,70,'All 70 blue G5.4 attackers spawn OUTSIDE');
+   assert.equal(start?.redOutside,0,'No defender starts outside castle');
+   assert.equal(start?.blueInside,0,'No attacker starts inside castle');
+   assert.equal(start?.playerOutside,true,'Player starts with attackers outside');
+   assert.equal(playing.siege?.defenderInsideAtSpawn,70);
+   assert.equal(playing.siege?.attackerOutsideAtSpawn,70);
+   assert.equal(playing.siege?.realSoldiers,140,'Original G5.4 soldier authority');
    assert.equal(playing.v20Siege?.installed,true,'V20 decor must run on the same original siege scene');
    assert.equal(playing.v20Siege?.textureMaps,5,'Five authentic stone/wood/ground original materials textured');
    assert.equal(playing.v20Siege?.originalRamRoofReskinned,true,'Actual bulky original grey ram roof becomes timber');

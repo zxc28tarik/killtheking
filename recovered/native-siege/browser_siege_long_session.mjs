@@ -38,7 +38,8 @@ async function snap(label){
    blue:status.meadowBattle?.blue??null,red:status.meadowBattle?.red??null,
    winner:status.meadowBattle?.winner??null,actorTotal:status.meadowBattle?.total??null,
    canvas:!!document.querySelector('canvas'),iframeCount:document.querySelectorAll('iframe').length,
-   siege,visualGate:window.ktkSiegeVisualV19Status?.()||null,
+   siege,layout:window.ktkSiegeExpandedMapStatus?.()||null,
+   visualGate:window.ktkSiegeVisualV19Status?.()||null,
    v20:window.ktkSiegeVisualV20Status?.()||null,
    v21Ui:window.ktkUiV21Status?.()||null};
  });
@@ -75,6 +76,15 @@ try{
   assert.equal(started.iframeCount,0);
   assert.equal(started.siege.gateHp,600);
   assert.equal(started.siege.gateOpen,false);
+  assert(started.layout?.castleAreaFactor>=4,'4x actual physical castle');
+  assert(started.layout?.mapAreaFactor>=8,'8x actual siege terrain');
+  assert.equal(started.layout?.deployment?.redInside,70);
+  assert.equal(started.layout?.deployment?.blueOutside,70);
+  assert.equal(started.layout?.deployment?.redOutside,0);
+  assert.equal(started.layout?.deployment?.blueInside,0);
+  assert.equal(started.layout?.deployment?.playerOutside,true);
+  assert.equal(started.siege?.defenderInsideAtSpawn,70);
+  assert.equal(started.siege?.attackerOutsideAtSpawn,70);
   assert.equal(started.v21Ui?.installed,true,'New UI loaded on live original 140-soldier siege');
   assert.equal(started.v21Ui?.renderOnly,true,'Only historical visual layer changed');
   assert(started.v21Ui?.originalSiegeButtons>=4,'Original equipment controls remain');
@@ -115,6 +125,8 @@ try{
    if(!firstDamage&&t.siege?.gateHp<600)firstDamage=t;
    await pass('healthy game state at '+((steps+got)*.05).toFixed(1)+' s',()=>{
     assert.equal(t.iframeCount,0);
+    assert.equal(t.layout?.activated,true,'Original siege-only outer wall remains active');
+    assert.equal(t.layout?.deployment?.redInside,70,'Original defender deployment is retained');
     assert(t.siege?.gateHp>=0&&t.siege?.gateHp<=600);
     assert(t.siege?.ramHp>=0&&t.siege?.ramHp<=340);
     assert(t.siege?.catapultHp>=0&&t.siege?.catapultHp<=280);
@@ -214,6 +226,8 @@ try{
   });
   await pass('replay resets genuine gate/machine state without duplicate soldiers',()=>{
    assert.equal(restarted.siege?.realSoldiers,140);
+   assert.equal(restarted.layout?.deployment?.redInside,70);
+   assert.equal(restarted.layout?.deployment?.blueOutside,70);
    assert.equal(restarted.siege?.gateHp,600);
    assert.equal(restarted.siege?.gateOpen,false);
    assert.equal(restarted.siege?.ramHits,0);
