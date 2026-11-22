@@ -50,10 +50,17 @@ export function buildCanonical(original){
   addon('g54-meadow-natural-lighting.js'),
   addon('g54-meadow-surface-visual.js'),
   addon('g54-meadow-horizon-visual.js'),
-  readFileSync(resolve(HERE,'native-army-match-finish.js'),'utf8')
+  readFileSync(resolve(HERE,'native-army-match-finish.js'),'utf8'),
+  readFileSync(resolve(HERE,'native-battlefield-visual-v19.js'),'utf8')
  ].join('\n');
  body=one(body,'        function buildMeadowSquare() {',
-   scriptPrelude+'\n        function buildMeadowSquare() {','visual module install');
+   scriptPrelude+'\n        KTKBattlefieldVisualV19.installHud(document);\n        function buildMeadowSquare() {','visual module install');
+
+ body=append(body,
+  '        const nativeSiegeGateMesh=nativeSiegeMesh(nativeSiegeParts,\\n          0,3.5,-42,16,7,5,nativeSiegeGateMat);'.replace('\\n','\n'),
+  '\n        const v19SiegeDressing=KTKBattlefieldVisualV19.dressSiegeGate(THREE,nativeSiegeParts,nativeSiegeGateMesh);'+
+  '\n        window.ktkSiegeVisualV19Status=()=>({...v19SiegeDressing,gateVisible:nativeSiegeGateMesh.visible,groupVisible:nativeSiegeParts.visible});',
+  'native wall/gate look');
 
  body=append(body,'        let meadowNearGrass=null;',
    '\n        let meadowDenseGrass=null;','dense variable');
@@ -82,6 +89,12 @@ export function buildCanonical(original){
    'triangles:meadowHorizon.triangles,vertices:meadowHorizon.vertices,'+
    'visible:meadowHorizon.mesh.visible,innerRadius:meadowHorizon.innerRadius});\n'+leaf,
    'outside hills');
+ body=append(body,
+   '            const meadowHorizon=KTKMeadowHorizon.build(THREE,scene,spec);',
+   '\n            const v19Groves=KTKBattlefieldVisualV19.addMeadowGroves(THREE,scene,spec);'+
+   '\n            window.ktkMeadowGrovesV19Status=()=>({trees:v19Groves.trees,drawBatches:v19Groves.drawBatches,'+
+   'minDistanceFromCenter:v19Groves.minDistanceFromCenter,visible:v19Groves.group.visible,noColliders:true});',
+   'perimeter grove');
 
  const mapSwitch="            meadowMapData.visuals.forEach(obj=>{obj.visible=map==='meadow';});";
  body=append(body,mapSwitch,
@@ -123,6 +136,31 @@ export function buildCanonical(original){
   "                KTKNativeArmyMatchFinish.decorate(arenaMatch,result,summary,nativeSiegeMode,\n"+
   "                  !!(nativeSiegeMode&&nativeSiegeEquipment?.win));",
   'real G5.4 winner and elapsed time metadata');
+ // Native G5.4 field battles enter with a readable compact order panel,
+ // and F10 can expand it in BOTH Army and Siege. F6-F9 remain siege-only.
+ body=one(body,
+  "            army.classList.toggle('ktk-siege-slim',nativeSiegeMode&&slim);",
+  "            army.classList.toggle('ktk-siege-slim',meadowBattleMode&&slim);",
+  'compact 70v70 meadow HUD');
+ body=one(body,
+  "            if(on){slim=true;army.querySelectorAll('details').forEach(d=>d.open=false);}",
+  "            if(meadowBattleMode){slim=true;army.querySelectorAll('details').forEach(d=>d.open=false);}",
+  'reset to compact for both army maps');
+ body=one(body,
+  "const flip=()=>{if(!nativeSiegeMode)return;slim=!slim;sync();};",
+  "const flip=()=>{if(!meadowBattleMode)return;slim=!slim;sync();};",
+  'expand G5.4 army orders');
+ body=one(body,
+  "                if(nativeSiegeMode){\n                    if(e.code==='F10'){e.preventDefault();KTKNativeSiegeHud.flip();return;}",
+  "                if(e.code==='F10'){e.preventDefault();KTKNativeSiegeHud.flip();return;}\n                if(nativeSiegeMode){",
+  'F10 toggles real same-game field commander HUD');
+ body=append(body,"        function resetFreeForAllRound() {",
+  "\n            KTKBattlefieldVisualV19.setBattleUi(document,meadowBattleMode);",
+  'battle-only HUD and world panorama');
+ body=append(body,
+  "        document.getElementById('match-menu-btn').addEventListener('click', () => {",
+  "\n            KTKBattlefieldVisualV19.setBattleUi(document,false);",
+  'do not alter FFA original HUD');
  // Hide the in-game HUD only on real G5.4 victory/timeout overlay, and
  // restore it before the normal reset/replay or main-menu transition.
  body=one(body,
@@ -174,7 +212,9 @@ export function buildCanonical(original){
    'window.ktkNativeSiegeMapStatus=','KTKMeadowHorizon.build','KTKMeadowSurfaceVisual.apply',
    'KTKMeadowNaturalLighting.apply','ArenaMeadowGrass.createNearbyTufts',
    'KTKNativeArmyMatchFinish.acceptEarlyWin','KTKNativeArmyMatchFinish.decorate',
-   'KTKNativeArmyMatchFinish.showResults','KTKNativeArmyMatchFinish.restoreHud'])
+   'KTKNativeArmyMatchFinish.showResults','KTKNativeArmyMatchFinish.restoreHud',
+   'KTKBattlefieldVisualV19.addMeadowGroves','KTKBattlefieldVisualV19.dressSiegeGate',
+   'KTKBattlefieldVisualV19.setBattleUi'])
    if(!output.includes(key))throw Error('Missing canonical marker: '+key);
  const manifest={
   product:'Kill the King',kind:'SINGLE_NATIVE_FPS_THREE_MAPS',
@@ -186,6 +226,9 @@ export function buildCanonical(original){
   usesNativeAK09G54Siege:true,
   nativeArmyAndSiegeTroops:140,
   meadowVisibleGrassInstanced:14700,
+  meadowPerimeterTreesVisualOnly:180,
+  siegeGateMasonryVisualOnly:true,
+  armyAndSiegeCompactHudDefault:true,
   meadowInteriorWalkableHillsAdded:false,
   sourceBytePreservedInRepository:true,
   userWindowsGPUAccepted:false,productionApproved:false,
