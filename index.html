@@ -7717,9 +7717,9 @@ const KTKBattlefieldVisualV19=(()=>{
    new THREE.ConeGeometry(1,1,7),
    new THREE.MeshLambertMaterial({color:0xffffff,flatShading:true}),count);
   const centers=[
-   [-.73,-.42],[-.80,.08],[-.70,.48],[-.44,.72],
-   [.58,-.64],[.83,-.20],[.78,.36],[.42,.76],
-   [-.25,-.83],[.19,-.83],[-.15,.85],[.28,.82]
+   [-.43,-.28],[-.55,.04],[-.45,.34],[-.30,.50],
+   [.41,-.43],[.53,-.15],[.50,.30],[.31,.52],
+   [-.15,-.55],[.20,-.53],[-.16,.54],[.19,.53]
   ];
   const bound=half*.86,o=new THREE.Object3D(),color=new THREE.Color();
   let nearest=Infinity;
@@ -7728,7 +7728,7 @@ const KTKBattlefieldVisualV19=(()=>{
    const x=Math.max(-bound,Math.min(bound,center[0]*half+(hash(i*19+4)-.5)*110));
    const z=Math.max(-bound,Math.min(bound,center[1]*half+(hash(i*31+12)-.5)*110));
    nearest=Math.min(nearest,Math.hypot(x,z));
-   const size=6+hash(i*71+1)*5.5;
+   const size=7.5+hash(i*71+1)*8;
    const lean=(hash(i*13+5)-.5)*.07;
    o.rotation.set(0,(hash(i*17+8)-.5)*5,lean);
    o.position.set(x,size*.20,z);o.scale.set(size*.105,size*.40,size*.105);
