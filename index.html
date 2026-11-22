@@ -8036,6 +8036,9 @@ const KTKNativeSiegeVisualV20=(()=>{
   sling.position.set(0,.28,2.36);
   sling.scale.set(1,.28,1);sling.name='KTK_VIS20_AUTHENTIC_ARM_SLING';
   o.catapultArm.add(sling);catTrim++;
+  for(const x of [-.36,.36]){
+   block(THREE,o.catapultArm,x,.22,1.99,.065,.075,1.18,rope);catTrim++;
+  }
   for(const z of [-2,2]){
    block(THREE,o.catapult,0,2.65,z,3.35,.18,.18,rope);catTrim++;
   }
