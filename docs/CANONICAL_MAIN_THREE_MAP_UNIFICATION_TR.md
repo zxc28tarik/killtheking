@@ -42,7 +42,9 @@ Tarih: 22 Kasım 2026 · Çalışma dalı: codex/canonical-native-three-maps · 
 
 ### KTK-MAIN-05: Ana dalı toparlama
 - [ ] Ana dala hedeflenen PR; kanonik HTML ve testler doğrulandıktan sonra birleştirme.
-- [ ] README ve release yolu, kanonik tek HTML + SHA + manifest içerecek.
+- [x] Geliştirme dalındaki README son kanonik tek HTML/artifact adresini gösteriyor; eski iframe paketi arşiv olarak işaretlendi.
+- [ ] GitHub Pages / varsayılan index.html girişini de kanonik çıktıyla eşitle; main güncellense bile Ekim oyununun varsayılan açılmasını önle.
+- [ ] Main üzerinde kanonik tek HTML + SHA + manifesti üreten ana CI/release yolunu etkinleştir.
 - [ ] Yeni işler: güncel main'den kısa ömürlü özellik dalları, PR, test ve zamanında merge.
 - [ ] G8.4 / 200–280 asker / donanım FPS henüz kabul edilmediyse tamamlandı yazılmayacak.
 
