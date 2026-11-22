@@ -97,6 +97,81 @@
    tufts.frustumCulled=false;
    scene.add(tufts);
  }
+ // MAP3-V21: woodland around the OUTER siege battlefield. Every tree
+ // is visual only, outside the objective paths and gate approach. The
+ // accepted G5.4 soldier, player collision and siege traversal are unchanged.
+ const siegeNature={trees:80,shrubs:220,grass:430,stones:96,batches:0};
+ const siegeNatureRand=(n,k)=>{let v=Math.imul(n+17,374761393)^Math.imul(k+1,668265263);v=Math.imul(v^(v>>>13),1274126177);return (v^(v>>>16)>>>0)/4294967295;};
+ const siegeNatureDummy=new THREE.Object3D();
+ const siegeNatureTint=new THREE.Color();
+ function siegeNatureBatch(name,geom,tint,count){
+   const mat=new THREE.MeshStandardMaterial({color:0xffffff,roughness:1,flatShading:true,side:THREE.DoubleSide});
+   const mesh=new THREE.InstancedMesh(geom,mat,count);
+   mesh.name=name;mesh.castShadow=false;mesh.receiveShadow=true;mesh.frustumCulled=false;
+   scene.add(mesh);siegeNature.batches++;
+   return mesh;
+ }
+ function siegeNaturePlace(mesh,i,x,y,z,sx,sy,sz,hex){
+   siegeNatureDummy.position.set(x,y,z);
+   siegeNatureDummy.scale.set(sx,sy,sz);
+   siegeNatureDummy.rotation.set(0,siegeNatureRand(i,41)*Math.PI*2,0);
+   siegeNatureDummy.updateMatrix();
+   mesh.setMatrixAt(i,siegeNatureDummy.matrix);
+   mesh.setColorAt(i,siegeNatureTint.setHex(hex));
+ }
+ const siegeTrunk=siegeNatureBatch('KTK_SIEGE_V21_TREE_TRUNKS',
+   new THREE.CylinderGeometry(.6,.95,1,7),0x726044,siegeNature.trees);
+ const siegeLeaves=siegeNatureBatch('KTK_SIEGE_V21_TREE_CROWN',
+   new THREE.IcosahedronGeometry(1,0),0x4e6b42,siegeNature.trees*3);
+ const siegeBush=siegeNatureBatch('KTK_SIEGE_V21_HEDGE_SHRUBS',
+   new THREE.IcosahedronGeometry(1,0),0x61844d,siegeNature.shrubs);
+ const siegeGrass=siegeNatureBatch('KTK_SIEGE_V21_GRASS_FOLIAGE',
+   new THREE.ConeGeometry(.3,.9,4),0x789152,siegeNature.grass);
+ const siegeStones=siegeNatureBatch('KTK_SIEGE_V21_EARTH_STONES',
+   new THREE.DodecahedronGeometry(1,0),0x87877c,siegeNature.stones);
+ for(let i=0;i<siegeNature.trees;i++){
+   // Four alternating exterior wooded boundaries, away from siege routes.
+   const side=i%4;
+   const x=side<2?(side===0?-112:112):(-115+siegeNatureRand(i,1)*230);
+   const z=side<2?(-102+siegeNatureRand(i,2)*198):(side===2?-116:90);
+   const h=8+siegeNatureRand(i,3)*9,w=3+siegeNatureRand(i,4)*2.8;
+   siegeNaturePlace(siegeTrunk,i,x,h*.25,z,.8,h*.5,.8,
+     [0x66513c,0x6f5741,0x514535][i%3]);
+   for(let layer=0;layer<3;layer++){
+     const shift=layer===0?0:(layer===1?-w*.4:w*.4);
+     siegeNaturePlace(siegeLeaves,i*3+layer,x+shift,h*(.58+layer*.08),z,
+       w*(layer===0?1:.75),h*(layer===0?.35:.27),w*(layer===0?1:.75),
+       [0x3e6a3e,0x557a47,0x718452,0x4c7050][(i+layer)%4]);
+   }
+ }
+ for(let i=0;i<siegeNature.shrubs;i++){
+   const side=i%2===0?-1:1;
+   const x=side*(78+siegeNatureRand(i,5)*49);
+   const z=-105+siegeNatureRand(i,6)*187;
+   const size=.45+siegeNatureRand(i,7)*.7;
+   siegeNaturePlace(siegeBush,i,x,size*.33,z,size,size*.65,size,
+     [0x4f773e,0x5d8050,0x728957,0x658148][i%4]);
+ }
+ for(let i=0;i<siegeNature.grass;i++){
+   const side=i%2===0?-1:1;
+   const x=side*(63+siegeNatureRand(i,8)*64);
+   const z=-105+siegeNatureRand(i,9)*181;
+   const size=.55+siegeNatureRand(i,10)*1.2;
+   siegeNaturePlace(siegeGrass,i,x,.24*size,z,size,size,size,
+     [0x698351,0x809256,0x79854c,0x9b9866][i%4]);
+ }
+ for(let i=0;i<siegeNature.stones;i++){
+   const side=i%2===0?-1:1;
+   const x=side*(67+siegeNatureRand(i,11)*56);
+   const z=-110+siegeNatureRand(i,12)*190;
+   const size=.45+siegeNatureRand(i,13)*1.1;
+   siegeNaturePlace(siegeStones,i,x,.18*size,z,size,size*.38,size,
+     [0x898b7b,0x9a947d,0x777d74][i%3]);
+ }
+ for(const item of [siegeTrunk,siegeLeaves,siegeBush,siegeGrass,siegeStones]){
+   item.instanceMatrix.needsUpdate=true;
+   if(item.instanceColor)item.instanceColor.needsUpdate=true;
+ }
  // Narrow stone courses add scale and masonry depth without new solid geometry.
  const mortar=material(0x797566);
  for(const box of spec.boxes){
@@ -819,6 +894,7 @@
    liveCombatViewConnected:!!extensionCombatCanMove,
    markers:armyTokens.reduce((a,b)=>a+b.count,0),
    geometryObjects:spec.boxes.length,
+   siegeNatureV21:{...siegeNature},
    gateVisible:gate.visible,
    ladderWestVisible:ladderMeshes.west.visible,
    ladderEastVisible:ladderMeshes.east.visible,
