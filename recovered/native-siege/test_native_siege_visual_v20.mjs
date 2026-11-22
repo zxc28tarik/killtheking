@@ -89,7 +89,8 @@ test('large visual upgrade is children of genuine breakable siege equipment and 
  assert.equal(out.authenticCatapultArm,d.catapultArm);
  assert(d.gate.children.length>=out.gateTrimCount);
  assert(d.ram.children.length>=out.ramTrimCount);
- assert(d.catapult.children.length>=out.catapultTrimCount-1);
+ assert(d.catapult.children.length+d.catapultArm.children.length>=out.catapultTrimCount,'Sling plus two tethers follow the authentic moving launch arm');
+ assert.equal(d.catapultArm.children.length,3,'Leather sling and two moving ropes');
  assert(d.tower.children.length>=out.towerTrimCount);
  assert.equal(parts.children.length,out.wallTrimCount+out.groundWheelTracks);
  d.gate.visible=false;
