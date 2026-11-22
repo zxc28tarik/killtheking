@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - codex/siege-long-session-acceptance
+      - codex/v21-ui-finish-command-clarity
       - main
     paths:
       - 'recovered/native-siege/browser_siege_long_session.mjs'
@@ -10,6 +11,8 @@ on:
       - 'recovered/native-siege/build_canonical_three_maps.mjs'
       - 'recovered/native-siege/native-army-match-finish.js'
       - 'recovered/native-siege/test_native_army_match_finish.mjs'
+      - 'recovered/native-siege/native-ui-v21.js'
+      - 'recovered/native-siege/test_native_ui_v21.mjs'
   pull_request:
     paths:
       - 'recovered/native-siege/browser_siege_long_session.mjs'
@@ -17,6 +20,8 @@ on:
       - 'recovered/native-siege/build_canonical_three_maps.mjs'
       - 'recovered/native-siege/native-army-match-finish.js'
       - 'recovered/native-siege/test_native_army_match_finish.mjs'
+      - 'recovered/native-siege/native-ui-v21.js'
+      - 'recovered/native-siege/test_native_ui_v21.mjs'
   workflow_dispatch:
 jobs:
   webgl-native-siege-endurance:

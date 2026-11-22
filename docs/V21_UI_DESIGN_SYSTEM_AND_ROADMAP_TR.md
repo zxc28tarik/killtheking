@@ -38,7 +38,7 @@ Karar tarihi: 22 Kasım 2026. Kullanıcı tarafından istenen kapsamlı panel/HU
 ### V21-UI-D — son görsel rötuş
 - [x] İkon, klavye focus görselliği, ince motion/fade ve prefers-reduced-motion.
 - [x] Farklı çözünürlüklerde ekran üstüne taşma ve kontrol çakışmalarını giderme.
-- [ ] Resmi GitHub kaynak/Node doğrulaması; gerçek Chromium/SwiftShader üç harita kabulü; 140 asker uzun kuşatma tekrarı.
+- [x] Resmî GitHub kaynak/Node doğrulaması; gerçek Chromium/SwiftShader üç harita kabulü; 140 asker uzun kuşatma tekrarı. PR #56 merge SHA `42a5c9e` için üç ana Actions akışı PASS: `45059499485`, `45059499413`, `45059499403` (22.11.2026).
 - [ ] Kullanıcının fiziksel Windows GPU estetik kabulü, henüz yapılmadı.
 
 ## Kabul kanıtları
@@ -64,3 +64,15 @@ Karar tarihi: 22 Kasım 2026. Kullanıcı tarafından istenen kapsamlı panel/HU
 - Gerçek Kale 70v70 screenshot'unda özgün F10 kompakt emir paneli ve sağdaki kuşatma paneli 3B kapı/koçbaşı görünümünü kapatmadan korunuyor. Meydan'ın aynı HUD kimliğiyle çalıştığı doğrulandı.
 - Son görsel rötuş: menü grafik kalitesi seçiminin açık/okunaksız kutusunu koyu koyu-taş metin kontrastına çevirmek; eski parlak turuncu/mavi prototip kimlik rozetlerini mat bronz-ivory paletine almak.
 - Kullanıcının kararı değişmedi: FPS/perf optimizasyonu sona bırakıldı. Fiziksel Windows GPU doğrulaması yapılmış sayılamaz.
+
+## V21-UI-E — ikinci görsel rötuş / komut okunurluğu (22.11.2026)
+
+- [x] Dört özgün kuşatma emir butonuna CSS `::before` ile tarihî, metinle birlikte okunabilen simgeler (kule, koçbaşı, mancınık, taarruz).
+- [x] Gerçek G5.4 bölük ve kuşatma eylemlerinin seçili/pasif/klavye durumlarına belirgin ancak ölçülü geri bildirim.
+- [x] Sonuç paneli ve taktik harita için küçük ekran/dikey yükseklik taşma koruması.
+- [x] Sonuç ekranında yalnız azaltılmış hareket ayarı kapalıyken kısa, hafif geçiş.
+- [x] Korunan ilk 28 kaynak script, 3 harita, aynı tek FPS motoru ve F6–F10: yalnız V21 dekoratif CSS güncellendi; JS davranışı eklenmedi.
+- [x] V21-E PR #57 son `6b6891062` sürümü için üç GitHub kabul akışı PASS (22.11.2026): genel oyun `45060727871`, üç harita Chromium/WebGL `45060727858`, 140 asker hızlandırılmış oyun-zamanı kuşatma ve replay `45060727909`. Testlerin Windows gerçek GPU/FPS ölçümü olmadığını koru.
+- [ ] Kullanıcının Windows fiziksel GPU üzerinde görsel kabulü hâlâ gerekli.
+
+**Kapsam dışı:** FPS optimizasyonu ve yeni bağımsız mod/oyun motoru. UI-E doğrulanmadan main üzerine birleştirilmez.
