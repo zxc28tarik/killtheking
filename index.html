@@ -7634,7 +7634,32 @@ const KTKNativeArmyMatchFinish=(function(){
   result.armyStandings=Array.isArray(summary.squads)?summary.squads:null;
   return result;
  }
- return Object.freeze({acceptEarlyWin,decorate});
+ // The native game retains its original in-match HUD. On army/siege
+ // results it must not visibly cover the outcome. Suppress visuals only;
+ // original input listeners, DOM nodes and game mode flags are untouched.
+ function showResults(doc){
+  if(!doc?.body||!doc?.head)throw Error('Real native results document required');
+  let style=doc.getElementById('ktk-native-army-results-style');
+  if(!style){
+   style=doc.createElement('style');
+   style.id='ktk-native-army-results-style';
+   style.textContent=[
+    'body.ktk-native-army-results #hud,',
+    'body.ktk-native-army-results #native-siege-panel,',
+    'body.ktk-native-army-results #meadow-army-hud',
+    '{display:none!important;}',
+    // The default FFA tips are not the G5.4 siege win criteria.
+    'body.ktk-native-army-results #match-results-overlay .text-center.mb-5 > p',
+    '{display:none!important;}'
+   ].join('\n');
+   doc.head.appendChild(style);
+  }
+  doc.body.classList.add('ktk-native-army-results');
+ }
+ function restoreHud(doc){
+  doc?.body?.classList?.remove('ktk-native-army-results');
+ }
+ return Object.freeze({acceptEarlyWin,decorate,showResults,restoreHud});
 })();
 
         function buildMeadowSquare() {
