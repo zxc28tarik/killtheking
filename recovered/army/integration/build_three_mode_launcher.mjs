@@ -180,6 +180,7 @@ export function addCastleThirdMode(twoModeHtml, siegeHtml){
       '"\\n            scene.fog.density=map===\'meadow\'?.00065:.0046;'+
       '\\n            scene.fog.color.setHex(map===\'meadow\'?0xb9b7a3:0xd9824c);'+
       '\\n            if(skyDomeMesh)skyDomeMesh.scale.setScalar(map===\'meadow\'?Math.max(4,meadowSpec.half/90):1);'+
+      '\\n            skyClouds.forEach(c=>{c.mesh.visible=map===\'castle\';});'+
       '\\n            window.ktkMeadowSkyVisualStatus=()=>({skyRadius:240*skyDomeMesh.scale.x,meadowHalf:meadowSpec.half,mode:arenaMap});'+
       '\\n            scene.background.setHex(map===\'meadow\'?0xb9c5b6:0xd97736);");'+
    // The existing G5.4 map switch resets sky scale to 8 AFTER our hook.
