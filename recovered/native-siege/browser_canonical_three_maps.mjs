@@ -38,6 +38,13 @@ try{
   const uiBoot=await page.evaluate(()=>({
    ...window.ktkUiV21Status?.(),
    v22:window.ktkUiV22Status?.(),
+  v23:window.ktkUiV23Status?.(),
+   v23:window.ktkUiV23Status?.(),
+   heraldry:[...document.querySelectorAll('#menu-overlay .class-card')].map(card=>({
+    role:card.getAttribute('data-ktk-v23-role'),
+    heading:card.querySelector('h3,h4,strong')?.textContent.trim()||card.textContent.trim().slice(0,100),
+    crest:getComputedStyle(card,'::before').backgroundImage
+   })),
    selectedMapCount:document.querySelectorAll('#arena-map-controls>button').length,
    menuPanelBorder:getComputedStyle(document.querySelector('#menu-overlay>div')).borderTopWidth,
    menuPanelBackground:getComputedStyle(document.querySelector('#menu-overlay>div')).backgroundImage,
@@ -50,6 +57,15 @@ try{
   assert.equal(uiBoot.v22?.v21Retained,true,'V21 retained');
   assert.equal(uiBoot.v22?.mapButtons,3,'Three original map controls');
   assert.equal(uiBoot.v22?.noGameStateMutation,true,'V22 only presentation');
+  assert.equal(uiBoot.v23?.installed,true,'V23 command heraldry installed in native menu');
+  assert.equal(uiBoot.v23?.v21Retained,true,'Original V21 identity retained');
+  assert.equal(uiBoot.v23?.v22Retained,true,'Approved V22 still installed');
+  assert.equal(uiBoot.v23?.originalMaps,3,'V23 preserves three native maps');
+  assert.equal(uiBoot.v23?.classCards,4,'Original four class choices remain');
+  console.log('V23_REAL_CLASS_HEADINGS',JSON.stringify(uiBoot.heraldry.map(({role,heading})=>({role,heading}))));
+  assert.equal(uiBoot.v23?.roleCards,4,'Each real player class has a matching heraldic crest');
+  assert.equal(uiBoot.heraldry.filter(c=>c.role&&c.crest.includes('data:image/svg+xml')).length,4,
+   'All four existing class cards use original vector crests');
   assert.equal(uiBoot.originalMapButtons,3,'Three real original map controls remain');
   assert.equal(uiBoot.selectedMapCount,3,'Do not substitute isolated menu buttons');
   assert(uiBoot.originalSiegeButtons>=4,'Original commands plus existing F10 panel control');
@@ -103,6 +119,7 @@ try{
     v20Siege:window.ktkSiegeVisualV20Status?.(),
     v21Ui:window.ktkUiV21Status?.(),
     v22Ui:window.ktkUiV22Status?.(),
+    v23Ui:window.ktkUiV23Status?.(),
     v19Hud:{
      armyClass:document.body.classList.contains('ktk-native-battle-ui'),
      orderPanelCompact:document.getElementById('meadow-army-hud').classList.contains('ktk-siege-slim'),
@@ -113,6 +130,9 @@ try{
   assert.equal(playing.v21Ui?.installed,true,'V21 remains installed during real FPS battles');
   assert.equal(playing.v22Ui?.installed,true,'V22 stays installed in FPS battle');
   assert.equal(playing.v22Ui?.noNewControls,true,'No alternate battle controls');
+  assert.equal(playing.v23Ui?.installed,true,'V23 remains in native battle UI');
+  assert.equal(playing.v23Ui?.cosmeticOnly,true,'Class heraldry never changes game state');
+  assert.equal(playing.v23Ui?.originalSiegeControls>=4,true,'Original siege orders retained');
   assert(playing.v21Ui?.originalSiegeButtons>=4,'F6-F9 real siege commands and existing panel control');
   assert.equal(playing.v21Ui?.originalMapButtons,3,'No new menu or mode runtime');
   assert.equal(playing.v21Ui?.renderOnly,true,'No game logic rebindings in UI');
@@ -194,7 +214,7 @@ try{
  const compactErrors=[];
  compact.on('pageerror',e=>compactErrors.push(String(e)));
  await compact.goto(pathToFileURL(game).href,{waitUntil:'load',timeout:60000});
- await compact.waitForFunction(()=>!!window.ktkUiV22Status?.().installed,null,{timeout:30000});
+ await compact.waitForFunction(()=>!!window.ktkUiV23Status?.().installed,null,{timeout:30000});
  const mobileUi=await compact.evaluate(()=>({
   selectedCount:document.querySelectorAll('#arena-map-controls>button').length,
   mapDisplay:getComputedStyle(document.getElementById('arena-map-controls')).gridTemplateColumns,
@@ -202,6 +222,7 @@ try{
   viewportWidth:innerWidth,
   sameNativeGame:typeof window.krunkerArenaStatus==='function',
   v22:window.ktkUiV22Status?.(),
+  v23:window.ktkUiV23Status?.(),
   mapCardHeight:document.querySelector('#arena-map-controls>button').getBoundingClientRect().height,
   cardsFit:[...document.querySelectorAll('#arena-map-controls>button')].every(b=>b.getBoundingClientRect().width<=innerWidth),
   buttonsUnchanged:!!document.getElementById('native-siege-start')&&!!document.getElementById('play-btn')
@@ -210,11 +231,13 @@ try{
  assert.equal(mobileUi.sameNativeGame,true);
  assert.equal(mobileUi.buttonsUnchanged,true);
  assert.equal(mobileUi.v22?.installed,true,'V22 present on 390px display');
+ assert.equal(mobileUi.v23?.installed,true,'V23 readable on 390px display');
+ assert.equal(mobileUi.v23?.classCards,4,'Four original soldier class cards on mobile');
  assert.equal(mobileUi.cardsFit,true,'Three map choices fit mobile viewport');
  assert(mobileUi.mapCardHeight>=40,'Map choices remain legible/tappable');
  assert(mobileUi.menuWidth<=mobileUi.viewportWidth,'Mobile original menu fits screen');
  await compact.locator('#arena-map-controls').scrollIntoViewIfNeeded();
- await compact.screenshot({path:evidence+'/v22-mobile-menu.png',timeout:30000});
+ await compact.screenshot({path:evidence+'/v23-mobile-menu.png',timeout:30000});
  report.mobileUi=mobileUi;
  report.errors.push(...compactErrors.map(x=>'mobile: '+x));
  await compact.close();

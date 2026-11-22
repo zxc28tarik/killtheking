@@ -54,7 +54,8 @@ export function buildCanonical(original){
   readFileSync(resolve(HERE,'native-battlefield-visual-v19.js'),'utf8'),
   readFileSync(resolve(HERE,'native-siege-visual-v20.js'),'utf8'),
   readFileSync(resolve(HERE,'native-ui-v21.js'),'utf8'),
-  readFileSync(resolve(HERE,'native-ui-v22.js'),'utf8')
+  readFileSync(resolve(HERE,'native-ui-v22.js'),'utf8'),
+  readFileSync(resolve(HERE,'native-ui-v23.js'),'utf8')
  ].join('\n');
  body=one(body,'        function buildMeadowSquare() {',
    scriptPrelude+'\n        KTKBattlefieldVisualV19.installHud(document);'+
@@ -62,6 +63,8 @@ export function buildCanonical(original){
    '\n        window.ktkUiV21Status=()=>KTKNativeUiV21.status(document);'+
    '\n        KTKNativeUiV22.install(document);'+
    '\n        window.ktkUiV22Status=()=>KTKNativeUiV22.status(document);'+
+   '\n        KTKNativeUiV23.install(document);'+
+   '\n        window.ktkUiV23Status=()=>KTKNativeUiV23.status(document);'+
    '\n        function buildMeadowSquare() {','visual module install');
 
  body=append(body,
@@ -251,7 +254,8 @@ export function buildCanonical(original){
    'KTKBattlefieldVisualV19.setBattleUi',
    'KTKNativeSiegeVisualV20.install','ktkSiegeVisualV20Status',
    'KTKNativeUiV21.install','ktkUiV21Status',
-   'KTKNativeUiV22.install','ktkUiV22Status'])
+   'KTKNativeUiV22.install','ktkUiV22Status',
+   'KTKNativeUiV23.install','ktkUiV23Status'])
    if(!output.includes(key))throw Error('Missing canonical marker: '+key);
  const manifest={
   product:'Kill the King',kind:'SINGLE_NATIVE_FPS_THREE_MAPS',
@@ -269,6 +273,7 @@ export function buildCanonical(original){
   armyAndSiegeCompactHudDefault:true,
   unifiedNativeUiV21:{design:'period-war-bronze',modes:3,renderOnly:true,originalControls:true},
   nativeUiV22:{design:'historical-war-room',modes:3,renderOnly:true,originalControls:true},
+  nativeUiV23:{design:'class-heraldry-and-command',modes:3,decorativeOnly:true,originalControls:true},
   meadowInteriorWalkableHillsAdded:false,
   sourceBytePreservedInRepository:true,
   userWindowsGPUAccepted:false,productionApproved:false,
