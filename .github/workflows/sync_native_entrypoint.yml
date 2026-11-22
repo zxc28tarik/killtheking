@@ -17,6 +17,9 @@ on:
   workflow_dispatch:
 permissions:
   contents: write
+concurrency:
+  group: native-index-sync-${{ github.ref_name }}
+  cancel-in-progress: false
 jobs:
   sync:
     name: Generate canonical single FPS index.html from tested source and commit on current branch
@@ -40,15 +43,17 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          # Always regenerate from the CURRENT remote branch head. This
+          # prevents a stale generated 1.4MB index from conflicting with
+          # another in-flight CI-generated index.html change.
+          git fetch origin "$GITHUB_REF_NAME"
+          git reset --hard "origin/$GITHUB_REF_NAME"
+          node tools/sync_canonical_entrypoint.mjs --write
+          node tools/sync_canonical_entrypoint.mjs --check
           git add index.html
           if git diff --cached --quiet; then
             echo "Root index already exactly canonical"
           else
             git commit -m "build: synchronize default index.html with tested native three-map FPS"
-            # Feature development can advance while the runner builds its
-            # 1.35 MB HTML. Rebase the generated file on the latest branch
-            # instead of attempting a stale non-fast-forward push.
-            git fetch origin "$GITHUB_REF_NAME"
-            git rebase "origin/$GITHUB_REF_NAME"
             git push origin HEAD:"$GITHUB_REF_NAME"
           fi
