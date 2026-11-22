@@ -146,3 +146,13 @@ Tarih: 21 Kasım 2026. Durum: uygulama başladı; gerçek tarayıcı kabul testi
 - [x] Güncel CI 45036353698 **paketleme PASS, gerçek Chromium/SwiftShader üç mod PASS**. Görsel 250 ağaç, 860 çalı, 1.050 küçük bitki sayısı ve görünürlük tarayıcıda denetlendi. Sayfa ve konsol JS hatası yok.
 - [x] Tek çevrimdışı HTML ve gerçek Chromium ekran görüntüsü üretildi, ana dala birleştirme yapılmadı.
 - [ ] Görsel incelemede bitkiler oyuna eklenmiş olsa da ağaçlar başlangıç kamerasından hâlâ uzakta ve tepeler genel manzarada az fark ediliyor. Daha iyi kompozisyon, fiziksel ağaç çarpışması ve tüm haritada görülebilen ağaç kümeleri ayrı etap gerektirir.
+
+## V20 — Görünür orman kuşakları ve büyük bitki çeşitliliği
+- [x] Önceki V19 tek tip kenar ağaçlarının kompozisyonu değiştirildi: gerçek G5.4 Meydan'da **18 farklı ağaç kümesi**, toplam **460 ağaç** (280 geniş taçlı yapraklı ve 180 iğne yapraklı), **1550 çalı**, **2350 ot/çiçek**, **380 alçak kaya**.
+- [x] Geniş yapraklı ağaçlar üst üste binen dört asimetrik çokgen taç parçasından; iğne yapraklılar üç katmandan oluşuyor. Daha belirgin gövde, 7 yaprak tonu, boy/en varyasyonları ve kümelenmiş çalı geçişleri eklendi.
+- [x] **260 ağaç** daha yakın manzara kuşağında (merkeze 600 birimden yakın), **200 ağaç** uzak kuşakta. En yakın ağaç merkeze **389,88 birim**; ordu diziliş merkezindeki 250 birimlik koridorda dekoratif ağaç yok.
+- [x] Her üç boyutlu bitki grubu tekil ağaç başına yeni çizim çağrısı açmak yerine toplam **6 InstancedMesh** (gövde/geniş taç/ibreli taç/çalı/çiçek/kaya) ile çiziliyor.
+- [x] Bitkiler ve taşlar dekoratif. AI, gerçek navigasyon, mevcut G5.4 çarpışmaları, mermi fiziği, bölük komutları, FFA ve Kale modları değiştirilmedi. Yeni ağaçlar fiziken engel değil.
+- [x] GitHub Actions **run 45037020355**: tek offline HTML paketleme ve özgün kaynak korunumu **PASS**, gerçek Chromium SwiftShader üç-mod/motor kontrolü **PASS**. Bot/oyun kontrolleri korunuyor.
+- [x] Gerçek tarayıcı raporunda: `treeCount:460`, `groveTrees:260`, `deepCenterTrees:0`, `batchCount:6`, `visible:true`. Ekran görüntüsünde ağaçlar savaş alanının kenarlarında belirgin.
+- [ ] Estetik kabul kullanıcının kendi GPU'sunda yapılmalı. Hedef gerçekçi orman değil, mevcut oyunun stiline uyumlu stilize dış doğa kuşağıdır.
