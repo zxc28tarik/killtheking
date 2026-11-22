@@ -30,7 +30,7 @@ class Object3D{
 class Mesh extends Object3D{
  constructor(geometry,material){super();this.geometry=geometry;this.material=material;}
 }
-class Geometry{constructor(...args){this.args=args;}}
+class Geometry{constructor(...args){this.args=args;this.parameters={width:args[0],height:args[1],depth:args[2]};}}
 class Material{constructor(opts){this.opts=opts;this.color={setHex:()=>{}};}}
 class CanvasTexture{constructor(canvas){this.canvas=canvas;this.repeat={set:(x,y)=>{this.rx=x;this.ry=y}};}}
 const THREE={Group:Object3D,Mesh,CanvasTexture,
@@ -49,13 +49,21 @@ function fixture(){
   tower:new Object3D(),bridge:new Object3D(),
   gate:new Mesh(new Geometry(16,7,5),mat())
  };
- return {parts,d};
+ const originalRoofMaterial=mat();
+ const originalRoof=new Mesh(new Geometry(3.6,.35,5.5),originalRoofMaterial);
+ originalRoof.position.y=2.4;d.ram.add(originalRoof);
+ return {parts,d,originalRoof,originalRoofMaterial};
 }
 test('100% original G5.4 objects receive weathered stone/timber/courtyard canvas textures',()=>{
- const {parts,d}=fixture();
+ const {parts,d,originalRoof,originalRoofMaterial}=fixture();
  const out=V.install(THREE,doc,parts,d);
  assert.equal(out.installed,true);
  assert.equal(out.textureMaps,5);
+ assert.equal(out.originalRamRoofReskinned,true);
+ assert.equal(out.guardWallStoneCladding,true);
+ assert.notEqual(originalRoof.material,originalRoofMaterial,'Real oversized grey canopy material replaced');
+ assert.equal(originalRoof.scale.y,.48,'Canopy original depth preserved with thinner visible section');
+ assert.equal(originalRoof.position.y,2.49,'Original canopy remains on native moving ram');
  assert.equal(out.noColliders,true);
  assert.equal(out.noProjectileTargets,true);
  assert.equal(out.noNewSoldiers,true);
