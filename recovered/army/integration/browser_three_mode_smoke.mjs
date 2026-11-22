@@ -224,60 +224,6 @@ try{
  assert.equal(afterTicks.uncommandedAlliedSquadsKeepOriginalAI,true);
  report.checks.push('PASS_AK04B_REAL_FIELD_FOUR_INDIVIDUAL_AND_ALL_ORDERS_NATIVE_TICKS');
  await page.screenshot({path:resolve(dir,'three-main-mode-2-army.png'),fullPage:true});
- // V17 diagnostic only: three screenshots from the same rendered scene.
- // No gameplay source is changed; flags are restored before mode switch.
- await page.waitForFunction(()=>!!document.querySelector('#stage iframe')?.contentWindow?.__ktkVisualProbeScene);
- const diagnostic=await page.evaluate(()=>{
-   const w=document.querySelector('#stage iframe').contentWindow;
-   const scene=w.__ktkVisualProbeScene;
-   const transparent=[],sky=[];
-   scene.traverse(o=>{
-     if(o.isMesh && o.material?.transparent && o.visible)
-       transparent.push(o);
-     if(o.isMesh && o.geometry?.type==='SphereGeometry' &&
-       o.geometry.parameters?.radius===240 && o.visible)
-       sky.push(o);
-   });
-   const top=transparent.slice(0,12).map(o=>({
-     name:o.name,type:o.geometry?.type,opacity:o.material.opacity,
-     position:o.position.toArray()
-   }));
-   w.__ktkDiagTransparent=transparent;
-   w.__ktkDiagSky=sky;
-   const byOpacity=Object.entries(transparent.reduce((acc,o)=>{
-     const key=String(o.material.opacity);acc[key]=(acc[key]||0)+1;return acc;
-   },{}));
-   return {transparent:transparent.length,sky:sky.length,byOpacity,top};
- });
- report.checks.push('DIAGNOSTIC_MAP2_SCENE_MESH_LAYERS: '+JSON.stringify(diagnostic));
- await page.evaluate(()=>{
-   const w=document.querySelector('#stage iframe').contentWindow;
-   w.__ktkDiagTransparent.forEach(o=>o.visible=false);
- });
- await page.screenshot({path:resolve(dir,'map2-no-transparent-diagnostic.png'),fullPage:true});
- await page.evaluate(()=>{
-   const w=document.querySelector('#stage iframe').contentWindow;
-   w.__ktkDiagTransparent.forEach(o=>o.visible=true);
-   w.__ktkDiagTransparent.filter(o=>Math.abs(o.material.opacity-.85)<.001).forEach(o=>o.visible=false);
- });
- await page.screenshot({path:resolve(dir,'map2-no-box-cloud-material.png'),fullPage:true});
- await page.evaluate(()=>{
-   const w=document.querySelector('#stage iframe').contentWindow;
-   w.__ktkDiagTransparent.forEach(o=>o.visible=true);
-   w.__ktkDiagTransparent.filter(o=>Math.abs(o.material.opacity-.85)>=.001).forEach(o=>o.visible=false);
- });
- await page.screenshot({path:resolve(dir,'map2-no-other-transparencies.png'),fullPage:true});
- await page.evaluate(()=>{
-   const w=document.querySelector('#stage iframe').contentWindow;
-   w.__ktkDiagTransparent.forEach(o=>o.visible=true);
-   w.__ktkDiagSky.forEach(o=>o.visible=false);
- });
- await page.screenshot({path:resolve(dir,'map2-no-skydome-diagnostic.png'),fullPage:true});
- await page.evaluate(()=>{
-   const w=document.querySelector('#stage iframe').contentWindow;
-   w.__ktkDiagSky.forEach(o=>o.visible=true);
- });
-
  await switchMode('siege');
  await page.waitForFunction(()=>{
   const w=document.querySelector('#stage iframe')?.contentWindow;
