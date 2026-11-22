@@ -66,7 +66,7 @@ export function buildCanonical(original){
  // after the original native ram/catapult/tower/bridge are fully created, but
  // before equipment is deployed. Nothing is added to native collision lists.
  body=append(body,
-  '        nativeSiegeTowerBridge.visible=false;',
+  '        nativeSiegeTowerBridge.visible=false;\n        // Narrow side beams are genuine physical collision, while the center\n        // lane remains passable on foot. Dynamic native G5.4 and player cover.',
   '\n        const v20SiegeSkin=KTKNativeSiegeVisualV20.install(THREE,document,nativeSiegeParts,{'+
   'stone:nativeSiegeStone,gateMat:nativeSiegeGateMat,wood:nativeSiegeWood,'+
   'towerWood:nativeSiegeTowerWood,approach:nativeSiegeApproach,'+
