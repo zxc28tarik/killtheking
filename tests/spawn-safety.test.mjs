@@ -1,3 +1,4 @@
+// Historical modular October source regression; current native three-map entrypoint is verified by recovered/native-siege tests and CI.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
@@ -20,7 +21,7 @@ test('works with no threats or only one legal spawn',()=>{
 test('rejects empty spawn lists',()=>assert.throws(()=>chooseSpawn([],[]),/empty/));
 test('main game calls safety selector on both player and bot respawns',()=>{
   const code=readFileSync(new URL('../src/oyun.js',import.meta.url),'utf8');
-  const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+  const html=readFileSync(new URL('../recovered/legacy/KillTheKing_October_Original_Source_Index.html',import.meta.url),'utf8');
   assert.match(code,/chooseArenaRespawn\(COURTYARD_SPAWNS, null, false\)/);
   assert.match(code,/chooseArenaRespawn\(spawns, bot, true\)/);
   assert.ok(html.indexOf('src/spawn-safety.js')<html.indexOf('src/oyun.js'));
