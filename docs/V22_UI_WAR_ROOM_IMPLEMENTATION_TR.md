@@ -28,7 +28,7 @@ Başlangıç: 22 Kasım 2026. V21-A/B/C/D/E üstüne kurulan **orijinal tek FPS 
 - [x] `test_native_ui_v22.mjs` ile UI modülü idempotence, mevcut kontrol referansları, 28 özgün script ve no-listener sözleşmesi.
 - [x] Kanonik Chromium 3 harita/390px UI kabulüne V22 kontrolleri eklendi.
 - [x] GitHub üç haritalı/140 asker ve otomatik kök HTML senkronizasyon iş akışına bağlandı.
-- [ ] Yeni PR commit'indeki bütün GitHub Actions sonuçlarını kontrol et, hataları düzelt.
+- [x] PR #58 son uygulama `b65d59e1d` için GitHub Actions PASS (22.11.2026): genel oyun `45066984657`, kanonik kaynak/3 harita gerçek Chromium/SwiftShader `45066984661`, 140 asker hızlandırılmış oyun-zamanı uzun kuşatma ve replay `45066984671`. Testleri üretim Windows fiziksel GPU kabulü olarak sunma.
 - [ ] Birleştirme sonrasında `main` üstünde QA doğrula.
 - [ ] Kullanıcının fiziksel Windows GPU üzerinde tasarım ve oynanış kabulü açık.
 
