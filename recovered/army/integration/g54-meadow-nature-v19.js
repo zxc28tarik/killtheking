@@ -60,6 +60,45 @@ const KTKMeadowNatureV19=(function(){
   const rocks=batch('KTK_V20_LOW_ROCK_DETAILS',
    new THREE.DodecahedronGeometry(1,0),
    new THREE.MeshStandardMaterial({color:0xffffff,roughness:1,flatShading:true}),stones);
+  // V21 woodland ground: low, mottled leaf-litter and moss transitions.
+  // These patches are beneath the shrubs, not raised barriers or new colliders.
+  const litterCount=460,mossCount=320;
+  const litter=batch('KTK_V21_WOODLAND_LEAF_LITTER',
+   new THREE.CircleGeometry(1,8),
+   new THREE.MeshStandardMaterial({color:0xffffff,roughness:1,metalness:0,
+     side:THREE.DoubleSide,depthWrite:true}),litterCount);
+  const moss=batch('KTK_V21_WOODLAND_SOFT_MOSS',
+   new THREE.CircleGeometry(1,9),
+   new THREE.MeshStandardMaterial({color:0xffffff,roughness:1,metalness:0,
+     side:THREE.DoubleSide,depthWrite:true}),mossCount);
+  // The built-in put helper rotates around the Y axis; for horizontal
+  // ground patches keep an explicit -PI/2 x rotation with matrix updates.
+  function groundPatch(mesh,i,x,z,width,depth,tint,y){
+   dummy.position.set(x,y,z);
+   dummy.scale.set(width,depth,1);
+   dummy.rotation.set(-Math.PI/2,0,hash(i,173)*TAU);
+   dummy.updateMatrix();
+   mesh.setMatrixAt(i,dummy.matrix);
+   mesh.setColorAt(i,paint.setHex(tint));
+  }
+  for(let i=0;i<litterCount;i++){
+   const g=GROVES[i%GROVES.length],theta=hash(i,153)*TAU,
+      radius=8+Math.sqrt(hash(i,155))*94,
+      x=clamp(g[0]+Math.cos(theta)*radius,-half*.94,half*.94),
+      z=clamp(g[1]+Math.sin(theta)*radius,-half*.94,half*.94),
+      width=1.9+hash(i,157)*5.5;
+   groundPatch(litter,i,x,z,width,width*(.7+hash(i,159)*.6),
+    [0x586c38,0x786f43,0x657a49,0x716d43,0x4e6540][i%5],.028+i%3*.001);
+  }
+  for(let i=0;i<mossCount;i++){
+   const g=GROVES[i%GROVES.length],theta=hash(i,161)*TAU,
+      radius=10+Math.sqrt(hash(i,163))*103,
+      x=clamp(g[0]+Math.cos(theta)*radius,-half*.94,half*.94),
+      z=clamp(g[1]+Math.sin(theta)*radius,-half*.94,half*.94),
+      width=2.4+hash(i,167)*7.3;
+   groundPatch(moss,i,x,z,width,width*(.75+hash(i,169)*.45),
+    [0x527747,0x5f7c45,0x466d43,0x6b8553][i%4],.019+i%3*.001);
+  }
   const treePositions=[];
   const shades=[0x426c36,0x527b3f,0x657e42,0x385e38,0x6a8250,0x4b7138,0x748452];
   const bark=[0x66513d,0x584536,0x776248,0x514337,0x6b5745];
@@ -134,6 +173,7 @@ const KTKMeadowNatureV19=(function(){
   let disposed=false;
   return {
    root,treeCount:trees,bushCount:shrubs,flowerCount:flowers,
+   forestFloorPatches:litterCount+mossCount,
    rockCount:stones,broadleafCount:broadCount,coniferCount:pineCount,
    batchCount:meshes.length,groveCount:GROVES.length,
    groveTrees,perimeterTrees,deepCenterTrees,nearestTreeDistance:nearest,
