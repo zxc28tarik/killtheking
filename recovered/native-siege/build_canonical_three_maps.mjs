@@ -11,6 +11,7 @@ import {createHash} from 'node:crypto';
 import vm from 'node:vm';
 import {applyNativeSiegeExpansionV25} from './siege-expansion-patch-v25.mjs';
 import {applyNativeSiegeDefenseV26} from './siege-defense-patch-v26.mjs';
+import {applyNativeSiegeDefenderDoctrineV27} from './siege-defender-patch-v27.mjs';
 
 const HERE=dirname(fileURLToPath(import.meta.url));
 const sha=s=>createHash('sha256').update(s).digest('hex');
@@ -50,6 +51,7 @@ export function buildCanonical(original){
  const before=sha(body);
  body=applyNativeSiegeExpansionV25(body);
  body=applyNativeSiegeDefenseV26(body);
+ body=applyNativeSiegeDefenderDoctrineV27(body);
  const scriptPrelude=[
   addon('g54-meadow-natural-lighting.js'),
   addon('g54-meadow-surface-visual.js'),
@@ -62,7 +64,8 @@ export function buildCanonical(original){
   readFileSync(resolve(HERE,'native-ui-v23.js'),'utf8'),
   readFileSync(resolve(HERE,'native-ui-v24.js'),'utf8'),
   readFileSync(resolve(HERE,'native-siege-expansion-v25.js'),'utf8'),
-  readFileSync(resolve(HERE,'native-siege-defense-v26.js'),'utf8')
+  readFileSync(resolve(HERE,'native-siege-defense-v26.js'),'utf8'),
+  readFileSync(resolve(HERE,'native-siege-defender-ai-v27.js'),'utf8')
  ].join('\n');
  body=one(body,'        function buildMeadowSquare() {',
    scriptPrelude+'\n        KTKBattlefieldVisualV19.installHud(document);'+
@@ -267,7 +270,8 @@ export function buildCanonical(original){
    'KTKNativeUiV23.install','ktkUiV23Status',
    'KTKNativeUiV24.install','ktkUiV24Status',
    'KTKSiegeExpansionV25.install','ktkSiegeExpandedMapStatus',
-   'KTKSiegeFortificationV26.install','ktkSiegeFortificationStatus'])
+   'KTKSiegeFortificationV26.install','ktkSiegeFortificationStatus',
+   'KTKSiegeDefenderDoctrineV27.create','ktkSiegeDefenderDoctrineStatus'])
    if(!output.includes(key))throw Error('Missing canonical marker: '+key);
  const manifest={
   product:'Kill the King',kind:'SINGLE_NATIVE_FPS_THREE_MAPS',
@@ -292,6 +296,10 @@ export function buildCanonical(original){
   nativeSiegeV26:{design:'functional-layered-siege-fort',physicalDefenseBoxes:19,
     realBotAndPlayerCover:true,realProjectileFirstContact:true,castleOnly:true,
     untouchedNativeGate:true,existingSiegeEngines:true},
+  nativeSiegeV27:{design:'reactive-g54-defensive-doctrine',controlledTeam:'red',
+    genuineUnitRoutes:true,keepRearArchers:true,
+    gateReaction:true,posternFallback:true,secondLineReserve:true,
+    noSoldierTeleports:true,noBonusDamage:true,castleOnly:true},
   meadowInteriorWalkableHillsAdded:false,
   sourceBytePreservedInRepository:true,
   userWindowsGPUAccepted:false,productionApproved:false,
