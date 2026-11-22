@@ -179,6 +179,7 @@ export function addCastleThirdMode(twoModeHtml, siegeHtml){
    'visualArmy=visualArmy.replace(mapVisualSwitch,mapVisualSwitch+'+
       '"\\n            scene.fog.density=map===\'meadow\'?.00065:.0046;'+
       '\\n            scene.fog.color.setHex(map===\'meadow\'?0xb9b7a3:0xd9824c);'+
+      '\\n            if(skyDomeMesh)skyDomeMesh.scale.setScalar(map===\'meadow\'?Math.max(4,meadowSpec.half/90):1);'+
       '\\n            scene.background.setHex(map===\'meadow\'?0xb9c5b6:0xd97736);");'+
    'const renderMark="            renderer.render(scene, camera);";'+
    'if(visualArmy.split(renderMark).length!==2)throw Error("MAP2 render anchor changed");'+
