@@ -11,7 +11,7 @@ body{display:flex;flex-direction:column;overflow:hidden}
 header{padding:13px 22px;background:#232321;border-bottom:2px solid #6e5935;display:flex;align-items:center;justify-content:space-between;gap:15px;flex-wrap:wrap;z-index:4}
 h1{font-family:Georgia,serif;margin:0;font-size:clamp(20px,3vw,30px);letter-spacing:.04em}header small{font-size:12px;color:#dcc69b;letter-spacing:.1em}
 .warning{font-size:12px;line-height:1.4;color:#f5d7a5;background:#553f21;padding:8px 11px;border:1px solid #936532;border-radius:5px;max-width:420px}
-main{display:grid;grid-template-columns:minmax(0,1fr) 355px;flex:1;min-height:0}
+main{display:grid;grid-template-columns:minmax(0,1fr) minmax(250px,300px);flex:1;min-height:0;transition:grid-template-columns .25s ease}body.siege-cinematic main{grid-template-columns:minmax(0,1fr) 0px}body.siege-cinematic aside{padding:0;border:0;overflow:hidden;visibility:hidden}body.siege-cinematic #scene-label{max-width:420px}
 #scene{position:relative;min-width:0;overflow:hidden;background:linear-gradient(#8a9ca8,#bfd5c5 50%,#898b65);cursor:grab}
 #scene:active{cursor:grabbing}#scene canvas{display:block;width:100%;height:100%}
 #scene-label{position:absolute;left:17px;bottom:18px;padding:9px 13px;background:#222a24dd;border:1px solid #c1a56a99;font-size:12px;pointer-events:none;line-height:1.6}
@@ -28,16 +28,18 @@ button{padding:10px 7px;color:#f9edd6;background:#4c4430;border:1px solid #ae895
 button:hover{background:#675636}button:focus-visible{outline:2px solid #efbf73}button:disabled{opacity:.38;cursor:not-allowed}
 button.danger{border-color:#ce6c59;background:#55392f}button.success{border-color:#56a4a6;background:#2c4c4d}
 button.full{grid-column:span 2}
+#siege-scene-toggle{padding:8px 12px;min-width:158px;background:#304637;border-color:#96af87;font-weight:700}#siege-scene-toggle[aria-pressed=true]{background:#516e49;border-color:#c1d7b5}
 .help{font-size:12px;color:#c9c4b3;line-height:1.55}
 #event-log{font-size:11px;color:#deccaa;line-height:1.45;background:#191e19;padding:10px;min-height:85px;white-space:pre-wrap;overflow-wrap:anywhere}
 #status-error{display:none;background:#752f29;padding:10px;color:white;font-size:13px}
 footer{font-size:11px;color:#c9c0a7;background:#191b19;padding:8px 18px;border-top:1px solid #52472e}
-@media(max-width:950px){main{grid-template-columns:1fr;grid-template-rows:minmax(260px,1fr) minmax(250px,44%)}aside{border-left:0;border-top:2px solid #625234}header{padding:8px 12px}h1{font-size:21px}}
+@media(max-width:950px){main{grid-template-columns:1fr;grid-template-rows:minmax(260px,1fr) minmax(250px,44%)}body.siege-cinematic main{grid-template-columns:1fr;grid-template-rows:minmax(0,1fr) 0px}aside{border-left:0;border-top:2px solid #625234}header{padding:8px 12px}h1{font-size:21px}}
 </style>
 </head>
 <body>
 <header>
   <div><small>KILL THE KING • KUŞATMA S1</small><h1>Kuşatma Kalesi</h1></div>
+  <button id="siege-scene-toggle" type="button" aria-pressed="false" title="Kuşatma savaş alanını genişlet veya kontrol panelini aç">Geniş savaş görünümü</button>
   <div class="warning"><b>Geliştirici önizlemesi:</b> Kale yerleşimi ve kuşatma hedef kuralları çalışır. Görünen askerler <b>yerleşim işaretleri</b>, gerçek 140 asker savaş AI'sı değil.</div>
 </header>
 <main>
@@ -103,6 +105,25 @@ footer{font-size:11px;color:#c9c0a7;background:#191b19;padding:8px 18px;border-t
   </aside>
 </main>
 <footer>Bu önizleme FFA/TDM veya G5.4 ordu oyunlarını değiştirmez. Gerçek 140 askerli kuşatma, FPS/TPS ve komuta sistemi sonraki S2–S5 aşamalarında entegre edilecektir.</footer>
+<script>
+(function(){
+ const button=document.getElementById('siege-scene-toggle');
+ if(!button)return;
+ const apply=wide=>{
+   document.body.classList.toggle('siege-cinematic',wide);
+   button.setAttribute('aria-pressed',String(wide));
+   button.textContent=wide?'Kontrolleri göster':'Geniş savaş görünümü';
+   window.dispatchEvent(new Event('resize'));
+ };
+ button.addEventListener('click',()=>apply(!document.body.classList.contains('siege-cinematic')));
+ document.addEventListener('keydown',event=>{
+   if(event.code!=='F7'||event.repeat||event.altKey||event.ctrlKey)return;
+   event.preventDefault();
+   apply(!document.body.classList.contains('siege-cinematic'));
+ });
+ window.ktkSiegeCinematicStatus=()=>({available:true,wide:document.body.classList.contains('siege-cinematic')});
+})();
+</script>
 <!-- KTK_THREE_JS -->
 <!-- KTK_SIEGE_MAP_JS -->
 <!-- KTK_SIEGE_OBJECTIVES_JS -->
