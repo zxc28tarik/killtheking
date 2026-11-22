@@ -61,6 +61,9 @@ try{
  await page.click('#native-siege-start');
  await page.click('#play-btn');
  await page.waitForFunction(()=>window.krunkerArenaStatus().matchPhase==='playing',{timeout:35000});
+ // The 140-soldier equipment status is published by the FIRST real frame,
+ // a moment after the menu state flips to playing. Do not race the renderer.
+ await page.waitForFunction(()=>window.ktkNativeSiegeMapStatus?.().realSoldiers===140,{timeout:35000});
  const started=await snap('start-native-siege');
  await pass('starts real native 140 soldier siege, no iframe',()=>{
   assert.equal(started.army,true);
