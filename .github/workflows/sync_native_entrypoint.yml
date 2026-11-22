@@ -4,17 +4,19 @@ on:
     branches:
       - codex/canonical-native-three-maps
       - codex/siege-long-session-acceptance
+      - codex/visual-v19-native-battlefield-hud-and-landscape
     paths:
       - '.github/workflows/sync_native_entrypoint.yml'
       - 'recovered/native-siege/build_canonical_three_maps.mjs'
       - 'recovered/native-siege/native-army-match-finish.js'
+      - 'recovered/native-siege/native-battlefield-visual-v19.js'
   workflow_dispatch:
 permissions:
   contents: write
 jobs:
   sync:
     name: Generate canonical single FPS index.html from tested source and commit on current branch
-    if: github.ref_name == 'codex/canonical-native-three-maps' || github.ref_name == 'codex/siege-long-session-acceptance'
+    if: github.ref_name == 'codex/canonical-native-three-maps' || github.ref_name == 'codex/siege-long-session-acceptance' || github.ref_name == 'codex/visual-v19-native-battlefield-hud-and-landscape'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
@@ -39,5 +41,10 @@ jobs:
             echo "Root index already exactly canonical"
           else
             git commit -m "build: synchronize default index.html with tested native three-map FPS"
-            git push origin HEAD:${{ github.ref_name }}
+            # Feature development can advance while the runner builds its
+            # 1.35 MB HTML. Rebase the generated file on the latest branch
+            # instead of attempting a stale non-fast-forward push.
+            git fetch origin "$GITHUB_REF_NAME"
+            git rebase "origin/$GITHUB_REF_NAME"
+            git push origin HEAD:"$GITHUB_REF_NAME"
           fi

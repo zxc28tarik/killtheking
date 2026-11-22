@@ -63,17 +63,54 @@ try{
    return {map:s.map,mode:s.mode,meadowBattleMode:s.meadowBattleMode,
     botCount:s.botCount,phase:s.matchPhase,meadowBattle:!!s.meadowBattle,
     siege,canvas:!!cv&&cv.width>0&&cv.height>0,iframeCount:document.querySelectorAll('iframe').length,
-    grass:window.ktkMeadowGrassVisualStatus?.()};
+    grass:window.ktkMeadowGrassVisualStatus?.(),
+    v19Groves:window.ktkMeadowGrovesV19Status?.(),
+    v19Siege:window.ktkSiegeVisualV19Status?.(),
+    v19Hud:{
+     armyClass:document.body.classList.contains('ktk-native-battle-ui'),
+     orderPanelCompact:document.getElementById('meadow-army-hud').classList.contains('ktk-siege-slim'),
+     centerLogoDisplay:getComputedStyle(document.querySelector('#hud > div:first-child > div:nth-child(2)')).display,
+     armyPanelRect:document.getElementById('meadow-army-hud').getBoundingClientRect().toJSON()
+    }};
   });
   assert.equal(playing.canvas,true,'Actual game canvas available');
   assert.equal(playing.iframeCount,0,'Still the same original game document');
   assert.equal(playing.meadowBattleMode,mode.army,'In-game army authority');
   if(mode.army)assert.equal(playing.meadowBattle,true,'Real G5.4 army state exists');
+  assert.equal(playing.v19Hud.armyClass,mode.army,'V19 army HUD is scoped to genuine G5.4 modes');
+  if(mode.army){
+   assert.equal(playing.v19Hud.orderPanelCompact,true,'V19 default compact 140 soldier orders');
+   assert.equal(playing.v19Hud.centerLogoDisplay,'none','No giant banner over battlefield view');
+   assert(playing.v19Hud.armyPanelRect.height<=112,'No 500px tactical HUD covering the actual battle');
+  }
+  if(mode.name==='army'){
+   assert.equal(playing.v19Groves?.trees,180,'Native 180 meadow periphery trees');
+   assert.equal(playing.v19Groves?.drawBatches,3,'Only three instanced forest draw batches');
+   assert(playing.v19Groves?.minDistanceFromCenter>240,'No decorative groves in central army positions');
+   assert(playing.v19Groves?.minDistanceFromCenter<540,'Distant groves still actually readable from player');
+   assert.equal(playing.v19Groves?.visible,true,'Meadow-only groves visible when selected');
+   assert.equal(playing.v19Groves?.noColliders,true,'No invented tree colliders');
+  }
   if(mode.name==='siege'){
+   assert(playing.v19Siege?.gateDetails>=25,'Original native gate is visually dressed');
+   assert(playing.v19Siege?.mortarStones>=35,'Real outer wall masonry detail visible');
+   assert.equal(playing.v19Siege?.groupVisible,true);
+   assert.equal(playing.v19Siege?.gateVisible,true);
+   assert.equal(playing.v19Siege?.noColliders,true);
    assert.equal(playing.siege?.realSoldiers,140,'Genuine 140 native G5.4 siege soldiers');
    assert.equal(playing.siege?.nativeOriginalKrunkerFPSMovement,true);
   }
   await page.screenshot({path:evidence+'/'+mode.name+'-playing.png',timeout:30000});
+  if(mode.army){
+   // Same native F10 controls, no additional overlay/mode or input engine.
+   await page.evaluate(()=>window.dispatchEvent(new KeyboardEvent('keydown',{code:'F10',key:'F10',bubbles:true,cancelable:true})));
+   const expanded=await page.evaluate(()=>!document.getElementById('meadow-army-hud').classList.contains('ktk-siege-slim'));
+   assert.equal(expanded,true,'Real F10 expands native G5.4 commands in '+mode.name);
+   await page.evaluate(()=>window.dispatchEvent(new KeyboardEvent('keydown',{code:'F10',key:'F10',bubbles:true,cancelable:true})));
+   const restored=await page.evaluate(()=>document.getElementById('meadow-army-hud').classList.contains('ktk-siege-slim'));
+   assert.equal(restored,true,'Real F10 restores readable battle HUD in '+mode.name);
+  }
+  console.log('PASS_V19_'+mode.name.toUpperCase(),JSON.stringify(playing.v19Hud));
   report.modes.push({name:mode.name,selected:{map:selected.map,meadowBattleMode:selected.meadowBattleMode},playing,errors:errs});
   report.errors.push(...errs.map(e=>mode.name+': '+e));
   console.log('PASS_NATIVE_'+mode.name.toUpperCase(),JSON.stringify(playing).slice(0,600));
