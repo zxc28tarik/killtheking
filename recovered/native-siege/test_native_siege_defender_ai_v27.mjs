@@ -62,6 +62,7 @@ test('AK27 garrison retains all 140 actors, original blue commander and pins rea
  assert.equal(f.red('pike').playerControlled,false);
  assert.equal(f.red('sword').playerControlled,false);
  assert.equal(f.state.playerSquadId,3);
+ assert.equal(score.playerSquadTeam,'blue');
  assert.equal(score.noAddedFirepower,true);
  assert.equal(score.noSoldierTeleports,true);
  assert.equal(score.noBlueOrderOverrides,true);
