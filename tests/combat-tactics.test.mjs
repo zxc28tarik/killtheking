@@ -1,3 +1,4 @@
+// Historical modular October source regression; current native three-map entrypoint is verified by recovered/native-siege tests and CI.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
@@ -48,7 +49,7 @@ test('tactics are independent of player/bot target identity',()=>{
 });
 test('tactics module is wired into free-for-all game without modifying damage rules',()=>{
  const game=readFileSync(new URL('../src/oyun.js',import.meta.url),'utf8');
- const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+ const html=readFileSync(new URL('../recovered/legacy/KillTheKing_October_Original_Source_Index.html',import.meta.url),'utf8');
  assert.match(game,/ArenaCombatTactics\.plan\(/);
  assert.match(game,/arenaCanSeeFrom\(/);
  assert.match(game,/chooseArenaTarget\(bot\)/);
