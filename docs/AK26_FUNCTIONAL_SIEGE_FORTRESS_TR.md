@@ -45,10 +45,17 @@
 ## Doğrulama / kabul
 - [x] Fiziksel savunma modülü, guard'lı kaynak dönüşümü ve tüm üç haritaya entegrasyonu kodlandı.
 - [x] AK26 statik giriş yollarını ve AI koridorlarını özel node/browser test kapsamına dahil etme.
-- [ ] PR son commit'te genel kaynak/HTML testleri PASS.
-- [ ] PR'da gerçek Chromium/SwiftShader üç harita ve 70/70 kuşatma PASS.
-- [ ] PR'da 140 askerli uzun kuşatma ve replay PASS.
-- [ ] PR ana dala alındıktan sonra bütün CI testleri tekrar PASS.
+- [x] PR #62 son uygulama `4e003b407` için genel kaynak/HTML testleri `45084953458` PASS.
+- [x] PR #62 son uygulama `4e003b407` için gerçek üç harita Chromium/SwiftShader, kale/koridor ve başlangıç 70/70 testi `45084953442` PASS.
+- [x] PR #62 son uygulama `4e003b407` için orijinal 140 G5.4 askerli 120s hızlandırılmış oyun zamanı kuşatma ve replay `45084953539` PASS.
+- [x] PR #62 `6016df5c` ile `main` dalına alındı (23.11.2026). Aynı merge commit için üç GitHub Actions PASS: genel oyun `45085162901`, orijinal üç harita Chromium/WebGL `45085162897`, 140 asker uzun kuşatma/replay `45085162913`.
 - [ ] Gerçek Windows GPU oynayarak kontrol, görsel beğeni, kuşatma dengesi ve botların ikinci savunma hattındaki doğal davranışı manuel kabul.
 
 Test kontrol listesi tamamlanmadan bu dalın son sürüm olduğu iddia edilmez.
+
+## Ana dal kapanış ve test kanıtı — 23 Kasım 2026
+
+- **AK26 mühendislik ve test aşaması tamamlandı.** 19 gerçek dünya/collider ve 5 aşamalı savunma hattı aynı AK25 kuşatma haritasına işlendi. İlk 28 orijinal script byte-eşit; yalnız 29. script ve kuşatma-özel veri katmanı düzenlendi.
+- Gerçek testlerde 70 savunucu içeride, 70 saldırgan dışarıda, yeni engel içine doğan asker **0**, okçu rezervi arka hatta ve 6 temel orijinal kuşatma/baskın koridoru açık; ilk kapı ve üç makine aynı G5.4 sisteminde çalışıyor.
+- Uzun kuşatma kabulü **120 oyun saniyesi hızlandırılmış gerçek döngü testidir**; 120 saniye gerçek zamanlı FPS ölçümü veya tam insan oyun dengesi testi değildir.
+- Kullanıcının gerçek Windows GPU üzerinde fiziksel kale kuşatması oynayıp görsel/denge beğenisini onaylaması hâlâ **açıktır**. FPS optimizasyonu ve yayıncı pitch deck başlatılmadı.
