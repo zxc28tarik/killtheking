@@ -539,7 +539,7 @@ window.addEventListener('error', function(event) {
     <div id="match-results-overlay" class="hidden fixed inset-0 z-40 bg-slate-950/95 backdrop-blur-lg flex items-center justify-center p-4 overflow-y-auto">
         <section class="w-full max-w-2xl rounded-xl border-2 border-amber-500/70 bg-slate-900/95 p-5 sm:p-8 shadow-2xl my-auto">
             <div class="text-center mb-5">
-                <div class="text-xs font-black tracking-widest text-sky-300 krunker-text"><span id="match-results-mode-label">SERBEST ARENA</span> • <span id="match-duration-label">04:00</span> DAKİKALIK MAÇ</div>
+                <div class="text-xs font-black tracking-widest text-sky-300 krunker-text"><span id="match-results-mode-label">SERBEST ARENA</span> • <span id="match-duration-label">04:00</span> <span id="match-results-duration-description">DAKİKALIK MAÇ</span></div>
                 <h2 id="match-winner-title" class="text-2xl sm:text-4xl font-black text-amber-400 krunker-text mt-3">MAÇ SONUCU</h2>
                 <div id="match-team-results" class="hidden mt-3 p-2 rounded border border-sky-500/50 font-extrabold text-base text-sky-200 krunker-text"></div>
                 <p class="text-sm text-slate-300 mt-2">En fazla öldürme kazanır. Eşitlikte daha az ölüm öne geçer.</p>
@@ -7595,6 +7595,78 @@ const KTKMeadowHorizon=(function(){
  return Object.freeze({build});
 })();
 
+/* KTK-SIEGE-SESSION-02 — genuine G5.4 outcome in the original ArenaMatch UI.
+ * The original 28 combat/renderer scripts are never modified. This adapter
+ * changes only final match lifecycle ownership and the result metadata.
+ */
+const KTKNativeArmyMatchFinish=(function(){
+ 'use strict';
+ // In G5.4 a real soldier victory can arrive with minutes still on the clock.
+ // ArenaMatch.finish normally accepts ONLY phase='results'. This performs
+ // exactly the same terminal phase transition that ArenaMatch.tick() does when
+ // its clock reaches zero, without changing the clock or any soldier state.
+ function acceptEarlyWin(match,armyWinner){
+  if(!match||!armyWinner||match.phase!=='playing')return false;
+  match.phase='results';
+  return true;
+ }
+ function decorate(match,result,summary,isSiege,captured){
+  if(!match||!result||!summary||match.phase!=='results')
+   throw Error('Native G5.4 result requires an actual finished battle');
+  const blue=Number(summary.blue),red=Number(summary.red);
+  if(!Number.isInteger(blue)||!Number.isInteger(red)||blue<0||red<0)
+   throw Error('Invalid G5.4 surviving soldier counts');
+  // A castle only belongs to blue after an authentic G5.4 capture; a time-out
+  // is a red defense victory even when blue has more survivors outside.
+  const winner=summary.winner==='blue'||captured?'blue':
+   summary.winner==='red'?'red':
+   isSiege?'red':blue>red?'blue':red>blue?'red':'draw';
+  result.meadowBattle=summary;
+  result.winnerId='g54:'+winner;
+  result.winnerName=winner==='blue'?'MAVİ ORDU':
+   winner==='red'?'KIRMIZI ORDU':'BERABERE';
+  result.playerWon=winner==='blue';
+  result.seconds=Math.max(0,Math.min(match.durationSeconds,
+   match.durationSeconds-match.remaining));
+  result.battleOutcome=winner;
+  result.battleReason=!!captured?'castle-capture':
+   !!summary.winner?'elimination':'time-limit';
+  result.armyStandings=Array.isArray(summary.squads)?summary.squads:null;
+  return result;
+ }
+ // The native game retains its original in-match HUD. On army/siege
+ // results it must not visibly cover the outcome. Suppress visuals only;
+ // original input listeners, DOM nodes and game mode flags are untouched.
+ function showResults(doc){
+  if(!doc?.body||!doc?.head)throw Error('Real native results document required');
+  let style=doc.getElementById('ktk-native-army-results-style');
+  if(!style){
+   style=doc.createElement('style');
+   style.id='ktk-native-army-results-style';
+   style.textContent=[
+    'body.ktk-native-army-results #hud,',
+    'body.ktk-native-army-results #native-siege-panel,',
+    'body.ktk-native-army-results #meadow-army-hud',
+    '{display:none!important;}',
+    // The default FFA tips are not the G5.4 siege win criteria.
+    'body.ktk-native-army-results #match-results-overlay .text-center.mb-5 > p,',
+    'body.ktk-native-army-results #match-results-overlay > section > div.grid',
+    '{display:none!important;}'
+   ].join('\n');
+   doc.head.appendChild(style);
+  }
+  doc.body.classList.add('ktk-native-army-results');
+  const description=doc.getElementById('match-results-duration-description');
+  if(description)description.textContent='SÜREDE SONA ERDİ';
+ }
+ function restoreHud(doc){
+  doc?.body?.classList?.remove('ktk-native-army-results');
+  const description=doc?.getElementById?.('match-results-duration-description');
+  if(description)description.textContent='DAKİKALIK MAÇ';
+ }
+ return Object.freeze({acceptEarlyWin,decorate,showResults,restoreHud});
+})();
+
         function buildMeadowSquare() {
             const spec=ArenaMeadowLayout.spec();
             // Ground mesh and stable turf detail cover the entire 300x original area.
@@ -11887,7 +11959,9 @@ const KTKMeadowHorizon=(function(){
                 button.classList.toggle('selected', selected);
                 button.setAttribute('aria-pressed', String(selected));
             });
-            matchDurationLabel.textContent = ArenaMatch.clock(arenaMatch.durationSeconds);
+            matchDurationLabel.textContent = ArenaMatch.clock(
+              meadowBattleMode&&arenaMatch.phase==='results'&&arenaMatch.result?.battleOutcome
+                ? arenaMatch.result.seconds:arenaMatch.durationSeconds);
         }
 
         matchDurationButtons.forEach(button => button.addEventListener('click', () => {
@@ -11899,6 +11973,7 @@ const KTKMeadowHorizon=(function(){
         }));
 
         function resetFreeForAllRound() {
+            KTKNativeArmyMatchFinish.restoreHud(document);
             hideLiveScoreboard();
             scoreboardRefreshSeconds = 0;
             ArenaTelemetry.reset(arenaTelemetry);
@@ -12040,7 +12115,8 @@ const KTKMeadowHorizon=(function(){
             const result = ArenaMatch.finish(arenaMatch, player, bots);
             if(meadowBattleMode&&meadowBattleState){
                 const summary=ArenaArmyBattle.snapshot(meadowBattleState);
-                result.meadowBattle=summary;
+                KTKNativeArmyMatchFinish.decorate(arenaMatch,result,summary,nativeSiegeMode,
+                  !!(nativeSiegeMode&&nativeSiegeEquipment?.win));
                 matchDurationLabel.textContent=ArenaMatch.clock(result.seconds);
                 document.getElementById('match-results-mode-label').textContent=
                     (nativeSiegeMode?'KALE KUŞATMASI • AYNI OYUN / 140 ASKER':
@@ -12069,6 +12145,7 @@ const KTKMeadowHorizon=(function(){
                 menuOverlay.classList.add('hidden');
                 armyBattleHud.classList.add('hidden');
                 matchResultsOverlay.classList.remove('hidden');
+                KTKNativeArmyMatchFinish.showResults(document);
                 if(document.pointerLockElement===canvas&&document.exitPointerLock)
                     document.exitPointerLock();
                 return;
@@ -12191,6 +12268,7 @@ const KTKMeadowHorizon=(function(){
             setTimeout(() => URL.revokeObjectURL(url), 1000);
         });
         document.getElementById('match-menu-btn').addEventListener('click', () => {
+            KTKNativeArmyMatchFinish.restoreHud(document);
             arenaMatch.phase = 'menu';
             ArenaMatch.configure(arenaMatch, arenaMatch.durationSeconds);
             matchTimeSeconds = arenaMatch.remaining;
@@ -13699,8 +13777,9 @@ const KTKMeadowHorizon=(function(){
             const matchFinished = ArenaMatch.tick(arenaMatch, dt);
             matchTimeSeconds = arenaMatch.remaining;
             document.getElementById('hud-timer').textContent = ArenaMatch.clock(matchTimeSeconds);
-            if (matchFinished || (meadowBattleMode&&meadowBattleState&&meadowBattleState.winner))
-                showMatchResults();
+            const nativeArmyWinner=meadowBattleMode&&meadowBattleState&&meadowBattleState.winner;
+            KTKNativeArmyMatchFinish.acceptEarlyWin(arenaMatch,nativeArmyWinner);
+            if (matchFinished || nativeArmyWinner) showMatchResults();
             renderTeamHUD();
             if (tabScoreboardHeld && arenaMatch.phase === 'playing') {
                 scoreboardRefreshSeconds -= dt;
