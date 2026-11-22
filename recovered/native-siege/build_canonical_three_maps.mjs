@@ -49,7 +49,8 @@ export function buildCanonical(original){
  const scriptPrelude=[
   addon('g54-meadow-natural-lighting.js'),
   addon('g54-meadow-surface-visual.js'),
-  addon('g54-meadow-horizon-visual.js')
+  addon('g54-meadow-horizon-visual.js'),
+  readFileSync(resolve(HERE,'native-army-match-finish.js'),'utf8')
  ].join('\n');
  body=one(body,'        function buildMeadowSquare() {',
    scriptPrelude+'\n        function buildMeadowSquare() {','visual module install');
@@ -106,6 +107,23 @@ export function buildCanonical(original){
    "\n            window.__ktkMeadowLightActive=map==='meadow';"+
    "\n            window.setAtmosphere(currentAtmosphereIdx);",
    'map-scoped daylight');
+ // KTK-SIEGE-SESSION-02: the original ArenaMatch.finish() requires phase
+ // 'results'. A real 140-soldier victory can happen before the 4-min timer;
+ // synchronize only that genuine victory with the existing match lifecycle.
+ const originalEarlyWin=
+  "            if (matchFinished || (meadowBattleMode&&meadowBattleState&&meadowBattleState.winner))\n"+
+  "                showMatchResults();";
+ const correctedEarlyWin=
+  "            const nativeArmyWinner=meadowBattleMode&&meadowBattleState&&meadowBattleState.winner;\n"+
+  "            KTKNativeArmyMatchFinish.acceptEarlyWin(arenaMatch,nativeArmyWinner);\n"+
+  "            if (matchFinished || nativeArmyWinner) showMatchResults();";
+ body=one(body,originalEarlyWin,correctedEarlyWin,'early native army/siege finish');
+ body=one(body,
+  "                result.meadowBattle=summary;",
+  "                KTKNativeArmyMatchFinish.decorate(arenaMatch,result,summary,nativeSiegeMode,\n"+
+  "                  !!(nativeSiegeMode&&nativeSiegeEquipment?.win));",
+  'real G5.4 winner and elapsed time metadata');
+
  body=one(body,'            renderer.render(scene, camera);',
    "            if(arenaMap==='meadow'&&meadowDenseGrass){\n"+
    '              ArenaMeadowGrass.updateNearbyTufts(THREE,meadowDenseGrass,meadowSpec,player.pos.x,player.pos.z);\n'+
@@ -124,7 +142,8 @@ export function buildCanonical(original){
    throw Error('Unexpected separate game launcher in canonical output');
  for(const key of ['id="native-siege-start"','meadowBattleMode = false','nativeSiegeMode = false',
    'window.ktkNativeSiegeMapStatus=','KTKMeadowHorizon.build','KTKMeadowSurfaceVisual.apply',
-   'KTKMeadowNaturalLighting.apply','ArenaMeadowGrass.createNearbyTufts'])
+   'KTKMeadowNaturalLighting.apply','ArenaMeadowGrass.createNearbyTufts',
+   'KTKNativeArmyMatchFinish.acceptEarlyWin','KTKNativeArmyMatchFinish.decorate'])
    if(!output.includes(key))throw Error('Missing canonical marker: '+key);
  const manifest={
   product:'Kill the King',kind:'SINGLE_NATIVE_FPS_THREE_MAPS',
