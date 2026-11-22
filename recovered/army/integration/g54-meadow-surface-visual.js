@@ -35,9 +35,9 @@ const KTKMeadowSurfaceVisual=(function(){
    const pathZ=Math.sin(x*.009+1.7)*23+Math.sin(x*.023-1.1)*8;
    const path=smooth((14-Math.abs(z-pathZ))/13)*.13;
    const edge=smooth((Math.max(Math.abs(x),Math.abs(z))/half-.76)/.24);
-   const r=clamp(.78+lush*.22+dry*.105+path*.36-edge*.06,.60,1.22);
-   const g=clamp(.84+lush*.26-dry*.07-path*.14-edge*.03,.60,1.24);
-   const b=clamp(.73+lush*.21-dry*.17-path*.22-edge*.045,.55,1.15);
+   const r=clamp(.68+lush*.15+dry*.10+path*.20-edge*.05,.60,1.04);
+   const g=clamp(.77+lush*.19-dry*.04-path*.12-edge*.03,.65,1.08);
+   const b=clamp(.64+lush*.16-dry*.10-path*.17-edge*.04,.52,.98);
    return [r,g,b];
  }
  function apply(THREE,ground,spec,segments=144){
