@@ -3,15 +3,18 @@ on:
   push:
     branches:
       - codex/canonical-native-three-maps
+      - codex/siege-long-session-acceptance
     paths:
       - '.github/workflows/sync_native_entrypoint.yml'
+      - 'recovered/native-siege/build_canonical_three_maps.mjs'
+      - 'recovered/native-siege/native-army-match-finish.js'
   workflow_dispatch:
 permissions:
   contents: write
 jobs:
   sync:
     name: Generate canonical single FPS index.html from tested source and commit on current branch
-    if: github.ref_name == 'codex/canonical-native-three-maps'
+    if: github.ref_name == 'codex/canonical-native-three-maps' || github.ref_name == 'codex/siege-long-session-acceptance'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
@@ -36,5 +39,5 @@ jobs:
             echo "Root index already exactly canonical"
           else
             git commit -m "build: synchronize default index.html with tested native three-map FPS"
-            git push origin HEAD:codex/canonical-native-three-maps
+            git push origin HEAD:${{ github.ref_name }}
           fi
