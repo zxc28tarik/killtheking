@@ -51,7 +51,8 @@ export function buildCanonical(original){
   addon('g54-meadow-surface-visual.js'),
   addon('g54-meadow-horizon-visual.js'),
   readFileSync(resolve(HERE,'native-army-match-finish.js'),'utf8'),
-  readFileSync(resolve(HERE,'native-battlefield-visual-v19.js'),'utf8')
+  readFileSync(resolve(HERE,'native-battlefield-visual-v19.js'),'utf8'),
+  readFileSync(resolve(HERE,'native-siege-visual-v20.js'),'utf8')
  ].join('\n');
  body=one(body,'        function buildMeadowSquare() {',
    scriptPrelude+'\n        KTKBattlefieldVisualV19.installHud(document);\n        function buildMeadowSquare() {','visual module install');
@@ -61,6 +62,30 @@ export function buildCanonical(original){
   '\n        const v19SiegeDressing=KTKBattlefieldVisualV19.dressSiegeGate(THREE,nativeSiegeParts,nativeSiegeGateMesh);'+
   '\n        window.ktkSiegeVisualV19Status=()=>({...v19SiegeDressing,gateVisible:nativeSiegeGateMesh.visible,groupVisible:nativeSiegeParts.visible});',
   'native wall/gate look');
+ // VIS-20 materials and genuine moving equipment details. This is installed
+ // after the original native ram/catapult/tower/bridge are fully created, but
+ // before equipment is deployed. Nothing is added to native collision lists.
+ body=append(body,
+  '        nativeSiegeTowerBridge.visible=false;',
+  '\n        const v20SiegeSkin=KTKNativeSiegeVisualV20.install(THREE,document,nativeSiegeParts,{'+
+  'stone:nativeSiegeStone,gateMat:nativeSiegeGateMat,wood:nativeSiegeWood,'+
+  'towerWood:nativeSiegeTowerWood,approach:nativeSiegeApproach,'+
+  'ram:nativeSiegeRam,catapult:nativeSiegeCatapult,catapultArm:nativeSiegeArm,'+
+  'tower:nativeSiegeTower,bridge:nativeSiegeTowerBridge,gate:nativeSiegeGateMesh});'+
+  '\n        window.ktkSiegeVisualV20Status=()=>({'+
+  'installed:v20SiegeSkin.installed,textureMaps:v20SiegeSkin.textureMaps,'+
+  'wallTrimCount:v20SiegeSkin.wallTrimCount,gateTrimCount:v20SiegeSkin.gateTrimCount,'+
+  'ramTrimCount:v20SiegeSkin.ramTrimCount,catapultTrimCount:v20SiegeSkin.catapultTrimCount,'+
+  'towerTrimCount:v20SiegeSkin.towerTrimCount,groundWheelTracks:v20SiegeSkin.groundWheelTracks,'+
+  'noColliders:v20SiegeSkin.noColliders,noProjectileTargets:v20SiegeSkin.noProjectileTargets,'+
+  'originalBattleEngine:v20SiegeSkin.originalBattleEngine,'+
+  'realGateVisible:v20SiegeSkin.authenticGateMesh.visible,'+
+  'realBridgeVisible:v20SiegeSkin.authenticTower.children.includes(nativeSiegeTowerBridge)&&nativeSiegeTowerBridge.visible,'+
+  'ramVisualCount:v20SiegeSkin.authenticRam.children.length,'+
+  'catapultArmVisualCount:v20SiegeSkin.authenticCatapultArm.children.length,'+
+  'towerVisualCount:v20SiegeSkin.authenticTower.children.length});',
+  'authentic G5.4 machine skin and castle materials');
+
 
  body=append(body,'        let meadowNearGrass=null;',
    '\n        let meadowDenseGrass=null;','dense variable');
@@ -214,7 +239,8 @@ export function buildCanonical(original){
    'KTKNativeArmyMatchFinish.acceptEarlyWin','KTKNativeArmyMatchFinish.decorate',
    'KTKNativeArmyMatchFinish.showResults','KTKNativeArmyMatchFinish.restoreHud',
    'KTKBattlefieldVisualV19.addMeadowGroves','KTKBattlefieldVisualV19.dressSiegeGate',
-   'KTKBattlefieldVisualV19.setBattleUi'])
+   'KTKBattlefieldVisualV19.setBattleUi',
+   'KTKNativeSiegeVisualV20.install','ktkSiegeVisualV20Status'])
    if(!output.includes(key))throw Error('Missing canonical marker: '+key);
  const manifest={
   product:'Kill the King',kind:'SINGLE_NATIVE_FPS_THREE_MAPS',
@@ -228,6 +254,7 @@ export function buildCanonical(original){
   meadowVisibleGrassInstanced:14700,
   meadowPerimeterTreesVisualOnly:180,
   siegeGateMasonryVisualOnly:true,
+  castleSiegeVisualV20:{texturedMaterials:5,cosmeticOnly:true,includesNativeTower:true},
   armyAndSiegeCompactHudDefault:true,
   meadowInteriorWalkableHillsAdded:false,
   sourceBytePreservedInRepository:true,
