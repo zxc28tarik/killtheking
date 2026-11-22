@@ -63,6 +63,8 @@ test('V24 maintains four historic UI areas, three distinct map etchings, keyboar
  }
  for(const n of [1,2,3])assert(css.includes('#arena-map-controls>button:nth-of-type('+n+')'),
   'Original map '+n+' must retain distinctive artwork');
+ assert.equal((css.match(/background-image:url\("data:image\/svg\+xml,/g)||[]).length,6,
+  'Three engravings must be foreground artwork in both selected and normal states');
  assert.equal((css.match(/data:image\/svg\+xml,/g)||[]).length,6,
   '3 independent original map etchings with normal and selected visuals');
  assert.equal(/\b(?:addEventListener|requestAnimationFrame|setInterval|setTimeout)\s*\(/.test(source),false);
