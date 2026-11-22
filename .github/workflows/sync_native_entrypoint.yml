@@ -10,6 +10,7 @@ on:
       - codex/v21-ui-finish-command-clarity
       - codex/v22-war-room-menu-hud-quality
       - codex/v23-command-heraldry-ui
+      - codex/v24-war-council-visual-hierarchy
     paths:
       - '.github/workflows/sync_native_entrypoint.yml'
       - 'recovered/native-siege/build_canonical_three_maps.mjs'
@@ -19,6 +20,7 @@ on:
       - 'recovered/native-siege/native-ui-v21.js'
       - 'recovered/native-siege/native-ui-v22.js'
       - 'recovered/native-siege/native-ui-v23.js'
+      - 'recovered/native-siege/native-ui-v24.js'
   workflow_dispatch:
 permissions:
   contents: write
@@ -28,7 +30,7 @@ concurrency:
 jobs:
   sync:
     name: Generate canonical single FPS index.html from tested source and commit on current branch
-    if: github.ref_name == 'codex/canonical-native-three-maps' || github.ref_name == 'codex/siege-long-session-acceptance' || github.ref_name == 'codex/visual-v19-native-battlefield-hud-and-landscape' || github.ref_name == 'codex/v20-native-siege-materials-and-structure' || github.ref_name == 'codex/v21-ui-renaissance-panels-hud' || github.ref_name == 'codex/v21-ui-finish-command-clarity' || github.ref_name == 'codex/v22-war-room-menu-hud-quality' || github.ref_name == 'codex/v23-command-heraldry-ui'
+    if: github.ref_name == 'codex/canonical-native-three-maps' || github.ref_name == 'codex/siege-long-session-acceptance' || github.ref_name == 'codex/visual-v19-native-battlefield-hud-and-landscape' || github.ref_name == 'codex/v20-native-siege-materials-and-structure' || github.ref_name == 'codex/v21-ui-renaissance-panels-hud' || github.ref_name == 'codex/v21-ui-finish-command-clarity' || github.ref_name == 'codex/v22-war-room-menu-hud-quality' || github.ref_name == 'codex/v23-command-heraldry-ui' || github.ref_name == 'codex/v24-war-council-visual-hierarchy'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
