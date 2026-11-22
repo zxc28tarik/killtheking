@@ -164,3 +164,12 @@ Tarih: 21 Kasım 2026. Durum: uygulama başladı; gerçek tarayıcı kabul testi
 - [x] GitHub Actions **45037653280** paketleme / kaynak koruma PASS, gerçek Chromium SwiftShader üç mod kabulü PASS. Tarayıcıda `forestFloorPatches:780`, `batchCount:8`, Kale için `trees:80,shrubs:220,grass:430,stones:96,batches:5` doğrulandı. Ekran görüntüleri ve HTML artifact üretildi.
 - [ ] Kale dış bitkileri sınırlı kamera açısında, büyük HUD panelleri arkasında gizlenebilir; daha iyi objektif görsel karşılaştırma için harita kamerasından ayrıca görüntü gerekir.
 - [ ] Yeni ağaç ve taşlar yalnız görseldir; fiziksel engel olarak kabul edilmez. Gerçek oynanış mekaniğini bozmayacak şekilde bırakıldı.
+
+## V22 — Kale dış tepeler, geniş savaş görünümü ve kontrollü arayüz
+- [x] Kale Kuşatması etrafına **44 InstancedMesh alçak yükselti** ve orijinal 270×220 zeminini çevreleyen 460×415 çevre çimenliği eklendi. Yükseltiler dış kuşakta, eski kale/kapı/rampa/ordu collider'larına hiçbir şekilde bağlı değil.
+- [x] **Geniş savaş görünümü** düğmesi (F7 kısayolu): taktik yan paneli, büyük geliştirici açıklamasını ve Kale sahnesini kaplayan bölük HUD'unu geçici gizleyip oyun görüntüsünü genişletir. Normal görünüme geri dönüldüğünde orijinal 140 askerin tüm taktik/bölük komutları geri gelir; sistemin kendisi silinmez.
+- [x] Kale'nin aşırı parlak duran sahnesinde ton eşleme pozlaması 1.05→0.88, güneş 1.7→1.14 ve hemisferik ışık 1.2→0.83 olarak dengelendi. Savaş ve silah özelliklerinde değişiklik yok.
+- [x] Native S3 HTML paketleme sözleşmesindeki **27 script** şartına riayet edildi: görünüm düğmesi mevcut siege-preview.js içine eklendi, yeni script etiketi kullanılmadı.
+- [x] GitHub Actions **run 45040592514**, paketleme ve gerçek Chromium/SwiftShader üç mod testi **PASS/PASS**. Gerçek tarayıcıda 44 tepe, geniş görünüm ve bölük komut panelinin geri açılması doğrulandı. Sayfa/console hataları yok.
+- [x] Gerçek Chromium geniş görünüm ekran görüntüsü `three-map3-v22-wide-cinematic.png` ve tek çevrimdışı HTML oluşturuldu. V22 adayı, main'e birleştirilmedi.
+- [ ] Ekran görüntüsünde Kale aydınlatması hâlâ stilize ve biraz açık renkli görünüyor. Donanım GPU testleri ve estetik kullanıcı kabulü yapılmadı.
