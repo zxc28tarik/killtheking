@@ -53,10 +53,10 @@
  renderer.shadowMap.enabled=false; // First-pass preview; no GPU perf claim.
  renderer.outputEncoding=THREE.sRGBEncoding;
  renderer.toneMapping=THREE.ACESFilmicToneMapping;
- renderer.toneMappingExposure=1.05;
+ renderer.toneMappingExposure=.88;
  root.appendChild(renderer.domElement);
- scene.add(new THREE.HemisphereLight(0xe8f8ff,0x65503a,1.2));
- const sun=new THREE.DirectionalLight(0xffdbb0,1.7);
+ scene.add(new THREE.HemisphereLight(0xe8f8ff,0x65503a,.83));
+ const sun=new THREE.DirectionalLight(0xffe1bd,1.14);
  sun.position.set(-84,140,75);scene.add(sun);
  const colors={
    wall:0x8a8270,'keep-wall':0x686f73,roof:0x4a4542,
