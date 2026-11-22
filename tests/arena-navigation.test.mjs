@@ -1,3 +1,4 @@
+// Historical modular October source regression; current native three-map entrypoint is verified by recovered/native-siege tests and CI.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
@@ -43,7 +44,7 @@ test('six bots can plan bounded A* routes',()=>{
 });
 test('main source integrates navigation and keeps free-for-all targets',()=>{
  const src=readFileSync(new URL('../src/oyun.js',import.meta.url),'utf8');
- const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+ const html=readFileSync(new URL('../recovered/legacy/KillTheKing_October_Original_Source_Index.html',import.meta.url),'utf8');
  assert.match(src,/ArenaNavigation\.createNavigator/);
  assert.match(src,/navigator\.safeAdvance\(/);
  assert.match(src,/navigator\.findPath\(/);
