@@ -1,0 +1,60 @@
+name: KTK native castle siege — accelerated long game-time WebGL acceptance
+on:
+  push:
+    branches:
+      - codex/siege-long-session-acceptance
+      - main
+    paths:
+      - 'recovered/native-siege/browser_siege_long_session.mjs'
+      - '.github/workflows/native_siege_long_session.yml'
+      - 'recovered/native-siege/build_canonical_three_maps.mjs'
+  pull_request:
+    paths:
+      - 'recovered/native-siege/browser_siege_long_session.mjs'
+      - '.github/workflows/native_siege_long_session.yml'
+      - 'recovered/native-siege/build_canonical_three_maps.mjs'
+  workflow_dispatch:
+jobs:
+  webgl-native-siege-endurance:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 22
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Ensure original AK09 G5.4 source and acceptance helper parse
+        run: |
+          node --check recovered/native-siege/browser_siege_long_session.mjs
+          node --test recovered/native-siege/test_ak_native_07.mjs
+          node --test recovered/native-siege/test_ak_native_09.mjs
+          node --test recovered/native-siege/test_canonical_three_maps.mjs
+      - name: Build exactly the production-candidate native game without gameplay changes
+        run: |
+          node recovered/native-siege/build_canonical_three_maps.mjs
+          node tools/sync_canonical_entrypoint.mjs --check
+          node tools/check_offline.cjs index.html
+      - name: Install pinned Chromium software WebGL browser
+        run: |
+          npm install --no-save --no-package-lock playwright@1.58.2
+          if command -v google-chrome >/dev/null 2>&1; then
+            echo "KTK_CHROME_EXECUTABLE=$(command -v google-chrome)" >> "$GITHUB_ENV"
+          elif command -v google-chrome-stable >/dev/null 2>&1; then
+            echo "KTK_CHROME_EXECUTABLE=$(command -v google-chrome-stable)" >> "$GITHUB_ENV"
+          else
+            npx playwright install chromium
+          fi
+      - name: Real Chromium G5.4 native siege orders 120 simulated game seconds and replay
+        env:
+          KTK_SIEGE_SESSION_REPORT: recovered/native-siege/siege-session-evidence
+        run: |
+          node recovered/native-siege/browser_siege_long_session.mjs \
+            recovered/native-siege/dist/KillTheKing_3_Harita_TEK_ORJINAL_OYUN_ADAY.html
+      - name: Archive exact native battle telemetry and screen evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: KTK-Native-Siege-Accelerated-Long-Battle-REAL-WebGL-Evidence
+          path: |
+            recovered/native-siege/siege-session-evidence/
+          if-no-files-found: warn
