@@ -17,7 +17,7 @@
 - [x] Kırmızı **70 savunucu** güney surunun iç tarafında (`z ≥ -36`) başlar; eski kırmızı tüfekçinin dış karakol `z=-54` doğması kaldırılır.
 - [x] Oyuncu mavi tarafta sur dışında `z=-69` konumunda başlar.
 - [x] Başlangıç 70/70 ayrımı gerçek askerlerin dünya koordinatlarından ölçülür; testte sahte asker enjekte edilmez.
-- [ ] Gerçek tarayıcıda tüm başlangıç konumlarının doğrulanması.
+- [x] Gerçek Chromium/SwiftShader üç harita testinde (`45081413703`, ana dal `45081632373`) 70 kırmızı içeride, 70 mavi dışarıda ve oyuncu dışarıda doğrulandı.
 
 ## B — Gerçek fiziksel kale ve arazisi
 - [x] Orijinal 110×110 kalenin çevresine 224×228,5 sınırında dış sur, dört fiziksel köşe kulesi eklenir.
@@ -42,8 +42,8 @@
 - [x] `test_native_siege_expansion_v25.mjs` oranlar, gerçek colliderlar, orijinal 28 script ve taraf ayrımını test eder.
 - [x] Gerçek Chromium üç harita ve 120 sn hızlandırılmış G5.4 kuşatma akışına 70 iç / 70 dış, kapı ve alan kontrolleri eklendi.
 - [x] GitHub orijinal tek `index.html` üretimi, kanonik oyun testi ve uzun kuşatma iş akışlarına AK25 kaydı.
-- [ ] PR son commit'inde genel oyun, 3 harita Chromium/WebGL ve 140 asker uzun kuşatma/replay testleri PASS.
-- [ ] Birleştirilen `main` üzerinde aynı 3 test PASS.
+- [x] PR #61 son uygulama `18c20e75a` için GitHub Actions PASS: genel oyun `45081413799`, orijinal üç haritanın Chromium/WebGL testi `45081413703`, 140 askerli 120 sn hızlandırılmış oyun zamanı kuşatma/replay `45081413745`.
+- [x] PR #61, `4b1e3630` merge commit'iyle `main` dalına alındı. Aynı commit için 3 GitHub Actions akışı PASS: genel oyun `45081632351`, üç harita gerçek Chromium/SwiftShader `45081632373`, 140 asker uzun kuşatma/replay `45081632294`.
 - [ ] Fiziksel Windows GPU ve kullanıcının bizzat oynayarak kale/alan kabulü.
 
 ## Kaynaklar
@@ -52,3 +52,9 @@
 - Son onaylı arayüz kalitesi V24 / PR #60 korunur.
 
 **Not:** Alanın büyük olması, otomatik olarak genişletilmiş savaş süresi veya farklı birlik sayısı anlamına gelmez. Bunlar ayrı kullanıcı kararı gerektirir.
+
+## AK25 kapanış / kabul sonuçları
+- 3. Kale Kuşatması kırmızı savunma ve mavi hücum gerçek 70/70 asker ayrımına sahiptir. Başlangıçta **70 savunucu içeride**, **70 saldırgan dışarıda**; oyuncu saldırgandır.
+- Kale yerleşim alanı **4,23×**, üçüncü haritanın navigasyon/zemin alanı **8,04×**. Orijinal 600 HP kapı, koçbaşı, mancınık, kuşatma kulesi, iç avlu, F6–F10 ve tek FPS motoru korunur.
+- **Gerçek masaüstü GPU kullanıcı kabulü açık:** GitHub Chromium/SwiftShader, Windows fiziksel GPU görsel deneyiminin yerine geçmez.
+- FPS/perf optimizasyonu ve yayıncı pitch deck başlatılmadı.
