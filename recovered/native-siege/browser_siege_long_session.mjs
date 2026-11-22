@@ -162,6 +162,21 @@ try{
    assert.equal(v.army,'none');
    assert.equal(v.hint,'none');
   });
+  await pass('result screen shows real G5.4 elapsed time, not old 04:00 preset or FFA columns',async()=>{
+   const v=await page.evaluate(()=>{
+    const header=document.querySelector('#match-results-overlay > section > div.grid');
+    const lbl=document.getElementById('match-duration-label');
+    const desc=document.getElementById('match-results-duration-description');
+    return {clock:lbl?.textContent,description:desc?.textContent,
+      headerDisplay:header?getComputedStyle(header).display:null};
+   });
+   const seconds=finished.matchResult.seconds;
+   const mm=String(Math.floor(seconds/60)).padStart(2,'0');
+   const ss=String(Math.ceil(seconds)%60).padStart(2,'0');
+   assert.equal(v.clock,mm+':'+ss);
+   assert.equal(v.description,'SÜREDE SONA ERDİ');
+   assert.equal(v.headerDisplay,'none');
+  });
   await page.screenshot({path:out+'/siege-results.png',timeout:40000});
   await page.click('#match-replay-btn');
   await page.waitForFunction(()=>{
