@@ -300,11 +300,11 @@ try{
  });
  assert.equal(wide?.wide,true,'cinematic siege view should open');
  await child().locator('#siege-scene-toggle').click();
- const restored=await page.evaluate(()=>{
+ const tacticalRestored=await page.evaluate(()=>{
    const doc=document.querySelector('#stage iframe')?.contentDocument;
    return doc?.defaultView?.ktkSiegeCinematicStatus?.().wide;
  });
- assert.equal(restored,false,'original tactical controls should remain available');
+ assert.equal(tacticalRestored,false,'original tactical controls should remain available');
  report.checks.push('PASS_MAP3_V22_CINEMATIC_BATTLEFIELD_TOGGLE');
  report.checks.push('PASS_MAP3_V21_NATURE_REAL_SIEGE:'+JSON.stringify(siege.scene.siegeNatureV21));
  assert.equal(siege.army.authentic140Soldiers,140);
