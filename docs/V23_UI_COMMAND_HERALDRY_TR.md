@@ -10,8 +10,8 @@ Başlangıç: 22 Kasım 2026. Sıradaki arayüz kalite aşaması; V21 ve V22 ona
 - V23, V22'yi değiştirmek veya ikinci bir oyun açmak yerine onun üstüne CSS yükler; mevcut HTML dışında iframe, sahte menü, sahte savaş istatistiği yoktur.
 
 ## V23-A — dört sınıfın görsel kimliği
-- [x] Tüfekçi, Okçu, Mızraklı/Kargılı, Kılıçlı için **özgün tek renkli vektör arma**.
-- [x] Arma, var olan sınıf kartının yazılı başlığından okunarak atanır; açıklama metninden yanlış sınıf çıkarılmaz.
+- [x] Şövalye, Piyade (Mızrak), Okçu (Uzun Yay), Tüfekçi (1600) için **özgün tek renkli vektör arma**.
+- [x] Arma, var olan sınıf kartının yazılı başlığından okunarak atanır; açıklama metninden yanlış sınıf çıkarılmaz. Şövalye için ayrıca kalkan arması vardır; eski bir sürümdeki Kılıçlı varsayımı kullanılmaz.
 - [x] Kartlar için rol rengiyle ince alt kenar, seçili durumda vurgu, klavye focus görünümü ve okunur başlıklar.
 - [x] Arma `::before` üzerinden dekoratif gösterilir; orijinal butonlara ikinci tıklama/dinleyici eklenmez.
 - [x] Bilinmeyen başlıklar görsel süsleme olmadan korunur, oyun seçimi asla engellenmez.
@@ -38,3 +38,8 @@ Başlangıç: 22 Kasım 2026. Sıradaki arayüz kalite aşaması; V21 ve V22 ona
 - Mevcut son arayüz planı: `docs/V22_UI_WAR_ROOM_IMPLEMENTATION_TR.md`.
 
 **Yayıncı sunumu ve performans ölçüm işi bu geliştirme paketinin parçası değildir.**
+
+## Gerçek Chromium sırasında bulunan sınıf kimliği düzeltmesi
+- İlk V23 browser testi `45068499926` dört karttan üçünü tanıdı; bu, oyun hatası değil süsleme eşleştirme eksikliğiydi.
+- Gerçek kart başlıkları `ŞÖVALYE`, `PİYADE (MIZRAK)`, `OKÇU (UZUN YAY)`, `TÜFEKÇİ (1600)` olarak Chromium konsolundan doğrulandı.
+- Şövalye için özgün kalkan arması eklendi ve test fixture'ı tam gerçek isimlere güncellendi. Tüm sınıf isimleri Türkçe harf kurallarıyla tanınır.
