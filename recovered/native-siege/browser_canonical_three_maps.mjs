@@ -133,6 +133,7 @@ try{
     v23Ui:window.ktkUiV23Status?.(),
     v24Ui:window.ktkUiV24Status?.(),
     expandedSiege:window.ktkSiegeExpandedMapStatus?.(),
+    siegeFortification:window.ktkSiegeFortificationStatus?.(),
     v19Hud:{
      armyClass:document.body.classList.contains('ktk-native-battle-ui'),
      orderPanelCompact:document.getElementById('meadow-army-hud').classList.contains('ktk-siege-slim'),
@@ -171,12 +172,33 @@ try{
    assert.equal(playing.v19Groves?.noColliders,true,'No invented tree colliders');
   }
   if(mode.name!=='siege'){
+   assert.equal(playing.siegeFortification?.activated,false,
+    'AK26 defensive obstacles must be invisible/uncollidable outside siege mode');
+   assert.equal(playing.siegeFortification?.activeProjectileCover,false,
+    'AK26 must not change Arena or Meadow world raycasts');
    assert.equal(playing.expandedSiege?.activated,false,
     'AK25 enlarged fortress must remain invisible/uncollidable in FFA and Meadow');
   }
   if(mode.name==='siege'){
    assert(playing.expandedSiege,'AK25 expanded siege layout status exists in the same game');
    assert.equal(playing.expandedSiege.activated,true,'Physical outer fort active only in siege');
+   const fort=playing.siegeFortification;
+   assert.equal(fort?.activated,true,'Five defensive lines actually belong to playing siege map');
+   assert.equal(fort?.realDefensiveLayers,5,'A functional fort needs five defense zones');
+   assert.equal(fort?.realCollisionBoxes,19,'Nineteen authentic gameplay cover bodies');
+   assert(fort?.frontBastions>=6,'Fortified flanking gate and integrated projecting bastions');
+   assert.equal(fort?.antiRushObstacles,3,'Original breach has actual anti-rush dogleg/guardrooms');
+   assert.equal(fort?.secondLineBlocks,4,'Rear bailey defended by real second line');
+   assert.equal(fort?.entranceChokeWidth,16,'Original destructible gate aperture stays open');
+   assert.equal(fort?.backRetreatPassageWidth,24,'Second line has walkable reserve passage');
+   assert.equal(fort?.activeProjectileCover,true,'Original projectile raycasts see the physical bastions');
+   assert.equal(fort?.realG54PlayerBotCollisions,true,'Existing FPS and G5.4 collision engines own new walls');
+   assert.equal(fort?.noAdditionalSoldiers,true);
+   assert.equal(fort?.noSecondGame,true);
+   assert.deepEqual(Object.keys(fort?.corridors||{}).sort(),
+    ['ram','tower','catapult','westBreach','eastBreach','innerPostern'].sort());
+   assert(Object.values(fort.corridors).every(Boolean),
+    'All existing original siege machines, two breach flanks and retreat corridor remain walkable');
    assert(playing.expandedSiege.castleAreaFactor>=4,'Castle footprint at least 4x original');
    assert(playing.expandedSiege.mapAreaFactor>=8,'Siege terrain/nav area at least 8x original');
    assert.equal(playing.expandedSiege.castleWidth,224);
