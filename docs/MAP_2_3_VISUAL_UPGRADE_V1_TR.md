@@ -137,3 +137,12 @@ Tarih: 21 Kasım 2026. Durum: uygulama başladı; gerçek tarayıcı kabul testi
 - [x] 3 birim test, güncel üç modlu çalışma kopyası 29/29 JS sözdizimi ve Chromium'da gerçek `PASS_MAP2_NATURAL_LIGHTING` + `PASS_MAP2_ORIGINAL_H_DAY_CYCLE` doğrulandı.
 - [x] GitHub Actions run 45022149047: paketleme SUCCESS, üç modlu Chromium/WebGL SUCCESS, sayfa/konsol hataları yok. Tek offline HTML ve gerçek ekran görüntüleri üretildi.
 - [ ] Gözle yapılan incelemede ufuk gökyüzü öncekinden daha nötr ama zemin hâlâ fazla parlak; sonraki görsel adım yalnız çim tonu ve zemin materyalinin doğal görünümü olacak.
+
+## V19 — Tek parçada ağaç, çalı ve çimen mega görsel güncellemesi
+- [x] Meydan gerçek native G5.4 sahnesine 250 farklı boy/renkte low-poly ağaç (1 gövde ve 3 katmanlı taç) eklendi. 64'ü görünür kenar kuşağında, 186'sı dış orman kuşağında.
+- [x] Savaş alanının içine 860 alçak çalı ve 1.050 küçük kuru ot/çiçek kümesi dağıtıldı; dağılım deterministik ve InstancedMesh ile **yalnız dört çizim grubu** kullanıyor.
+- [x] Orman tabanında çimenlik geçiş yüzeyi eklendi; ana zemin materyaline daha doğal yeşil çarpan (0xa3b58c) uygulandı.
+- [x] Yeni bitkiler yalnız 3B dekorasyon: gerçek G5.4 bot AI, çarpışmalar, mermiler, spawns, ordu komutu ve FFA/Kale kaynakları korunuyor. İçteki 64 ağaç şimdilik çarpışmasızdır; görsel yerleşim fiziksel kabul değildir.
+- [x] Güncel CI 45036353698 **paketleme PASS, gerçek Chromium/SwiftShader üç mod PASS**. Görsel 250 ağaç, 860 çalı, 1.050 küçük bitki sayısı ve görünürlük tarayıcıda denetlendi. Sayfa ve konsol JS hatası yok.
+- [x] Tek çevrimdışı HTML ve gerçek Chromium ekran görüntüsü üretildi, ana dala birleştirme yapılmadı.
+- [ ] Görsel incelemede bitkiler oyuna eklenmiş olsa da ağaçlar başlangıç kamerasından hâlâ uzakta ve tepeler genel manzarada az fark ediliyor. Daha iyi kompozisyon, fiziksel ağaç çarpışması ve tüm haritada görülebilen ağaç kümeleri ayrı etap gerektirir.
