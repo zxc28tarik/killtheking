@@ -65,3 +65,41 @@ jobs:
             recovered/native-siege/dist/KillTheKing_3_Harita_TEK_ORJINAL_OYUN_ADAY.html
             recovered/native-siege/dist/KillTheKing_3_Harita_TEK_ORJINAL_OYUN_ADAY.html.build.json
           if-no-files-found: error
+
+  chromium:
+    name: Genuine Chromium software-WebGL on all THREE native battle choices
+    runs-on: ubuntu-24.04
+    timeout-minutes: 22
+    needs: canonical
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Build same single-engine test HTML
+        run: node recovered/native-siege/build_canonical_three_maps.mjs
+      - name: Install pinned Playwright and Chromium
+        run: |
+          npm install --no-save --no-package-lock playwright@1.58.2
+          if command -v google-chrome >/dev/null 2>&1; then
+            echo "KTK_CHROME_EXECUTABLE=$(command -v google-chrome)" >> "$GITHUB_ENV"
+          elif command -v google-chrome-stable >/dev/null 2>&1; then
+            echo "KTK_CHROME_EXECUTABLE=$(command -v google-chrome-stable)" >> "$GITHUB_ENV"
+          else
+            npx playwright install chromium
+          fi
+      - name: Test actual original 3-map game canvas and 70v70 siege in Chromium
+        env:
+          KTK_CANONICAL_BROWSER_REPORT: recovered/native-siege/canonical-browser-evidence
+        run: |
+          node --check recovered/native-siege/browser_canonical_three_maps.mjs
+          node recovered/native-siege/browser_canonical_three_maps.mjs             recovered/native-siege/dist/KillTheKing_3_Harita_TEK_ORJINAL_OYUN_ADAY.html
+      - name: Upload screenshots, actual status snapshots and errors
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: KillTheKing-CANONICAL-Native-3-Map-Software-WebGL-Evidence
+          path: |
+            recovered/native-siege/canonical-browser-evidence/
+            recovered/native-siege/dist/KillTheKing_3_Harita_TEK_ORJINAL_OYUN_ADAY.html.build.json
+          if-no-files-found: warn
