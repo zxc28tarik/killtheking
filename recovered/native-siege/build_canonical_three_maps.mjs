@@ -74,6 +74,8 @@ export function buildCanonical(original){
   'tower:nativeSiegeTower,bridge:nativeSiegeTowerBridge,gate:nativeSiegeGateMesh});'+
   '\n        window.ktkSiegeVisualV20Status=()=>({'+
   'installed:v20SiegeSkin.installed,textureMaps:v20SiegeSkin.textureMaps,'+
+  'originalRamRoofReskinned:v20SiegeSkin.originalRamRoofReskinned,'+
+  'guardWallStoneCladding:v20SiegeSkin.guardWallStoneCladding,'+
   'wallTrimCount:v20SiegeSkin.wallTrimCount,gateTrimCount:v20SiegeSkin.gateTrimCount,'+
   'ramTrimCount:v20SiegeSkin.ramTrimCount,catapultTrimCount:v20SiegeSkin.catapultTrimCount,'+
   'towerTrimCount:v20SiegeSkin.towerTrimCount,groundWheelTracks:v20SiegeSkin.groundWheelTracks,'+
