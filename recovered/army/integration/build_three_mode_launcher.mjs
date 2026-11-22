@@ -182,6 +182,11 @@ export function addCastleThirdMode(twoModeHtml, siegeHtml){
       '\\n            if(skyDomeMesh)skyDomeMesh.scale.setScalar(map===\'meadow\'?Math.max(4,meadowSpec.half/90):1);'+
       '\\n            window.ktkMeadowSkyVisualStatus=()=>({skyRadius:240*skyDomeMesh.scale.x,meadowHalf:meadowSpec.half,mode:arenaMap});'+
       '\\n            scene.background.setHex(map===\'meadow\'?0xb9c5b6:0xd97736);");'+
+   // The existing G5.4 map switch resets sky scale to 8 AFTER our hook.
+   'const quote=String.fromCharCode(39);'+
+   'const oldSkyScale="                map==="+quote+"meadow"+quote+"?8:1);";'+
+   'if(visualArmy.split(oldSkyScale).length!==2)throw Error("MAP2 original sky scale anchor changed");'+
+   'visualArmy=visualArmy.replace(oldSkyScale,oldSkyScale.replace("?8:1);","?Math.max(8,meadowSpec.half/90):1);"));'+
    'const renderMark="            renderer.render(scene, camera);";'+
    'if(visualArmy.split(renderMark).length!==2)throw Error("MAP2 render anchor changed");'+
    'visualArmy=visualArmy.replace(renderMark,'+
