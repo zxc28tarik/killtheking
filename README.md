@@ -18,13 +18,15 @@
 
 The old [three-iframe S3D1 bundle](https://github.com/zxc28tarik/killtheking/actions/runs/44524696649/artifacts/14528493467) is retained for regression/history. Its Siege is a separate engine and **must not be sent as the latest normal Kill the King game**.
 
-## Play locally
-1. Download the repository as ZIP and extract it.
-2. Open `index.html` in Chrome or Edge on a computer with WebGL enabled.
-3. Choose one of four classes and click **KUŞATMAYA GİR (BAŞLA)**; the game uses mouse pointer lock.
-4. WASD movement, space jumping, Shift/C sliding, mouse combat, F/V quick ability.
+## Play the current canonical game
+1. Open **index.html** at the root of the repository in Chrome or Edge, or use GitHub Pages when enabled. It is the same exact native game as the CI-built downloadable HTML and is fully self-contained (offline play).
+2. Pick original Arena/TDM, 140-soldier Meadow Army or 140-soldier Castle Siege **in the same game menu**, and click **OYUNA GİR (BAŞLA)**.
+3. The original camera, classes, WASD/slide-hop and combat are shared. The siege map offers 140 G5.4 actors, siege equipment commands F6–F9, and F10 to expand/collapse the command HUD.
+4. The old October Arena can still be compiled explicitly with `python3 tools/build_offline.py --legacy --out dist/Oct_Archive.html`; its historic source is stored in `recovered/legacy/`.
 
-The Three.js r128 engine and game CSS/JavaScript are committed locally. Chakra Petch uses a remote Google Fonts stylesheet when available and a fallback when offline. No font binary files are in this repository.
+Current/default offline build: `python3 tools/build_offline.py --out dist/KillTheKing_Oyna.html`, with resulting file identical to **index.html**. To verify the source-to-root match run `node tools/sync_canonical_entrypoint.mjs --check`. The normal CI workflow enforces this check.
+
+**Acceptance limit:** Chromium software-WebGL three-map smoke and original-source regression tests passed. Real Windows graphics hardware and human-operated long battles are not yet accepted as production-ready.
 
 ## Development structure
 - `index.html` — game entrypoint
