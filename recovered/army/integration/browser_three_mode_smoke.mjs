@@ -282,6 +282,25 @@ try{
  assert.equal(siege.scene.siegeNatureV21.grass,430);
  assert.equal(siege.scene.siegeNatureV21.stones,96);
  assert.equal(siege.scene.siegeNatureV21.batches,5);
+ const cinematicStart=await page.evaluate(()=>{
+   const doc=document.querySelector('#stage iframe')?.contentDocument;
+   return doc?.defaultView?.ktkSiegeCinematicStatus?.()||null;
+ });
+ assert.equal(cinematicStart?.available,true);
+ assert.equal(cinematicStart.wide,false);
+ await child().locator('#siege-scene-toggle').click();
+ const wide=await page.evaluate(()=>{
+   const doc=document.querySelector('#stage iframe')?.contentDocument;
+   return doc?.defaultView?.ktkSiegeCinematicStatus?.()||null;
+ });
+ assert.equal(wide?.wide,true,'cinematic siege view should open');
+ await child().locator('#siege-scene-toggle').click();
+ const restored=await page.evaluate(()=>{
+   const doc=document.querySelector('#stage iframe')?.contentDocument;
+   return doc?.defaultView?.ktkSiegeCinematicStatus?.().wide;
+ });
+ assert.equal(restored,false,'original tactical controls should remain available');
+ report.checks.push('PASS_MAP3_V22_CINEMATIC_BATTLEFIELD_TOGGLE');
  report.checks.push('PASS_MAP3_V21_NATURE_REAL_SIEGE:'+JSON.stringify(siege.scene.siegeNatureV21));
  assert.equal(siege.army.authentic140Soldiers,140);
  assert.equal(siege.army.realDefenderRoleCoordinationConnected,true);
