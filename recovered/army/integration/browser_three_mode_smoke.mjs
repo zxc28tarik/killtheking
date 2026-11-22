@@ -139,7 +139,8 @@ try{
  assert.equal(natureV19.bushCount,1550);
  assert.equal(natureV19.flowerCount,2350);
  assert.equal(natureV19.rockCount,380);
- assert.equal(natureV19.batchCount,6);
+ assert.equal(natureV19.batchCount,8);
+ assert.equal(natureV19.forestFloorPatches,780);
  assert.equal(natureV19.groveCount,18);
  assert.ok(natureV19.groveTrees>200,'foreground should include a genuine visible tree belt');
  assert.ok(natureV19.nearestTreeDistance>=250,'squads need unobstructed centre clearing');
@@ -276,6 +277,12 @@ try{
     player:w.ktkSiegePlayerCombatStatus(),
     scene:w.ktkSiegePreviewStatus()};
  });
+ assert.equal(siege.scene.siegeNatureV21.trees,80);
+ assert.equal(siege.scene.siegeNatureV21.shrubs,220);
+ assert.equal(siege.scene.siegeNatureV21.grass,430);
+ assert.equal(siege.scene.siegeNatureV21.stones,96);
+ assert.equal(siege.scene.siegeNatureV21.batches,5);
+ report.checks.push('PASS_MAP3_V21_NATURE_REAL_SIEGE:'+JSON.stringify(siege.scene.siegeNatureV21));
  assert.equal(siege.army.authentic140Soldiers,140);
  assert.equal(siege.army.realDefenderRoleCoordinationConnected,true);
  assert.equal(siege.army.realRampart3DDefenderAIConnected,true);
