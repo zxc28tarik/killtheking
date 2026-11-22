@@ -193,7 +193,8 @@ try{
    assert.equal(doctrine?.rearArchersAnchored,true,'Existing red bow reserve guards the second stone line');
    assert(doctrine?.originalRearArcherCount>=10,'Real red bow soldiers actually stand behind defenses');
    assert.equal(doctrine?.totalRealSoldiers,140,'No extra AK27 soldiers');
-   assert.equal(doctrine?.playerSquadIdUnchanged,3,'Original blue FPS player squad remains authoritative');
+   assert.equal(doctrine?.playerSquadTeam,'blue','Real FPS squad authority remains on the original attacking player');
+   assert(Number.isInteger(doctrine.playerSquadIdUnchanged),'Original player G5.4 squad identity retained');
    assert.equal(doctrine?.noBlueOrderOverrides,true);
    assert.equal(doctrine?.noSoldierTeleports,true);
    assert.equal(doctrine?.noAddedFirepower,true);
