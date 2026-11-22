@@ -62,7 +62,7 @@ test('launcher embeds only the real main menu controller; source games are inert
  assert(scr[3][1].includes('window.confirm('));
  assert(scr[3][1].includes('frame.srcdoc=visualArmy.replace('));
  assert(scr[3][1].includes('frame.srcdoc=original'));
- assert(scr[3][1].includes('KTKMeadowSurfaceVisual.apply(THREE,grassGround,spec)')===false);
+ assert(scr[3][1].includes('KTKMeadowSurfaceVisual.apply(THREE,grassGround,spec)'));
  assert(scr[3][1].includes('surfaceB64'));
  assert(scr[3][1].includes('horizonB64'));
  assert(scr[3][1].includes('MAP2 ground surface anchor changed'));
