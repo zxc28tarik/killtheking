@@ -120,3 +120,13 @@ Tarih: 21 Kasım 2026. Durum: uygulama başladı; gerçek tarayıcı kabul testi
 - [x] Son güncel run 44966251580: paketleme ve gerçek SwiftShader Chromium kontrolü **ikisi de SUCCESS**; 2.700 + 12.000 native grass, 325 vertex/512 triangle dış tepeler ve 21.025 köşeli zemin gerçek çalışmada doğrulandı. GitHub Actions artifact: KillTheKing-3-Mod-Arena-Ordu-Kale-Kusatmasi-Tek-HTML-NOT-Final.
 - [ ] Gerçek ekran görüntüsündeki geçici büyük yarı saydam gri ön-plan nesnesi/efekti ve genel sahne ışık dengesi ayrıca estetik kalite incelemesi istiyor. Smoke/mesh kaynağı saptanmadan oyunun fiziğine veya oynanışına müdahale edilmeyecek.
 - [ ] Windows fiziksel GPU ve oyuncu tarafından görsel kabulü bekleniyor. Bu geliştirici adayı, son yayın sürümü değildir.
+
+## V17 — Gerçek görüntüdeki dev gri blok düzeltildi
+- [x] V16 Chromium screenshot'unda ön plandaki büyük yarı saydam gri prizma tespit edildi. 3B tanı ile tüm saydam mesh'ler kapanınca prizmanın kaybolduğu; gökyüzü kubbesi tek başına kapanınca kaybolmadığı gözlendi.
+- [x] Saydam nesneler ikiye ayrıldı: eski bulut BoxGeometry grubu (opacity 0.85) kapatılınca blok sürüyor; diğer saydam nesneler kapatılınca blok gidiyor. Asıl kaynak: eski tüfek atışında doğrudan kamera çevresinde oluşan 22 adet volumetrik barut dumanı küpü.
+- [x] Oyunun 140 askerli MEYDAN SAVAŞI görsel çalışma kopyasında tüfek dumanı kamera konumundan nişan doğrultusunda 5 birim ileri taşındı; 22 -> 8 görsel parça, 3.0 -> 1.0 saniye. FFA/TDM kaynakları ve diğer silah/AI/fizik davranışları korunuyor.
+- [x] Meydan'ın gerçek büyüklüğüne göre sky dome ölçeği düzeltildi; mod geçişinde native G5.4'ün 8x'e geri çekmesini önleyen ikinci kaynak yaması eklendi. Kale modunda eski atmosfer korunuyor.
+- [x] Uygun olmayan blok biçimli eski skyCloud grupları yalnızca Meydan modunda gizleniyor; diğer moddaki orijinal bulutlar korunuyor.
+- [x] Duman düzeltmesinin gerçek Chromium screenshot'unda dev gri blok tamamen kaybolduğu gözlemlendi; askerler ve açık savaş alanı artık net. Tanı modülleri ve geçici sahne inceleme kancası son üç modlu HTML'den çıkarıldı.
+- [x] Son güncel GitHub Actions run 44970283131: tek HTML paketleme + gerçek SwiftShader Chromium üç mod testi **PASS/PASS**. Oynanabilir HTML ve 3 mod ekran görüntüleri artifact olarak üretildi. 29 game script syntax PASS; kaynak orijinal saklı base64 korunuyor.
+- [ ] Kullanıcı görsel kabulü ve Windows donanım GPU testi ayrı yapılmalı. Bu aday son yayın onaylı oyun değildir.
