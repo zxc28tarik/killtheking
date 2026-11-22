@@ -13,6 +13,10 @@ test('MAP2 visual patch is isolated to real decoded native G5.4 mode',()=>{
  assert(builder.includes('ArenaMeadowGrass.updateNearbyTufts'));
  assert.match(builder,/MAP2 nearby variable anchor changed/);
  assert.match(builder,/MAP2 render anchor changed/);
+ assert(builder.includes('MAP2 musket smoke anchor changed'));
+ assert(builder.includes('meadowBattleMode?8:22'));
+ assert(builder.includes('meadowBattleMode?1.0:3.0'));
+ assert(!builder.includes('__ktkVisualProbeScene'));
  assert.match(builder,/frame\.srcdoc=visualArmy\.replace/);
  assert.match(builder,/else frame\.srcdoc=original/);
  assert.match(builder,/expectSource\(result,'army'\)!==expectSource\(twoModeHtml,'army'\)/);
