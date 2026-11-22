@@ -41,7 +41,7 @@ test('KTK-MAIN-01: same original FPS uses 3 real menu map/army choices',()=>{
  }
  assert(s.includes('let meadowBattleMode = false;'));
  assert(s.includes('let nativeSiegeMode = false;'));
- assert.equal(result.manifest.140G54TroopsInArmyAndSiege,true);
+ assert.equal(result.manifest.nativeArmyAndSiegeTroops,140);
 });
 test('KTK-MAIN-02: real Meadow V18 cosmetics added without soldier height changes',()=>{
  const s=result.html;
