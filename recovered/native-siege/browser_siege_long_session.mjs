@@ -39,7 +39,8 @@ async function snap(label){
    winner:status.meadowBattle?.winner??null,actorTotal:status.meadowBattle?.total??null,
    canvas:!!document.querySelector('canvas'),iframeCount:document.querySelectorAll('iframe').length,
    siege,visualGate:window.ktkSiegeVisualV19Status?.()||null,
-   v20:window.ktkSiegeVisualV20Status?.()||null};
+   v20:window.ktkSiegeVisualV20Status?.()||null,
+   v21Ui:window.ktkUiV21Status?.()||null};
  });
  results.trace.push({label,...v});
  console.log('SIEGE_STEP',label,JSON.stringify({phase:v.phase,remaining:v.secondsRemaining,
@@ -74,6 +75,9 @@ try{
   assert.equal(started.iframeCount,0);
   assert.equal(started.siege.gateHp,600);
   assert.equal(started.siege.gateOpen,false);
+  assert.equal(started.v21Ui?.installed,true,'New UI loaded on live original 140-soldier siege');
+  assert.equal(started.v21Ui?.renderOnly,true,'Only historical visual layer changed');
+  assert(started.v21Ui?.originalSiegeButtons>=4,'Original equipment controls remain');
  });
  // A real keyboard event travels the normal game's original listener. We
  // never directly invoke private machine state or G5.4 commander internals.
@@ -120,6 +124,8 @@ try{
     assert(t.siege?.captureHeldSeconds>=0);
     assert(t.secondsRemaining>=0);
     assert.equal(t.v20?.installed,true,'V20 loaded on actual G5.4 siege');
+    assert.equal(t.v21Ui?.installed,true,'V21 visual panels persist throughout real native siege');
+    assert.equal(t.v21Ui?.noNewGameControls,true,'No non-native controls were installed');
     assert.equal(t.v20?.textureMaps,5,'Material textures survive 140 soldiers + projectiles');
     assert.equal(t.v20?.noColliders,true,'V20 visual details do not alter real passage');
     assert.equal(t.v20?.realGateVisible,!t.siege?.gateOpen,'Gate ring iron follows actual breach');
@@ -217,6 +223,7 @@ try{
    assert.equal(restarted.siege?.done,false);
    assert.equal(restarted.visualGate?.gateVisible,true,'Restored original native gate shows its dressing');
    assert.equal(restarted.v20?.realGateVisible,true,'V20 ironwork returns on real gate replay');
+   assert.equal(restarted.v21Ui?.installed,true,'V21 panels remain after genuine native siege replay');
    assert.equal(restarted.v20?.realBridgeVisible,false,'V20 preserved default retracted siege bridge');
   });
  }else{
