@@ -97,6 +97,8 @@ test('Only the verified 29th original FPS script receives AK26 physical defense 
  assert(next.includes('nativeSiegeWallBoxes.push(...nativeSiegeDefenseV26.wallBoxes)'));
  assert(next.includes('...nativeSiegeDefenseV26.solidMeshes'));
  assert(next.includes('window.ktkSiegeFortificationStatus=()=>'));
+ assert(next.includes('nativeSiegeDefenseSpawnIntrusions=meadowBattleState.soldiers.filter('));
+ assert(next.includes('bow:84,sword:4'));
  assert.equal((next.match(/nativeSiegeDefenseV26.solidMeshes/g)||[]).length,3);
 });
 test('Final AK26 canonical game keeps first 28 original G5.4 scripts byte-identical, 3 maps, true siege',()=>{
