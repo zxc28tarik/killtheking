@@ -37,6 +37,7 @@ try{
   await page.waitForFunction(()=>typeof window.krunkerArenaStatus==='function',{timeout:30000});
   const uiBoot=await page.evaluate(()=>({
    ...window.ktkUiV21Status?.(),
+   v22:window.ktkUiV22Status?.(),
    selectedMapCount:document.querySelectorAll('#arena-map-controls>button').length,
    menuPanelBorder:getComputedStyle(document.querySelector('#menu-overlay>div')).borderTopWidth,
    menuPanelBackground:getComputedStyle(document.querySelector('#menu-overlay>div')).backgroundImage,
@@ -45,6 +46,10 @@ try{
    originalModeButtons:document.querySelectorAll('#match-mode-controls button').length
   }));
   assert.equal(uiBoot.installed,true,'V21 shared visual design installed in the original game');
+  assert.equal(uiBoot.v22?.installed,true,'V22 War Room UI installed over original game');
+  assert.equal(uiBoot.v22?.v21Retained,true,'V21 retained');
+  assert.equal(uiBoot.v22?.mapButtons,3,'Three original map controls');
+  assert.equal(uiBoot.v22?.noGameStateMutation,true,'V22 only presentation');
   assert.equal(uiBoot.originalMapButtons,3,'Three real original map controls remain');
   assert.equal(uiBoot.selectedMapCount,3,'Do not substitute isolated menu buttons');
   assert(uiBoot.originalSiegeButtons>=4,'Original commands plus existing F10 panel control');
@@ -55,7 +60,7 @@ try{
   assert(uiBoot.originalArmyOrderButtons>=7,'Real G5.4 tactical order elements remain');
   assert.equal(uiBoot.actualSiegeDisabled,true,'Cannot visually unlock real gate assault');
   assert.equal(uiBoot.selectorDisplay,'grid','Map selection is three equal visual cards');
-  assert.equal(uiBoot.menuPanelBorder,'3px','Menu now has historic bronze top molding');
+  assert.equal(uiBoot.menuPanelBorder,'4px','V22 War Room menu brass molding');
   assert(uiBoot.menuPanelBackground.includes('gradient'),'Premium background surface is applied');
   assert(uiBoot.primaryButtonBackground.includes('gradient'),'Main PLAY action uses the same bronze/gold system');
   assert.equal(uiBoot.originalModeButtons,2,'FFA/TDM modes unchanged');
@@ -76,7 +81,12 @@ try{
   await page.screenshot({path:evidence+'/'+mode.name+'-menu.png',timeout:30000});
   await page.click('#play-btn');
   await page.waitForFunction(()=>window.krunkerArenaStatus().matchPhase==='playing',{timeout:30000});
-  await page.waitForTimeout(500);
+  // Wait for actual original G5.4 soldier readiness, not a timing guess.
+  // Read-only wait: never injects soldiers or game state.
+  if(mode.name==='siege')await page.waitForFunction(()=>{
+   try{return window.ktkNativeSiegeMapStatus?.().realSoldiers===140}catch{return false}
+  },null,{timeout:45000});
+  else await page.waitForTimeout(350);
   const playing=await page.evaluate(()=>{
    const s=window.krunkerArenaStatus();
    const cv=document.querySelector('canvas');
@@ -92,6 +102,7 @@ try{
     v19Siege:window.ktkSiegeVisualV19Status?.(),
     v20Siege:window.ktkSiegeVisualV20Status?.(),
     v21Ui:window.ktkUiV21Status?.(),
+    v22Ui:window.ktkUiV22Status?.(),
     v19Hud:{
      armyClass:document.body.classList.contains('ktk-native-battle-ui'),
      orderPanelCompact:document.getElementById('meadow-army-hud').classList.contains('ktk-siege-slim'),
@@ -100,6 +111,8 @@ try{
     }};
   });
   assert.equal(playing.v21Ui?.installed,true,'V21 remains installed during real FPS battles');
+  assert.equal(playing.v22Ui?.installed,true,'V22 stays installed in FPS battle');
+  assert.equal(playing.v22Ui?.noNewControls,true,'No alternate battle controls');
   assert(playing.v21Ui?.originalSiegeButtons>=4,'F6-F9 real siege commands and existing panel control');
   assert.equal(playing.v21Ui?.originalMapButtons,3,'No new menu or mode runtime');
   assert.equal(playing.v21Ui?.renderOnly,true,'No game logic rebindings in UI');
@@ -181,21 +194,27 @@ try{
  const compactErrors=[];
  compact.on('pageerror',e=>compactErrors.push(String(e)));
  await compact.goto(pathToFileURL(game).href,{waitUntil:'load',timeout:60000});
- await compact.waitForFunction(()=>!!window.ktkUiV21Status?.().installed,{timeout:30000});
+ await compact.waitForFunction(()=>!!window.ktkUiV22Status?.().installed,null,{timeout:30000});
  const mobileUi=await compact.evaluate(()=>({
   selectedCount:document.querySelectorAll('#arena-map-controls>button').length,
   mapDisplay:getComputedStyle(document.getElementById('arena-map-controls')).gridTemplateColumns,
   menuWidth:document.querySelector('#menu-overlay>div').getBoundingClientRect().width,
   viewportWidth:innerWidth,
   sameNativeGame:typeof window.krunkerArenaStatus==='function',
+  v22:window.ktkUiV22Status?.(),
+  mapCardHeight:document.querySelector('#arena-map-controls>button').getBoundingClientRect().height,
+  cardsFit:[...document.querySelectorAll('#arena-map-controls>button')].every(b=>b.getBoundingClientRect().width<=innerWidth),
   buttonsUnchanged:!!document.getElementById('native-siege-start')&&!!document.getElementById('play-btn')
  }));
  assert.equal(mobileUi.selectedCount,3,'Small-screen menu retains three battle choices');
  assert.equal(mobileUi.sameNativeGame,true);
  assert.equal(mobileUi.buttonsUnchanged,true);
+ assert.equal(mobileUi.v22?.installed,true,'V22 present on 390px display');
+ assert.equal(mobileUi.cardsFit,true,'Three map choices fit mobile viewport');
+ assert(mobileUi.mapCardHeight>=40,'Map choices remain legible/tappable');
  assert(mobileUi.menuWidth<=mobileUi.viewportWidth,'Mobile original menu fits screen');
  await compact.locator('#arena-map-controls').scrollIntoViewIfNeeded();
- await compact.screenshot({path:evidence+'/v21-mobile-menu.png',timeout:30000});
+ await compact.screenshot({path:evidence+'/v22-mobile-menu.png',timeout:30000});
  report.mobileUi=mobileUi;
  report.errors.push(...compactErrors.map(x=>'mobile: '+x));
  await compact.close();
