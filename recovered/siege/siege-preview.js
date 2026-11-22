@@ -22,6 +22,25 @@
  if(!validation.ok){fail(validation.errors.join(' | '));return;}
  const spec=layout.spec;
  let siege=rules.createScenario();
+ const viewToggle=document.getElementById('siege-scene-toggle');
+ if(viewToggle){
+  const setCinematic=wide=>{
+   document.body.classList.toggle('siege-cinematic',wide);
+   viewToggle.setAttribute('aria-pressed',String(wide));
+   viewToggle.textContent=wide?'Kontrolleri göster':'Geniş savaş görünümü';
+   window.dispatchEvent(new Event('resize'));
+  };
+  viewToggle.addEventListener('click',()=>setCinematic(
+   !document.body.classList.contains('siege-cinematic')));
+  document.addEventListener('keydown',e=>{
+   if(e.code!=='F7'||e.repeat||e.altKey||e.ctrlKey)return;
+   e.preventDefault();
+   setCinematic(!document.body.classList.contains('siege-cinematic'));
+  });
+  globalThis.ktkSiegeCinematicStatus=()=>({
+   available:true,wide:document.body.classList.contains('siege-cinematic')
+  });
+ }
  const root=document.getElementById('scene');
  const scene=new THREE.Scene();
  scene.background=new THREE.Color(0xa9bec0);
