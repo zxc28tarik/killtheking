@@ -21,9 +21,23 @@ jobs:
         run: python3 tools/build_offline.py --out dist/KillTheKing_Oyna.html
       - name: Validate all inlined HTML scripts
         run: node tools/check_offline.cjs dist/KillTheKing_Oyna.html
+      - name: Assert main/root index and downloadable artifact are the same CANONICAL game
+        run: |
+          node tools/sync_canonical_entrypoint.mjs --check
+          cmp index.html dist/KillTheKing_Oyna.html
+          node --input-type=module -e '
+            import {readFileSync} from "node:fs";
+            const s=readFileSync("dist/KillTheKing_Oyna.html","utf8");
+            if(!s.includes("id=\"native-siege-start\"")||
+               !s.includes("ktkNativeSiegeMapStatus")||
+               s.includes("ktk-source-siege")||
+               s.includes("data-ktk-launch="))
+              throw Error("Old isolated S3D1 game accidentally exported");
+            console.log("PASS: single original game, 3 maps, no S3D1 iframe");
+          '
       - name: Upload tested playable HTML
         uses: actions/upload-artifact@v4
         with:
-          name: killtheking-playable-html
+          name: KillTheKing-CANONICAL-THREE-MAPS-PLAYABLE
           path: dist/KillTheKing_Oyna.html
           if-no-files-found: error
