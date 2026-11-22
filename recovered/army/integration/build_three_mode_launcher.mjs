@@ -141,6 +141,17 @@ export function addCastleThirdMode(twoModeHtml, siegeHtml){
    'const grassVar="        let meadowNearGrass=null;";'+
    'if(visualArmy.split(grassVar).length!==2)throw Error("MAP2 nearby variable anchor changed");'+
    'visualArmy=visualArmy.replace(grassVar,grassVar+"\\n        let meadowDenseGrass=null;");'+
+   // The original grass blades were visually oversized in the real
+   // Chromium screenshot. Keep density but narrow and lower each tuft.
+   'const grassNearSize="   const size=.46+.3*rng(),height=.34+.44*rng();";'+
+   'if(visualArmy.split(grassNearSize).length!==2)throw Error("MAP2 native grass size anchor changed");'+
+   'visualArmy=visualArmy.replace(grassNearSize,'+
+     '"   const size=.17+.11*rng(),height=.13+.20*rng();");'+
+   'const grassFarSize="   const height=.3+.4*rng(),width=.43+.3*rng(),angle=2*Math.PI*rng();";'+
+   'if(visualArmy.split(grassFarSize).length!==2)throw Error("MAP2 far grass size anchor changed");'+
+   'visualArmy=visualArmy.replace(grassFarSize,'+
+     '"   const height=.12+.18*rng(),width=.17+.13*rng(),angle=2*Math.PI*rng();");'+
+
    // Install visual-only hills as a local symbol in the original game script.
    // MAP2 interior surface: physically flat, spatially varied grass colors.
    'const surfaceScript=new TextDecoder("utf-8",{fatal:true}).decode(Uint8Array.from(atob(surfaceB64),c=>c.charCodeAt(0)));'+
