@@ -187,6 +187,7 @@ const KTKSiegeDefenderDoctrineV27=(()=>{
    realDefensiveLeases:bound.length,
    totalRealSoldiers:s.soldiers.length,
    playerSquadIdUnchanged:s.playerSquadId,
+   playerSquadTeam:s.squads[s.playerSquadId]?.team||null,
    posternArrivals:runtime.posternArrivals,
    realRearGuardArrivals:runtime.realRearGuardArrivals,
    gateThreats:o?.gateVicinity||0,courtyardThreats:o?.courtyard||0,
