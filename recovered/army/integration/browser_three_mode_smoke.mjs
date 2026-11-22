@@ -134,6 +134,7 @@ try{
  });
  assert(skyCoverage,'Sky dome must report current map coverage');
  assert.equal(skyCoverage.mode,'meadow');
+ assert.equal(skyCoverage.visibleClouds,0,'Meadow removes giant legacy cuboid sky clouds');
  assert.ok(skyCoverage.skyRadius>skyCoverage.meadowHalf*2.5,
    'Sky dome radius must contain the entire square meadow, not intersect soldiers');
  report.checks.push('PASS_MAP2_SKY_DOME_WITHOUT_GHOST_FOREGROUND: '+JSON.stringify(skyCoverage));
