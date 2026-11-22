@@ -42,3 +42,8 @@
 - Gerçek tek dosya HTML: repo kökündeki otomatik oluşturulan `index.html`.
 
 **Dışarıda:** FPS performansı, yeni mod, silah/savaş dengesi değişimi, orijinal scriptlerde yeniden yazım ve yayıncı sunumu.
+
+## V24 son görsel inceleme / teslim notu
+- Üç SVG harita gravürü **arka planın ön yüzeyine** alındı. Mat koyu malzeme gradyanı önce çizimi kapatabiliyordu; yeni tarayıcı/kaynak testleri sadece URL varlığını değil, görselin CSS katmanında gerçekten en önde boyanmasını da kontrol ediyor.
+- Bu adım orijinal harita geometrisi, malzemeler, asker/atış veya render performansını değiştirmez.
+- Üretilen `index.html` yalnız resmi kaynak derleyiciden gelir. Hızlı ardışık commitlerde oluşan CI non-fast-forward çakışmasına karşı güvenli en fazla beş denemelik senkronizasyon eklendi; asla force-push yok.
