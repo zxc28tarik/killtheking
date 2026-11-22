@@ -114,12 +114,14 @@ export function addCastleThirdMode(twoModeHtml, siegeHtml){
  const horizonB64=Buffer.from(readFileSync(resolve(base,'g54-meadow-horizon-visual.js'),'utf8'),'utf8').toString('base64');
  const surfaceB64=Buffer.from(readFileSync(resolve(base,'g54-meadow-surface-visual.js'),'utf8'),'utf8').toString('base64');
  const meadowLightingB64=Buffer.from(readFileSync(resolve(base,'g54-meadow-natural-lighting.js'),'utf8'),'utf8').toString('base64');
+ const natureV19B64=Buffer.from(readFileSync(resolve(base,'g54-meadow-nature-v19.js'),'utf8'),'utf8').toString('base64');
  const runtimeLoad='stage.appendChild(frame);'+
    'const original=decode("ktk-source-"+mode);'+
    'const ak04b='+JSON.stringify(addonB64)+';'+
    'const horizonB64='+JSON.stringify(horizonB64)+';'+
    'const surfaceB64='+JSON.stringify(surfaceB64)+';'+
    'const meadowLightingB64='+JSON.stringify(meadowLightingB64)+';'+
+   'const natureV19B64='+JSON.stringify(natureV19B64)+';'+
    'if(mode==="army"){'+
      'if(original.split("</body>").length!==2)throw Error("AK04b original body changed");'+
    // MAP2 native grass enhancement. The historical G5.4 HTML remains
@@ -158,10 +160,11 @@ export function addCastleThirdMode(twoModeHtml, siegeHtml){
    // MAP2 interior surface: physically flat, spatially varied grass colors.
    'const surfaceScript=new TextDecoder("utf-8",{fatal:true}).decode(Uint8Array.from(atob(surfaceB64),c=>c.charCodeAt(0)));'+
    'const meadowLightingScript=new TextDecoder("utf-8",{fatal:true}).decode(Uint8Array.from(atob(meadowLightingB64),c=>c.charCodeAt(0)));'+
+   'const natureV19Script=new TextDecoder("utf-8",{fatal:true}).decode(Uint8Array.from(atob(natureV19B64),c=>c.charCodeAt(0)));'+
    'const horizonScript=new TextDecoder("utf-8",{fatal:true}).decode(Uint8Array.from(atob(horizonB64),c=>c.charCodeAt(0)));'+
    'const horizonFunction="        function buildMeadowSquare() {";'+
    'if(visualArmy.split(horizonFunction).length!==2)throw Error("MAP2 horizon function anchor changed");'+
-   'visualArmy=visualArmy.replace(horizonFunction,meadowLightingScript+"\\n"+surfaceScript+"\\n"+horizonScript+"\\n"+horizonFunction);'+
+   'visualArmy=visualArmy.replace(horizonFunction,natureV19Script+"\\n"+meadowLightingScript+"\\n"+surfaceScript+"\\n"+horizonScript+"\\n"+horizonFunction);'+
    'const surfaceAnchor="            grassGround.rotation.x=-Math.PI/2;";'+
    'if(visualArmy.split(surfaceAnchor).length!==2)throw Error("MAP2 ground surface anchor changed");'+
    'visualArmy=visualArmy.replace(surfaceAnchor,surfaceAnchor+'+
@@ -208,6 +211,13 @@ export function addCastleThirdMode(twoModeHtml, siegeHtml){
    'visualArmy=visualArmy.replace(switchLightingAnchor,switchLightingAnchor+'+
      '"\\n            window.__ktkMeadowLightActive=map==="+q+"meadow"+q+";"+'+
      '"\\n            window.setAtmosphere(currentAtmosphereIdx);");'+
+   // Native G5.4 real meadow scenery is added before the original field
+   // material; captured in meadowMapData.visuals for authentic mode toggling.
+   'const v19Anchor="            const leafMat=new THREE.MeshStandardMaterial({color:0x477a32,roughness:.95});";'+
+   'if(visualArmy.split(v19Anchor).length!==2)throw Error("MAP2 V19 nature anchor changed");'+
+   'visualArmy=visualArmy.replace(v19Anchor,'+
+     '"            const natureV19=KTKMeadowNatureV19.build(THREE,scene,spec);\\n'+
+     '            window.ktkMeadowNatureStatus=()=>({treeCount:natureV19.treeCount,bushCount:natureV19.bushCount,flowerCount:natureV19.flowerCount,batchCount:natureV19.batchCount,minTreeClearance:natureV19.minTreeClearance,visible:natureV19.root.visible,visualOnly:natureV19.visualOnly});\\n"+v19Anchor);'+
    'const renderMark="            renderer.render(scene, camera);";'+
    'if(visualArmy.split(renderMark).length!==2)throw Error("MAP2 render anchor changed");'+
    'visualArmy=visualArmy.replace(renderMark,'+
