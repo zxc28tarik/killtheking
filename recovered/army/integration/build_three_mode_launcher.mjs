@@ -169,6 +169,7 @@ export function addCastleThirdMode(twoModeHtml, siegeHtml){
    'if(visualArmy.split(surfaceAnchor).length!==2)throw Error("MAP2 ground surface anchor changed");'+
    'visualArmy=visualArmy.replace(surfaceAnchor,surfaceAnchor+'+
      '"\\n            const meadowSurfaceStatus=KTKMeadowSurfaceVisual.apply(THREE,grassGround,spec);'+
+     '\\n            grassGround.material.color.setHex(0xa3b58c);'+
      '\\n            window.ktkMeadowSurfaceStatus=()=>meadowSurfaceStatus;");'+
    'const horizonGround="            const leafMat=new THREE.MeshStandardMaterial({color:0x477a32,roughness:.95});";'+
    'if(visualArmy.split(horizonGround).length!==2)throw Error("MAP2 horizon ground anchor changed");'+
@@ -217,7 +218,7 @@ export function addCastleThirdMode(twoModeHtml, siegeHtml){
    'if(visualArmy.split(v19Anchor).length!==2)throw Error("MAP2 V19 nature anchor changed");'+
    'visualArmy=visualArmy.replace(v19Anchor,'+
      '"            const natureV19=KTKMeadowNatureV19.build(THREE,scene,spec);\\n'+
-     '            window.ktkMeadowNatureStatus=()=>({treeCount:natureV19.treeCount,bushCount:natureV19.bushCount,flowerCount:natureV19.flowerCount,batchCount:natureV19.batchCount,minTreeClearance:natureV19.minTreeClearance,visible:natureV19.root.visible,visualOnly:natureV19.visualOnly});\\n"+v19Anchor);'+
+     '            window.ktkMeadowNatureStatus=()=>({treeCount:natureV19.treeCount,bushCount:natureV19.bushCount,flowerCount:natureV19.flowerCount,batchCount:natureV19.batchCount,minTreeClearance:natureV19.minTreeClearance,nearEdgeTrees:natureV19.nearEdgeTrees,outerTrees:natureV19.outerTrees,visible:natureV19.root.visible,visualOnly:natureV19.visualOnly});\\n"+v19Anchor);'+
    'const renderMark="            renderer.render(scene, camera);";'+
    'if(visualArmy.split(renderMark).length!==2)throw Error("MAP2 render anchor changed");'+
    'visualArmy=visualArmy.replace(renderMark,'+
