@@ -112,3 +112,11 @@ Tarih: 21 Kasım 2026. Durum: uygulama başladı; gerçek tarayıcı kabul testi
 - [x] Gerçek Chromium kabul senaryosuna zemin renk geometrisi kontrolü eklendi ve ilgili CI workflow kapsamı genişletildi.
 - [ ] Henüz güncel üç modlu HTML bu oturumda gerçek Chromium/WebGL içinde açılıp ekranda doğrulanmadı; görsel kalite kabulü verilmedi.
 - [ ] Üzerinde yürünebilir gerçek iç tepeler mevcut değil; bu V14 yalnızca düz zeminin doğal görünümünü iyileştirir.
+
+## V15–V16 — Gerçek Chrome/WebGL kabulü ve görüntü üzerinden düzeltme
+- [x] GitHub Actions üç modlu derleme, kaynak SHA koruma ve tüm paketleme/regresyon testleri PASS. İlk engeller değişmiş çalışma kopyasına ayarlanmamış iki test beklentisiydi, oyun derleme sorunu değildi; testler düzeltildi.
+- [x] GitHub run 44965947604: hem paketleme hem gerçek SwiftShader Chromium üç mod/sahne geçişi SUCCESS. İndirilebilir tek çevrimdışı HTML ve FFA/Ordu/Kuşatma ekran görüntüleri üretildi.
+- [x] Gerçek Meydan görüntüsü incelendi. Aşırı iri ve sivri çim biçimleri görüldü. V16'da G5.4'ün yerleşik yakın ve uzak çim ölçekleri küçültüldü; büyük ot yüzeyindeki aşırı açık renkler daha dengeli ve yeşil olacak şekilde yeniden ayarlandı. Çim sayıları 2.700 uzak + 12.000 yakın, fizik ve tüm özgün motorlar aynı kaldı.
+- [x] Son güncel run 44966251580: paketleme ve gerçek SwiftShader Chromium kontrolü **ikisi de SUCCESS**; 2.700 + 12.000 native grass, 325 vertex/512 triangle dış tepeler ve 21.025 köşeli zemin gerçek çalışmada doğrulandı. GitHub Actions artifact: KillTheKing-3-Mod-Arena-Ordu-Kale-Kusatmasi-Tek-HTML-NOT-Final.
+- [ ] Gerçek ekran görüntüsündeki geçici büyük yarı saydam gri ön-plan nesnesi/efekti ve genel sahne ışık dengesi ayrıca estetik kalite incelemesi istiyor. Smoke/mesh kaynağı saptanmadan oyunun fiziğine veya oynanışına müdahale edilmeyecek.
+- [ ] Windows fiziksel GPU ve oyuncu tarafından görsel kabulü bekleniyor. Bu geliştirici adayı, son yayın sürümü değildir.
