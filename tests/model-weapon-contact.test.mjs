@@ -1,3 +1,4 @@
+// Historical modular October source regression; current native three-map entrypoint is verified by recovered/native-siege tests and CI.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
@@ -71,7 +72,7 @@ test('invalid kind, missing tip or invalid reach produce no proxy',()=>{
 });
 test('game integration uses actual grip and tip for FPS and old TPS sweep',()=>{
  const src=readFileSync(new URL('../src/oyun.js',import.meta.url),'utf8');
- const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+ const html=readFileSync(new URL('../recovered/legacy/KillTheKing_October_Original_Source_Index.html',import.meta.url),'utf8');
  assert.match(src,/visualWeaponGripMarkers\[0\] = swordVisualGrip/);
  assert.match(src,/visualWeaponGripMarkers\[1\] = spearVisualGrip/);
  assert.match(src,/camera\.worldToLocal\(marker\.getWorldPosition\(new THREE\.Vector3\(\)\)\)/);
