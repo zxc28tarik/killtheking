@@ -130,3 +130,10 @@ Tarih: 21 Kasım 2026. Durum: uygulama başladı; gerçek tarayıcı kabul testi
 - [x] Duman düzeltmesinin gerçek Chromium screenshot'unda dev gri blok tamamen kaybolduğu gözlemlendi; askerler ve açık savaş alanı artık net. Tanı modülleri ve geçici sahne inceleme kancası son üç modlu HTML'den çıkarıldı.
 - [x] Son güncel GitHub Actions run 44970283131: tek HTML paketleme + gerçek SwiftShader Chromium üç mod testi **PASS/PASS**. Oynanabilir HTML ve 3 mod ekran görüntüleri artifact olarak üretildi. 29 game script syntax PASS; kaynak orijinal saklı base64 korunuyor.
 - [ ] Kullanıcı görsel kabulü ve Windows donanım GPU testi ayrı yapılmalı. Bu aday son yayın onaylı oyun değildir.
+
+## V18 — Meydan'a özgü doğal gün ışığı ve gökyüzü
+- [x] Orijinal G5.4 üç atmosfer seçeneğini (gün batımı/öğle/gece) koruyan, yalnız Meydan modunda kullanılan `g54-meadow-natural-lighting.js` eklendi. Gökyüzü renk geçişleri, güneş renginin/şiddetinin ve konumunun dengelenmesi, hemisferik dolgu ışığı, sis ve ton eşleme pozlaması birlikte ayarlandı.
+- [x] Kale'ye dönülünce özgün `setAtmosphere(currentAtmosphereIdx)` eski parametreleri geri yüklüyor. [H] ile üç atmosfer seçeneği Meydan'da da seçilebiliyor.
+- [x] 3 birim test, güncel üç modlu çalışma kopyası 29/29 JS sözdizimi ve Chromium'da gerçek `PASS_MAP2_NATURAL_LIGHTING` + `PASS_MAP2_ORIGINAL_H_DAY_CYCLE` doğrulandı.
+- [x] GitHub Actions run 45022149047: paketleme SUCCESS, üç modlu Chromium/WebGL SUCCESS, sayfa/konsol hataları yok. Tek offline HTML ve gerçek ekran görüntüleri üretildi.
+- [ ] Gözle yapılan incelemede ufuk gökyüzü öncekinden daha nötr ama zemin hâlâ fazla parlak; sonraki görsel adım yalnız çim tonu ve zemin materyalinin doğal görünümü olacak.
