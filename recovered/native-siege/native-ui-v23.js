@@ -11,7 +11,7 @@ const KTKNativeUiV23=(()=>{
   if(!doc.body.classList.contains('ktk-ui-v21')||!doc.body.classList.contains('ktk-ui-v22'))throw Error('V23 requires approved V21 and V22');
   for(const id of ['menu-overlay','arena-map-controls','hud','meadow-army-hud','native-siege-panel','army-tactical-overlay','match-results-overlay'])if(!doc.getElementById(id))throw Error('V23 native UI missing: '+id);
   const cards=doc.querySelectorAll('#menu-overlay .class-card');
-  for(const card of cards){const role=roleFor(card.textContent||'');if(role)card.setAttribute('data-ktk-v23-role',role);}
+  for(const card of cards){const title=card.querySelector('h3,h4,strong')?.textContent||card.textContent||'';const role=roleFor(title);if(role)card.setAttribute('data-ktk-v23-role',role);}
   const style=doc.createElement('style');style.id=STYLE_ID;style.textContent=CSS;
   doc.head.appendChild(style);doc.body.classList.add('ktk-ui-v23');
   return true;
