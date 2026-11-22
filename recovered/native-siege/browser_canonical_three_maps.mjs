@@ -186,6 +186,8 @@ try{
    assert.equal(fort?.activated,true,'Five defensive lines actually belong to playing siege map');
    assert.equal(fort?.realDefensiveLayers,5,'A functional fort needs five defense zones');
    assert.equal(fort?.realCollisionBoxes,19,'Nineteen authentic gameplay cover bodies');
+   assert.equal(fort?.spawnIntrusions,0,'No actual G5.4 troop may spawn inside new bastion or wall');
+   assert(fort?.defenderRearBowReserve>=10,'Actual red archer squad occupies rear defensive line');
    assert(fort?.frontBastions>=6,'Fortified flanking gate and integrated projecting bastions');
    assert.equal(fort?.antiRushObstacles,3,'Original breach has actual anti-rush dogleg/guardrooms');
    assert.equal(fort?.secondLineBlocks,4,'Rear bailey defended by real second line');
