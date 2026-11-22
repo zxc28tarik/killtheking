@@ -73,6 +73,8 @@ try{
   assert(uiBoot.mapEtchings.every(image=>image.includes('data:image/svg+xml,')),
    'Three original War Council map silhouette etchings are actually rendered');
   assert.equal(new Set(uiBoot.mapEtchings).size,3,'Three maps have distinct native decorative motifs');
+  assert(uiBoot.mapEtchings.every(image=>image.trim().startsWith('url(')),
+   'All three actual map motifs must be painted in foreground, not obscured behind the panel gradient');
   assert.equal(uiBoot.heraldry.filter(c=>c.role&&c.crest.includes('data:image/svg+xml')).length,4,
    'All four existing class cards use original vector crests');
   assert.equal(uiBoot.originalMapButtons,3,'Three real original map controls remain');
