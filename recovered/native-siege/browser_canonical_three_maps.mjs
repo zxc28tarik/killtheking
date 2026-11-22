@@ -42,6 +42,7 @@ try{
    v23:window.ktkUiV23Status?.(),
    heraldry:[...document.querySelectorAll('#menu-overlay .class-card')].map(card=>({
     role:card.getAttribute('data-ktk-v23-role'),
+    heading:card.querySelector('h3,h4,strong')?.textContent.trim()||card.textContent.trim().slice(0,100),
     crest:getComputedStyle(card,'::before').backgroundImage
    })),
    selectedMapCount:document.querySelectorAll('#arena-map-controls>button').length,
@@ -61,6 +62,7 @@ try{
   assert.equal(uiBoot.v23?.v22Retained,true,'Approved V22 still installed');
   assert.equal(uiBoot.v23?.originalMaps,3,'V23 preserves three native maps');
   assert.equal(uiBoot.v23?.classCards,4,'Original four class choices remain');
+  console.log('V23_REAL_CLASS_HEADINGS',JSON.stringify(uiBoot.heraldry.map(({role,heading})=>({role,heading}))));
   assert.equal(uiBoot.v23?.roleCards,4,'Each real player class has a matching heraldic crest');
   assert.equal(uiBoot.heraldry.filter(c=>c.role&&c.crest.includes('data:image/svg+xml')).length,4,
    'All four existing class cards use original vector crests');
