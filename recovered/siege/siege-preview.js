@@ -172,6 +172,39 @@
    item.instanceMatrix.needsUpdate=true;
    if(item.instanceColor)item.instanceColor.needsUpdate=true;
  }
+ // V22: distant low, rolling earth terraces make the siege battlefield
+ // feel surrounded by landscape rather than a flat rectangular stage.
+ // Kept beyond the original 270x220 active floor and all siege routes.
+ const siegeHorizon={mounds:44,edgeGround:true,batches:1,visualOnly:true};
+ const farEarth=new THREE.Mesh(new THREE.PlaneGeometry(460,415),
+   material(0x586d4d));
+ farEarth.rotation.x=-Math.PI/2;farEarth.position.set(0,-1.15,-23);
+ farEarth.receiveShadow=true;
+ farEarth.name='KTK_V22_SIEGE_DISTANT_LANDSCAPE';
+ scene.add(farEarth);
+ const earthMounds=new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1,1),
+   new THREE.MeshStandardMaterial({color:0xffffff,roughness:1,flatShading:true}),
+   siegeHorizon.mounds);
+ earthMounds.name='KTK_V22_SIEGE_ROLLING_HILLS';
+ const moundDummy=new THREE.Object3D(),moundColor=new THREE.Color();
+ for(let i=0;i<siegeHorizon.mounds;i++){
+   const t=siegeNatureRand(i,35)*2-1,side=i%4;
+   const x=side<2?(side===0?-171:171):t*158;
+   const z=side<2?(t*136-23):(side===2?-166:127);
+   const width=13+siegeNatureRand(i,37)*17;
+   const height=2.8+siegeNatureRand(i,39)*3.8;
+   moundDummy.position.set(x,height*.20-1.15,z);
+   moundDummy.scale.set(width,height,width*(.75+siegeNatureRand(i,40)*.55));
+   moundDummy.rotation.set(0,siegeNatureRand(i,41)*Math.PI*2,0);
+   moundDummy.updateMatrix();
+   earthMounds.setMatrixAt(i,moundDummy.matrix);
+   earthMounds.setColorAt(i,moundColor.setHex(
+     [0x62794d,0x526b49,0x71825a,0x667553,0x768264][i%5]));
+ }
+ earthMounds.instanceMatrix.needsUpdate=true;
+ if(earthMounds.instanceColor)earthMounds.instanceColor.needsUpdate=true;
+ earthMounds.frustumCulled=false;
+ scene.add(earthMounds);
  // Narrow stone courses add scale and masonry depth without new solid geometry.
  const mortar=material(0x797566);
  for(const box of spec.boxes){
@@ -895,6 +928,7 @@
    markers:armyTokens.reduce((a,b)=>a+b.count,0),
    geometryObjects:spec.boxes.length,
    siegeNatureV21:{...siegeNature},
+   siegeHorizonV22:{...siegeHorizon},
    gateVisible:gate.visible,
    ladderWestVisible:ladderMeshes.west.visible,
    ladderEastVisible:ladderMeshes.east.visible,
