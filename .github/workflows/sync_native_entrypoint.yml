@@ -7,6 +7,7 @@ on:
       - codex/visual-v19-native-battlefield-hud-and-landscape
       - codex/v20-native-siege-materials-and-structure
       - codex/v21-ui-renaissance-panels-hud
+      - codex/v21-ui-finish-command-clarity
     paths:
       - '.github/workflows/sync_native_entrypoint.yml'
       - 'recovered/native-siege/build_canonical_three_maps.mjs'
@@ -23,7 +24,7 @@ concurrency:
 jobs:
   sync:
     name: Generate canonical single FPS index.html from tested source and commit on current branch
-    if: github.ref_name == 'codex/canonical-native-three-maps' || github.ref_name == 'codex/siege-long-session-acceptance' || github.ref_name == 'codex/visual-v19-native-battlefield-hud-and-landscape' || github.ref_name == 'codex/v20-native-siege-materials-and-structure' || github.ref_name == 'codex/v21-ui-renaissance-panels-hud'
+    if: github.ref_name == 'codex/canonical-native-three-maps' || github.ref_name == 'codex/siege-long-session-acceptance' || github.ref_name == 'codex/visual-v19-native-battlefield-hud-and-landscape' || github.ref_name == 'codex/v20-native-siege-materials-and-structure' || github.ref_name == 'codex/v21-ui-renaissance-panels-hud' || github.ref_name == 'codex/v21-ui-finish-command-clarity'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
