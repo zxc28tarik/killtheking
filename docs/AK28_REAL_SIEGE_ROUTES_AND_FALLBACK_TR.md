@@ -35,8 +35,8 @@ Kale savaşı başladıktan ve orijinal `ArenaArmyBattle.setWorldObstacles` AK25
 - [x] `recovered/native-siege/test_native_siege_route_watch_v28.mjs`: 140 oyuncu/doğma/HP koruması, erken emir yasağı, en fazla iki retry, reddedilen rotada özgün AI'ye geçiş.
 - [x] Üç haritalı gerçek Chromium testine altı G5.4 rotasının canlı yol engellerinde doğrulanması eklendi.
 - [x] 140 askerli hızlandırılmış 120 oyun saniyesi kuşatma ve replay'e rota/aktor/doğma, yeniden başlatmada retry=0 kontrolü eklendi.
-- [ ] Son PR dal commit'inde genel oyun, üç harita gerçek Chromium/WebGL ve uzun kuşatma/replay testleri PASS.
-- [ ] `main` birleştirmesinden sonra aynı üç test PASS.
+- [x] PR #64 son oynanabilir sürüm `39e8dac2b` üzerinde genel oyun `45088997044`, gerçek 3 harita Chromium/WebGL `45088997058` ve gerçek 140 asker uzun kuşatma/replay `45088997038` **üçü de PASS**.
+- [x] PR #64 `7875edb9` merge commit'iyle `main` dalına birleştirildi. Aynı commit için genel oyun `45089274421`, gerçek 3 harita Chromium/WebGL `45089274430`, 140 asker uzun kuşatma/replay `45089274401` **üçü de PASS**.
 - [ ] Windows fiziksel GPU üzerinde gerçek oyun estetiği, kapı kırılmasından ikinci savunmaya geçiş ve insan gözüyle savaş dengesi kabulü.
 
 ### Özellikle değişmeyenler
@@ -53,4 +53,13 @@ Kale savaşı başladıktan ve orijinal `ArenaArmyBattle.setWorldObstacles` AK25
 - İlk oynanış kabulü, AK27'den devralınan altı yürünebilir koridorun **yalnız dördünü** doğruladı: `frontPike=true`, `frontSword=false`, `posternPike=true`, `posternSword=false`, `rearPike=true`, `rearSword=true`. Kaynak: GitHub Actions `45088703411`, gerçek Chromium/SwiftShader ve özgün fizik colliderları.
 - Neden: Kale içindeki özgün sandıkların sağ kanat güvenlik payı nedeniyle `(18,10)` hedefi gerçek G5.4 `planSquadRoute` tarafından reddediliyor. İlk AK27 statik/sahte veriye dayalı testler bu köşeyi kaçırmıştı.
 - AK28 değişikliği: Mevcut G5.4 kızıl kılıçlı kaptanın **kapı gerisi mevzisi** `(18,10)` yerine açık sağ kanattaki `(24,10)` olarak ayarlandı. Kızıl gerçek asker sayısı, saldırgan yolu, orijinal sandıklar ve 19 AK26 savunma engeli **değiştirilmedi**. Hem `frontSword`, hem `posternSword` canlı rota testlerine bu gerçek komuta noktası işlendi.
-- [ ] Yeni `(24,10)` noktasıyla altı rotanın gerçek Chromium'da tamamının PASS olması; onay verilmeden tamamlandı denmez.
+- [x] Sağ kaptanın `(24,10)` güncellenmiş gerçek mevzisiyle altı rotanın **tamamı özgün G5.4 engellerinde PASS**: PR `45088997058` ve ana dal `45089274430` gerçek Chromium/SwiftShader.
+
+## Sonuç — AK28 ana dal teknik kabulü
+
+- **Tamamlandı ve birleştirildi:** PR #64; Merge `7875edb91003a438652ab9f0579ae087ccb637a7`. Genel oyun, gerçek üç harita Chromium/WebGL ve 140 asker kuşatma/replay aynı birleşmiş oyunda **PASS**.
+- Eski canlı başlangıç ölçümünde iki sağ kanat rota testi başarısızdı (`frontSword=false`, `posternSword=false`). Özgün kalenin sağ avlu sandıkları korunarak kırmızı kılıçlı komutanın hedefi **(18,10) → (24,10)** taşındı. Gerçek G5.4 ile yeni altı rota **6/6 PASS**.
+- 13,5 oyun saniyesi gerçek ilerleme görülmezse en fazla 2 özgün rota yeniden planlaması; başarısızlıkta orijinal G5.4 kaptan davranışına dönüş. Savaşın asker/HP/hasar/munisyon/kapı makineleri değiştirilmedi. AK27 testleri de yeni gerçek mevziyi doğrular.
+- Orijinal ilk 28 HTML savaş betiği bayt-eşit; Arena, Meydan ve üçüncü Kale Kuşatması **tek** FPS motorunda. Alan ölçüleri önceki gibi 4,23× kale ve 8,04× saha.
+- **Açık kabul:** Gerçek Windows GPU kullanıcı testinde görsel kalite, saldırganın içeri girme deneyimi, ikinci hat kuvvet dengesi. Otomatik kabul, her rastlantısal savaş seed'inde tüm hareketlerin optimal olduğunu iddia etmez.
+- FPS/performance optimizasyonu ve yayıncı pitch deck başlatılmadı.
