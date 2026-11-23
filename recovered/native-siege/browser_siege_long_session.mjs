@@ -41,6 +41,7 @@ async function snap(label){
    siege,layout:window.ktkSiegeExpandedMapStatus?.()||null,
    fortification:window.ktkSiegeFortificationStatus?.()||null,
    defenderDoctrine:window.ktkSiegeDefenderDoctrineStatus?.()||null,
+   siegeRouteWatch:window.ktkSiegeRouteWatchStatus?.()||null,
    visualGate:window.ktkSiegeVisualV19Status?.()||null,
    v20:window.ktkSiegeVisualV20Status?.()||null,
    v21Ui:window.ktkUiV21Status?.()||null};
@@ -84,6 +85,13 @@ try{
   assert(started.defenderDoctrine?.originalRearArcherCount>=10);
   assert.equal(started.defenderDoctrine?.totalRealSoldiers,140);
   assert.equal(started.defenderDoctrine?.realDefensiveLeases,1);
+  assert.equal(started.siegeRouteWatch?.active,true);
+  assert.equal(started.siegeRouteWatch?.allRequiredRoutesClear,true,
+    'Live six-route G5.4 castle fallback must remain physically accessible');
+  assert.equal(started.siegeRouteWatch?.actorCount,140);
+  assert.equal(started.siegeRouteWatch?.maxReplansPerStage,2);
+  assert.equal(started.siegeRouteWatch?.noTeleport,true);
+  assert.equal(started.siegeRouteWatch?.noExtraDamage,true);
   assert.equal(started.defenderDoctrine?.noSoldierTeleports,true);
   assert.equal(started.siege.gateOpen,false);
   assert(started.layout?.castleAreaFactor>=4,'4x actual physical castle');
@@ -148,6 +156,10 @@ try{
     assert.equal(t.fortification?.realCollisionBoxes,19);
     assert.equal(t.defenderDoctrine?.active,true);
     assert.equal(t.defenderDoctrine?.totalRealSoldiers,140);
+    assert.equal(t.siegeRouteWatch?.active,true);
+    assert.equal(t.siegeRouteWatch?.actorCount,140);
+    assert.equal(t.siegeRouteWatch?.allRequiredRoutesClear,true);
+    assert(t.siegeRouteWatch?.replans>=0&&t.siegeRouteWatch?.routeFailures>=0);
     assert(t.defenderDoctrine?.orders>=0);
     assert(t.defenderDoctrine?.rejected>=0);
     assert.equal(t.defenderDoctrine?.noBlueOrderOverrides,true);
@@ -261,6 +273,10 @@ try{
     'Genuine replay resets red commander to gate-closed garrison phase');
    assert.equal(restarted.defenderDoctrine?.rearArchersAnchored,true);
    assert.equal(restarted.defenderDoctrine?.totalRealSoldiers,140);
+   assert.equal(restarted.siegeRouteWatch?.allRequiredRoutesClear,true,
+    'Real replay restores identical physically reachable fallback routes');
+   assert.equal(restarted.siegeRouteWatch?.replans,0,
+    'Replay resets stalled captain state rather than inheriting prior game commands');
    assert.equal(restarted.fortification?.activated,true);
    assert.equal(restarted.fortification?.activeProjectileCover,true);
    assert.equal(restarted.siege?.gateHp,600);
