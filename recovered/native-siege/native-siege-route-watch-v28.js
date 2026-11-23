@@ -17,9 +17,9 @@ const KTKSiegeRouteWatchV28=(()=>{
  const ARRIVAL=5.5;
  const paths=Object.freeze({
   frontPike:Object.freeze({from:{x:-8,z:14},to:{x:-18,z:10}}),
-  frontSword:Object.freeze({from:{x:24,z:4},to:{x:18,z:10}}),
+  frontSword:Object.freeze({from:{x:24,z:4},to:{x:24,z:10}}),
   posternPike:Object.freeze({from:{x:-18,z:10},to:{x:-5,z:50}}),
-  posternSword:Object.freeze({from:{x:18,z:10},to:{x:5,z:50}}),
+  posternSword:Object.freeze({from:{x:24,z:10},to:{x:5,z:50}}),
   rearPike:Object.freeze({from:{x:-5,z:50},to:{x:-7,z:76}}),
   rearSword:Object.freeze({from:{x:5,z:50},to:{x:7,z:76}})
  });
