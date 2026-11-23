@@ -202,7 +202,7 @@ try{
    assert.equal(Object.keys(routeWatch?.routeReadiness||{}).length,6,
     'Both defender companies have real front, postern and rear destinations');
    assert.equal(routeWatch?.allRequiredRoutesClear,true,
-    'All SIX defender routes must be walkable in actual AK25/26 castle collider graph');
+    'All SIX defender routes must be walkable in actual AK25/26 castle collider graph: '+JSON.stringify(routeWatch?.routeReadiness));
    assert.equal(doctrine?.installed,true,'Original G5.4 red defensive captain created');
    assert.equal(doctrine?.active,true,'AK27 runs only inside actual siege battle');
    assert.equal(doctrine?.phase,'garrison','Authentic defenders begin at intended posts');
