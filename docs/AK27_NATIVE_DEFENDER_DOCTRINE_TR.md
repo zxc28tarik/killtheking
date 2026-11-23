@@ -37,12 +37,20 @@
 - [x] Kanonik kök HTML senkronizasyonunda ve native uzun savaş CI'da V27 izleniyor.
 
 ## Canlı test ve merge kabul kapıları
-- [ ] PR son dal commit'inde genel oyun/kaynak testleri **PASS**.
-- [ ] PR son dal commit'inde gerçek 3-harita Chromium/WebGL ve 70+70 orijinal asker **PASS**.
-- [ ] PR son dal commit'inde 140-asker hızlandırılmış 120 oyun saniyesi kuşatma ve replay **PASS**.
-- [ ] PR `main`'e birleştikten sonra aynı üç CI **PASS**.
+- [x] PR #63 son commit `46612c5ad` için genel oyun/kaynak testleri **PASS** — `45086212442`.
+- [x] PR #63 son commit `46612c5ad` için gerçek üç harita Chromium/WebGL ve 70+70 asker **PASS** — `45086212669`.
+- [x] PR #63 son commit `46612c5ad` için 140 asker, hızlandırılmış 120 oyun saniyesi kuşatma ve replay **PASS** — `45086212377`.
+- [x] PR #63 `25b44fe8` merge commit'iyle `main`'e birleştirildi. Aynı commit için genel oyun `45086472946`, üç harita Chromium/WebGL `45086472923`, 140 asker uzun kuşatma/replay `45086472924` — **üçü de PASS**.
 - [ ] Kullanıcının Windows ekran kartında, kale kapısının kırılması ve ikinci hattın gerçek maçta dengesi / siper kullanımının insan oynanışıyla kabulü **açık**.
 
 ### Sınırlar ve gelecek kapsam
 - Geçerli rota çıkmazsa kaptan sıfırdan pozisyon yaratmaz; rota reddedilir. Manuel oynanış sırasında veya gerçek kuvvetler kapıya giremezse savunucu hareket etmeyebilir.
 - Otomatik Chromium kabulü orijinal askerlerin pozisyonlarının ve sistemlerin doğru başlatıldığını kanıtlar; **her savaşta** ikinci hattın başarıyla ele geçirileceğini veya kale dengesinin mükemmel olduğunu garanti etmez. Gerçek kapı kırılmasının ardındaki zamanlamayı oyuncu/görsel kabulüyle değerlendirmek gerekir.
+
+## AK27 Sonuç / Ana dal kabul — 23 Kasım 2026
+
+- **Tek özgün AK09/G5.4 HTML**; önceki Arena, Meydan, Kale Kuşatması ve V21–V26 onaylı parçalar aynen korunmuştur.
+- Kırmızı ikinci-hat okçuları orijinal `issueOrder` ile mevzide tutulur. Kapı baskısı ve gerçek iç avlu sızmasında mevcut kızıl mızraklı/kılıçlı kaptanlar G5.4 `setDestination` üzerinden geçit ve arka mevzi rotası alır. G5.4 yolu reddederse emir reddedilir, beden ışınlama/hasar yaratma yoktur.
+- Testlerde oyuncunun mavi G5.4 komuta yetkisi ve mevcut 140 asker korunur, diğer iki harita etkilenmez, kuşatma replay ilk garnizon safhasını yeniden kurar.
+- **Yorum sınırı:** Gerçek Chromium regresyonu ilk konuşlandırmayı ve uzun gerçek kuşatma oyun döngüsünü doğrular. Her olası kapı kırılması ve ikinci hat gerileme vakasında optimal savaş dengesi için kullanıcıyla Windows GPU gerçek oyun kabulü hâlâ açık. Bir başka deyişle geçerli G5.4 rota denemelerinin tüm savaşlarda başarıyla tamamlandığı garanti edilmez.
+- Yeni harita veya FPS/perf optimizasyonu yapılmadı, yayıncı pitch deck çalışması kullanıcı isteğine kadar ertelendi.
