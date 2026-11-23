@@ -15,7 +15,9 @@ const KTKSiegeDefenderDoctrineV27=(()=>{
  const POSTS=Object.freeze({
   front:Object.freeze({
    pike:Object.freeze({x:-18,z:10}),
-   sword:Object.freeze({x:18,z:10})
+   // AK28: former (18,10) overlapped the ORIGINAL keep's right crate
+   // with G5.4 3.4m route clearance. Real safe flank: x24,z10.
+   sword:Object.freeze({x:24,z:10})
   }),
   postern:Object.freeze({
    pike:Object.freeze({x:-5,z:50}),

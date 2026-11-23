@@ -135,6 +135,7 @@ try{
     expandedSiege:window.ktkSiegeExpandedMapStatus?.(),
     siegeFortification:window.ktkSiegeFortificationStatus?.(),
     defenderDoctrine:window.ktkSiegeDefenderDoctrineStatus?.(),
+    siegeRouteWatch:window.ktkSiegeRouteWatchStatus?.(),
     v19Hud:{
      armyClass:document.body.classList.contains('ktk-native-battle-ui'),
      orderPanelCompact:document.getElementById('meadow-army-hud').classList.contains('ktk-siege-slim'),
@@ -173,6 +174,8 @@ try{
    assert.equal(playing.v19Groves?.noColliders,true,'No invented tree colliders');
   }
   if(mode.name!=='siege'){
+   assert.equal(playing.siegeRouteWatch?.active,false,
+    'AK28 route-watch must never touch the original Arena/Meadow battle');
    assert.equal(playing.defenderDoctrine?.active,false,
     'AK27 red defensive AI must never run on Arena or Meadow');
    assert.equal(playing.siegeFortification?.activated,false,
@@ -187,6 +190,19 @@ try{
    assert.equal(playing.expandedSiege.activated,true,'Physical outer fort active only in siege');
    const fort=playing.siegeFortification;
    const doctrine=playing.defenderDoctrine;
+   const routeWatch=playing.siegeRouteWatch;
+   assert.equal(routeWatch?.active,true,'AK28 watches only the true third map');
+   assert.equal(routeWatch?.installed,true,'Real G5.4 collision-aware route audit is installed');
+   assert.equal(routeWatch?.originalBattleRouting,true);
+   assert.equal(routeWatch?.checkedFromLiveG54Colliders,true);
+   assert.equal(routeWatch?.actorCount,140);
+   assert.equal(routeWatch?.maxReplansPerStage,2);
+   assert.equal(routeWatch?.noTeleport,true);
+   assert.equal(routeWatch?.noExtraDamage,true);
+   assert.equal(Object.keys(routeWatch?.routeReadiness||{}).length,6,
+    'Both defender companies have real front, postern and rear destinations');
+   assert.equal(routeWatch?.allRequiredRoutesClear,true,
+    'All SIX defender routes must be walkable in actual AK25/26 castle collider graph: '+JSON.stringify(routeWatch?.routeReadiness));
    assert.equal(doctrine?.installed,true,'Original G5.4 red defensive captain created');
    assert.equal(doctrine?.active,true,'AK27 runs only inside actual siege battle');
    assert.equal(doctrine?.phase,'garrison','Authentic defenders begin at intended posts');

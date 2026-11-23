@@ -12,6 +12,7 @@ import vm from 'node:vm';
 import {applyNativeSiegeExpansionV25} from './siege-expansion-patch-v25.mjs';
 import {applyNativeSiegeDefenseV26} from './siege-defense-patch-v26.mjs';
 import {applyNativeSiegeDefenderDoctrineV27} from './siege-defender-patch-v27.mjs';
+import {applyNativeSiegeRouteWatchV28} from './siege-route-patch-v28.mjs';
 
 const HERE=dirname(fileURLToPath(import.meta.url));
 const sha=s=>createHash('sha256').update(s).digest('hex');
@@ -52,6 +53,7 @@ export function buildCanonical(original){
  body=applyNativeSiegeExpansionV25(body);
  body=applyNativeSiegeDefenseV26(body);
  body=applyNativeSiegeDefenderDoctrineV27(body);
+ body=applyNativeSiegeRouteWatchV28(body);
  const scriptPrelude=[
   addon('g54-meadow-natural-lighting.js'),
   addon('g54-meadow-surface-visual.js'),
@@ -65,7 +67,8 @@ export function buildCanonical(original){
   readFileSync(resolve(HERE,'native-ui-v24.js'),'utf8'),
   readFileSync(resolve(HERE,'native-siege-expansion-v25.js'),'utf8'),
   readFileSync(resolve(HERE,'native-siege-defense-v26.js'),'utf8'),
-  readFileSync(resolve(HERE,'native-siege-defender-ai-v27.js'),'utf8')
+  readFileSync(resolve(HERE,'native-siege-defender-ai-v27.js'),'utf8'),
+  readFileSync(resolve(HERE,'native-siege-route-watch-v28.js'),'utf8')
  ].join('\n');
  body=one(body,'        function buildMeadowSquare() {',
    scriptPrelude+'\n        KTKBattlefieldVisualV19.installHud(document);'+
@@ -271,7 +274,8 @@ export function buildCanonical(original){
    'KTKNativeUiV24.install','ktkUiV24Status',
    'KTKSiegeExpansionV25.install','ktkSiegeExpandedMapStatus',
    'KTKSiegeFortificationV26.install','ktkSiegeFortificationStatus',
-   'KTKSiegeDefenderDoctrineV27.create','ktkSiegeDefenderDoctrineStatus'])
+   'KTKSiegeDefenderDoctrineV27.create','ktkSiegeDefenderDoctrineStatus',
+   'KTKSiegeRouteWatchV28.create','ktkSiegeRouteWatchStatus'])
    if(!output.includes(key))throw Error('Missing canonical marker: '+key);
  const manifest={
   product:'Kill the King',kind:'SINGLE_NATIVE_FPS_THREE_MAPS',
@@ -300,6 +304,9 @@ export function buildCanonical(original){
     genuineUnitRoutes:true,keepRearArchers:true,
     gateReaction:true,posternFallback:true,secondLineReserve:true,
     noSoldierTeleports:true,noBonusDamage:true,castleOnly:true},
+  nativeSiegeV28:{design:'real-g54-route-watch-and-postern-audit',liveRouteProbes:6,
+    boundedReplansPerDefenseStage:2,realActorMovementOnly:true,
+    noDirectPositionWrites:true,noExtraUnitsOrDamage:true,castleOnly:true},
   meadowInteriorWalkableHillsAdded:false,
   sourceBytePreservedInRepository:true,
   userWindowsGPUAccepted:false,productionApproved:false,

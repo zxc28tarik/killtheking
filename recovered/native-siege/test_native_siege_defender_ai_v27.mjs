@@ -82,7 +82,7 @@ test('AK27 reacts to real first damage with native G5.4 routes, no personal acto
  assert.equal(score.realDefensiveLeases,3);
  assert.equal(f.red('pike').order,'position');
  assert.equal(f.red('pike').routeGoal.x,-18);
- assert.equal(f.red('sword').routeGoal.x,18);
+ assert.equal(f.red('sword').routeGoal.x,24);
  assert.equal(f.red('bow').order,'hold');
  assert.equal(f.red('musket').playerControlled,false,'original musket counterfire autonomy unchanged');
  assert.deepEqual(f.state.soldiers.map(u=>[u.x,u.z,u.hp]),positions,
