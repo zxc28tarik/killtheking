@@ -47,3 +47,10 @@ Kale savaşı başladıktan ve orijinal `ArenaArmyBattle.setWorldObstacles` AK25
 - FPS performans optimizasyonu ve yayıncı pitch deck kullanıcı ayrıca söyleyene dek açılmıyor.
 
 **Gözlem:** Gerçek Chromium otomatik testleri başarıyla geçse bile bütün insan kuşatma senaryolarında mükemmel savunma dengesini kanıtlamaz. Ama artık en azından orijinal G5.4 yol planlayıcısından kapı, geçit ve ikinci hat için somut rota kanıtı alınır.
+
+## Gerçek Chromium G5.4 hata keşfi ve AK28 onarımı
+
+- İlk oynanış kabulü, AK27'den devralınan altı yürünebilir koridorun **yalnız dördünü** doğruladı: `frontPike=true`, `frontSword=false`, `posternPike=true`, `posternSword=false`, `rearPike=true`, `rearSword=true`. Kaynak: GitHub Actions `45088703411`, gerçek Chromium/SwiftShader ve özgün fizik colliderları.
+- Neden: Kale içindeki özgün sandıkların sağ kanat güvenlik payı nedeniyle `(18,10)` hedefi gerçek G5.4 `planSquadRoute` tarafından reddediliyor. İlk AK27 statik/sahte veriye dayalı testler bu köşeyi kaçırmıştı.
+- AK28 değişikliği: Mevcut G5.4 kızıl kılıçlı kaptanın **kapı gerisi mevzisi** `(18,10)` yerine açık sağ kanattaki `(24,10)` olarak ayarlandı. Kızıl gerçek asker sayısı, saldırgan yolu, orijinal sandıklar ve 19 AK26 savunma engeli **değiştirilmedi**. Hem `frontSword`, hem `posternSword` canlı rota testlerine bu gerçek komuta noktası işlendi.
+- [ ] Yeni `(24,10)` noktasıyla altı rotanın gerçek Chromium'da tamamının PASS olması; onay verilmeden tamamlandı denmez.
