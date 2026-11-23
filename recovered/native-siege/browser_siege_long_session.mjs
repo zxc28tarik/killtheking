@@ -87,7 +87,7 @@ try{
   assert.equal(started.defenderDoctrine?.realDefensiveLeases,1);
   assert.equal(started.siegeRouteWatch?.active,true);
   assert.equal(started.siegeRouteWatch?.allRequiredRoutesClear,true,
-    'Live six-route G5.4 castle fallback must remain physically accessible');
+    'Live six-route G5.4 castle fallback must remain physically accessible: '+JSON.stringify(started.siegeRouteWatch?.routeReadiness));
   assert.equal(started.siegeRouteWatch?.actorCount,140);
   assert.equal(started.siegeRouteWatch?.maxReplansPerStage,2);
   assert.equal(started.siegeRouteWatch?.noTeleport,true);
