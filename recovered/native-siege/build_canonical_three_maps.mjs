@@ -68,7 +68,8 @@ export function buildCanonical(original){
   readFileSync(resolve(HERE,'native-siege-expansion-v25.js'),'utf8'),
   readFileSync(resolve(HERE,'native-siege-defense-v26.js'),'utf8'),
   readFileSync(resolve(HERE,'native-siege-defender-ai-v27.js'),'utf8'),
-  readFileSync(resolve(HERE,'native-siege-route-watch-v28.js'),'utf8')
+  readFileSync(resolve(HERE,'native-siege-route-watch-v28.js'),'utf8'),
+  readFileSync(resolve(HERE,'native-ui-v25-calm.js'),'utf8')
  ].join('\n');
  body=one(body,'        function buildMeadowSquare() {',
    scriptPrelude+'\n        KTKBattlefieldVisualV19.installHud(document);'+
@@ -79,6 +80,8 @@ export function buildCanonical(original){
    '\n        KTKNativeUiV23.install(document);'+
    '\n        window.ktkUiV23Status=()=>KTKNativeUiV23.status(document);'+
    '\n        KTKNativeUiV24.install(document);'+
+   '\n        KTKCalmUIV25.install(document);'+
+   '\n        window.ktkCalmUiV25Status=()=>KTKCalmUIV25.status(document);'+
    '\n        window.ktkUiV24Status=()=>KTKNativeUiV24.status(document);'+
    '\n        function buildMeadowSquare() {','visual module install');
 
