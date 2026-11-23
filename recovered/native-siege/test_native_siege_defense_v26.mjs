@@ -53,6 +53,21 @@ test('AK26 uses FIVE defensive lines and at least nineteen REAL colliders, each 
  for(const name of ['west-flanking-bastion','east-flanking-bastion','west-bastion-throat','east-bastion-throat','inner-gate-dogleg','west-second-line','east-second-line'])
   assert(v.featureBoxes.some(x=>x.name===name),'Essential functional outwork is missing: '+name);
 });
+test('AK29 early-modern profile attaches to REAL AK26 outworks without making fake colliders',()=>{
+ const {v,parent}=installed();
+ const root=parent.children.find(c=>c.name==='AK26_REAL_DEFENSIVE_OUTWORKS_GATE_DOGLEG_AND_SECOND_LINE');
+ const profile=root?.userData?.ak29Profile;
+ assert(profile,'historical fortress profile missing');
+ assert.equal(profile.historicalPeriod,'early-modern-artillery-fortress');
+ assert.equal(profile.artilleryPorts,4);
+ assert.equal(profile.scarpFaces,2);
+ assert(profile.parapetTeeth>=12);
+ assert(profile.stoneCourses>=20);
+ assert.equal(profile.realBaseColliders,19);
+ assert.equal(profile.originalGateAndBreachLanesUnchanged,true);
+ assert.equal(v.wallBoxes.length,19);
+ assert.equal(v.solidMeshes.length,19);
+});
 test('AK26 physically safeguards original ram, catapult, tower, G5.4 breakthrough and rear retreat paths',()=>{
  const zones=D.zones;
  assert.deepEqual(Object.keys(zones).sort(),

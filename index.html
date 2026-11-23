@@ -8593,6 +8593,68 @@ const KTKSiegeFortificationV26=(()=>{
    roof.rotation.y=Math.PI/4;
    root.add(roof);
   }
+  // AK29: historically grounded 17th-century artillery-fortress silhouette.
+  // These accents are fixed to AK26's EXISTING physical cover. They never
+  // pretend to add walkable battlements, firing AI, or extra damage.
+  const limestone=new THREE.MeshStandardMaterial({color:0x918979,roughness:1});
+  const mortar=new THREE.MeshStandardMaterial({color:0x514e44,roughness:1});
+  const iron=new THREE.MeshStandardMaterial({color:0x2c302d,metalness:.22,roughness:.82});
+  let artilleryPorts=0,stoneCourses=0,parapetTeeth=0,scarpFaces=0;
+  // Low, broad outworks should read as thick artillery parapets rather than
+  // thin fantasy walls. Their base remains the authentic AK26 collision box.
+  for(const f of features){
+   if(f.role==='front-bastion'||f.role==='second-line'){
+    for(let yy=1.15;yy<f.h-.45;yy+=1.6){
+     trim(f.x,yy,f.z-f.d/2-.035,f.w-.36,.105,.085,mortar);
+     stoneCourses++;
+    }
+    // Raised inner lip and spaced merlons: visual coping ON the solid wall.
+    if(f.role==='front-bastion'){
+     trim(f.x,f.h+.55,f.z+f.d/2-.7,f.w,1.15,1.0,limestone);
+     for(let xx=f.x-f.w/2+2.5;xx<f.x+f.w/2-1.5;xx+=4.8){
+      trim(xx,f.h+1.05,f.z-f.d/2+.55,2.35,2.1,1.1,limestone);
+      parapetTeeth++;
+     }
+    }
+   }
+  }
+  // The projecting south bastions physically flank the only native main gate:
+  // dark recessed gun openings with hard stone lintels make that role legible.
+  for(const side of [-1,1]){
+   for(const xx of [side*51.5,side*62.5]){
+    trim(xx,5.25,-65.72,3.4,1.9,.20,iron);
+    trim(xx,6.34,-65.86,4.1,.38,.29,limestone);
+    trim(xx-2.08,5.25,-65.81,.38,2.25,.29,limestone);
+    trim(xx+2.08,5.25,-65.81,.38,2.25,.29,limestone);
+    artilleryPorts++;
+   }
+   // Earth-backed sloped revetment is a visual scarp on each existing bastion
+   // front. Crucially, do not place new walls across AK25 ram/tower lanes.
+   const scarp=new THREE.Mesh(new THREE.BoxGeometry(20,2.2,3.1),earth);
+   scarp.position.set(side*57,1.1,-66.6);
+   scarp.rotation.x=-.27;
+   root.add(scarp);scarpFaces++;
+   // Gatehouse watch embrasures and a low-pitched guardroom roof emphasize
+   // that the inner courtyard has a real dogleg, not a straight open run.
+   for(const zz of [-16,-11,-6]){
+    trim(side*35,3.2,zz,2.7,1.6,.14,dark);
+   }
+  }
+  // The redoubt behind the inner postern remains an OPEN 24m withdrawal
+  // passage; crest stones stop short of that centre route.
+  for(const side of [-1,1]){
+   for(let xx=side*15;Math.abs(xx)<56;xx+=side*5.6){
+    trim(xx,7.2,62,2.8,2.0,1.4,limestone);
+    parapetTeeth++;
+   }
+  }
+  root.userData=root.userData||{};
+  root.userData.ak29Profile={
+   historicalPeriod:'early-modern-artillery-fortress',
+   artilleryPorts,stoneCourses,parapetTeeth,scarpFaces,
+   realBaseColliders:boxes.length,
+   originalGateAndBreachLanesUnchanged:true
+  };
   // 19 real collision boxes create a layered assault: external outworks,
   // long approach, dogleg once the 600 HP native gate is breached, then
   // physically flanked inner-bastion and second defensive line.
