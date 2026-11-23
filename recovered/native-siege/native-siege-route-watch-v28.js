@@ -72,7 +72,7 @@ const KTKSiegeRouteWatchV28=(()=>{
    }
    if(prev.closest-remain>=PROGRESS){
     prev.closest=remain;prev.atLastProgress=now;
-    prev.attempts=0;w.progressEvents++;
+    w.progressEvents++;
     continue;
    }
    if(now-prev.atLastProgress<REPLAN_AFTER||prev.attempts>=MAX_REPLANS)
