@@ -183,6 +183,7 @@ const KTKSiegeFortificationV26=(()=>{
     parapetTeeth++;
    }
   }
+  root.userData=root.userData||{};
   root.userData.ak29Profile={
    historicalPeriod:'early-modern-artillery-fortress',
    artilleryPorts,stoneCourses,parapetTeeth,scarpFaces,
