@@ -134,6 +134,7 @@ try{
     v24Ui:window.ktkUiV24Status?.(),
     expandedSiege:window.ktkSiegeExpandedMapStatus?.(),
     siegeFortification:window.ktkSiegeFortificationStatus?.(),
+    defenderDoctrine:window.ktkSiegeDefenderDoctrineStatus?.(),
     v19Hud:{
      armyClass:document.body.classList.contains('ktk-native-battle-ui'),
      orderPanelCompact:document.getElementById('meadow-army-hud').classList.contains('ktk-siege-slim'),
@@ -172,6 +173,8 @@ try{
    assert.equal(playing.v19Groves?.noColliders,true,'No invented tree colliders');
   }
   if(mode.name!=='siege'){
+   assert.equal(playing.defenderDoctrine?.active,false,
+    'AK27 red defensive AI must never run on Arena or Meadow');
    assert.equal(playing.siegeFortification?.activated,false,
     'AK26 defensive obstacles must be invisible/uncollidable outside siege mode');
    assert.equal(playing.siegeFortification?.activeProjectileCover,false,
@@ -183,6 +186,19 @@ try{
    assert(playing.expandedSiege,'AK25 expanded siege layout status exists in the same game');
    assert.equal(playing.expandedSiege.activated,true,'Physical outer fort active only in siege');
    const fort=playing.siegeFortification;
+   const doctrine=playing.defenderDoctrine;
+   assert.equal(doctrine?.installed,true,'Original G5.4 red defensive captain created');
+   assert.equal(doctrine?.active,true,'AK27 runs only inside actual siege battle');
+   assert.equal(doctrine?.phase,'garrison','Authentic defenders begin at intended posts');
+   assert.equal(doctrine?.rearArchersAnchored,true,'Existing red bow reserve guards the second stone line');
+   assert(doctrine?.originalRearArcherCount>=10,'Real red bow soldiers actually stand behind defenses');
+   assert.equal(doctrine?.totalRealSoldiers,140,'No extra AK27 soldiers');
+   assert.equal(doctrine?.playerSquadTeam,'blue','Real FPS squad authority remains on the original attacking player');
+   assert(Number.isInteger(doctrine.playerSquadIdUnchanged),'Original player G5.4 squad identity retained');
+   assert.equal(doctrine?.noBlueOrderOverrides,true);
+   assert.equal(doctrine?.noSoldierTeleports,true);
+   assert.equal(doctrine?.noAddedFirepower,true);
+   assert.equal(doctrine?.realDefensiveLeases,1,'Initial garrison pins only the rear red bow company');
    assert.equal(fort?.activated,true,'Five defensive lines actually belong to playing siege map');
    assert.equal(fort?.realDefensiveLayers,5,'A functional fort needs five defense zones');
    assert.equal(fort?.realCollisionBoxes,19,'Nineteen authentic gameplay cover bodies');
