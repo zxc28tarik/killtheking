@@ -12,9 +12,9 @@ Kale savaşı başladıktan ve orijinal `ArenaArmyBattle.setWorldObstacles` AK25
 | Rol | Başlangıç | Hedef | İşlev |
 |---|---|---|---|
 | Kızıl mızraklı | (-8,14) | (-18,10) | Kapı gerisi savunma |
-| Kızıl kılıçlı | (24,4) | (18,10) | Kapı gerisi ikinci savunma |
+| Kızıl kılıçlı | (24,4) | (24,10) | Sağ iç avlu sandıklarına takılmayan gerçek kapı savunması |
 | Kızıl mızraklı | (-18,10) | (-5,50) | Gerçek 16m kuzey iç geçit |
-| Kızıl kılıçlı | (18,10) | (5,50) | Aynı geçidin diğer kanadı |
+| Kızıl kılıçlı | (24,10) | (5,50) | Aynı geçidin diğer kanadı |
 | Kızıl mızraklı | (-5,50) | (-7,76) | İkinci savunma taş hattı |
 | Kızıl kılıçlı | (5,50) | (7,76) | İkinci savunma taş hattı |
 
