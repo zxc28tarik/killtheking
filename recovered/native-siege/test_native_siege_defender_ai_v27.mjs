@@ -136,6 +136,34 @@ test('AK27 rejects blocked original routes without controlling or teleporting en
  assert.equal(score.deniedRoutes.includes('pike'),true);
  assert.equal(score.noSoldierTeleports,true);
 });
+test('AK30 critical gate assault anchors the original red musket squad, never teleports',()=>{
+ const f=fixture(),r=AI.create(f.state,f.battle);
+ const pos=f.state.soldiers.map(u=>[u.x,u.z,u.hp]);
+ f.state.elapsed=2;
+ const blue=f.state.soldiers.filter(u=>u.team==='blue').slice(0,3);
+ for(const u of blue){u.x=2;u.z=-20;}
+ const before=f.state.soldiers.map(u=>[u.x,u.z,u.hp]);
+ const score=AI.update(r,{gateHp:350,gateOpen:false,towerCrossed:0});
+ assert.equal(score.gateMusketsHeld,true);
+ assert.equal(f.red('musket').order,'hold');
+ assert.equal(f.red('musket').fireMode,'free');
+ assert.equal(f.red('musket').siegeDefenseAIControlled,true);
+ assert.equal(f.red('musket').aiRole,'siege-gate-musket-guard');
+ assert.deepEqual(f.state.soldiers.map(u=>[u.x,u.z,u.hp]),before);
+ assert.equal(f.calls.filter(c=>c.type==='musket'&&c.order==='hold').length,1);
+ f.state.elapsed=4;
+ AI.update(r,{gateHp:280,gateOpen:false,towerCrossed:0});
+ assert.equal(f.calls.filter(c=>c.type==='musket'&&c.order==='hold').length,1,
+  'AK30 never floods G5.4 with repeat HOLD orders');
+ assert(f.calls.every(c=>c.team==='red'));
+});
+test('AK30 gate muskets remain under original autonomous G5.4 when assault is not critical',()=>{
+ const f=fixture(),r=AI.create(f.state,f.battle);
+ f.state.elapsed=2;
+ const score=AI.update(r,{gateHp:450,gateOpen:false});
+ assert.equal(score.gateMusketsHeld,false);
+ assert.equal(f.red('musket').playerControlled,false);
+});
 test('AK27 requires original four defender roles and actual 140-soldier G5.4 authority',()=>{
  const f=fixture();
  assert.throws(()=>AI.create({squads:[],soldiers:[]},f.battle),/four REAL red/);
