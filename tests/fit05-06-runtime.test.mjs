@@ -89,3 +89,58 @@ test('FIT06 army raycast matches FIT04 on 1500 deterministic cases',()=>{
   assert.equal(JSON.stringify(ctx.raycastSoldier(...args)),JSON.stringify(ctx.referenceRaycast(...args)),'ray '+i);
  }
 });
+
+function referenceCohesion(state,squad){
+  const members=state.soldiers.filter(u=>u.alive&&u.squadId===squad.id);
+  if(!members.length)return 0;
+  const spread=members.reduce((sum,u)=>sum+Math.hypot(u.x-squad.x,u.z-squad.z),0)/members.length;
+  return clamp(1-spread/(squad.formation==='loose'?38:31),.18,1);
+ }
+function referenceMorale(state){
+  for(const squad of state.squads){
+   if(!squad.alive){squad.morale=0;continue;}
+   const fraction=squad.alive/squad.startCount;
+   const supporters=state.squads.filter(s=>s.team===squad.team&&s.alive>0&&s.id!==squad.id&&dist(s,squad)<65).length;
+   const pressure=state.squads.filter(e=>e.team!==squad.team&&e.alive>0&&dist(e,squad)<45).length;
+   const reformBonus=squad.aiRole==='rally'&&squad.order==='hold'?.12:0;
+   const members=state.soldiers.filter(u=>u.alive&&u.squadId===squad.id);
+   const incoming=members.length?members.reduce((t,u)=>t+(u.suppression||0),0)/members.length:0;
+   const captainNerve=squad.nerve??.7;
+   squad.morale=clamp(.23+fraction*.56+supporters*.075-pressure*.085+
+    reformBonus-incoming*(.12+(1-captainNerve)*.12),.08,1);
+   const physical=squadCohesionEstimate(state,squad);
+   squad.cohesion=clamp(.40+supporters*.12+(squad.order==='hold'?.20:0)-
+     (squad.order==='charge'?.18:0),.2,1)*.55+physical*.45;
+  }
+ }
+test('FIT08 formation rank buffers preserve exact live ordering and isolate matches',()=>{
+ const ctx=vm.createContext({});
+ vm.runInContext(extract('const formationRankScratch=', 'function oneTick(')+'\nthis.compute=computeActiveRanks;',ctx);
+ const make=()=>({squads:[{},{}],soldiers:Array.from({length:140},(_,id)=>({id,squadId:id%2,alive:id%7!==0}))});
+ const a=make(),b=make();
+ const first=ctx.compute(a),other=ctx.compute(b);
+ assert.notEqual(first,other);assert.notEqual(first.activeRank,other.activeRank);
+ for(let cycle=0;cycle<140;cycle++){
+  a.soldiers[cycle].alive=!a.soldiers[cycle].alive;
+  const next=new Array(a.squads.length).fill(0),active=new Array(a.soldiers.length);
+  for(const s of a.soldiers)if(s.alive)active[s.id]=next[s.squadId]++;
+  const actual=ctx.compute(a);
+  assert.equal(actual,first);assert.equal(JSON.stringify(actual.nextRank),JSON.stringify(next));
+  assert.equal(JSON.stringify(actual.activeRank),JSON.stringify(active));
+ }
+ assert.equal(Object.keys(a).length,2);
+});
+test('FIT08 morale and cohesion preserve exact results with casualties and suppression',()=>{
+ const ctx=vm.createContext({clamp:(x,a,b)=>Math.max(a,Math.min(b,x)),dist:(a,b)=>Math.hypot(a.x-b.x,a.z-b.z)});
+ vm.runInContext(extract('function squadCohesionEstimate(', 'function formationOffset('),ctx);
+ vm.runInContext(extract('function updateMorale(', '// Private per-match scratch'),ctx);
+ vm.runInContext(referenceCohesion.toString(),ctx);
+ vm.runInContext(referenceMorale.toString().replace('squadCohesionEstimate(state,squad)','referenceCohesion(state,squad)'),ctx);
+ for(let cycle=0;cycle<140;cycle++){
+  const squads=Array.from({length:8},(_,id)=>({id,team:id<4?'blue':'red',alive:(id+cycle)%9,startCount:20,x:id*12,z:id%2*9,formation:id%2?'loose':'line',order:id%3?'hold':'charge',aiRole:id%2?'rally':'attack',nerve:.7}));
+  const soldiers=Array.from({length:140},(_,id)=>({id,squadId:id%8,alive:(id+cycle)%6!==0,x:id%45,z:id%31,suppression:(id%10)/10}));
+  const a={squads,soldiers},b=JSON.parse(JSON.stringify(a));
+  ctx.updateMorale(a);ctx.referenceMorale(b);
+  assert.equal(JSON.stringify(a),JSON.stringify(b));
+ }
+});

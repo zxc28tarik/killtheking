@@ -14,9 +14,9 @@ All new feature branches start from the latest `main`; target `main` directly, t
 
 **Current original-game basis:** Native AK09 (recovered/native-siege/KillTheKing_AK_NATIVE_09_original_game_siege_map.html) already contains **Arena/TDM, 140-soldier Meadow Army and 140-soldier Castle Siege** within the SAME original Three.js/FPS renderer, camera, weapons, G5.4 army and controls. The 22 November canonical builder transfers only Meadow V18 cosmetics (grass, surface, horizon and lighting) onto that native game, without altering the first 28 original scripts.
 
-**[Canonical ONE native FPS / THREE maps — GitHub CI artifact (DEVELOPMENT)](https://github.com/zxc28tarik/killtheking/actions/runs/45036335268/artifacts/14760235309)**. Unzip, open the HTML directly in Chrome/Edge. Builder: recovered/native-siege/build_canonical_three_maps.mjs. Manifest includes HTML SHA-256, original AK09 SHA-256 and game identity. This is **one game document, no iframe, no separate S3D1 gameplay engine**.
+**[Historical AK09 native FPS artifact — NOT current download](https://github.com/zxc28tarik/killtheking/actions/runs/45036335268/artifacts/14760235309)**. Unzip, open the HTML directly in Chrome/Edge. Builder: recovered/native-siege/build_canonical_three_maps.mjs. Manifest includes HTML SHA-256, original AK09 SHA-256 and game identity. This is **one game document, no iframe, no separate S3D1 gameplay engine**.
 
-**Current test status:** native AK06–AK09 regression + new canonical build/source tests PASS in GitHub CI. Original 28 scripts are byte-identical, all 29 embedded scripts parse. A fully manual real Windows GPU / 4–8 minute three-map acceptance of this new exact HTML remains OPEN. Do not call it published or publisher-ready until those gates pass.
+**Historical baseline test status:** native AK06–AK09 regression + canonical build/source tests passed in GitHub CI. Original 28 scripts are byte-identical, all 29 embedded scripts parse. A fully manual real Windows GPU / 4–8 minute three-map acceptance of this new exact HTML remains OPEN. Do not call it published or publisher-ready until those gates pass.
 
 [Canonical integration and follow-up roadmap](docs/CANONICAL_MAIN_THREE_MAP_UNIFICATION_TR.md) · [PR #51 MERGED into main on 22 November](https://github.com/zxc28tarik/killtheking/pull/51) · [canonical native three-map Chromium/WebGL PASS](https://github.com/zxc28tarik/killtheking/actions/runs/45036335268). The default main/index.html now serves the verified native three-map development build. Windows hardware and full gameplay acceptance remain open.
 
@@ -35,8 +35,10 @@ Current/default offline build: `python3 tools/build_offline.py --out dist/KillTh
 **Acceptance limit:** Chromium software-WebGL three-map smoke and original-source regression tests passed. Real Windows graphics hardware and human-operated long battles are not yet accepted as production-ready.
 
 ## Development structure
-- `index.html` — **canonical complete offline FPS / three maps**, generated deterministically from native AK09 plus Meadow visual upgrades
-- `recovered/native-siege/build_canonical_three_maps.mjs` — source of truth for the current game bundle; original 28 combat scripts unchanged
+- `index.html` — **canonical complete offline FPS / three maps**, exact mirror of the current UI32 standalone in `playables/`; this is the active runtime.
+- `playables/KillTheKing_AK30_Amblemler_Korundu_Tam_Ekran_Arka_Plan.html` — current release source; commit alongside the root in one tree.
+- `recovered/native-siege/build_canonical_three_maps.mjs` — immutable historical lineage and regression baseline, not the current export source. The live guard protects the original script positions and explicitly pins reviewed army-module changes.
+- Other `playables/` files and `recovered/` builds — historical evidence and optional regression dependencies, not current distribution. See [FIT07–09 audit](docs/FIT07_09_FINAL_AUDIT_TR.md).
 - `src/oyun.js` — archived modular October core (legacy source and unit tests)
 - `styles/game.css` — original style, compiled utility CSS and impact CSS combined
 - `vendor/three-r128.js` — original version of Three.js (MIT)

@@ -3104,10 +3104,13 @@ window.addEventListener('error', function(event) {
   return false;
  }
  function squadCohesionEstimate(state,squad){
-  const members=state.soldiers.filter(u=>u.alive&&u.squadId===squad.id);
-  if(!members.length)return 0;
-  const spread=members.reduce((sum,u)=>sum+Math.hypot(u.x-squad.x,u.z-squad.z),0)/members.length;
-  return clamp(1-spread/(squad.formation==='loose'?38:31),.18,1);
+  let count=0,spread=0;
+  for(const u of state.soldiers){
+   if(!u.alive||u.squadId!==squad.id)continue;
+   count++;spread+=Math.hypot(u.x-squad.x,u.z-squad.z);
+  }
+  if(!count)return 0;
+  return clamp(1-(spread/count)/(squad.formation==='loose'?38:31),.18,1);
  }
 
  function formationOffset(squad,index,activeCount=squad.startCount){
@@ -5324,11 +5327,19 @@ window.addEventListener('error', function(event) {
   for(const squad of state.squads){
    if(!squad.alive){squad.morale=0;continue;}
    const fraction=squad.alive/squad.startCount;
-   const supporters=state.squads.filter(s=>s.team===squad.team&&s.alive>0&&s.id!==squad.id&&dist(s,squad)<65).length;
-   const pressure=state.squads.filter(e=>e.team!==squad.team&&e.alive>0&&dist(e,squad)<45).length;
+   let supporters=0,pressure=0,memberCount=0,suppressionSum=0;
+   for(const other of state.squads){
+    if(other.alive<=0)continue;
+    if(other.team===squad.team){
+     if(other.id!==squad.id&&dist(other,squad)<65)supporters++;
+    }else if(dist(other,squad)<45)pressure++;
+   }
    const reformBonus=squad.aiRole==='rally'&&squad.order==='hold'?.12:0;
-   const members=state.soldiers.filter(u=>u.alive&&u.squadId===squad.id);
-   const incoming=members.length?members.reduce((t,u)=>t+(u.suppression||0),0)/members.length:0;
+   for(const u of state.soldiers){
+    if(!u.alive||u.squadId!==squad.id)continue;
+    memberCount++;suppressionSum+=u.suppression||0;
+   }
+   const incoming=memberCount?suppressionSum/memberCount:0;
    const captainNerve=squad.nerve??.7;
    squad.morale=clamp(.23+fraction*.56+supporters*.075-pressure*.085+
     reformBonus-incoming*(.12+(1-captainNerve)*.12),.08,1);
@@ -5336,6 +5347,21 @@ window.addEventListener('error', function(event) {
    squad.cohesion=clamp(.40+supporters*.12+(squad.order==='hold'?.20:0)-
      (squad.order==='charge'?.18:0),.2,1)*.55+physical*.45;
   }
+ }
+ // Private per-match scratch; no serialized state or cross-match aliasing.
+ const formationRankScratch=new WeakMap();
+ function computeActiveRanks(state){
+  let scratch=formationRankScratch.get(state);
+  if(!scratch){
+   scratch={nextRank:[],activeRank:[]};
+   formationRankScratch.set(state,scratch);
+  }
+  const {nextRank,activeRank}=scratch;
+  nextRank.length=state.squads.length;nextRank.fill(0);
+  activeRank.length=state.soldiers.length;activeRank.fill(undefined);
+  for(const soldier of state.soldiers)if(soldier.alive)
+   activeRank[soldier.id]=nextRank[soldier.squadId]++;
+  return scratch;
  }
  function oneTick(state,dt){
   state.elapsed+=dt;state.tick++;
@@ -5355,9 +5381,7 @@ window.addEventListener('error', function(event) {
   // Keep rows compact as casualties open gaps in the line. Stable original
   // soldier order prevents shuffling every frame, and player commands remain
   // authoritative over which formation is used.
-  const nextRank=new Array(state.squads.length).fill(0),activeRank=new Array(state.soldiers.length);
-  for(const soldier of state.soldiers)if(soldier.alive)
-   activeRank[soldier.id]=nextRank[soldier.squadId]++;
+  const {nextRank,activeRank}=computeActiveRanks(state);
   for(const soldier of state.soldiers){
    if(!soldier.alive)continue;
    const squad=state.squads[soldier.squadId],role=TYPES[soldier.type];
