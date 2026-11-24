@@ -12172,6 +12172,16 @@ const KTKCalmUIV25=(()=>{
         const arenaSightRay = new THREE.Raycaster();
         const arenaAimTmp = new THREE.Vector3();
         const arenaAimOrigin = new THREE.Vector3();
+        // FIT03c: synchronous sight queries reuse scratch storage. Raycaster
+        // appends to its optional target array, so clear it before AND after.
+        const arenaSightHits = [];
+        function arenaSightBlocked() {
+            arenaSightHits.length=0;
+            arenaSightRay.intersectObjects(worldMeshes,false,arenaSightHits);
+            const blocked=arenaSightHits.length>0;
+            arenaSightHits.length=0;
+            return blocked;
+        }
 
         function arenaActorPosition(type, id) {
             if (type === 'player') return isGameActive ? player.pos : null;
@@ -12289,13 +12299,13 @@ const KTKCalmUIV25=(()=>{
         // Combat foundation: prevent strikes and hitscan shots from hitting through stone/props.
         // Only static world colliders participate; characters are checked separately.
         function arenaWorldBlockBetween(from, to) {
-            const displacement = to.clone().sub(from);
+            const displacement = arenaAimTmp.copy(to).sub(from);
             const distance = displacement.length();
             if (distance <= 0.15) return false;
             arenaSightRay.set(from, displacement.multiplyScalar(1 / distance));
             arenaSightRay.near = 0.05;
             arenaSightRay.far = distance - 0.10;
-            return arenaSightRay.intersectObjects(worldMeshes, false).length > 0;
+            return arenaSightBlocked();
         }
 
         function arenaLineOfSight(bot, targetPos, targetIsPlayer) {
@@ -12309,20 +12319,20 @@ const KTKCalmUIV25=(()=>{
             arenaSightRay.set(origin, dir.multiplyScalar(1 / distance));
             arenaSightRay.near = 0.12;
             arenaSightRay.far = Math.max(0.12, distance - 0.55);
-            return arenaSightRay.intersectObjects(worldMeshes, false).length === 0;
+            return !arenaSightBlocked();
         }
 
         // Tactical vantage checks use the same world occlusion as real shots.
         function arenaCanSeeFrom(point, targetPos, targetIsPlayer) {
-            const origin = new THREE.Vector3(point.x, point.y + 1.8, point.z);
-            const end = targetPos.clone();
+            const origin = arenaAimOrigin.set(point.x,point.y+1.8,point.z);
+            const end = arenaAimTmp.copy(targetPos);
             end.y += targetIsPlayer ? 1.0 : 1.65;
             const direction = end.sub(origin), distance = direction.length();
             if (distance < 0.01) return true;
             arenaSightRay.set(origin, direction.multiplyScalar(1 / distance));
             arenaSightRay.near = 0.12;
             arenaSightRay.far = Math.max(0.12, distance - 0.55);
-            return arenaSightRay.intersectObjects(worldMeshes, false).length === 0;
+            return !arenaSightBlocked();
         }
         function arenaShotTracer(start, end, isArrow) {
             const path = end.clone().sub(start);
