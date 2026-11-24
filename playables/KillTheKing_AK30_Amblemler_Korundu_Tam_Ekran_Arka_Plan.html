@@ -15610,7 +15610,8 @@ body.ktk-calm-ui #menu-overlay #focus-menu .fm-hint{font:500 11px/1.5 system-ui,
               const quality=old('#arena-quality-select'),motion=old('#arena-low-motion');
               if(quality)panel.querySelector('#fm-quality').value=quality.value;
               if(motion)panel.querySelector('#fm-low-motion').checked=motion.checked;
-              if(nativePlay.textContent.trim()!=='Savaşa Başla')nativePlay.textContent='Savaşa Başla';
+              const nativeLabel=arenaMatch.phase==='paused'?'Maça Devam Et':'Savaşa Başla';
+               if(nativePlay.textContent.trim()!==nativeLabel)nativePlay.textContent=nativeLabel;
             }
             for(const b of panel.querySelectorAll('[data-focus-map]'))b.addEventListener('click',()=>{
               const where=b.dataset.focusMap;
@@ -16076,8 +16077,8 @@ body #menu-overlay#menu-overlay#menu-overlay::before,body #menu-overlay#menu-ove
 body #menu-overlay #ktk-original-menu{display:none!important}
 body #menu-overlay#menu-overlay#menu-overlay>#focus-menu{position:relative!important;display:flex!important;flex-direction:column!important;align-items:stretch!important;justify-content:flex-start!important;width:100%!important;max-width:none!important;min-height:100dvh!important;max-height:none!important;margin:0!important;padding:0!important;overflow:visible!important;background:none!important;border:0!important;border-radius:0!important;box-shadow:none!important;backdrop-filter:none!important}
 body #menu-overlay #focus-menu>.fm-eyebrow,body #menu-overlay #focus-menu>h1,body #menu-overlay #focus-menu>.fm-intro{display:none!important}
-body #menu-overlay #focus-menu .ui32-backdrop{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;z-index:-1;pointer-events:none;filter:blur(9px);opacity:.45}
-body #menu-overlay #focus-menu[data-stage=class] .ui32-backdrop{opacity:.65}
+body #menu-overlay #focus-menu .ui32-backdrop{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;z-index:-1;pointer-events:none;filter:none;opacity:.45}
+body #menu-overlay #focus-menu[data-stage=class] .ui32-backdrop{opacity:1}
 body #menu-overlay #focus-menu .ui32-header{position:relative;z-index:3;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px clamp(18px,4vw,64px);background:linear-gradient(#10191ce8,#10191c00);color:#fff0d5;font:700 clamp(18px,2.2vw,32px) Georgia,serif;letter-spacing:.04em}
 body #menu-overlay #focus-menu .ui32-stage-label{font:600 13px system-ui,sans-serif;letter-spacing:.14em;text-transform:uppercase}
 body #menu-overlay#menu-overlay#menu-overlay #focus-menu>.fm-main{display:flex!important;flex:1!important;align-items:center!important;justify-content:center!important;margin:0!important;padding:20px!important;width:100%!important;max-width:none!important}
@@ -16095,7 +16096,10 @@ body #menu-overlay#menu-overlay#menu-overlay #focus-menu .approved-gallery-head{
 body #menu-overlay#menu-overlay#menu-overlay #focus-menu .approved-gallery-desktop{width:100%!important;max-width:none!important;aspect-ratio:1672/625!important;margin:auto!important}
 body #menu-overlay#menu-overlay#menu-overlay #focus-menu .approved-gallery-picture{width:100%!important;height:100%!important;object-fit:fill!important;mask-image:none!important;filter:none!important}
 body #menu-overlay#menu-overlay#menu-overlay #focus-menu>.fm-foot{position:relative;z-index:3;width:100%!important;margin:0!important;max-width:none!important;padding:16px clamp(18px,4vw,64px)!important;border:0!important;background:linear-gradient(transparent,#10191cee)!important}
-body #menu-overlay #focus-menu[data-stage=map] #fm-start-wrap,body #menu-overlay #focus-menu[data-stage=map] #ui32-back{display:none!important}
+body #menu-overlay #focus-menu[data-stage=map] #fm-start-wrap,body #menu-overlay #focus-menu[data-stage=map] #ui32-back,body #menu-overlay #focus-menu[data-stage=pause] #ui32-back{display:none!important}
+body #menu-overlay#menu-overlay#menu-overlay #focus-menu[data-stage=pause]>.fm-main{display:none!important}
+body #menu-overlay#menu-overlay#menu-overlay #focus-menu[data-stage=pause] .approved-class-gallery{display:none!important}
+body #menu-overlay #focus-menu[data-stage=pause] .ui32-header{flex:1;align-items:center;justify-content:center;flex-direction:column}
 body #menu-overlay #focus-menu .ui32-back{font:700 15px Georgia,serif;color:#f4dfba;background:transparent;border:0;cursor:pointer;padding:10px}
 body #menu-overlay #focus-menu .fm-drawer:not([hidden]){position:relative;z-index:5;margin:0 18px 18px!important;background:#192425f5!important}
 body #menu-overlay #focus-menu button:focus-visible{outline:2px solid #ffe0a0!important;outline-offset:4px}
@@ -16107,15 +16111,16 @@ body #menu-overlay #focus-menu button:focus-visible{outline:2px solid #ffe0a0!im
 'use strict';
 function install(){
 const overlay=document.getElementById('menu-overlay'),panel=document.getElementById('focus-menu'),art=panel?.querySelector('.approved-gallery-picture');
-if(!overlay||!panel||!art){if(overlay){overlay.textContent='Menü yüklenemedi. Oyunu yeniden açın.';overlay.dataset.ui32Ready='error';}return;}
+if(!overlay||!panel||!art){if(overlay){overlay.dataset.ui32Ready='error';console.error('UI32 initialization failed: original controls preserved');}return;}
 const bg=document.createElement('img');bg.className='ui32-backdrop';bg.src=art.src;bg.alt='';bg.setAttribute('aria-hidden','true');panel.prepend(bg);
 const header=document.createElement('header');header.className='ui32-header';header.innerHTML='<span>KILL THE KING</span><span class="ui32-stage-label" id="ui32-stage-label">Harita seçimi</span>';panel.insertBefore(header,panel.querySelector('.fm-main'));
 const back=document.createElement('button');back.type='button';back.id='ui32-back';back.className='ui32-back';back.textContent='‹ Haritalar';panel.querySelector('.fm-more-links').prepend(back);
 const shapes={arena:'<path d="M24 74V43h12V30h11v13h16V30h11v13h12v31z"/><path d="M48 74V57h14v17"/>',meadow:'<path d="M19 73Q35 48 55 69Q74 46 91 73M27 65l20-38m-10 0 10 0 6 8m25 30L63 27m-6 8 6-8 10 0"/>',siege:'<path d="M19 76V35h13v10h10V35h26v10h10V35h13v41zM46 76V61h18v15M19 48h72"/><path d="M55 21v14m0-14 20 4-20 6"/>'};
-function stage(s){panel.dataset.stage=s;panel.querySelector('#ui32-stage-label').textContent=s==='map'?'Harita seçimi':'Sınıf seçimi';for(const d of panel.querySelectorAll('.fm-drawer'))d.hidden=true;for(const b of panel.querySelectorAll('[aria-controls]'))b.setAttribute('aria-expanded','false');overlay.scrollTop=0;}
+function stage(s){panel.dataset.stage=s;panel.querySelector('#ui32-stage-label').textContent=s==='map'?'Harita seçimi':s==='pause'?'Oyun duraklatıldı':'Sınıf seçimi';for(const d of panel.querySelectorAll('.fm-drawer'))d.hidden=true;for(const b of panel.querySelectorAll('[aria-controls]'))b.setAttribute('aria-expanded','false');overlay.scrollTop=0;}
 for(const b of panel.querySelectorAll('[data-focus-map]')){const name=b.dataset.focusMap;const e=document.createElementNS('http://www.w3.org/2000/svg','svg');e.setAttribute('class','ui32-emblem');e.setAttribute('viewBox','0 0 110 126');e.setAttribute('aria-hidden','true');e.innerHTML='<path d="M55 5 101 23v55Q101 103 55 121Q9 103 9 78V23Z" fill="#222c2d" stroke="#d7bd8a" stroke-width="3"/><path d="M55 13 93 28v49Q93 96 55 112Q17 96 17 77V28Z" fill="none" stroke="#907951" stroke-width="1.5"/><g fill="none" stroke="#e4cc9d" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">'+shapes[name]+'</g>';b.prepend(e);b.addEventListener('click',()=>stage('class'));}
 back.addEventListener('click',()=>stage('map'));
-new MutationObserver(()=>{if(!overlay.classList.contains('hidden'))stage('map');}).observe(overlay,{attributes:true,attributeFilter:['class']});
+let wasHidden=overlay.classList.contains('hidden');
+new MutationObserver(()=>{const hidden=overlay.classList.contains('hidden');if(wasHidden&&!hidden)stage(arenaMatch.phase==='paused'?'pause':'map');wasHidden=hidden;}).observe(overlay,{attributes:true,attributeFilter:['class']});
 stage('map');overlay.dataset.ui32Ready='true';
 window.ktkUI32Status=()=>({ready:overlay.dataset.ui32Ready,stage:panel.dataset.stage,legacyHidden:getComputedStyle(document.getElementById('ktk-original-menu')).display==='none',mapEmblems:panel.querySelectorAll('.ui32-emblem').length,classes:new Set(Array.from(panel.querySelectorAll('[data-approved-class]'),b=>b.dataset.approvedClass)).size,playButton:!!panel.querySelector('#play-btn'),menuHidden:overlay.classList.contains('hidden')&&getComputedStyle(overlay).display==='none'});
 }
