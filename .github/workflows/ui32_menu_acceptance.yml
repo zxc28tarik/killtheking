@@ -42,6 +42,35 @@ jobs:
                 const selected=await p.evaluate(()=>window.ktkUI32Status());
                 assert.equal(selected.selectedMap,map);assert.equal(selected.engineSiege,map==='siege');assert.equal(selected.engineArmy,map!=='arena');assert.equal(selected.engineMap,map==='meadow'?'meadow':'castle');
                 console.log('PASS actual map state',viewport.width,map);
+                const skyCheck=await p.evaluate(()=>{
+                  let replacements=0,disposals=0,reused=0,wrongGradient=0;
+                  const original=currentAtmosphereIdx;
+                  for(const idx of [0,1,2,0]){
+                    const before=skyDomeMesh.material.map;
+                    let freed=0;const onDispose=()=>freed++;
+                    before.addEventListener('dispose',onDispose);
+                    window.setAtmosphere(idx);
+                    const active=skyDomeMesh.material.map;
+                    before.removeEventListener('dispose',onDispose);
+                    if(active!==before){replacements++;disposals+=freed;}
+                    else if(freed!==0)wrongGradient++;
+                    const expected=window.__ktkMeadowLightActive
+                      ? KTKMeadowNaturalLighting.PRESETS[idx]:ATMOSPHERES[idx];
+                    const key=JSON.stringify(window.__ktkMeadowLightActive
+                      ? [expected.top,expected.mid,expected.horizon]
+                      : [expected.topCol,expected.midCol,expected.botCol]);
+                    if(active.userData.ktkGradientKey!==key)wrongGradient++;
+                    window.setAtmosphere(idx);
+                    if(skyDomeMesh.material.map===active)reused++;
+                  }
+                  window.setAtmosphere(original);
+                  return {replacements,disposals,reused,wrongGradient};
+                });
+                assert.ok(skyCheck.replacements>=3);
+                assert.equal(skyCheck.replacements,skyCheck.disposals);
+                assert.equal(skyCheck.reused,4);
+                assert.equal(skyCheck.wrongGradient,0);
+
                 for(const id of [0,1,2,3]){
                   await p.locator('[data-approved-class="'+id+'"]:visible').click();
                   assert.equal(await p.evaluate(()=>window.ktkApprovedArtworkStatus().currentClass),String(id));

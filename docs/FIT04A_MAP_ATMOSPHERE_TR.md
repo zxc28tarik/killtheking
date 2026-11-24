@@ -1,0 +1,5 @@
+# FIT04a — Harita atmosferi ve grafik kaynakları
+Temel: main ef116869a3fb0115113c42179dc2556ed157de16. FIT03c genel CI ve üç ekran boyutunda Chromium kabulü başarılı.
+Özgün kale atmosferi her seçimde yeni gradient CanvasTexture oluşturuyordu, eski kaynak dispose edilmiyordu. Meydan seçiminde ayrıca gereksiz bir kale gradienti oluşturulup hemen meydan gradientiyle değiştiriliyordu. Ortak refreshSkyGradient fonksiyonu aynı renk üçlüsünde dokuyu korur, farklı renklerde eski tek-sahipli dokuyu dispose eder. Meydanın doğal atmosferi artık doğrudan kendi gradientini üretir.
+Üç atmosfer seçeneğinin renkleri, ışıkları, sis parametreleri, kamera, harita geometrileri, çimen yoğunluğu ve çarpışma katmanları korunur. 30 diğer script ile HTML/CSS/görseller aynı. Çimen sisteminde mevcut 20 birimlik tile koruması bulunduğu için bu pakette değiştirilmedi.
+Chromium testinde üç haritanın seçimlerinde 0/1/2/0 atmosfer geçişi, aynı gradientin yeniden kullanımı, doğru renk anahtarı ve değiştirilen dokuların dispose olayları kontrol edilir. Yeni testler geçmeden main'e birleştirilmez. GPU bellek/FPS kazanımı henüz ölçülmedi.
