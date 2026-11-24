@@ -61,6 +61,33 @@ jobs:
                 assert.deepEqual(state.selected,[id,id],'both layouts reflect exactly the same selected class');
               }
               console.log('PASS direct engine class sync without old cards',viewport.width);
+              // FIT03a: stable HUD values must not cause DOM mutations or replace the weapon SVG.
+              const hudCheck=await p.evaluate(()=>{
+                const ids=['hud-hp-text','hud-hp-bar','hud-class-name','hud-class-tip','hud-weapon-icon','hud-ammo','hud-ability-badge','hud-kills','hud-deaths','hud-streak','hud-timer','hud-speed'];
+                const nodes=ids.map(id=>document.getElementById(id));
+                window.selectClass(0);
+                updateHUD();
+                const icon=document.getElementById('hud-weapon-icon'),first=icon.firstElementChild,markup=icon.innerHTML;
+                const observer=new MutationObserver(()=>{});
+                for(const el of nodes)observer.observe(el,{attributes:true,childList:true,characterData:true,subtree:true});
+                for(let i=0;i<10;i++)updateHUD();
+                const stable=observer.takeRecords().length;
+                const sameNode=first===icon.firstElementChild;
+                window.selectClass(3);
+                const changed=icon.innerHTML!==markup;
+                const detached=document.createElement('span');
+                setHudText(detached,0);setHudClass(detached,'initial');
+                const probe=new MutationObserver(()=>{});
+                probe.observe(detached,{attributes:true,childList:true,characterData:true,subtree:true});
+                setHudText(detached,0);setHudClass(detached,'initial');
+                const repeated=probe.takeRecords().length;
+                setHudText(detached,1);setHudClass(detached,'next');
+                const updated=detached.textContent==='1'&&detached.className==='next';
+                probe.disconnect();observer.disconnect();
+                return {stable,sameNode,changed,repeated,updated};
+              });
+              assert.deepEqual(hudCheck,{stable:0,sameNode:true,changed:true,repeated:0,updated:true});
+              console.log('PASS FIT03a HUD unchanged writes and real class changes',viewport.width);
               // FIT02b: settings must still reach the original engine controls.
               await p.locator('[data-focus-map="arena"]').click();
               await p.locator('#fm-toggle-settings').click();

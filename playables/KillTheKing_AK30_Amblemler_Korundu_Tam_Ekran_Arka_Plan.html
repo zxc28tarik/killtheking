@@ -9657,31 +9657,44 @@ const KTKCalmUIV25=(()=>{
             window.ktkSyncFocusMenu?.();
         };
 
+        // FIT03a: write HUD text/class only when the visible value changes.
+        function setHudText(el,value) {
+            const text=String(value);
+            if(el.textContent!==text)el.textContent=text;
+        }
+        function setHudClass(el,value) {
+            if(el.className!==value)el.className=value;
+        }
+        let lastHudWeaponIcon=null;
         function updateHUD() {
             const cls = CLASSES[player.classIdx];
-            document.getElementById('hud-hp-text').textContent = `${Math.ceil(player.hp)} / ${player.maxHp}`;
+            setHudText(document.getElementById('hud-hp-text'),`${Math.ceil(player.hp)} / ${player.maxHp}`);
             const hpPct = Math.max(0, Math.min(100, (player.hp / player.maxHp) * 100));
             const hpBar = document.getElementById('hud-hp-bar');
-            hpBar.style.width = `${hpPct}%`;
-            hpBar.className = `h-full transition-all duration-150 ${hpPct > 55 ? 'bg-lime-400' : hpPct > 25 ? 'bg-amber-400' : 'bg-rose-500'}`;
+            const hpWidth=`${hpPct}%`;
+            if(hpBar.style.width!==hpWidth)hpBar.style.width=hpWidth;
+            setHudClass(hpBar,`h-full transition-all duration-150 ${hpPct > 55 ? 'bg-lime-400' : hpPct > 25 ? 'bg-amber-400' : 'bg-rose-500'}`);
 
-            document.getElementById('hud-class-name').textContent = cls.name;
-            document.getElementById('hud-class-tip').textContent = cls.tipText;
-            document.getElementById('hud-weapon-icon').innerHTML = cls.svgIcon;
+            setHudText(document.getElementById('hud-class-name'),cls.name);
+            setHudText(document.getElementById('hud-class-tip'),cls.tipText);
+            if(lastHudWeaponIcon!==cls.svgIcon){
+                document.getElementById('hud-weapon-icon').innerHTML=cls.svgIcon;
+                lastHudWeaponIcon=cls.svgIcon;
+            }
 
             if (cls.id === 3) {
-                document.getElementById('hud-ammo').textContent = player.isReloading
+                setHudText(document.getElementById('hud-ammo'),player.isReloading
                     ? 'BARUT DOLDURULUYOR...'
-                    : `${player.ammo} / 1 (BARUT)`;
+                    : `${player.ammo} / 1 (BARUT)`);
             } else {
-                document.getElementById('hud-ammo').textContent = cls.ammoText;
+                setHudText(document.getElementById('hud-ammo'),cls.ammoText);
             }
 
             // Ability status badge
             const abilBadge = document.getElementById('hud-ability-badge');
             if (player.abilityCooldown > 0) {
-                abilBadge.textContent = `YETENEK DOLUYOR: ${player.abilityCooldown.toFixed(1)}s`;
-                abilBadge.className = 'text-[11px] font-extrabold bg-slate-800 text-gray-400 border border-white/10 px-2 py-0.5 rounded krunker-text';
+                setHudText(abilBadge,`YETENEK DOLUYOR: ${player.abilityCooldown.toFixed(1)}s`);
+                setHudClass(abilBadge,'text-[11px] font-extrabold bg-slate-800 text-gray-400 border border-white/10 px-2 py-0.5 rounded krunker-text');
             } else {
                 const labels = [
                     '[SAĞ TIK] KALKAN / [F] ÇARPMA',
@@ -9689,13 +9702,13 @@ const KTKCalmUIV25=(()=>{
                     '[SOL TIK BASILI] YAY GERME / [F] HANÇER',
                     '[F] SÜNGÜ / HANÇER DARBESİ: HAZIR'
                 ];
-                abilBadge.textContent = labels[player.classIdx];
-                abilBadge.className = 'text-[11px] font-extrabold bg-amber-500/20 text-amber-300 border border-amber-400/40 px-2 py-0.5 rounded krunker-text';
+                setHudText(abilBadge,labels[player.classIdx]);
+                setHudClass(abilBadge,'text-[11px] font-extrabold bg-amber-500/20 text-amber-300 border border-amber-400/40 px-2 py-0.5 rounded krunker-text');
             }
 
-            document.getElementById('hud-kills').textContent = player.kills;
-            document.getElementById('hud-deaths').textContent = player.deaths;
-            document.getElementById('hud-streak').textContent = player.streak;
+            setHudText(document.getElementById('hud-kills'),player.kills);
+            setHudText(document.getElementById('hud-deaths'),player.deaths);
+            setHudText(document.getElementById('hud-streak'),player.streak);
         }
 
         selectClass(3);
@@ -13421,7 +13434,7 @@ const KTKCalmUIV25=(()=>{
             if (arenaMatch.phase !== 'menu') return;
             ArenaMatch.configure(arenaMatch, Number(button.dataset.durationSeconds));
             matchTimeSeconds = arenaMatch.remaining;
-            document.getElementById('hud-timer').textContent = ArenaMatch.clock(matchTimeSeconds);
+            setHudText(document.getElementById('hud-timer'),ArenaMatch.clock(matchTimeSeconds));
             syncMatchDurationControls();
         }));
 
@@ -13579,7 +13592,7 @@ const KTKCalmUIV25=(()=>{
             ArenaMatch.begin(arenaMatch);
             syncMatchDurationControls();
             matchTimeSeconds = arenaMatch.remaining;
-            document.getElementById('hud-timer').textContent = ArenaMatch.clock(matchTimeSeconds);
+            setHudText(document.getElementById('hud-timer'),ArenaMatch.clock(matchTimeSeconds));
             matchResultsOverlay.classList.add('hidden');
             lastTeamHud = '';
             renderTeamHUD();
@@ -13752,7 +13765,7 @@ const KTKCalmUIV25=(()=>{
             arenaMatch.phase = 'menu';
             ArenaMatch.configure(arenaMatch, arenaMatch.durationSeconds);
             matchTimeSeconds = arenaMatch.remaining;
-            document.getElementById('hud-timer').textContent = ArenaMatch.clock(matchTimeSeconds);
+            setHudText(document.getElementById('hud-timer'),ArenaMatch.clock(matchTimeSeconds));
             syncMatchDurationControls();
             syncMatchModeControls();
             syncArenaMapControls();
@@ -14273,11 +14286,12 @@ const KTKCalmUIV25=(()=>{
                 const pct = Math.round(player.bowCharge * 100);
                 const wait = ArenaWeaponBalance.bowReleaseWait(
                     player.lastBowShotAt,arenaClock,player.bowDrawSeconds);
-                document.getElementById('bow-charge-label').textContent = wait > .001
+                setHudText(document.getElementById('bow-charge-label'),wait > .001
                     ? '🏹 GERİLİYOR: '+pct+'% • ATIŞA '+wait.toFixed(1)+'s'
                     : pct >= 100 ? '🔥 TAM GERİLDİ • BIRAK VE AT!'
-                    : '🏹 ATIŞ HAZIR • GÜÇ: '+pct+'%';
-                document.getElementById('bow-charge-fill').style.width = `${pct}%`;
+                    : '🏹 ATIŞ HAZIR • GÜÇ: '+pct+'%');
+                const chargeFill=document.getElementById('bow-charge-fill'),chargeWidth=`${pct}%`;
+                if(chargeFill.style.width!==chargeWidth)chargeFill.style.width=chargeWidth;
             }
 
             if (player.isReloading) {
@@ -14364,8 +14378,8 @@ const KTKCalmUIV25=(()=>{
                 const horizSpeed = Math.hypot(player.vel.x, player.vel.z);
                 const displaySpeed = Math.round((horizSpeed / 14.5) * cls.speed);
                 const speedEl = document.getElementById('hud-speed');
-                speedEl.textContent = displaySpeed > 5 ? displaySpeed : 0;
-                speedEl.className = displaySpeed > 135 ? 'text-sky-300' : displaySpeed > 110 ? 'text-amber-400' : 'text-white';
+                setHudText(speedEl,displaySpeed > 5 ? displaySpeed : 0);
+                setHudClass(speedEl,displaySpeed > 135 ? 'text-sky-300' : displaySpeed > 110 ? 'text-amber-400' : 'text-white');
 
                 renderSpeedLines(displaySpeed);
 
@@ -15256,7 +15270,7 @@ const KTKCalmUIV25=(()=>{
             // Match Timer, Radar & FPS Counter
             const matchFinished = ArenaMatch.tick(arenaMatch, dt);
             matchTimeSeconds = arenaMatch.remaining;
-            document.getElementById('hud-timer').textContent = ArenaMatch.clock(matchTimeSeconds);
+            setHudText(document.getElementById('hud-timer'),ArenaMatch.clock(matchTimeSeconds));
             const nativeArmyWinner=meadowBattleMode&&meadowBattleState&&meadowBattleState.winner;
             KTKNativeArmyMatchFinish.acceptEarlyWin(arenaMatch,nativeArmyWinner);
             if (matchFinished || nativeArmyWinner) showMatchResults();
