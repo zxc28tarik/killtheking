@@ -25,3 +25,10 @@ Denetim tabanı: main 497fa653b250522b3d13f5d9a3453a5e7fc55e3d (PR #73).
 6. Yeni menü sürüm işareti değişirse CI sözleşmesini aynı PR'da güncelle.
 
 Not: CI ancestry kontrolü ekleniyor, repository branch protection/ruleset zorunluluğu bu çalışma kapsamında ayarlanmadı; eski dallara zorla push yapılmaz. Bu belge eski kaynaklara ait tüm özelliklerin semantik olarak taşındığı iddiası değildir.
+
+## İkinci içerik denetimi — güncel gerçek HTML
+- A8 ile farklı iki modül çözümlendi: ArenaMeadowGrass 256 → 512 piksel, daha sık blade/ton/benek, mipmap filtreleme ve 96 tekrar ile yükseltilmiş; eski sürüme dönülmez. ArenaCombatTactics mevcut erişilebilir rota, geri çekilme ve ateş konumu davranışını koruyup cover, flank, evade/feint, düşük can ve cooldown davranışları ekliyor.
+- Eski AI/animasyon/çarpışma dallarından 11 modül karşılaştırıldı: en son erişilebilir atış rotası, ok çarpışması, kalkan parry, yakın saldırı teması ve güvenli doğuş birebir. Daha eski navigasyon sürümleri yerini güncel 13 KB modüle bırakmış. Karakter hareketinde eğim, menzilli hazırlık ve yumuşak dönüş; model teması ve silah sweep'te ordu hedefleri; oyuncu çarpışmasında rampa yan yüzü koruması ilave edilmiş.
+- Eski src/ testlerinin güncel native HTML'yi çalıştırmadığı biliniyor. tests/current-native-inline-modules.test.mjs doğrudan main/index.html içindeki 26 modülü yükleyerek silah, maç, ayarlar, taktik, animasyon, çarpışma ve meydan/ordu sözleşmelerini kontrol eder. Eski testler arşiv regresyonu olarak korunur.
+- Visual-meadow-siege-pass1 içindeki KTKMeadowNatureV19 (460 ağaç, 1550 çalı vb.) kodu güncel HTML'ye birebir alınmamış. Güncel native doğa dekorasyonuyla görsel ve maliyet karşılaştırması yapılmadan taşınmaz.
+- G8.5 eski QA araçlarının aktarımı ve geri kalan dallardaki tüm runtime değişikliklerinin semantik incelemesi hâlâ açık. Bu turda oyunun oynanış kodu değiştirilmedi.
