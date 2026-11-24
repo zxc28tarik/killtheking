@@ -10193,11 +10193,11 @@ const KTKCalmUIV25=(()=>{
         let nativeSiegeWallBlocks=0;
         function nativeSiegeSegmentHitsBox(from,to,box,pad=.65){
           let lo=0,hi=1;
-          for(const [axis,minimum,maximum] of [
-            ['x',box.minX-pad,box.maxX+pad],
-            ['z',box.minZ-pad,box.maxZ+pad]
-          ]){
-            const delta=to[axis]-from[axis],value=from[axis];
+          for(let axis=0;axis<2;axis++){
+            const minimum=(axis===0?box.minX:box.minZ)-pad;
+            const maximum=(axis===0?box.maxX:box.maxZ)+pad;
+            const value=axis===0?from.x:from.z;
+            const delta=(axis===0?to.x:to.z)-value;
             if(Math.abs(delta)<1e-10){
               if(value<minimum||value>maximum)return false;
               continue;
@@ -10209,6 +10209,17 @@ const KTKCalmUIV25=(()=>{
           }
           return lo<=hi;
         }
+        // Reuse the previous-pose records; the battle step cannot retain them.
+        const siegePoseBuffer=[];
+        function captureSiegePoses(soldiers){
+          siegePoseBuffer.length=soldiers.length;
+          for(let i=0;i<soldiers.length;i++){
+            const u=soldiers[i],p=siegePoseBuffer[i]||(siegePoseBuffer[i]={x:0,z:0});
+            p.x=u.x;p.z=u.z;
+          }
+          return siegePoseBuffer;
+        }
+        const siegeConstraintTo={x:0,z:0};
         function nativeSiegeConstrainOriginalG54(before){
           if(!nativeSiegeMode||!meadowBattleState)return;
           const walls=nativeSiegeGateOpen?
@@ -10220,7 +10231,8 @@ const KTKCalmUIV25=(()=>{
           for(let i=0;i<meadowBattleState.soldiers.length;i++){
             const u=meadowBattleState.soldiers[i],old=before[i];
             if(!u.alive||!old||!Number.isFinite(u.x)||!Number.isFinite(u.z))continue;
-            const from={x:old.x,z:old.z},to={x:u.x,z:u.z};
+            const from=old,to=siegeConstraintTo;
+            to.x=u.x;to.z=u.z;
             if(Math.hypot(to.x-from.x,to.z-from.z)<1e-8)continue;
             // Preserve a verified prior physical pose, never teleport a body.
             if(walls.some(box=>
@@ -13470,6 +13482,7 @@ const KTKCalmUIV25=(()=>{
 
         function resetFreeForAllRound() {
             clearRoundTransients();
+            renderSpeedLines(0);
             KTKNativeArmyMatchFinish.restoreHud(document);
             KTKBattlefieldVisualV19.setBattleUi(document,meadowBattleMode);
             hideLiveScoreboard();
@@ -14076,9 +14089,11 @@ const KTKCalmUIV25=(()=>{
         const radarCanvas = document.getElementById('radar-canvas');
         const radarCtx = radarCanvas.getContext('2d');
 
+        let speedLinesDrawn=false;
         function renderSpeedLines(displaySpeed) {
-            speedLinesCtx.clearRect(0, 0, speedLinesCanvas.width, speedLinesCanvas.height);
-            if (displaySpeed < 130) return;
+            if(speedLinesDrawn) speedLinesCtx.clearRect(0,0,speedLinesCanvas.width,speedLinesCanvas.height);
+            speedLinesDrawn=displaySpeed>=130;
+            if (!speedLinesDrawn) return;
 
             const alpha = Math.min(0.45, (displaySpeed - 130) / 110);
             const cx = speedLinesCanvas.width / 2;
@@ -14233,6 +14248,9 @@ const KTKCalmUIV25=(()=>{
             bot.strikePoseTime = Math.max(0, bot.strikePoseTime - dt);
         }
 
+        const frameForward=new THREE.Vector3(),frameRight=new THREE.Vector3(),
+            frameMove=new THREE.Vector3(),frameUp=new THREE.Vector3(0,1,0),
+            frameCamBack=new THREE.Vector3(),barrelProjection=new THREE.Vector3();
         function updateGame(dt) {
             arenaClock += dt;
             if (player.shieldParryTime > 0) {
@@ -14251,6 +14269,7 @@ const KTKCalmUIV25=(()=>{
 
             // Drift 3D Voxel Clouds across the sky
             skyClouds.forEach(c => {
+                if(!c.mesh.visible)return;
                 c.mesh.position.x += c.speed * dt;
                 if (c.mesh.position.x > 130) c.mesh.position.x = -130;
             });
@@ -14285,9 +14304,10 @@ const KTKCalmUIV25=(()=>{
                     }
                 } else {
                     const dToPlayer = b.pos.distanceTo(player.pos);
-                    const topWorld = b.pos.clone().add(new THREE.Vector3(0, 2.7, 0));
-                    const proj = topWorld.project(camera);
-                    if (proj.z < 1.0 && dToPlayer < 28) {
+                    if(dToPlayer>=28){if(b.label.style.display!=='none')b.label.style.display='none';return;}
+                    const proj=barrelProjection.copy(b.pos);
+                    proj.y+=2.7;proj.project(camera);
+                    if (proj.z < 1.0) {
                         b.label.style.display = 'block';
                         b.label.style.left = `${(proj.x * 0.5 + 0.5) * window.innerWidth}px`;
                         b.label.style.top = `${(-proj.y * 0.5 + 0.5) * window.innerHeight}px`;
@@ -14358,10 +14378,10 @@ const KTKCalmUIV25=(()=>{
                 const targetHeight = wantsSlide ? player.crouchHeight : player.standHeight;
                 player.currentHeight = THREE.MathUtils.lerp(player.currentHeight, targetHeight, dt * 14);
 
-                const forward = new THREE.Vector3(0, 0, -1).applyAxisAngle(new THREE.Vector3(0, 1, 0), player.yaw);
-                const right = new THREE.Vector3(1, 0, 0).applyAxisAngle(new THREE.Vector3(0, 1, 0), player.yaw);
+                const forward = frameForward.set(0,0,-1).applyAxisAngle(frameUp,player.yaw);
+                const right = frameRight.set(1,0,0).applyAxisAngle(frameUp,player.yaw);
 
-                const moveDir = new THREE.Vector3();
+                const moveDir = frameMove.set(0,0,0);
                 if (keys['KeyW'] || keys['ArrowUp']) moveDir.add(forward);
                 if (keys['KeyS'] || keys['ArrowDown']) moveDir.sub(forward);
                 if (keys['KeyD'] || keys['ArrowRight']) moveDir.add(right);
@@ -14442,7 +14462,7 @@ const KTKCalmUIV25=(()=>{
                 camera.rotation.z = THREE.MathUtils.lerp(camera.rotation.z, wantsSlide ? -0.035 : 0, dt * 10);
 
                 if (player.isThirdPerson && playerCharGroup) {
-                    const camBack = new THREE.Vector3(0.65, 0.65, 4.2).applyAxisAngle(new THREE.Vector3(0, 1, 0), player.yaw);
+                    const camBack = frameCamBack.set(.65,.65,4.2).applyAxisAngle(frameUp,player.yaw);
                     camera.position.copy(player.pos).add(camBack);
 
                     // Update player's own 3D character mesh pose & animations
@@ -15204,10 +15224,10 @@ const KTKCalmUIV25=(()=>{
                 applyBotMotion(bot, dt, animationTravel, travelSlope);
 
                 // Project bot nameplate in place without temporary frame allocations.
-                const projected = botHeadProjection.set(
+                const projected = distToPlayer<75 ? botHeadProjection.set(
                     bot.mesh.position.x, bot.mesh.position.y + 3.4,
-                    bot.mesh.position.z).project(camera);
-                if (projected.z < 1.0 && distToPlayer < 75) {
+                    bot.mesh.position.z).project(camera):null;
+                if (projected && projected.z < 1.0) {
                     const sx = (projected.x * 0.5 + 0.5) * window.innerWidth;
                     const sy = (-projected.y * 0.5 + 0.5) * window.innerHeight;
                     bot.label.style.display = 'flex';
@@ -15233,7 +15253,7 @@ const KTKCalmUIV25=(()=>{
                 ArenaArmyBattle.setPlayerPosition(meadowBattleState,player.pos.x,player.pos.z);
                 ArenaArmyBattle.setPlayerHealth(meadowBattleState,player.hp);
                 const siegePreviousPositions=nativeSiegeMode?
-                    meadowBattleState.soldiers.map(u=>({x:u.x,z:u.z})):null;
+                    captureSiegePoses(meadowBattleState.soldiers):null;
                 if(nativeSiegeMode){
                     nativeSiegeTowerProtectNativeActors();
                     nativeSiegeDefenderCounterfire();
@@ -15325,6 +15345,14 @@ const KTKCalmUIV25=(()=>{
             }
         }
 
+        function updateActiveMeadowGrass(){
+            if(arenaMap!=='meadow'||!meadowDenseGrass||!meadowDenseGrass.visible)return false;
+            const tile=ArenaMeadowGrass.NEAR_TILE_SIZE;
+            const data=meadowDenseGrass.userData;
+            if(data.lastTileX===Math.floor(player.pos.x/tile)&&
+               data.lastTileZ===Math.floor(player.pos.z/tile))return false;
+            return ArenaMeadowGrass.updateNearbyTufts(THREE,meadowDenseGrass,meadowSpec,player.pos.x,player.pos.z);
+        }
         function animate() {
             requestAnimationFrame(animate);
             const now = performance.now();
@@ -15342,9 +15370,7 @@ const KTKCalmUIV25=(()=>{
                 gameDt *= 0.16;
             }
             if (isGameActive && arenaMatch.phase === 'playing') updateGame(gameDt);
-            if(arenaMap==='meadow'&&meadowDenseGrass){
-              ArenaMeadowGrass.updateNearbyTufts(THREE,meadowDenseGrass,meadowSpec,player.pos.x,player.pos.z);
-            }
+            updateActiveMeadowGrass();
             renderer.render(scene, camera);
         }
 
