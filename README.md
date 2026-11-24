@@ -2,7 +2,13 @@
 
 **Kill the King** is a native single-engine historical browser FPS prototype with original fast Arena/TDM movement, genuine 140-soldier G5.4 Meadow Army combat and a third, same-engine Castle Siege map. The October Serbest Arena source is preserved in recovered/legacy/; the canonical three-map build is the default development game, not a production release.
 
-## 22 November 2026 — Canonical ONE original FPS with THREE battle maps (development baseline)
+## 24 November 2026 — Current game / mainline policy
+
+**Current playable:** the root [index.html](index.html) on `main` (UI32 native three-map FPS). The only current downloadable artifact is **KillTheKing-CURRENT-PLAYABLE** from a successful **Browser game checks** run on `main`. It is byte-identical to the root and the current standalone candidate. Do not use the older canonical-builder artifacts, isolated launchers or historic feature-branch HTMLs as the current game.
+
+All new feature branches start from the latest `main`; target `main` directly, test the actual current HTML, and merge after checks pass. Never overwrite the new menu with an old standalone file. See [branch audit and integration rules](docs/MAINLINE_BRANCH_AUDIT_TR.md).
+
+## Historical baseline — 22 November 2026 — Canonical ONE original FPS with THREE battle maps (development baseline)
 
 **Important correction:** Older three-mode iframe HTML (FFA + Army + separate S3D1 Siege) is **an archive**, NOT the current canonical gameplay candidate. It gave the siege a different engine, camera and graphics and contradicted the approved requirement.
 

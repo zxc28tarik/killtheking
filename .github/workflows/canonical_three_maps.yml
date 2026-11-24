@@ -1,4 +1,4 @@
-name: Canonical Kill the King - one FPS and three native maps
+name: Historical native engine baseline - regression only
 on:
   push:
     branches:
@@ -72,7 +72,7 @@ jobs:
       - name: Archive actual single-engine HTML + manifest (development candidate)
         uses: actions/upload-artifact@v4
         with:
-          name: KillTheKing-CANONICAL-1-FPS-3-MAPS-NOT-FINAL
+          name: ARCHIVE-BASELINE-NOT-CURRENT-PLAYABLE
           path: |
             recovered/native-siege/dist/KillTheKing_3_Harita_TEK_ORJINAL_OYUN_ADAY.html
             recovered/native-siege/dist/KillTheKing_3_Harita_TEK_ORJINAL_OYUN_ADAY.html.build.json
@@ -110,7 +110,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: KillTheKing-CANONICAL-Native-3-Map-Software-WebGL-Evidence
+          name: ARCHIVE-BASELINE-WebGL-evidence
           path: |
             recovered/native-siege/canonical-browser-evidence/
             recovered/native-siege/dist/KillTheKing_3_Harita_TEK_ORJINAL_OYUN_ADAY.html.build.json

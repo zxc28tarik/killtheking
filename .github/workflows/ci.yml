@@ -7,6 +7,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Require a current main-based development branch
+        if: github.event_name == 'pull_request' && github.base_ref == 'main'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: git merge-base --is-ancestor "$BASE_SHA" "$HEAD_SHA"
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -30,6 +38,7 @@ jobs:
             const s=readFileSync("dist/KillTheKing_Oyna.html","utf8");
             if(!s.includes("id=\"native-siege-start\"")||
                !s.includes("ktkNativeSiegeMapStatus")||
+               !s.includes("id=\"ktk-ui32-controller\"")||
                s.includes("ktk-source-siege")||
                s.includes("data-ktk-launch="))
               throw Error("Old isolated S3D1 game accidentally exported");
@@ -38,6 +47,6 @@ jobs:
       - name: Upload tested playable HTML
         uses: actions/upload-artifact@v4
         with:
-          name: KillTheKing-CANONICAL-THREE-MAPS-PLAYABLE
+          name: KillTheKing-CURRENT-PLAYABLE
           path: dist/KillTheKing_Oyna.html
           if-no-files-found: error
