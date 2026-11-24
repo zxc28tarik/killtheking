@@ -11796,6 +11796,26 @@ const KTKCalmUIV25=(()=>{
         const stuckArrows = [];
         const particles = [];
 
+        // FIT03b: each particle owns its geometry and material; arrows own
+        // only their geometry (goldMat/steelMat are shared with weapon models).
+        // Flying helmet clones share both geometry and material with live bots.
+        function releaseParticle(mesh) {
+            scene.remove(mesh);
+            mesh.geometry.dispose();
+            mesh.material.dispose();
+        }
+        function releaseArrow(mesh) {
+            scene.remove(mesh);
+            mesh.traverse(child=>{if(child.isMesh)child.geometry.dispose();});
+        }
+        function clearRoundTransients() {
+            for(const p of particles)releaseParticle(p.mesh);
+            for(const a of arrows)releaseArrow(a.mesh);
+            for(const a of stuckArrows)releaseArrow(a.mesh);
+            for(const h of flyingHelmets)scene.remove(h.mesh);
+            particles.length=arrows.length=stuckArrows.length=flyingHelmets.length=0;
+        }
+
         function spawnFloatingDamage(worldPos, dmg, isHeadshot = false, extraTag = '') {
             const container = document.getElementById('damage-numbers-container');
             const proj = worldPos.clone().project(camera);
@@ -11863,7 +11883,7 @@ const KTKCalmUIV25=(()=>{
                         2 + Math.random() * 8,
                         (Math.random() - 0.5) * (metal ? 14 : 9)
                     ),
-                    life, maxLife: life, gravity: true, impactTemporary: true
+                    life, maxLife: life, gravity: true
                 });
             }
         }
@@ -12317,7 +12337,7 @@ const KTKCalmUIV25=(()=>{
             scene.add(beam);
             const lifetime = isArrow ? 0.16 : 0.085;
             particles.push({ mesh: beam, vel: new THREE.Vector3(), life: lifetime,
-                maxLife: lifetime, impactTemporary: true });
+                maxLife: lifetime });
         }
 
         function damageBotFromBot(attacker, victim, damage) {
@@ -13439,6 +13459,7 @@ const KTKCalmUIV25=(()=>{
         }));
 
         function resetFreeForAllRound() {
+            clearRoundTransients();
             KTKNativeArmyMatchFinish.restoreHud(document);
             KTKBattlefieldVisualV19.setBattleUi(document,meadowBattleMode);
             hideLiveScoreboard();
@@ -14674,16 +14695,16 @@ const KTKCalmUIV25=(()=>{
                     if (impact.type === 'barrel') {
                         triggerHitmarker(false);
                         triggerBarrelExplosion(impact.target);
-                        scene.remove(arr.mesh);
+                        releaseArrow(arr.mesh);
                     } else if(impact.type==='army-friendly'){
                         // Friendly body absorbs the arrow. No friendly damage and
                         // no phasing through the ally to hit an enemy behind.
-                        scene.remove(arr.mesh);
+                        releaseArrow(arr.mesh);
                     } else if(impact.type==='army'){
                         playerHitArmySoldier(impact.battleHit,
                             ArenaWeaponBalance.damage('bow',impact.battleHit.zone,arr.charge),
                             CLASSES[2].weaponName);
-                        scene.remove(arr.mesh);
+                        releaseArrow(arr.mesh);
                     } else if (impact.type === 'bot') {
                         const bot = impact.target;
                         const zone = ArenaWeaponBalance.zoneFromAim(
@@ -14691,7 +14712,7 @@ const KTKCalmUIV25=(()=>{
                         const bowCls = CLASSES[2];
                         const baseDmg = ArenaWeaponBalance.damage('bow',zone,arr.charge);
                         damageBot(bot, baseDmg, zone === 'head', bowCls.weaponName, '', arr.mesh.position);
-                        scene.remove(arr.mesh);
+                        releaseArrow(arr.mesh);
                     } else {
                         if (isGameActive && arr.mesh.position.distanceTo(player.pos) < 35) sfx.playArrowThud();
                         stuckArrows.push({ mesh: arr.mesh, life: 10.0 });
@@ -14701,7 +14722,7 @@ const KTKCalmUIV25=(()=>{
                 }
 
                 if (arr.life <= 0) {
-                    scene.remove(arr.mesh);
+                    releaseArrow(arr.mesh);
                     arrows.splice(i, 1);
                 }
             }
@@ -14710,7 +14731,7 @@ const KTKCalmUIV25=(()=>{
             for (let i = stuckArrows.length - 1; i >= 0; i--) {
                 stuckArrows[i].life -= dt;
                 if (stuckArrows[i].life <= 0) {
-                    scene.remove(stuckArrows[i].mesh);
+                    releaseArrow(stuckArrows[i].mesh);
                     stuckArrows.splice(i, 1);
                 }
             }
@@ -14748,11 +14769,7 @@ const KTKCalmUIV25=(()=>{
                     }
                 }
                 if (p.life <= 0) {
-                    scene.remove(p.mesh);
-                    if (p.impactTemporary) {
-                        p.mesh.geometry.dispose();
-                        p.mesh.material.dispose();
-                    }
+                    releaseParticle(p.mesh);
                     particles.splice(i, 1);
                 }
             }

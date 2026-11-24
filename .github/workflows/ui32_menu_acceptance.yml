@@ -88,6 +88,41 @@ jobs:
               });
               assert.deepEqual(hudCheck,{stable:0,sameNode:true,changed:true,repeated:0,updated:true});
               console.log('PASS FIT03a HUD unchanged writes and real class changes',viewport.width);
+              // FIT03b: test actual Three.js disposal events and shared ownership.
+              const resourceCheck=await p.evaluate(()=>{
+                let particleGeometry=0,particleMaterial=0,arrowGeometry=0,sharedMaterial=0,helmetGeometry=0,helmetMaterial=0;
+                const origin=new THREE.Vector3(0,5,0),dir=new THREE.Vector3(1,0,0);
+                const initial=particles.length;
+                spawnSmokeCloud(origin,dir,5);
+                const smoke=particles.slice(initial);
+                for(const p of smoke){
+                  p.mesh.geometry.addEventListener('dispose',()=>particleGeometry++);
+                  p.mesh.material.addEventListener('dispose',()=>particleMaterial++);
+                }
+                const arrow=new THREE.Group(),shared=new THREE.MeshBasicMaterial();
+                shared.addEventListener('dispose',()=>sharedMaterial++);
+                for(let i=0;i<2;i++){
+                  const g=new THREE.BoxGeometry(1,1,1);
+                  g.addEventListener('dispose',()=>arrowGeometry++);
+                  arrow.add(new THREE.Mesh(g,shared));
+                }
+                scene.add(arrow);arrows.push({mesh:arrow});
+                const stuck=new THREE.Group(),g=new THREE.BoxGeometry(1,1,1);
+                g.addEventListener('dispose',()=>arrowGeometry++);
+                stuck.add(new THREE.Mesh(g,shared));scene.add(stuck);stuckArrows.push({mesh:stuck});
+                const hg=new THREE.BoxGeometry(1,1,1),hm=new THREE.MeshBasicMaterial();
+                hg.addEventListener('dispose',()=>helmetGeometry++);
+                hm.addEventListener('dispose',()=>helmetMaterial++);
+                const helmet=new THREE.Mesh(hg,hm);
+                scene.add(helmet);flyingHelmets.push({mesh:helmet});
+                clearRoundTransients();clearRoundTransients();
+                const result={particleGeometry,particleMaterial,arrowGeometry,sharedMaterial,helmetGeometry,helmetMaterial,
+                  remaining:particles.length+arrows.length+stuckArrows.length+flyingHelmets.length,
+                  detached:[...smoke.map(p=>p.mesh),arrow,stuck,helmet].every(m=>m.parent===null)};
+                shared.dispose();hg.dispose();hm.dispose();return result;
+              });
+              assert.deepEqual(resourceCheck,{particleGeometry:5,particleMaterial:5,arrowGeometry:3,sharedMaterial:0,helmetGeometry:0,helmetMaterial:0,remaining:0,detached:true});
+              console.log('PASS FIT03b owned resource disposal and shared resource protection',viewport.width);
               // FIT02b: settings must still reach the original engine controls.
               await p.locator('[data-focus-map="arena"]').click();
               await p.locator('#fm-toggle-settings').click();
