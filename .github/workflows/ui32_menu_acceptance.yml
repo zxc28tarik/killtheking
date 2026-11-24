@@ -1,7 +1,9 @@
 name: UI32 full-screen menu acceptance
 on:
   push:
-    branches: [codex/ui32-native-fullscreen-menu-flow]
+    branches: [main, codex/ui32-native-fullscreen-menu-flow]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 jobs:
   browser:
