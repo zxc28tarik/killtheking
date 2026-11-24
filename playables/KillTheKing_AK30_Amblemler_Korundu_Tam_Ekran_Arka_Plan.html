@@ -15404,6 +15404,9 @@ const KTKCalmUIV25=(()=>{
             const rawDt = (now - lastTime) / 1000;
             const dt = Math.min(0.05, rawDt);
             lastTime = now;
+            // Fullscreen bitmap menu never displays the live 3D scene.
+            // Keep the clock current, but skip simulation/render work until play resumes.
+            if(!menuOverlay.classList.contains('hidden')) return;
             ArenaPerformance.record(performanceSamples,rawDt);
 
             let gameDt = dt;
@@ -15617,7 +15620,7 @@ body.ktk-calm-ui #menu-overlay #focus-menu .fm-hint{font:500 11px/1.5 system-ui,
               const where=b.dataset.focusMap;
               if(where==='arena')old('[data-arena-map="castle"]')?.click();
               else if(where==='meadow'){
-                if(!isPressed(old('#meadow-army-demo-btn')))old('#meadow-army-demo-btn')?.click();
+                if(mapChoice()!=='meadow')old('#meadow-army-demo-btn')?.click();
               }else if(!isPressed(old('#native-siege-start')))old('#native-siege-start')?.click();
               sync();
             });
@@ -16078,7 +16081,9 @@ body #menu-overlay #ktk-original-menu{display:none!important}
 body #menu-overlay#menu-overlay#menu-overlay>#focus-menu{position:relative!important;display:flex!important;flex-direction:column!important;align-items:stretch!important;justify-content:flex-start!important;width:100%!important;max-width:none!important;min-height:100dvh!important;max-height:none!important;margin:0!important;padding:0!important;overflow:visible!important;background:none!important;border:0!important;border-radius:0!important;box-shadow:none!important;backdrop-filter:none!important}
 body #menu-overlay #focus-menu>.fm-eyebrow,body #menu-overlay #focus-menu>h1,body #menu-overlay #focus-menu>.fm-intro{display:none!important}
 body #menu-overlay #focus-menu .ui32-backdrop{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;z-index:-1;pointer-events:none;filter:none;opacity:.45}
-body #menu-overlay #focus-menu[data-stage=class] .ui32-backdrop{opacity:1}
+body #menu-overlay #focus-menu[data-stage=class] .ui32-backdrop{opacity:0}
+body:has(#menu-overlay[data-ui32-ready]:not(.hidden)) canvas{visibility:hidden!important}
+body #menu-overlay #focus-menu #fm-mode-opt[hidden]{display:none!important}
 body #menu-overlay #focus-menu .ui32-header{position:relative;z-index:3;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px clamp(18px,4vw,64px);background:linear-gradient(#10191ce8,#10191c00);color:#fff0d5;font:700 clamp(18px,2.2vw,32px) Georgia,serif;letter-spacing:.04em}
 body #menu-overlay #focus-menu .ui32-stage-label{font:600 13px system-ui,sans-serif;letter-spacing:.14em;text-transform:uppercase}
 body #menu-overlay#menu-overlay#menu-overlay #focus-menu>.fm-main{display:flex!important;flex:1!important;align-items:center!important;justify-content:center!important;margin:0!important;padding:20px!important;width:100%!important;max-width:none!important}
@@ -16093,7 +16098,7 @@ body #menu-overlay#menu-overlay#menu-overlay #focus-menu [data-focus-map] .fm-ch
 body #menu-overlay#menu-overlay#menu-overlay #focus-menu .approved-class-gallery{display:flex!important;flex:1!important;flex-direction:column!important;justify-content:center!important;width:100%!important;max-width:none!important;margin:0!important;padding:0!important}
 body #menu-overlay#menu-overlay#menu-overlay #focus-menu[data-stage=map] .approved-class-gallery{display:none!important}
 body #menu-overlay#menu-overlay#menu-overlay #focus-menu .approved-gallery-head{display:none!important}
-body #menu-overlay#menu-overlay#menu-overlay #focus-menu .approved-gallery-desktop{width:100%!important;max-width:none!important;aspect-ratio:1672/625!important;margin:auto!important}
+body #menu-overlay#menu-overlay#menu-overlay #focus-menu .approved-gallery-desktop{width:100%!important;max-width:none!important;aspect-ratio:1672/625!important;margin:auto!important;flex-shrink:0}
 body #menu-overlay#menu-overlay#menu-overlay #focus-menu .approved-gallery-picture{width:100%!important;height:100%!important;object-fit:fill!important;mask-image:none!important;filter:none!important}
 body #menu-overlay#menu-overlay#menu-overlay #focus-menu>.fm-foot{position:relative;z-index:3;width:100%!important;margin:0!important;max-width:none!important;padding:16px clamp(18px,4vw,64px)!important;border:0!important;background:linear-gradient(transparent,#10191cee)!important}
 body #menu-overlay #focus-menu[data-stage=map] #fm-start-wrap,body #menu-overlay #focus-menu[data-stage=map] #ui32-back,body #menu-overlay #focus-menu[data-stage=pause] #ui32-back{display:none!important}
@@ -16117,12 +16122,12 @@ const header=document.createElement('header');header.className='ui32-header';hea
 const back=document.createElement('button');back.type='button';back.id='ui32-back';back.className='ui32-back';back.textContent='‹ Haritalar';panel.querySelector('.fm-more-links').prepend(back);
 const shapes={arena:'<path d="M24 74V43h12V30h11v13h16V30h11v13h12v31z"/><path d="M48 74V57h14v17"/>',meadow:'<path d="M19 73Q35 48 55 69Q74 46 91 73M27 65l20-38m-10 0 10 0 6 8m25 30L63 27m-6 8 6-8 10 0"/>',siege:'<path d="M19 76V35h13v10h10V35h26v10h10V35h13v41zM46 76V61h18v15M19 48h72"/><path d="M55 21v14m0-14 20 4-20 6"/>'};
 function stage(s){panel.dataset.stage=s;panel.querySelector('#ui32-stage-label').textContent=s==='map'?'Harita seçimi':s==='pause'?'Oyun duraklatıldı':'Sınıf seçimi';for(const d of panel.querySelectorAll('.fm-drawer'))d.hidden=true;for(const b of panel.querySelectorAll('[aria-controls]'))b.setAttribute('aria-expanded','false');overlay.scrollTop=0;}
-for(const b of panel.querySelectorAll('[data-focus-map]')){const name=b.dataset.focusMap;const e=document.createElementNS('http://www.w3.org/2000/svg','svg');e.setAttribute('class','ui32-emblem');e.setAttribute('viewBox','0 0 110 126');e.setAttribute('aria-hidden','true');e.innerHTML='<path d="M55 5 101 23v55Q101 103 55 121Q9 103 9 78V23Z" fill="#222c2d" stroke="#d7bd8a" stroke-width="3"/><path d="M55 13 93 28v49Q93 96 55 112Q17 96 17 77V28Z" fill="none" stroke="#907951" stroke-width="1.5"/><g fill="none" stroke="#e4cc9d" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">'+shapes[name]+'</g>';b.prepend(e);b.addEventListener('click',()=>stage('class'));}
+for(const b of panel.querySelectorAll('[data-focus-map]')){const name=b.dataset.focusMap;const e=document.createElementNS('http://www.w3.org/2000/svg','svg');e.setAttribute('class','ui32-emblem');e.setAttribute('viewBox','0 0 110 126');e.setAttribute('aria-hidden','true');e.innerHTML='<path d="M55 5 101 23v55Q101 103 55 121Q9 103 9 78V23Z" fill="#222c2d" stroke="#d7bd8a" stroke-width="3"/><path d="M55 13 93 28v49Q93 96 55 112Q17 96 17 77V28Z" fill="none" stroke="#907951" stroke-width="1.5"/><g fill="none" stroke="#e4cc9d" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">'+shapes[name]+'</g>';b.prepend(e);b.addEventListener('click',()=>{if(arenaMatch.phase==='menu'&&b.getAttribute('aria-pressed')==='true')stage('class');});}
 back.addEventListener('click',()=>stage('map'));
 let wasHidden=overlay.classList.contains('hidden');
 new MutationObserver(()=>{const hidden=overlay.classList.contains('hidden');if(wasHidden&&!hidden)stage(arenaMatch.phase==='paused'?'pause':'map');wasHidden=hidden;}).observe(overlay,{attributes:true,attributeFilter:['class']});
 stage('map');overlay.dataset.ui32Ready='true';
-window.ktkUI32Status=()=>({ready:overlay.dataset.ui32Ready,stage:panel.dataset.stage,legacyHidden:getComputedStyle(document.getElementById('ktk-original-menu')).display==='none',mapEmblems:panel.querySelectorAll('.ui32-emblem').length,classes:new Set(Array.from(panel.querySelectorAll('[data-approved-class]'),b=>b.dataset.approvedClass)).size,playButton:!!panel.querySelector('#play-btn'),menuHidden:overlay.classList.contains('hidden')&&getComputedStyle(overlay).display==='none'});
+window.ktkUI32Status=()=>({ready:overlay.dataset.ui32Ready,stage:panel.dataset.stage,legacyHidden:getComputedStyle(document.getElementById('ktk-original-menu')).display==='none',mapEmblems:panel.querySelectorAll('.ui32-emblem').length,classes:new Set(Array.from(panel.querySelectorAll('[data-approved-class]'),b=>b.dataset.approvedClass)).size,playButton:!!panel.querySelector('#play-btn'),selectedMap:panel.querySelector('[data-focus-map][aria-pressed=true]')?.dataset.focusMap,engineMap:arenaMap,engineSiege:nativeSiegeMode,engineArmy:meadowBattleMode,phase:arenaMatch.phase,menuHidden:overlay.classList.contains('hidden')&&getComputedStyle(overlay).display==='none'});
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
 })();
