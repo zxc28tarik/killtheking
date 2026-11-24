@@ -6799,7 +6799,6 @@ window.addEventListener('error', function(event) {
         const blueHeraldicTex = createHeraldicShieldTexture('#1e3a8a', '#f59e0b');
         const chainmailTex = createChainmailTexture();
         const armorPlateBundle = createArmorPlateTexture();
-        const armorPlateTex = armorPlateBundle.map;
         const walnutTexBundle = createWalnutWoodTexture();
 
         // ============================================================================
@@ -8713,7 +8712,6 @@ const KTKSiegeDefenderDoctrineV27=(()=>{
    sword:Object.freeze({x:7,z:76})
   })
  });
- const FRONT_RADIUS=53;
  const FRONT_LINE=-51;
  const COURTYARD_Z=28;
  const NEAR_GATE_X=43;
@@ -9191,8 +9189,6 @@ const KTKCalmUIV25=(()=>{
         let quickDaggerGroup = null;
         let meleeSlashTrailMesh = null;
 
-        const skinMat = new THREE.MeshStandardMaterial({ color: 0xe0ac69, roughness: 0.58, metalness: 0.05 });
-        const sleeveMat = new THREE.MeshStandardMaterial({ color: 0x374151, metalness: 0.35, roughness: 0.55 });
         const steelMat = new THREE.MeshStandardMaterial({
             map: armorPlateBundle.map,
             bumpMap: armorPlateBundle.bumpMap,
@@ -11891,7 +11887,6 @@ const KTKCalmUIV25=(()=>{
         // ============================================================================
         const arrows = [];
         const stuckArrows = [];
-        const enemyTracers = [];
         const particles = [];
 
         function spawnFloatingDamage(worldPos, dmg, isHeadshot = false, extraTag = '') {
@@ -15515,7 +15510,7 @@ body.ktk-calm-ui #menu-overlay #focus-menu .fm-help{display:grid;grid-template-c
 body.ktk-calm-ui #menu-overlay #focus-menu .fm-help li{font-size:12px;color:#b8c8be}
 body.ktk-calm-ui #menu-overlay #focus-menu .fm-help strong{font-weight:750;color:#e7eee7;margin-right:8px}
 body.ktk-calm-ui #menu-overlay #focus-menu .fm-hint{font:500 11px/1.5 system-ui,sans-serif;color:#83988b;margin:10px 0 0}
-@media(max-width:650px){body.ktk-calm-ui #menu-overlay>#focus-menu{padding:22px 20px 28px;max-height:calc(100dvh - 8px)}body.ktk-calm-ui #menu-overlay #focus-menu .fm-main{grid-template-columns:1fr;gap:21px;margin:29px 0 25px}body.ktk-calm-ui #menu-overlay #focus-menu .fm-kicker{margin-bottom:6px}body.ktk-calm-ui #menu-overlay #focus-menu .fm-choice{padding:8px 12px 8px 14px;min-height:39px}body.ktk-calm-ui #menu-overlay #focus-menu .fm-choice .fm-choice-text{font-size:16px}body.ktk-calm-ui #menu-overlay #focus-menu .fm-context{margin:7px 0 0 16px!important;min-height:21px}body.ktk-calm-ui #menu-overlay #focus-menu .fm-foot{align-items:stretch}body.ktk-calm-ui #menu-overlay #focus-menu #fm-start-wrap{width:100%}body.ktk-calm-ui #menu-overlay #focus-menu #play-btn{width:100%!important;order:-1}body.ktk-calm-ui #menu-overlay #focus-menu .fm-option-grid{grid-template-columns:1fr;gap:18px}body.ktk-calm-ui #menu-overlay #focus-menu .fm-help{grid-template-columns:1fr}body.ktk-calm-ui #menu-overlay #focus-menu .fm-more-links{width:100%;justify-content:space-between}}
+@media(max-width:650px){body.ktk-calm-ui #menu-overlay>#focus-menu{padding:22px 20px 28px;max-height:calc(100dvh - 8px)}body.ktk-calm-ui #menu-overlay #focus-menu .fm-main{grid-template-columns:1fr;gap:21px;margin:29px 0 25px}body.ktk-calm-ui #menu-overlay #focus-menu .fm-choice{padding:8px 12px 8px 14px;min-height:39px}body.ktk-calm-ui #menu-overlay #focus-menu .fm-choice .fm-choice-text{font-size:16px}body.ktk-calm-ui #menu-overlay #focus-menu .fm-foot{align-items:stretch}body.ktk-calm-ui #menu-overlay #focus-menu #fm-start-wrap{width:100%}body.ktk-calm-ui #menu-overlay #focus-menu #play-btn{width:100%!important;order:-1}body.ktk-calm-ui #menu-overlay #focus-menu .fm-option-grid{grid-template-columns:1fr;gap:18px}body.ktk-calm-ui #menu-overlay #focus-menu .fm-help{grid-template-columns:1fr}body.ktk-calm-ui #menu-overlay #focus-menu .fm-more-links{width:100%;justify-content:space-between}}
 @media(prefers-reduced-motion:reduce){body.ktk-calm-ui #menu-overlay #focus-menu *{transition:none!important}}
           `;
           function install(){
@@ -15578,21 +15573,24 @@ body.ktk-calm-ui #menu-overlay #focus-menu .fm-hint{font:500 11px/1.5 system-ui,
               const chosen=mapChoice();
               for(const button of panel.querySelectorAll('[data-focus-map]'))setPressed(button,button.dataset.focusMap===chosen);
               for(const button of panel.querySelectorAll('[data-approved-class]'))setPressed(button,Number(button.dataset.approvedClass)===player.classIdx);
-              panel.querySelector('#fm-mode-opt').hidden=chosen!=='arena';
-              for(const button of panel.querySelectorAll('[data-focus-mode]'))button.setAttribute('aria-pressed',String(isPressed(old('[data-arena-mode="'+button.dataset.focusMode+'"]'))));
-              for(const button of panel.querySelectorAll('[data-focus-duration]'))button.setAttribute('aria-pressed',String(isPressed(old('[data-duration-seconds="'+button.dataset.focusDuration+'"]'))));
-              for(const button of panel.querySelectorAll('[data-focus-atmo]'))button.setAttribute('aria-pressed',String(old('#atmo-btn-'+button.dataset.focusAtmo)?.classList.contains('bg-amber-500')));
+              const modeOption=panel.querySelector('#fm-mode-opt');
+              if(modeOption.hidden!==(chosen!=='arena'))modeOption.hidden=chosen!=='arena';
+              for(const button of panel.querySelectorAll('[data-focus-mode]'))setPressed(button,isPressed(old('[data-arena-mode="'+button.dataset.focusMode+'"]')));
+              for(const button of panel.querySelectorAll('[data-focus-duration]'))setPressed(button,isPressed(old('[data-duration-seconds="'+button.dataset.focusDuration+'"]')));
+              for(const button of panel.querySelectorAll('[data-focus-atmo]'))setPressed(button,!!old('#atmo-btn-'+button.dataset.focusAtmo)?.classList.contains('bg-amber-500'));
               const pairs=[['sens-slider','fm-sensitivity','fm-sensitivity-value','×'],['arena-volume-slider','fm-volume','fm-volume-value','%']];
               for(const [from,to,outId,suffix] of pairs){
                 const src=old('#'+from),dst=panel.querySelector('#'+to);if(!src||!dst)continue;
-                if(document.activeElement!==dst)dst.value=src.value;
-                const raw=src.value;panel.querySelector('#'+outId).textContent=(suffix==='×'?Number(raw).toFixed(1):raw)+suffix;
+                if(document.activeElement!==dst&&dst.value!==src.value)dst.value=src.value;
+                const raw=src.value,out=panel.querySelector('#'+outId),label=(suffix==='×'?Number(raw).toFixed(1):raw)+suffix;
+                if(out.textContent!==label)out.textContent=label;
               }
               const quality=old('#arena-quality-select'),motion=old('#arena-low-motion');
-              if(quality)panel.querySelector('#fm-quality').value=quality.value;
-              if(motion)panel.querySelector('#fm-low-motion').checked=motion.checked;
+              const qualityTarget=panel.querySelector('#fm-quality'),motionTarget=panel.querySelector('#fm-low-motion');
+              if(quality&&qualityTarget.value!==quality.value)qualityTarget.value=quality.value;
+              if(motion&&motionTarget.checked!==motion.checked)motionTarget.checked=motion.checked;
               const nativeLabel=arenaMatch.phase==='paused'?'Maça Devam Et':'Savaşa Başla';
-               for(const button of panel.querySelectorAll('[data-focus-mode],[data-focus-duration]'))button.disabled=arenaMatch.phase!=='menu';
+               for(const button of panel.querySelectorAll('[data-focus-mode],[data-focus-duration]'))if(button.disabled!==(arenaMatch.phase!=='menu'))button.disabled=arenaMatch.phase!=='menu';
                if(nativePlay.textContent.trim()!==nativeLabel)nativePlay.textContent=nativeLabel;
             }
             for(const b of panel.querySelectorAll('[data-focus-map]'))b.addEventListener('click',()=>{

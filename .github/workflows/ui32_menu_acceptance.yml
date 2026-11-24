@@ -49,6 +49,27 @@ jobs:
                 await p.screenshot({path:'ui32-class-'+viewport.width+'-'+map+'.png',timeout:90000});
                 await p.locator('#ui32-back').click();
               }
+              // FIT02b: settings must still reach the original engine controls.
+              await p.locator('[data-focus-map="arena"]').click();
+              await p.locator('#fm-toggle-settings').click();
+              await p.locator('[data-focus-mode="tdm"]').click();
+              assert.equal(await p.locator('[data-arena-mode="tdm"]').getAttribute('aria-pressed'),'true');
+              await p.locator('[data-focus-mode="ffa"]').click();
+              await p.locator('[data-focus-duration="120"]').click();
+              assert.equal(await p.locator('[data-duration-seconds="120"]').getAttribute('aria-pressed'),'true');
+              await p.locator('#fm-quality').selectOption('low');
+              assert.equal(await p.locator('#arena-quality-select').inputValue(),'low');
+              await p.locator('#fm-low-motion').check();
+              assert.equal(await p.locator('#arena-low-motion').isChecked(),true);
+              const writes=await p.evaluate(()=>{
+                const obs=new MutationObserver(()=>{});
+                obs.observe(document.getElementById('focus-menu'),{attributes:true,childList:true,characterData:true,subtree:true});
+                for(let i=0;i<5;i++)window.ktkSyncFocusMenu();
+                const count=obs.takeRecords().length;obs.disconnect();return count;
+              });
+              assert.equal(writes,0,'unchanged menu sync must not mutate the DOM');
+              await p.locator('#ui32-back').click();
+              console.log('PASS settings bridge and idempotent sync',viewport.width);
               const startMap=viewport.width===1920?'arena':viewport.width===1366?'meadow':'siege';
               await p.locator('[data-focus-map="'+startMap+'"]').click();
               await p.locator('#play-btn').click();
