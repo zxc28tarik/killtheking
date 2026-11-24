@@ -42,6 +42,7 @@ jobs:
           node --test recovered/native-siege/test_native_ui_v22.mjs
           node --test recovered/native-siege/test_native_ui_v23.mjs
           node --test recovered/native-siege/test_native_ui_v24.mjs
+          node --test recovered/native-siege/test_native_ui_v25_calm.mjs
           node --test recovered/native-siege/test_native_siege_expansion_v25.mjs
           node --test recovered/native-siege/test_native_siege_defense_v26.mjs
           node --test recovered/native-siege/test_native_siege_defender_ai_v27.mjs

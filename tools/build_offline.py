@@ -43,13 +43,14 @@ def main():
     if not args.legacy:
         # Main / release MUST match the same single native G5.4 FPS and three
         # battle maps as the repo entrypoint; no old S3D1 three-iframe bundle.
-        canonical = ROOT / "recovered/native-siege/build_canonical_three_maps.mjs"
-        original = ROOT / "recovered/native-siege/KillTheKing_AK_NATIVE_09_original_game_siege_map.html"
+        candidate = ROOT / "playables/KillTheKing_AK30_Amblemler_Korundu_Tam_Ekran_Arka_Plan.html"
         out = (ROOT / args.out).resolve()
         if not out.is_relative_to(ROOT):
             raise RuntimeError("Refusing output outside repository")
-        subprocess.run(["node", str(canonical), str(original), str(out)],
-                       cwd=ROOT, check=True)
+        subprocess.run(["node", "tools/sync_canonical_entrypoint.mjs", "--check"], cwd=ROOT, check=True)
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_bytes(candidate.read_bytes())
+        print(f"Built UI32 playable HTML: {out}, bytes={out.stat().st_size}")
         return
 
     # Historical mode is explicitly opt-in. The canonical build above is the default.

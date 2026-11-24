@@ -40,6 +40,7 @@ try{
    v22:window.ktkUiV22Status?.(),
    v23:window.ktkUiV23Status?.(),
    v24:window.ktkUiV24Status?.(),
+   v25:window.ktkCalmUiV25Status?.(),
    mapEtchings:[...document.querySelectorAll('#arena-map-controls>button')].map(b=>getComputedStyle(b).backgroundImage),
    heraldry:[...document.querySelectorAll('#menu-overlay .class-card')].map(card=>({
     role:card.getAttribute('data-ktk-v23-role'),
@@ -69,14 +70,15 @@ try{
   assert.equal(uiBoot.v24?.maps,3,'V24 retains the three native map controls');
   assert.equal(uiBoot.v24?.heraldryCards,4,'All four genuine class crests survived V24');
   assert.equal(uiBoot.v24?.cosmeticOnly,true,'V24 cannot affect original game state');
+  assert.equal(uiBoot.v25?.installed,true,'Quiet V25 theme installed above original V21-V24');
+  assert.equal(uiBoot.v25?.settingsAccessible,true,'Original settings remain accessible in disclosure');
+  assert.equal(uiBoot.v25?.mapChoices,3,'Three native maps still selectable');
+  assert.equal(uiBoot.v25?.originalSiegeButtons,4,'Four real siege command buttons unchanged');
   assert.equal(uiBoot.mapEtchings.length,3);
-  assert(uiBoot.mapEtchings.every(image=>image.includes('data:image/svg+xml,')),
-   'Three original War Council map silhouette etchings are actually rendered');
-  assert.equal(new Set(uiBoot.mapEtchings).size,3,'Three maps have distinct native decorative motifs');
-  assert(uiBoot.mapEtchings.every(image=>image.trim().startsWith('url(')),
-   'All three actual map motifs must be painted in foreground, not obscured behind the panel gradient');
-  assert.equal(uiBoot.heraldry.filter(c=>c.role&&c.crest.includes('data:image/svg+xml')).length,4,
-   'All four existing class cards use original vector crests');
+  assert(uiBoot.mapEtchings.every(image=>image==='none'),
+   'UI25 deliberately removes busy map etchings while keeping three real buttons');
+  assert.equal(uiBoot.heraldry.filter(c=>!!c.role).length,4,
+   'Original four classes retain V23 role identity although decorative crests are hidden');
   assert.equal(uiBoot.originalMapButtons,3,'Three real original map controls remain');
   assert.equal(uiBoot.selectedMapCount,3,'Do not substitute isolated menu buttons');
   assert(uiBoot.originalSiegeButtons>=4,'Original commands plus existing F10 panel control');
@@ -87,9 +89,9 @@ try{
   assert(uiBoot.originalArmyOrderButtons>=7,'Real G5.4 tactical order elements remain');
   assert.equal(uiBoot.actualSiegeDisabled,true,'Cannot visually unlock real gate assault');
   assert.equal(uiBoot.selectorDisplay,'grid','Map selection is three equal visual cards');
-  assert.equal(uiBoot.menuPanelBorder,'4px','V22 War Room menu brass molding');
-  assert(uiBoot.menuPanelBackground.includes('gradient'),'Premium background surface is applied');
-  assert(uiBoot.primaryButtonBackground.includes('gradient'),'Main PLAY action uses the same bronze/gold system');
+  assert.equal(uiBoot.menuPanelBorder,'1px','V25 quiet menu uses subtle thin border');
+  assert.equal(uiBoot.menuPanelBackground,'none','V25 eliminates heavy ornamental panel gradient');
+  assert.equal(uiBoot.primaryButtonBackground,'none','V25 play action uses muted flat fill');
   assert.equal(uiBoot.originalModeButtons,2,'FFA/TDM modes unchanged');
   const boot=await page.evaluate(()=>window.krunkerArenaStatus());
   assert.equal(boot.matchPhase,'menu','Boot is native match menu');
@@ -281,11 +283,11 @@ try{
     armyGradient:getComputedStyle(document.getElementById('meadow-army-hud')).backgroundImage,
     resultGradient:getComputedStyle(document.querySelector('#match-results-overlay>section')).backgroundImage
    }));
-   assert(skin.gradient.includes('gradient'),'Actual active siege panel is textured');
-   assert.equal(skin.border,'3px','Genuine original siege panel now has bronze top molding');
-   assert.equal(skin.realAssaultDisabled,true,'Assault button remains locked until real breach');
-   assert(skin.armyGradient.includes('gradient'),'Real army commands have same design system');
-   assert(skin.resultGradient.includes('gradient'),'Actual result card also shares this design');
+   assert.equal(skin.gradient,'none','UI25 real siege panel has non-distracting flat surface');
+   assert.equal(skin.border,'1px','UI25 removes attention-grabbing bronze molding');
+   assert.equal(skin.realAssaultDisabled,true,'Real F9 stays locked until actual breach');
+   assert.equal(skin.armyGradient,'none','UI25 real G5.4 command panel has muted flat fill');
+   assert.equal(skin.resultGradient,'none','UI25 real result screen follows quiet palette');
   }
   await page.screenshot({path:evidence+'/'+mode.name+'-playing.png',timeout:30000});
   if(mode.army){
@@ -318,6 +320,7 @@ try{
   v22:window.ktkUiV22Status?.(),
   v23:window.ktkUiV23Status?.(),
   v24:window.ktkUiV24Status?.(),
+  v25:window.ktkCalmUiV25Status?.(),
   mapEtchings:[...document.querySelectorAll('#arena-map-controls>button')].map(b=>getComputedStyle(b).backgroundImage),
   mapCardHeight:document.querySelector('#arena-map-controls>button').getBoundingClientRect().height,
   cardsFit:[...document.querySelectorAll('#arena-map-controls>button')].every(b=>b.getBoundingClientRect().width<=innerWidth),
@@ -331,8 +334,9 @@ try{
  assert.equal(mobileUi.v23?.classCards,4,'Four original soldier class cards on mobile');
  assert.equal(mobileUi.v24?.installed,true,'War Council V24 at 390px');
  assert.equal(mobileUi.v24?.originalClassCards,4,'Four original class cards at 390px');
- assert(mobileUi.mapEtchings.every(x=>x.includes('data:image/svg+xml,')),
-  '390px map silhouettes remain rendered on all three native cards');
+ assert.equal(mobileUi.v25?.installed,true,'UI25 compact view enabled at 390px');
+ assert(mobileUi.mapEtchings.every(x=>x==='none'),
+  '390px map choices stay legible without ornamental etchings');
  assert.equal(mobileUi.cardsFit,true,'Three map choices fit mobile viewport');
  assert(mobileUi.mapCardHeight>=40,'Map choices remain legible/tappable');
  assert(mobileUi.menuWidth<=mobileUi.viewportWidth,'Mobile original menu fits screen');

@@ -78,7 +78,10 @@ export function buildCanonical(original){
    '\n        window.ktkUiV22Status=()=>KTKNativeUiV22.status(document);'+
    '\n        KTKNativeUiV23.install(document);'+
    '\n        window.ktkUiV23Status=()=>KTKNativeUiV23.status(document);'+
+   '\n'+readFileSync(resolve(HERE,'native-ui-v25-calm.js'),'utf8')+
    '\n        KTKNativeUiV24.install(document);'+
+   '\n        KTKCalmUIV25.install(document);'+
+   '\n        window.ktkCalmUiV25Status=()=>KTKCalmUIV25.status(document);'+
    '\n        window.ktkUiV24Status=()=>KTKNativeUiV24.status(document);'+
    '\n        function buildMeadowSquare() {','visual module install');
 

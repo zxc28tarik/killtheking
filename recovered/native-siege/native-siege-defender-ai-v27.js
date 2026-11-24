@@ -76,7 +76,7 @@ const KTKSiegeDefenderDoctrineV27=(()=>{
   bow.tacticalReason='Kalenin gerçek ikinci savunma hattını tut';
   if(bow.fireMode==='hold')bow.fireMode='free';
   const runtime={state,battle,bowId:bow.id,
-   phase:'garrison',phaseLevel:0,issued:0,rejected:0,
+   phase:'garrison',phaseLevel:0,issued:0,rejected:0,musketGateHeld:false,
    decisions:0,frontCommands:0,fallbackCommands:0,
    rearCommands:0,failedRouteRoles:[],events:[],
    lastThinkAt:-Infinity,lastDecisionAt:0,lastTransitionAt:0,
@@ -123,6 +123,27 @@ const KTKSiegeDefenderDoctrineV27=(()=>{
   if(runtime.events.length>12)runtime.events.shift();
   return true;
  }
+ // AK30: when attackers physically push through the gate while its HP is
+ // critically depleted, the ORIGINAL red musket squad holds its existing
+ // defensible firing position instead of chasing into the assault corridor.
+ // Uses G5.4 hold order; no position writes, fake gunfire, or damage changes.
+ function reinforceGateFire(runtime,obs){
+  if(runtime.musketGateHeld||obs.gateHp>400||obs.gateVicinity<2)return false;
+  const musket=runtime.state.squads.find(s=>s.team==='red'&&s.type==='musket');
+  if(!musket?.alive)return false;
+  const prior=musket.playerControlled;
+  musket.playerControlled=true;
+  const accepted=runtime.battle.issueOrder(runtime.state,musket.id,'hold',true);
+  if(!accepted){musket.playerControlled=prior;return false;}
+  musket.siegeDefenseAIControlled=true;
+  musket.aiRole='siege-gate-musket-guard';
+  musket.tacticalReason='Gerçek kapı baskınında mevziyi tut';
+  if(musket.fireMode==='hold')musket.fireMode='free';
+  runtime.musketGateHeld=true;
+  runtime.events.push({elapsed:runtime.state.elapsed,type:'musket',stage:'gate-hold',squadId:musket.id});
+  if(runtime.events.length>12)runtime.events.shift();
+  return true;
+ }
  function update(runtime,equipment){
   if(!runtime?.state||runtime.state.winner)return status(runtime);
   const time=runtime.state.elapsed;
@@ -131,6 +152,7 @@ const KTKSiegeDefenderDoctrineV27=(()=>{
   runtime.decisions++;
   const obs=observed(runtime.state,equipment);
   runtime.lastObserved=obs;
+  reinforceGateFire(runtime,obs);
   // Monotonic response: don't oscillate when a single attacker briefly
   // retreats or is killed. The fallback trigger is real G5.4 body positions,
   // never a timer or a gate HP change alone.
@@ -185,6 +207,7 @@ const KTKSiegeDefenderDoctrineV27=(()=>{
    fallbackCommands:runtime.fallbackCommands,
    rearCommands:runtime.rearCommands,
    rearArchersAnchored:!!bow?.siegeDefenseAIControlled&&bow.order==='hold',
+   gateMusketsHeld:!!runtime.musketGateHeld,
    originalRearArcherCount:o?.reserveBow||0,
    realDefensiveLeases:bound.length,
    totalRealSoldiers:s.soldiers.length,

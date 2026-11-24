@@ -1,0 +1,65 @@
+name: UI32 full-screen menu acceptance
+on:
+  push:
+    branches: [main, codex/ui32-native-fullscreen-menu-flow]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save --no-package-lock playwright@1.58.2
+      - run: npx playwright install --with-deps chromium
+      - name: Exercise map and class selection, start, and menu visibility
+        run: |
+          node --input-type=module <<'JS'
+          import { chromium } from 'playwright';
+          import { resolve } from 'node:path';
+          import { readFileSync } from 'node:fs';
+          import { pathToFileURL } from 'node:url';
+          import assert from 'node:assert/strict';
+          assert.deepEqual(readFileSync('index.html'),readFileSync('playables/KillTheKing_AK30_Amblemler_Korundu_Tam_Ekran_Arka_Plan.html'));
+          const b=await chromium.launch({args:['--use-angle=swiftshader','--enable-unsafe-swiftshader','--disable-dev-shm-usage']});
+          try {
+            for(const viewport of [{width:1920,height:1080},{width:1366,height:768},{width:390,height:844}]){
+              const p=await b.newPage({viewport}); const errors=[]; p.on('pageerror',e=>errors.push(e.message));
+              await p.goto(pathToFileURL(resolve('index.html')).href);
+              await p.waitForFunction(()=>window.ktkUI32Status?.().ready==='true');
+              const status=await p.evaluate(()=>window.ktkUI32Status());
+              assert.equal(status.legacyHidden,true);assert.equal(status.stage,'map');assert.equal(status.mapEmblems,3);assert.equal(status.classes,4);
+              const box=await p.locator('#menu-overlay').boundingBox();assert.ok(Math.abs(box.width-viewport.width)<2);
+              await p.screenshot({path:'ui32-map-'+viewport.width+'.png',timeout:90000});
+              for(const map of ['arena','meadow','siege','meadow','arena']){
+                await p.locator('[data-focus-map="'+map+'"]').click();
+                assert.equal(await p.evaluate(()=>window.ktkUI32Status().stage),'class');
+                const selected=await p.evaluate(()=>window.ktkUI32Status());
+                assert.equal(selected.selectedMap,map);assert.equal(selected.engineSiege,map==='siege');assert.equal(selected.engineArmy,map!=='arena');assert.equal(selected.engineMap,map==='meadow'?'meadow':'castle');
+                console.log('PASS actual map state',viewport.width,map);
+                for(const id of [0,1,2,3]){
+                  await p.locator('[data-approved-class="'+id+'"]:visible').click();
+                  assert.equal(await p.evaluate(()=>window.ktkApprovedArtworkStatus().currentClass),String(id));
+                }
+                await p.screenshot({path:'ui32-class-'+viewport.width+'-'+map+'.png',timeout:90000});
+                await p.locator('#ui32-back').click();
+              }
+              await p.locator('[data-focus-map="arena"]').click();
+              await p.locator('#play-btn').click();
+              await p.waitForFunction(()=>window.ktkUI32Status().menuHidden);
+              assert.deepEqual(errors,[]);
+              console.log('PASS start and menu visibility',viewport.width);
+              await p.close();
+            }
+          } finally {await b.close();}
+          JS
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: UI32-browser-evidence
+          path: ui32-*.png
+          if-no-files-found: warn
