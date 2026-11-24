@@ -14233,6 +14233,32 @@ const KTKCalmUIV25=(()=>{
             bot.strikePoseTime = Math.max(0, bot.strikePoseTime - dt);
         }
 
+        // FIT04a: purely visual map work is skipped when it cannot be seen.
+        const barrelLabelProjection = new THREE.Vector3();
+        function updateMapClouds(dt) {
+            for(const c of skyClouds){
+                if(!c.mesh.visible)continue;
+                c.mesh.position.x+=c.speed*dt;
+                if(c.mesh.position.x>130)c.mesh.position.x=-130;
+            }
+        }
+        function updateBarrelLabel(b) {
+            const style=b.label.style;
+            if(b.pos.distanceToSquared(player.pos)>=28*28){
+                if(style.display!=='none')style.display='none';
+                return;
+            }
+            const proj=barrelLabelProjection.copy(b.pos);
+            proj.y+=2.7;
+            proj.project(camera);
+            if(proj.z<1.0){
+                if(style.display!=='block')style.display='block';
+                const left=`${(proj.x*.5+.5)*window.innerWidth}px`;
+                const top=`${(-proj.y*.5+.5)*window.innerHeight}px`;
+                if(style.left!==left)style.left=left;
+                if(style.top!==top)style.top=top;
+            }else if(style.display!=='none')style.display='none';
+        }
         function updateGame(dt) {
             arenaClock += dt;
             if (player.shieldParryTime > 0) {
@@ -14250,10 +14276,7 @@ const KTKCalmUIV25=(()=>{
             }
 
             // Drift 3D Voxel Clouds across the sky
-            skyClouds.forEach(c => {
-                c.mesh.position.x += c.speed * dt;
-                if (c.mesh.position.x > 130) c.mesh.position.x = -130;
-            });
+            updateMapClouds(dt);
 
             // Flicker torches & spawn occasional embers
             const nowSec = performance.now() * 0.001;
@@ -14284,16 +14307,7 @@ const KTKCalmUIV25=(()=>{
                         b.group.visible = true;
                     }
                 } else {
-                    const dToPlayer = b.pos.distanceTo(player.pos);
-                    const topWorld = b.pos.clone().add(new THREE.Vector3(0, 2.7, 0));
-                    const proj = topWorld.project(camera);
-                    if (proj.z < 1.0 && dToPlayer < 28) {
-                        b.label.style.display = 'block';
-                        b.label.style.left = `${(proj.x * 0.5 + 0.5) * window.innerWidth}px`;
-                        b.label.style.top = `${(-proj.y * 0.5 + 0.5) * window.innerHeight}px`;
-                    } else {
-                        b.label.style.display = 'none';
-                    }
+                    updateBarrelLabel(b);
                 }
             });
 

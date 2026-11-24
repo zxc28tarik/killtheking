@@ -165,6 +165,40 @@ jobs:
               });
               assert.deepEqual(sightCheck,{compared:900,mismatches:0,dirty:0,changedInputs:0,blocked:true,clear:true});
               console.log('PASS FIT03c sight-query equivalence',viewport.width);
+              // FIT04a: hidden clouds do not move, active clouds keep original drift.
+              const mapVisualCheck=await p.evaluate(()=>{
+                const saved=skyClouds.map(c=>({x:c.mesh.position.x,visible:c.mesh.visible}));
+                const oldPos=player.pos.clone();
+                const label=document.createElement('div'),pos=new THREE.Vector3(0,0,0);
+                try{
+                  for(const c of skyClouds){c.mesh.position.x=0;c.mesh.visible=false;}
+                  updateMapClouds(.05);
+                  const hidden=skyClouds.every(c=>c.mesh.position.x===0);
+                  for(const c of skyClouds)c.mesh.visible=true;
+                  updateMapClouds(.05);
+                  const active=skyClouds.every(c=>c.mesh.position.x===c.speed*.05);
+                  for(const c of skyClouds)c.mesh.position.x=131;
+                  updateMapClouds(.05);
+                  const wrap=skyClouds.every(c=>c.mesh.position.x===-130);
+                  player.pos.set(100,0,0);label.style.display='block';
+                  updateBarrelLabel({pos,label});
+                  const farHidden=label.style.display==='none';
+                  const obs=new MutationObserver(()=>{});
+                  obs.observe(label,{attributes:true});
+                  for(let i=0;i<10;i++)updateBarrelLabel({pos,label});
+                  const repeated=obs.takeRecords().length;obs.disconnect();
+                  player.pos.set(0,0,0);
+                  const expected=pos.clone().add(new THREE.Vector3(0,2.7,0)).project(camera);
+                  updateBarrelLabel({pos,label});
+                  const expectedStyle=document.createElement('div').style;
+                  expectedStyle.left=String((expected.x*.5+.5)*innerWidth)+'px';
+                  expectedStyle.top=String((-expected.y*.5+.5)*innerHeight)+'px';
+                  const nearMatches=expected.z<1?label.style.display==='block'&&label.style.left===expectedStyle.left&&label.style.top===expectedStyle.top:label.style.display==='none';
+                  return {nonempty:skyClouds.length>0,hidden,active,wrap,farHidden,repeated,nearMatches};
+                }finally{player.pos.copy(oldPos);skyClouds.forEach((c,i)=>{c.mesh.position.x=saved[i].x;c.mesh.visible=saved[i].visible;});}
+              });
+              assert.deepEqual(mapVisualCheck,{nonempty:true,hidden:true,active:true,wrap:true,farHidden:true,repeated:0,nearMatches:true});
+              console.log('PASS FIT04a visual map work guards',viewport.width);
               // FIT02b: settings must still reach the original engine controls.
               await p.locator('[data-focus-map="arena"]').click();
               await p.locator('#fm-toggle-settings').click();
