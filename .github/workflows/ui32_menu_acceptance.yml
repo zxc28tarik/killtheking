@@ -30,21 +30,25 @@ jobs:
               const status=await p.evaluate(()=>window.ktkUI32Status());
               assert.equal(status.legacyHidden,true);assert.equal(status.stage,'map');assert.equal(status.mapEmblems,3);assert.equal(status.classes,4);
               const box=await p.locator('#menu-overlay').boundingBox();assert.ok(Math.abs(box.width-viewport.width)<2);
-              await p.screenshot({path:'ui32-map-'+viewport.width+'.png'});
-              for(const map of ['arena','meadow','siege']){
+              await p.screenshot({path:'ui32-map-'+viewport.width+'.png',timeout:90000});
+              for(const map of ['arena','meadow','siege','meadow','arena']){
                 await p.locator('[data-focus-map="'+map+'"]').click();
                 assert.equal(await p.evaluate(()=>window.ktkUI32Status().stage),'class');
+                const selected=await p.evaluate(()=>window.ktkUI32Status());
+                assert.equal(selected.selectedMap,map);assert.equal(selected.engineSiege,map==='siege');assert.equal(selected.engineArmy,map!=='arena');assert.equal(selected.engineMap,map==='meadow'?'meadow':'castle');
+                console.log('PASS actual map state',viewport.width,map);
                 for(const id of [0,1,2,3]){
                   await p.locator('[data-approved-class="'+id+'"]:visible').click();
                   assert.equal(await p.evaluate(()=>window.ktkApprovedArtworkStatus().currentClass),String(id));
                 }
-                await p.screenshot({path:'ui32-class-'+viewport.width+'-'+map+'.png'});
+                await p.screenshot({path:'ui32-class-'+viewport.width+'-'+map+'.png',timeout:90000});
                 await p.locator('#ui32-back').click();
               }
               await p.locator('[data-focus-map="arena"]').click();
               await p.locator('#play-btn').click();
               await p.waitForFunction(()=>window.ktkUI32Status().menuHidden);
               assert.deepEqual(errors,[]);
+              console.log('PASS start and menu visibility',viewport.width);
               await p.close();
             }
           } finally {await b.close();}
