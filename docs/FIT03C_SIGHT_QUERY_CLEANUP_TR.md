@@ -1,0 +1,4 @@
+# FIT03c — Görüş ve çarpışma sorgularında geçici nesne azaltımı
+Temel: main b829511a895f32c7c7e4b1e929aaf9ac6aff68c1. FIT03b genel CI ve Chromium kabulü başarılı.
+arenaWorldBlockBetween ve arenaCanSeeFrom mevcut arenaAimTmp/arenaAimOrigin vektörlerini kullanır. arenaLineOfSight dahil üç senkron sorgu tek sonuç dizisini kullanır, her sorgudan önce ve sonra dizi temizlenir. Near/far, hedef yüksekliği, mesafe eşikleri, worldMeshes ve Three.js raycast yöntemi korunur. Raycast içindeki kesişim nesnelerinin oluşturulması devam eder; tam sıfır tahsis iddiası yoktur.
+Chromium testi eski algoritma ile yeni algoritmayı gerçek dünya meshleri, yapay engel ve boş sahnede 900 sorgu üzerinden karşılaştırır; girdi vektörlerinin değiştirilmediğini ve dizinin boşaltıldığını kontrol eder. Her viewport için uygulanır. Diğer 30 script, HTML, CSS ve görseller değişmedi. FPS kazanımı henüz ölçülmedi. Yeni CI geçmeden main'e birleştirilmez.

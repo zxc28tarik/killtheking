@@ -123,6 +123,48 @@ jobs:
               });
               assert.deepEqual(resourceCheck,{particleGeometry:5,particleMaterial:5,arrowGeometry:3,sharedMaterial:0,helmetGeometry:0,helmetMaterial:0,remaining:0,detached:true});
               console.log('PASS FIT03b owned resource disposal and shared resource protection',viewport.width);
+              // FIT03c: compare old allocating ray queries and reused scratch storage.
+              const sightCheck=await p.evaluate(()=>{
+                const saved=worldMeshes.slice(),legacyRay=new THREE.Raycaster();
+                const g=new THREE.BoxGeometry(2,6,2),m=new THREE.MeshBasicMaterial();
+                const wall=new THREE.Mesh(g,m);wall.position.set(5,2,0);wall.updateMatrixWorld(true);
+                let compared=0,mismatches=0,dirty=0,changedInputs=0;
+                const oldBlock=(a,b)=>{
+                  const d=b.clone().sub(a),length=d.length();if(length<=.15)return false;
+                  legacyRay.set(a,d.multiplyScalar(1/length));legacyRay.near=.05;legacyRay.far=length-.10;
+                  return legacyRay.intersectObjects(worldMeshes,false).length>0;
+                };
+                const oldSight=(a,b,isPlayer)=>{
+                  const origin=new THREE.Vector3(a.x,a.y+1.8,a.z),end=b.clone();
+                  end.y+=isPlayer?1:1.65;const d=end.sub(origin),length=d.length();
+                  if(length<.01)return true;
+                  legacyRay.set(origin,d.multiplyScalar(1/length));legacyRay.near=.12;legacyRay.far=Math.max(.12,length-.55);
+                  return legacyRay.intersectObjects(worldMeshes,false).length===0;
+                };
+                const check=(actual,expected)=>{compared++;if(actual!==expected)mismatches++;if(arenaSightHits.length)dirty++;};
+                try{
+                  for(const meshes of [[wall],[],saved]){
+                    worldMeshes.length=0;worldMeshes.push(...meshes);
+                    for(let i=0;i<60;i++){
+                      const a=new THREE.Vector3(0,0,i%2===0?0:10),b=new THREE.Vector3(i%3===0?.04:10,0,a.z);
+                      const aa=a.clone(),bb=b.clone();
+                      check(arenaWorldBlockBetween(a,b),oldBlock(a,b));
+                      for(const isPlayer of [true,false]){
+                        check(arenaCanSeeFrom(a,b,isPlayer),oldSight(a,b,isPlayer));
+                        check(arenaLineOfSight({mesh:{position:a}},b,isPlayer),oldSight(a,b,isPlayer));
+                      }
+                      if(!a.equals(aa)||!b.equals(bb))changedInputs++;
+                    }
+                  }
+                  worldMeshes.length=0;worldMeshes.push(wall);
+                  const a=new THREE.Vector3(0,2,0),b=new THREE.Vector3(10,2,0);
+                  const blocked=arenaWorldBlockBetween(a,b);
+                  worldMeshes.length=0;
+                  return {compared,mismatches,dirty,changedInputs,blocked,clear:!arenaWorldBlockBetween(a,b)};
+                }finally{worldMeshes.length=0;worldMeshes.push(...saved);g.dispose();m.dispose();}
+              });
+              assert.deepEqual(sightCheck,{compared:900,mismatches:0,dirty:0,changedInputs:0,blocked:true,clear:true});
+              console.log('PASS FIT03c sight-query equivalence',viewport.width);
               // FIT02b: settings must still reach the original engine controls.
               await p.locator('[data-focus-map="arena"]').click();
               await p.locator('#fm-toggle-settings').click();
