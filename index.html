@@ -6799,7 +6799,6 @@ window.addEventListener('error', function(event) {
         const blueHeraldicTex = createHeraldicShieldTexture('#1e3a8a', '#f59e0b');
         const chainmailTex = createChainmailTexture();
         const armorPlateBundle = createArmorPlateTexture();
-        const armorPlateTex = armorPlateBundle.map;
         const walnutTexBundle = createWalnutWoodTexture();
 
         // ============================================================================
@@ -8713,7 +8712,6 @@ const KTKSiegeDefenderDoctrineV27=(()=>{
    sword:Object.freeze({x:7,z:76})
   })
  });
- const FRONT_RADIUS=53;
  const FRONT_LINE=-51;
  const COURTYARD_Z=28;
  const NEAR_GATE_X=43;
@@ -9191,8 +9189,6 @@ const KTKCalmUIV25=(()=>{
         let quickDaggerGroup = null;
         let meleeSlashTrailMesh = null;
 
-        const skinMat = new THREE.MeshStandardMaterial({ color: 0xe0ac69, roughness: 0.58, metalness: 0.05 });
-        const sleeveMat = new THREE.MeshStandardMaterial({ color: 0x374151, metalness: 0.35, roughness: 0.55 });
         const steelMat = new THREE.MeshStandardMaterial({
             map: armorPlateBundle.map,
             bumpMap: armorPlateBundle.bumpMap,
@@ -11891,7 +11887,6 @@ const KTKCalmUIV25=(()=>{
         // ============================================================================
         const arrows = [];
         const stuckArrows = [];
-        const enemyTracers = [];
         const particles = [];
 
         function spawnFloatingDamage(worldPos, dmg, isHeadshot = false, extraTag = '') {
