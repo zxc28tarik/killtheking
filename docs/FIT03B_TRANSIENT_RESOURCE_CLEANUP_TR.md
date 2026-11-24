@@ -1,0 +1,5 @@
+# FIT03b — Geçici grafik kaynaklarının temizliği
+Temel: main ccc7ec279738055f294485401a23b961d509fcc6. FIT03a genel CI ve Chromium kabulü başarılı.
+Altı particles.push üreticisinin tamamı kendi geometri ve materyalini oluşturuyor. Daha önce yalnız impactTemporary işaretli iki üreticinin kaynakları dispose ediliyordu. Tüm parçacıkların ömrü sonunda sahneden ayrılması ve kendi geometri/materyalinin serbest bırakılması sağlandı. Beş uçan ok çıkış noktası ve saplanmış ok ömrü sonunda yalnız oka ait geometri temizlenir; ortak goldMat/steelMat korunur. Uçan miğfer klonları canlı botlarla kaynak paylaştığından yalnız sahneden ayrılır.
+Yeni maç resetinde dört geçici nesne dizisi temizlenir; duraklatma/devam etme akışı değişmez. Görsel efektler, ömürleri, hasar ve fizik hesapları değiştirilmedi.
+Chromium kabul testi gerçek Three.js dispose olaylarını ve ortak kaynakların korunmasını, iki ardışık temizliğin güvenli olduğunu ve tüm nesnelerin sahneden ayrıldığını kontrol eder. Uzun maç GPU/RAM ölçümü henüz yoktur. CI ve tarayıcı kabulü tamamlanmadan main'e birleştirilmez.
