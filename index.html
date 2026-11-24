@@ -621,94 +621,6 @@ window.addEventListener('error', function(event) {
                 </label>
             </div>
 
-            <!-- Class Selection Grid (4 Upgraded v3.5 HD Classes) -->
-            <div>
-                <div class="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-amber-400 mb-2.5 flex items-center justify-between">
-                    <span>SAVAŞÇI SINIFINI SEÇ (OYUN İÇİNDE 1-4 İLE DEĞİŞTİR, [P] İLE KARAKTERİNİ GÖR):</span>
-                    <span class="text-sky-300 hidden sm:inline">Her Sınıfın Kendine Özgü 1600'ler Zırhı, Miğferi ve Silüeti Vardır!</span>
-                </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                    
-                    <!-- Class 1: Şövalye (Kılıç & Kalkan) -->
-                    <div onclick="selectClass(0)" id="card-class-0" class="class-card cursor-pointer rounded-lg border-2 border-white/15 bg-slate-800/75 p-3.5 flex flex-col justify-between">
-                        <div>
-                            <div class="flex justify-between items-center mb-1.5">
-                                <span class="text-xs font-extrabold bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded border border-amber-500/30">[1] KILIÇ &amp; KALKAN</span>
-                                <span class="text-xs font-bold text-lime-400">130 HP</span>
-                            </div>
-                            <h3 class="text-lg font-extrabold text-white krunker-text">ŞÖVALYE</h3>
-                            <p class="text-xs text-gray-300 mt-1">
-                                <strong class="text-amber-300">Sol Tık:</strong> Hızlı Kılıç Komboları.<br>
-                                <strong class="text-sky-300">Sağ Tık (Basılı):</strong> Kalkan Kaldır (%75 Hasar Blok).<br>
-                                <strong class="text-rose-300">Kalkan + Sol Tık / [F]:</strong> Kalkan Hücumu (İleri Atılma)!
-                            </p>
-                        </div>
-                        <div class="mt-3 pt-2 border-t border-white/10 text-[11px] text-amber-300 font-bold flex justify-between">
-                            <span>GÖVDE: 20 • KAFA: 30</span>
-                            <span>HIZ: 112</span>
-                        </div>
-                    </div>
-
-                    <!-- Class 2: Piyade (Mızrak / Kargı) -->
-                    <div onclick="selectClass(1)" id="card-class-1" class="class-card cursor-pointer rounded-lg border-2 border-white/15 bg-slate-800/75 p-3.5 flex flex-col justify-between">
-                        <div>
-                            <div class="flex justify-between items-center mb-1.5">
-                                <span class="text-xs font-extrabold bg-sky-500/20 text-sky-300 px-2 py-0.5 rounded border border-sky-500/30">[2] MOMENTUM KARGI</span>
-                                <span class="text-xs font-bold text-lime-400">110 HP</span>
-                            </div>
-                            <h3 class="text-lg font-extrabold text-white krunker-text">PİYADE (MIZRAK)</h3>
-                            <p class="text-xs text-gray-300 mt-1">
-                                <strong class="text-amber-300">Pasif:</strong> Hızlandıkça (Slide-Hop) Mızrak Hasarı Katlanır!<br>
-                                <strong class="text-sky-300">Sağ Tık / [F]:</strong> Kargı Hücumu (Aniden ileri fırlar ve deler).
-                            </p>
-                        </div>
-                        <div class="mt-3 pt-2 border-t border-white/10 text-[11px] text-amber-300 font-bold flex justify-between">
-                            <span>GÖVDE: 35 • KAFA: 52,5</span>
-                            <span>MENZİL: UZUN</span>
-                        </div>
-                    </div>
-
-                    <!-- Class 3: Okçu (Gerilebilir Uzun Yay) -->
-                    <div onclick="selectClass(2)" id="card-class-2" class="class-card cursor-pointer rounded-lg border-2 border-white/15 bg-slate-800/75 p-3.5 flex flex-col justify-between">
-                        <div>
-                            <div class="flex justify-between items-center mb-1.5">
-                                <span class="text-xs font-extrabold bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded border border-emerald-500/30">[3] GERİLEBİLİR YAY</span>
-                                <span class="text-xs font-bold text-lime-400">100 HP</span>
-                            </div>
-                            <h3 class="text-lg font-extrabold text-white krunker-text">OKÇU (UZUN YAY)</h3>
-                            <p class="text-xs text-gray-300 mt-1">
-                                <strong class="text-emerald-300">Sol Tık Basılı Tut:</strong> İlk 2 saniye atış yok; 3 saniyede tam güç (14–35 gövde hasarı).<br>
-                                <strong class="text-sky-300">[F] Tuşu:</strong> Yakın Dövüş Hançeri.
-                            </p>
-                        </div>
-                        <div class="mt-3 pt-2 border-t border-white/10 text-[11px] text-amber-300 font-bold flex justify-between">
-                            <span>15 OK/DK • ATINCA 1sn TOPARLAN</span>
-                            <span>HIZ: 108</span>
-                        </div>
-                    </div>
-
-                    <!-- Class 4: Tüfekçi (1600 Çakmaklı Tüfek + Süngü) -->
-                    <div onclick="selectClass(3)" id="card-class-3" class="class-card selected cursor-pointer rounded-lg border-2 border-white/15 bg-slate-800/75 p-3.5 flex flex-col justify-between">
-                        <div>
-                            <div class="flex justify-between items-center mb-1.5">
-                                <span class="text-xs font-extrabold bg-rose-500/20 text-rose-300 px-2 py-0.5 rounded border border-rose-500/30">[4] BARUT &amp; SÜNGÜ</span>
-                                <span class="text-xs font-bold text-amber-300">100 HP</span>
-                            </div>
-                            <h3 class="text-lg font-extrabold text-white krunker-text">TÜFEKÇİ (1600)</h3>
-                            <p class="text-xs text-gray-300 mt-1">
-                                <strong class="text-rose-300">Sol Tık:</strong> Çakmaklı Tüfek: 4 atış/dk • 15 sn barut doldurma.<br>
-                                <strong class="text-sky-300">[F] Tuşu:</strong> Barut doldururken bile anında **Süngü / Hançer** sapla!
-                            </p>
-                        </div>
-                        <div class="mt-3 pt-2 border-t border-white/10 text-[11px] text-amber-300 font-bold flex justify-between">
-                            <span>GÖVDE: 90 • KAFA: 135</span>
-                            <span>HANÇER [F]: 10</span>
-                        </div>
-                    </div>
-
-                </div>
-            </div>
-
             <!-- Independent arena selection; preserve the original castle by default. -->
             <div id="arena-map-controls" class="match-duration-picker" role="group" aria-label="Harita seçimi">
                 <strong>HARİTA</strong>
@@ -9078,12 +8990,6 @@ const KTKCalmUIV25=(()=>{
    const full=button.textContent.trim();button.title=full;
    button.textContent=siegeLabels[i];button.setAttribute('aria-label',full);
   });
-  const classTitle=doc.getElementById('card-class-0')?.parentElement?.previousElementSibling;
-  if(classTitle){
-   const parts=classTitle.querySelectorAll('span');
-   if(parts[0])parts[0].textContent='SINIF SEÇİMİ';
-   if(parts[1])parts[1].textContent='Oyun içinde 1–4 tuşlarıyla değiştir';
-  }
   const intro=doc.querySelector('#menu-overlay>div>div:first-child p');
   if(intro){intro.title=intro.textContent.trim();intro.textContent='Haritanı ve savaşçı sınıfını seç, savaşa gir.';}
   const meadow=doc.querySelector('#meadow-army-controls>.match-duration-help');
@@ -9748,8 +9654,6 @@ const KTKCalmUIV25=(()=>{
             document.getElementById('ads-overlay').style.opacity = '0';
 
             for (let i = 0; i < 4; i++) {
-                const card = document.getElementById(`card-class-${i}`);
-                if (card) card.classList.toggle('selected', i === idx);
                 const pill = document.getElementById(`pill-${i + 1}`);
                 if (pill) {
                     pill.className = i === idx
@@ -9761,6 +9665,7 @@ const KTKCalmUIV25=(()=>{
             }
             updateHUD();
             if(meadowBattleMode && arenaMatch.phase==='menu')syncArenaMapControls();
+            window.ktkSyncFocusMenu?.();
         };
 
         function updateHUD() {
@@ -15627,7 +15532,7 @@ body.ktk-calm-ui #menu-overlay #focus-menu .fm-hint{font:500 11px/1.5 system-ui,
                 sync();
               });
             }
-            const originalControls=[...original.querySelectorAll('#arena-map-controls button,#meadow-army-demo-btn,#native-siege-start,#match-mode-controls button,#match-duration-controls button,.class-card')];
+            const originalControls=[...original.querySelectorAll('#arena-map-controls button,#meadow-army-demo-btn,#native-siege-start,#match-mode-controls button,#match-duration-controls button')];
             const observer=new MutationObserver(sync);
             originalControls.forEach(el=>observer.observe(el,{attributes:true,attributeFilter:['aria-pressed','class']}));
             observer.observe(nativePlay,{childList:true,characterData:true,subtree:true});
@@ -15708,7 +15613,6 @@ body.ktk-calm-ui.ktk-approved-art #focus-menu .fm-drawer{background:rgba(16,25,2
   for(const b of art)b.addEventListener('click',()=>{
    if(arenaMatch.phase!=='menu')return;
    window.selectClass(Number(b.dataset.approvedClass));
-   window.ktkSyncFocusMenu();
   });
   window.ktkSyncFocusMenu();
   window.ktkApprovedArtworkStatus=()=>({installed:true,originalEngine:true,classes:new Set(art.map(b=>b.dataset.approvedClass)).size,
