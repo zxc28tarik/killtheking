@@ -2,7 +2,7 @@
 <html lang="tr"><head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kill the King — Ana Oyun • Kale Kuşatması AK-NATIVE-08</title>
+    <title>Kill the King — UI32 • Arena / Meydan / Kuşatma</title>
     
     <script>
 /**
@@ -15406,7 +15406,7 @@ const KTKCalmUIV25=(()=>{
             lastTime = now;
             // Fullscreen bitmap menu never displays the live 3D scene.
             // Keep the clock current, but skip simulation/render work until play resumes.
-            if(!menuOverlay.classList.contains('hidden')) return;
+            if(menuOverlay.dataset.ui32Ready==='true'&&!menuOverlay.classList.contains('hidden')) return;
             ArenaPerformance.record(performanceSamples,rawDt);
 
             let gameDt = dt;
@@ -15614,6 +15614,7 @@ body.ktk-calm-ui #menu-overlay #focus-menu .fm-hint{font:500 11px/1.5 system-ui,
               if(quality)panel.querySelector('#fm-quality').value=quality.value;
               if(motion)panel.querySelector('#fm-low-motion').checked=motion.checked;
               const nativeLabel=arenaMatch.phase==='paused'?'Maça Devam Et':'Savaşa Başla';
+               for(const button of panel.querySelectorAll('[data-focus-mode],[data-focus-duration]'))button.disabled=arenaMatch.phase!=='menu';
                if(nativePlay.textContent.trim()!==nativeLabel)nativePlay.textContent=nativeLabel;
             }
             for(const b of panel.querySelectorAll('[data-focus-map]'))b.addEventListener('click',()=>{
@@ -16082,7 +16083,7 @@ body #menu-overlay#menu-overlay#menu-overlay>#focus-menu{position:relative!impor
 body #menu-overlay #focus-menu>.fm-eyebrow,body #menu-overlay #focus-menu>h1,body #menu-overlay #focus-menu>.fm-intro{display:none!important}
 body #menu-overlay #focus-menu .ui32-backdrop{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;z-index:-1;pointer-events:none;filter:none;opacity:.45}
 body #menu-overlay #focus-menu[data-stage=class] .ui32-backdrop{opacity:0}
-body:has(#menu-overlay[data-ui32-ready]:not(.hidden)) canvas{visibility:hidden!important}
+body:has(#menu-overlay[data-ui32-ready=true]:not(.hidden)) canvas{visibility:hidden!important}
 body #menu-overlay #focus-menu #fm-mode-opt[hidden]{display:none!important}
 body #menu-overlay #focus-menu .ui32-header{position:relative;z-index:3;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px clamp(18px,4vw,64px);background:linear-gradient(#10191ce8,#10191c00);color:#fff0d5;font:700 clamp(18px,2.2vw,32px) Georgia,serif;letter-spacing:.04em}
 body #menu-overlay #focus-menu .ui32-stage-label{font:600 13px system-ui,sans-serif;letter-spacing:.14em;text-transform:uppercase}
@@ -16107,6 +16108,7 @@ body #menu-overlay#menu-overlay#menu-overlay #focus-menu[data-stage=pause] .appr
 body #menu-overlay #focus-menu[data-stage=pause] .ui32-header{flex:1;align-items:center;justify-content:center;flex-direction:column}
 body #menu-overlay #focus-menu .ui32-back{font:700 15px Georgia,serif;color:#f4dfba;background:transparent;border:0;cursor:pointer;padding:10px}
 body #menu-overlay #focus-menu .fm-drawer:not([hidden]){position:relative;z-index:5;margin:0 18px 18px!important;background:#192425f5!important}
+body #menu-overlay #focus-menu button:disabled{opacity:.45!important;cursor:not-allowed!important}
 body #menu-overlay #focus-menu button:focus-visible{outline:2px solid #ffe0a0!important;outline-offset:4px}
 @media(max-width:780px){body #menu-overlay#menu-overlay#menu-overlay #focus-menu .fm-main .fm-list{grid-template-columns:1fr!important;gap:0!important}body #menu-overlay#menu-overlay#menu-overlay #focus-menu [data-focus-map]{min-height:110px!important;flex-direction:row!important}body #menu-overlay #focus-menu .ui32-emblem{width:88px}body #menu-overlay#menu-overlay#menu-overlay #focus-menu .approved-gallery-mobile{width:min(100%,580px)!important;margin:auto!important;padding:10px!important}}
 @media(prefers-reduced-motion:reduce){body #menu-overlay #focus-menu *{transition:none!important}}
@@ -16116,7 +16118,7 @@ body #menu-overlay #focus-menu button:focus-visible{outline:2px solid #ffe0a0!im
 'use strict';
 function install(){
 const overlay=document.getElementById('menu-overlay'),panel=document.getElementById('focus-menu'),art=panel?.querySelector('.approved-gallery-picture');
-if(!overlay||!panel||!art){if(overlay){overlay.dataset.ui32Ready='error';console.error('UI32 initialization failed: original controls preserved');}return;}
+if(!overlay||!panel||!art){if(overlay){const message=document.createElement('div');message.setAttribute('role','alert');message.style.cssText='position:relative;margin:auto;padding:24px;color:white;background:#172125;font:16px system-ui';message.textContent='Oyun menüsü başlatılamadı (UI32). Dosyayı yeniden açın.';overlay.append(message);overlay.dataset.ui32Ready='error';console.error('UI32 initialization failed: original controls preserved');}return;}
 const bg=document.createElement('img');bg.className='ui32-backdrop';bg.src=art.src;bg.alt='';bg.setAttribute('aria-hidden','true');panel.prepend(bg);
 const header=document.createElement('header');header.className='ui32-header';header.innerHTML='<span>KILL THE KING</span><span class="ui32-stage-label" id="ui32-stage-label">Harita seçimi</span>';panel.insertBefore(header,panel.querySelector('.fm-main'));
 const back=document.createElement('button');back.type='button';back.id='ui32-back';back.className='ui32-back';back.textContent='‹ Haritalar';panel.querySelector('.fm-more-links').prepend(back);
