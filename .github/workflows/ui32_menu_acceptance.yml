@@ -53,8 +53,12 @@ jobs:
               assert.equal(await p.locator('#ktk-original-menu .class-card').count(),0);
               for(const id of [0,1,2,3]){
                 await p.evaluate(id=>window.selectClass(id),id);
-                assert.equal(await p.locator('[data-approved-class="'+id+'"]').getAttribute('aria-pressed'),'true');
-                assert.equal(await p.locator('[data-approved-class][aria-pressed="true"]').count(),1);
+                const state=await p.evaluate(()=>{
+                  const buttons=[...document.querySelectorAll('#focus-menu [data-approved-class]')];
+                  return {total:buttons.length,selected:buttons.filter(b=>b.getAttribute('aria-pressed')==='true').map(b=>Number(b.dataset.approvedClass))};
+                });
+                assert.equal(state.total,8,'four desktop and four mobile class buttons');
+                assert.deepEqual(state.selected,[id,id],'both layouts reflect exactly the same selected class');
               }
               console.log('PASS direct engine class sync without old cards',viewport.width);
               // FIT02b: settings must still reach the original engine controls.
