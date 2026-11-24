@@ -165,6 +165,42 @@ jobs:
               });
               assert.deepEqual(sightCheck,{compared:900,mismatches:0,dirty:0,changedInputs:0,blocked:true,clear:true});
               console.log('PASS FIT03c sight-query equivalence',viewport.width);
+              // FIT04 batch: equivalent siege slabs, reusable pose records, grass tile guard and idle canvas.
+              const mapPerfCheck=await p.evaluate(()=>{
+                const oldSegment=(from,to,box,pad=.65)=>{
+                  let lo=0,hi=1;
+                  for(const [axis,min,max] of [['x',box.minX-pad,box.maxX+pad],['z',box.minZ-pad,box.maxZ+pad]]){
+                    const delta=to[axis]-from[axis],value=from[axis];
+                    if(Math.abs(delta)<1e-10){if(value<min||value>max)return false;continue;}
+                    const a=(min-value)/delta,b=(max-value)/delta;
+                    lo=Math.max(lo,Math.min(a,b));hi=Math.min(hi,Math.max(a,b));if(lo>hi)return false;
+                  }
+                  return lo<=hi;
+                };
+                let mismatches=0,compared=0;
+                const box={minX:-2,maxX:2,minZ:-3,maxZ:3};
+                for(let ax=-6;ax<=6;ax+=2)for(let az=-6;az<=6;az+=2)
+                  for(let bx=-6;bx<=6;bx+=2)for(let bz=-6;bz<=6;bz+=2){
+                    const a={x:ax,z:az},b={x:bx,z:bz};compared++;
+                    if(nativeSiegeSegmentHitsBox(a,b,box)!==oldSegment(a,b,box))mismatches++;
+                  }
+                const units=Array.from({length:140},(_,i)=>({x:i,z:-i}));
+                const buf=captureSiegePoses(units),records=buf.slice();
+                units[0].x=99;
+                const independent=buf[0].x===0;
+                const reused=captureSiegePoses(units)===buf&&buf.every((v,i)=>v===records[i]);
+                const refreshed=buf[0].x===99&&buf.length===140;
+                const origClear=speedLinesCtx.clearRect;let clears=0;
+                speedLinesCtx.clearRect=function(...args){clears++;return origClear.apply(this,args);};
+                let idleClears,transitionClears;
+                try{renderSpeedLines(0);clears=0;renderSpeedLines(0);renderSpeedLines(100);idleClears=clears;
+                  renderSpeedLines(160);renderSpeedLines(0);renderSpeedLines(0);transitionClears=clears;
+                }finally{speedLinesCtx.clearRect=origClear;}
+                const grassSkipped=arenaMap!=='meadow'?updateActiveMeadowGrass()===false:true;
+                return {compared,mismatches,independent,reused,refreshed,idleClears,transitionClears,grassSkipped};
+              });
+              assert.deepEqual(mapPerfCheck,{compared:2401,mismatches:0,independent:true,reused:true,refreshed:true,idleClears:0,transitionClears:1,grassSkipped:true});
+              console.log('PASS FIT04 batch geometry, pose reuse and idle canvas',viewport.width);
               // FIT02b: settings must still reach the original engine controls.
               await p.locator('[data-focus-map="arena"]').click();
               await p.locator('#fm-toggle-settings').click();
