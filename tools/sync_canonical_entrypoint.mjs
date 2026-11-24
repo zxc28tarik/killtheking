@@ -19,12 +19,26 @@ if(!html.includes('id="ktk-ui32-controller"')||!html.includes('id="native-siege-
 const baseline=buildCanonical(readFileSync(resolve(root,'recovered/native-siege/KillTheKing_AK_NATIVE_09_original_game_siege_map.html'),'utf8'));
 const scripts=s=>Array.from(s.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi),m=>m[1]);
 const oldScripts=scripts(baseline.html),candidateScripts=scripts(html);
-const preserved=oldScripts.filter(s=>candidateScripts.includes(s)).length;
+// Preserve the archived native lineage by position. Only the explicitly
+// reviewed live army module may differ; pin its exact UTF-8 git blob identity.
+// The historical baseline stays immutable and is never exported over UI32.
+const approvedArmyBlob='cfcab6b92eb788edcdfecec3325e3b22d3f40a4b';
+const blobIdentity=s=>createHash('sha1').update('blob '+Buffer.byteLength(s)+'\0').update(s).digest('hex');
+if(oldScripts.length!==29||candidateScripts.length!==31)
+ throw Error('Unexpected native script count');
+if(!oldScripts[26].includes('root.ArenaArmyBattle')||!candidateScripts[26].includes('root.ArenaArmyBattle')||
+   blobIdentity(candidateScripts[26])!==approvedArmyBlob)
+ throw Error('Unreviewed live army module: update the explicit approval only with regression evidence');
+let preserved=0;
+for(let i=0;i<28;i++){
+ if(oldScripts[i]===candidateScripts[i])preserved++;
+ else if(i!==26)throw Error('Unapproved original script changed: '+i);
+}
 const manifest={...baseline.manifest,unchangedOriginalScriptCount:preserved,bytes:Buffer.byteLength(html),sha256:createHash('sha256').update(html).digest('hex')};
 if(manifest.kind!=='SINGLE_NATIVE_FPS_THREE_MAPS'||
    manifest.oldIframeOrSeparateS3D1Runtime!==false||
    manifest.oneLiveGameDocument!==true||
-   manifest.unchangedOriginalScriptCount!==28)
+   manifest.unchangedOriginalScriptCount!==27)
  throw Error('Refusing incorrect non-native entrypoint');
 if(mode==='--write'){
  writeFileSync(dest,html,'utf8');

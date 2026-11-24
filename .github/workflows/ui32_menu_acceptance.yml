@@ -229,6 +229,22 @@ jobs:
               const started=await p.evaluate(()=>window.ktkUI32Status());
               assert.equal(started.phase,'playing');assert.equal(started.engineSiege,startMap==='siege');assert.equal(started.engineArmy,startMap!=='arena');
               console.log('PASS actual match start',startMap);
+              // FIT09: verify actual running simulation, not only the menu transition.
+              // Software WebGL sample is diagnostic, never a hardware FPS gate.
+              const live=await p.evaluate(async()=>{
+                const initial=arenaClock,armyBefore=meadowBattleState?.tick??null;
+                const frames=[];let previous=performance.now();
+                for(let i=0;i<12;i++){
+                  await new Promise(requestAnimationFrame);
+                  const now=performance.now();frames.push(now-previous);previous=now;
+                }
+                return {advanced:arenaClock>initial,armyBefore,armyAfter:meadowBattleState?.tick??null,
+                  frames,phase:arenaMatch.phase,report:window.krunkerPerformanceReport()};
+              });
+              assert.equal(live.phase,'playing');assert.equal(live.advanced,true);
+              if(startMap!=='arena')assert.ok(live.armyAfter>live.armyBefore,'live army simulation must progress');
+              assert.ok(live.frames.every(n=>Number.isFinite(n)&&n>=0));
+              console.log('FIT09 SOFTWARE_WEBGL_DIAGNOSTIC',startMap,JSON.stringify(live));
               assert.deepEqual(errors,[]);
               console.log('PASS start and menu visibility',viewport.width);
               await p.close();

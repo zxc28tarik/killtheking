@@ -3104,10 +3104,13 @@ window.addEventListener('error', function(event) {
   return false;
  }
  function squadCohesionEstimate(state,squad){
-  const members=state.soldiers.filter(u=>u.alive&&u.squadId===squad.id);
-  if(!members.length)return 0;
-  const spread=members.reduce((sum,u)=>sum+Math.hypot(u.x-squad.x,u.z-squad.z),0)/members.length;
-  return clamp(1-spread/(squad.formation==='loose'?38:31),.18,1);
+  let count=0,spread=0;
+  for(const u of state.soldiers){
+   if(!u.alive||u.squadId!==squad.id)continue;
+   count++;spread+=Math.hypot(u.x-squad.x,u.z-squad.z);
+  }
+  if(!count)return 0;
+  return clamp(1-(spread/count)/(squad.formation==='loose'?38:31),.18,1);
  }
 
  function formationOffset(squad,index,activeCount=squad.startCount){
@@ -5231,7 +5234,11 @@ window.addEventListener('error', function(event) {
   if(len<1e-6)return null;
   const dx=direction.x/len,dy=direction.y/len,dz=direction.z/len;
   const aa=dx*dx+dz*dz,radius=.80;
-  let best=null,limit=maxDistance;
+  let bestTarget=null,bestY=0,bestZone=null,limit=maxDistance;
+  const vertical=Math.abs(dy)>1e-9;
+  if(!vertical&&(origin.y<.20||origin.y>3.55))return null;
+  const ya=vertical?(.20-origin.y)/dy:0,yb=vertical?(3.55-origin.y)/dy:0;
+  const yLow=Math.min(ya,yb),yHigh=Math.max(ya,yb);
   for(const target of state.soldiers){
    if(!target.alive||target.id===options.ignoreSoldierId)continue;
    if(target.team===team&&!options.firstBody)continue;
@@ -5245,10 +5252,9 @@ window.addEventListener('error', function(event) {
     if(high<0||low>limit)continue;
    }
    let entry=Math.max(0,low),exit=Math.min(limit,high);
-   if(Math.abs(dy)>1e-9){
-    const ya=(.20-origin.y)/dy,yb=(3.55-origin.y)/dy;
-    entry=Math.max(entry,Math.min(ya,yb));exit=Math.min(exit,Math.max(ya,yb));
-   }else if(origin.y<.20||origin.y>3.55)continue;
+   if(vertical){
+    entry=Math.max(entry,yLow);exit=Math.min(exit,yHigh);
+   }
    if(entry>exit||entry>limit)continue;
    // Ignore almost-zero entry distances (a player starts inside an ally's
    // personal space), but do not allow firing through an ally 1m in front.
@@ -5257,16 +5263,16 @@ window.addEventListener('error', function(event) {
    const lateral=Math.abs(px*dz-pz*dx);
    const zone=y>2.52?'head':y<1.1?'leg':lateral>.55?'arm':'body';
    limit=entry;
-   best={soldier:target,targetId:target.id,distance:entry,
-    point:{x:origin.x+entry*dx,y,z:origin.z+entry*dz},zone};
+   bestTarget=target;bestY=y;bestZone=zone;
   }
-  if(!best)return null;
-  const block=firstWorldObstacle(state,origin,{x:dx,y:dy,z:dz},best.distance);
-  if(block!==null&&block<best.distance-.03)return null;
+  if(!bestTarget)return null;
+  const block=firstWorldObstacle(state,origin,{x:dx,y:dy,z:dz},limit);
+  if(block!==null&&block<limit-.03)return null;
   // firstBody is used by army AI for shared obstruction checks. Human shots
   // never damage an ally, even though the ally physically intercepts the ray.
-  if(best.soldier.team===team&&!options.returnFriendly)return null;
-  return best;
+  if(bestTarget.team===team&&!options.returnFriendly)return null;
+  return {soldier:bestTarget,targetId:bestTarget.id,distance:limit,
+   point:{x:origin.x+limit*dx,y:bestY,z:origin.z+limit*dz},zone:bestZone};
  }
  function soldierInCone(state,origin,forward,range,team='blue',halfAngleCos=.65){
   const len=Math.hypot(forward.x,forward.z)||1,fx=forward.x/len,fz=forward.z/len;
@@ -5321,11 +5327,19 @@ window.addEventListener('error', function(event) {
   for(const squad of state.squads){
    if(!squad.alive){squad.morale=0;continue;}
    const fraction=squad.alive/squad.startCount;
-   const supporters=state.squads.filter(s=>s.team===squad.team&&s.alive>0&&s.id!==squad.id&&dist(s,squad)<65).length;
-   const pressure=state.squads.filter(e=>e.team!==squad.team&&e.alive>0&&dist(e,squad)<45).length;
+   let supporters=0,pressure=0,memberCount=0,suppressionSum=0;
+   for(const other of state.squads){
+    if(other.alive<=0)continue;
+    if(other.team===squad.team){
+     if(other.id!==squad.id&&dist(other,squad)<65)supporters++;
+    }else if(dist(other,squad)<45)pressure++;
+   }
    const reformBonus=squad.aiRole==='rally'&&squad.order==='hold'?.12:0;
-   const members=state.soldiers.filter(u=>u.alive&&u.squadId===squad.id);
-   const incoming=members.length?members.reduce((t,u)=>t+(u.suppression||0),0)/members.length:0;
+   for(const u of state.soldiers){
+    if(!u.alive||u.squadId!==squad.id)continue;
+    memberCount++;suppressionSum+=u.suppression||0;
+   }
+   const incoming=memberCount?suppressionSum/memberCount:0;
    const captainNerve=squad.nerve??.7;
    squad.morale=clamp(.23+fraction*.56+supporters*.075-pressure*.085+
     reformBonus-incoming*(.12+(1-captainNerve)*.12),.08,1);
@@ -5333,6 +5347,21 @@ window.addEventListener('error', function(event) {
    squad.cohesion=clamp(.40+supporters*.12+(squad.order==='hold'?.20:0)-
      (squad.order==='charge'?.18:0),.2,1)*.55+physical*.45;
   }
+ }
+ // Private per-match scratch; no serialized state or cross-match aliasing.
+ const formationRankScratch=new WeakMap();
+ function computeActiveRanks(state){
+  let scratch=formationRankScratch.get(state);
+  if(!scratch){
+   scratch={nextRank:[],activeRank:[]};
+   formationRankScratch.set(state,scratch);
+  }
+  const {nextRank,activeRank}=scratch;
+  nextRank.length=state.squads.length;nextRank.fill(0);
+  activeRank.length=state.soldiers.length;activeRank.fill(undefined);
+  for(const soldier of state.soldiers)if(soldier.alive)
+   activeRank[soldier.id]=nextRank[soldier.squadId]++;
+  return scratch;
  }
  function oneTick(state,dt){
   state.elapsed+=dt;state.tick++;
@@ -5352,9 +5381,7 @@ window.addEventListener('error', function(event) {
   // Keep rows compact as casualties open gaps in the line. Stable original
   // soldier order prevents shuffling every frame, and player commands remain
   // authoritative over which formation is used.
-  const nextRank=new Array(state.squads.length).fill(0),activeRank=new Array(state.soldiers.length);
-  for(const soldier of state.soldiers)if(soldier.alive)
-   activeRank[soldier.id]=nextRank[soldier.squadId]++;
+  const {nextRank,activeRank}=computeActiveRanks(state);
   for(const soldier of state.soldiers){
    if(!soldier.alive)continue;
    const squad=state.squads[soldier.squadId],role=TYPES[soldier.type];
@@ -12201,8 +12228,7 @@ const KTKCalmUIV25=(()=>{
             return foe && !foe.dead ? foe.mesh.position : null;
         }
 
-        function arenaTargetDistance(bot, type, id) {
-            const pos = arenaActorPosition(type, id);
+        function arenaTargetDistance(bot, type, id, pos = arenaActorPosition(type, id)) {
             if (!pos) return Infinity;
             const dx = pos.x - bot.mesh.position.x;
             const dz = pos.z - bot.mesh.position.z;
@@ -12211,12 +12237,18 @@ const KTKCalmUIV25=(()=>{
             return Math.hypot(dx, dz, dy * 1.2);
         }
 
-        function arenaTargetCount(type, id, excludeId) {
-            return bots.reduce((n, other) => n + (
-                other.id !== excludeId && !other.dead &&
-                other.arenaTargetType === type &&
-                (type === 'player' || other.arenaTargetId === id) ? 1 : 0
-            ), 0);
+        function arenaTargetCounts(excludeId) {
+            const byBot = new Map();
+            let playerCount = 0;
+            for (const other of bots) {
+                if (other.id === excludeId || other.dead) continue;
+                if (other.arenaTargetType === 'player') playerCount++;
+                else if (other.arenaTargetType === 'bot') {
+                    const id = other.arenaTargetId;
+                    byBot.set(id, (byBot.get(id) || 0) + 1);
+                }
+            }
+            return { byBot, playerCount };
         }
 
         function setArenaTarget(bot, type, id) {
@@ -12236,7 +12268,7 @@ const KTKCalmUIV25=(()=>{
             const maxDetection=arenaMap==='meadow'?420:bot.range>8?48:38;
             const keyFor=(type,id)=>type==='player'?'player:player':'bot:'+id;
             const current=arenaActorPosition(bot.arenaTargetType,bot.arenaTargetId);
-            const currentDistance=arenaTargetDistance(bot,bot.arenaTargetType,bot.arenaTargetId);
+            const currentDistance=arenaTargetDistance(bot,bot.arenaTargetType,bot.arenaTargetId,current);
             const currentKey=current?keyFor(bot.arenaTargetType,bot.arenaTargetId):null;
             const currentValid=!!(current&&currentDistance<maxDetection+5&&
                 arenaCanTarget(bot,bot.arenaTargetType,bot.arenaTargetId)&&
@@ -12262,14 +12294,15 @@ const KTKCalmUIV25=(()=>{
             const aggroKey=bot.arenaAggroType&&arenaClock<bot.arenaAggroUntil?
                 keyFor(bot.arenaAggroType,bot.arenaAggroId):null;
             const candidates=[];
+            const targetCounts=arenaTargetCounts(bot.id);
             for(const other of bots){
                 if(other===bot||other.dead||!arenaCanTarget(bot,'bot',other.id))continue;
                 if(!ArenaBotRecovery.allows(bot.navRecovery,'bot:'+other.id))continue;
-                const dist=arenaTargetDistance(bot,'bot',other.id);
+                const dist=arenaTargetDistance(bot,'bot',other.id,other.mesh.position);
                 if(dist>=maxDetection)continue;
                 candidates.push({type:'bot',id:other.id,role:other.role,
                     position:other.mesh.position,
-                    distance:dist,attackers:arenaTargetCount('bot',other.id,bot.id),
+                    distance:dist,attackers:targetCounts.byBot.get(other.id)||0,
                     hpFraction:other.hp/other.maxHp,range:bot.range,
                     visible:arenaLineOfSight(bot,other.mesh.position,false)});
             }
@@ -12280,11 +12313,11 @@ const KTKCalmUIV25=(()=>{
                 arenaCanTarget(bot,'player',null)&&
                 ArenaBotRecovery.allows(bot.navRecovery,'player:player')&&
                 (retaliating||currentKey==='player:player'||
-                 arenaTargetCount('player',null,bot.id)===0)){
+                 targetCounts.playerCount===0)){
                 candidates.push({type:'player',id:null,
                     role:['knight','pikeman','archer','musket'][player.classIdx]||'knight',
                     position:player.pos,
-                    distance:playerDistance,attackers:arenaTargetCount('player',null,bot.id),
+                    distance:playerDistance,attackers:targetCounts.playerCount,
                     hpFraction:Math.max(0,player.hp)/Math.max(1,player.maxHp),
                     range:bot.range,visible:arenaLineOfSight(bot,player.pos,true)});
             }
@@ -12321,17 +12354,7 @@ const KTKCalmUIV25=(()=>{
         }
 
         function arenaLineOfSight(bot, targetPos, targetIsPlayer) {
-            const origin = arenaAimOrigin.copy(bot.mesh.position);
-            origin.y += 1.8;
-            const end = arenaAimTmp.copy(targetPos);
-            end.y += targetIsPlayer ? 1.0 : 1.65;
-            const dir = end.sub(origin);
-            const distance = dir.length();
-            if (distance < 0.01) return true;
-            arenaSightRay.set(origin, dir.multiplyScalar(1 / distance));
-            arenaSightRay.near = 0.12;
-            arenaSightRay.far = Math.max(0.12, distance - 0.55);
-            return !arenaSightBlocked();
+            return arenaCanSeeFrom(bot.mesh.position, targetPos, targetIsPlayer);
         }
 
         // Tactical vantage checks use the same world occlusion as real shots.
@@ -12435,12 +12458,13 @@ const KTKCalmUIV25=(()=>{
         // cover the shooter can fire through. The check uses real 3D ray impacts.
         function arenaFriendlyShotBlock(bot,origin,impact) {
             if (arenaMode !== 'tdm' || !impact) return false;
+            const shooterTeam = botTeam(bot);
             for (const ally of bots) {
-                if (ally === bot || ally.dead || botTeam(ally) !== botTeam(bot)) continue;
+                if (ally === bot || ally.dead || botTeam(ally) !== shooterTeam) continue;
                 const first = ArenaCombatHit3D.resolveBot(THREE,origin,impact.point,ally.mesh);
                 if (first && first.distance < impact.distance - 0.04) return true;
             }
-            if (botTeam(bot) === ArenaTeams.PLAYER_TEAM) {
+            if (shooterTeam === ArenaTeams.PLAYER_TEAM) {
                 const playerBlock = ArenaCombatHit3D.resolvePlayer(THREE,origin,impact.point,player);
                 if (playerBlock && playerBlock.distance < impact.distance - 0.04)
                     return true;
@@ -12448,7 +12472,7 @@ const KTKCalmUIV25=(()=>{
             return false;
         }
 
-        function arenaBotAttack(bot, target, targetDistance) {
+        function arenaBotAttack(bot, target) {
             if (!target || !isGameActive || bot.dead || bot.staggerTime > 0) return;
             if (!arenaCanTarget(bot,target.type,target.id)) return;
             const targetPos = arenaActorPosition(target.type, target.id);
@@ -12461,7 +12485,6 @@ const KTKCalmUIV25=(()=>{
                 bot.attackTimer = Math.max(bot.attackTimer, 0.18);
                 return;
             }
-            const origin = bot.mesh.position.clone().add(new THREE.Vector3(0, 1.8, 0));
             const weapon = ArenaWeaponBalance.weaponForRole(bot.role);
             const cadence = isRanged
                 ? ArenaWeaponBalance.SHOT_INTERVAL[weapon] : null;
@@ -12471,26 +12494,24 @@ const KTKCalmUIV25=(()=>{
                     cadence-(arenaClock-bot.lastRangedShotAt));
                 return;
             }
-            let shot = null;
-            let targetPoint = targetPos.clone().add(
-                new THREE.Vector3(0,target.type === 'player' ? 1.0 : 1.65,0));
+            let origin, targetPoint, shotDir, hit3d = null;
             if (isRanged) {
+                origin = bot.mesh.position.clone();
+                origin.y += 1.8;
                 const targetBase = target.type === 'player'
                     ? {x:player.pos.x,y:player.pos.y-player.currentHeight,z:player.pos.z}
                     : targetPos;
-                shot = ArenaWeaponBalance.aimedShot(
+                const shot = ArenaWeaponBalance.aimedShot(
                     bot.role,origin,targetBase,Math.random(),Math.random(),
                     target.type === 'player' && player.isSliding ? 1.9 : 3);
                 if (!shot.point) return;
                 targetPoint = new THREE.Vector3(shot.point.x,shot.point.y,shot.point.z);
+                hit3d = target.type === 'bot'
+                    ? ArenaCombatHit3D.resolveBot(THREE, origin, targetPoint,
+                        bots[target.id] && bots[target.id].mesh)
+                    : ArenaCombatHit3D.resolvePlayer(THREE, origin, targetPoint, player);
+                shotDir = targetPoint.clone().sub(origin).normalize();
             }
-            // Resolve against actual animated mesh triangles for AI opponents;
-            // the invisible FPS player is represented by intersectable 3D volumes.
-            const hit3d = !isRanged ? null : target.type === 'bot'
-                ? ArenaCombatHit3D.resolveBot(THREE, origin, targetPoint,
-                    bots[target.id] && bots[target.id].mesh)
-                : ArenaCombatHit3D.resolvePlayer(THREE, origin, targetPoint, player);
-            const shotDir = targetPoint.clone().sub(origin).normalize();
             // Archer reloads hands for 1s, then draws for 3s. The absolute
             // 4s shot timestamp still enforces at most 15 arrows/min.
             bot.attackTimer = bot.role === 'archer'
@@ -15164,7 +15185,7 @@ const KTKCalmUIV25=(()=>{
                         bot.windupTargetKey = null;
                         bot.attackTimer = 0.35;
                     } else if (bot.rangedWindup <= 0) {
-                        arenaBotAttack(bot, arenaTarget, arenaDist);
+                        arenaBotAttack(bot, arenaTarget);
                     }
                 } else if (bot.meleeWindup > 0) {
                     // Shield bait: sometimes abort a real telegraph and sidestep.
@@ -15201,7 +15222,7 @@ const KTKCalmUIV25=(()=>{
                         bot.windupTargetKey = null;
                         bot.attackTimer = 0.35;
                     } else if (bot.meleeWindup <= 0) {
-                        arenaBotAttack(bot, arenaTarget, arenaDist);
+                        arenaBotAttack(bot, arenaTarget);
                     }
                     }
                 } else if (isGameActive && arenaTarget && arenaDist <= bot.range) {
