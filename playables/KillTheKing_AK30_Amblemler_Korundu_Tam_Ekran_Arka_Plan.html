@@ -9132,9 +9132,7 @@ const KTKCalmUIV25=(()=>{
             grassGround.receiveShadow=true;
             scene.add(grassGround);
             worldMeshes.push(grassGround);
-            // Tam çim kaplama modu: 3B çim kümeleri kaldırıldı.
-            // Tüm araziyi kaplayan prosedürel çim dokusu korunur; böylece görünüm
-            // daha temiz olur ve büyük haritada gereksiz GPU yükü azalır.
+            // Procedural full-field turf plus the approved bounded instanced detail.
             meadowNearGrass=ArenaMeadowGrass.createInstancedTufts(THREE,spec,2700);
             meadowNearGrass.geometry.scale(.40,.40,.40);
             scene.add(meadowNearGrass);
@@ -9856,7 +9854,6 @@ const KTKCalmUIV25=(()=>{
             meadowMapData.visuals.forEach(obj=>{obj.visible=map==='meadow';});
             scene.fog.density=map==='meadow'?.00065:.0046;
             scene.fog.color.setHex(map==='meadow'?0xb9b7a3:0xd9824c);
-            if(skyDomeMesh)skyDomeMesh.scale.setScalar(map==='meadow'?Math.max(4,meadowSpec.half/90):1);
             skyClouds.forEach(c=>{c.mesh.visible=map==='castle';});
             window.ktkMeadowSkyVisualStatus=()=>({skyRadius:240*skyDomeMesh.scale.x,meadowHalf:meadowSpec.half,mode:arenaMap,visibleClouds:skyClouds.filter(c=>c.mesh.visible).length});
             scene.background.setHex(map==='meadow'?0xb9c5b6:0xd97736);
@@ -15478,21 +15475,21 @@ body.ktk-calm-ui #menu-overlay{background:radial-gradient(ellipse at 50% 0%,rgba
 body.ktk-calm-ui #menu-overlay>#ktk-original-menu{display:none!important}
 body.ktk-calm-ui #menu-overlay>#focus-menu{width:min(930px,100%);max-width:930px;max-height:calc(100dvh - 24px);overflow-y:auto;margin:auto;padding:clamp(22px,4.4vw,52px);background:transparent!important;border:0!important;box-shadow:none!important;border-radius:0!important;scrollbar-color:#566864 transparent;font:400 15px/1.5 system-ui,-apple-system,'Segoe UI',sans-serif!important;color:#e7ebe8!important}
 body.ktk-calm-ui #menu-overlay #focus-menu *{box-sizing:border-box;text-shadow:none!important}
-body.ktk-calm-ui #menu-overlay #focus-menu h1{font:760 clamp(36px,5.5vw,63px)/1.01 system-ui,sans-serif!important;letter-spacing:-.064em!important;color:#f0f2ef!important;margin:0 0 10px!important}
-body.ktk-calm-ui #menu-overlay #focus-menu .fm-eyebrow{font:650 10px/1.3 system-ui,sans-serif;letter-spacing:.22em;color:#a2b7ad;margin-bottom:12px}
-body.ktk-calm-ui #menu-overlay #focus-menu .fm-intro{font-size:14px!important;color:#aebdb6!important;line-height:1.5!important;margin:0!important}
+
+
+
 body.ktk-calm-ui #menu-overlay #focus-menu .fm-main{display:grid;grid-template-columns:1fr 1fr;gap:clamp(28px,5.2vw,74px);margin:42px 0 32px}
 body.ktk-calm-ui #menu-overlay #focus-menu .fm-section{min-width:0}
-body.ktk-calm-ui #menu-overlay #focus-menu .fm-kicker{color:#a9b7b0;letter-spacing:.14em;font:650 11px/1.3 system-ui,sans-serif;margin:0 0 17px;display:flex;align-items:center;gap:11px}
-body.ktk-calm-ui #menu-overlay #focus-menu .fm-kicker span{opacity:.56;font-variant-numeric:tabular-nums}
+
+
 body.ktk-calm-ui #menu-overlay #focus-menu .fm-list{display:flex;flex-direction:column;gap:2px}
 body.ktk-calm-ui #menu-overlay #focus-menu .fm-choice{display:flex;align-items:center;gap:13px;text-align:left;width:100%;padding:13px 12px 13px 17px;margin:0;border:0!important;border-left:2px solid transparent!important;border-radius:0!important;background:transparent!important;background-image:none!important;color:#bbc7c1!important;box-shadow:none!important;cursor:pointer;min-height:49px;transform:none!important;transition:background .14s,color .14s,border-color .14s!important}
 body.ktk-calm-ui #menu-overlay #focus-menu .fm-choice:hover{background:rgba(187,212,201,.055)!important;color:#f0f4f0!important}
 body.ktk-calm-ui #menu-overlay #focus-menu .fm-choice[aria-pressed='true']{border-left-color:#b2d4c3!important;background:rgba(174,203,187,.07)!important;color:#f1f5f1!important}
-body.ktk-calm-ui #menu-overlay #focus-menu .fm-choice .fm-choice-index{font-size:11px;color:#788f85;font-variant-numeric:tabular-nums;width:18px;flex:0 0 18px}
+
 body.ktk-calm-ui #menu-overlay #focus-menu .fm-choice .fm-choice-text{font-size:17px;font-weight:580;letter-spacing:-.024em;line-height:1.25}
 body.ktk-calm-ui #menu-overlay #focus-menu .fm-choice[aria-pressed='true'] .fm-choice-text{font-weight:710}
-body.ktk-calm-ui #menu-overlay #focus-menu .fm-context{min-height:36px;color:#9eb3aa!important;font-size:12px!important;line-height:1.5!important;margin:13px 0 0 18px!important;max-width:39ch}
+
 body.ktk-calm-ui #menu-overlay #focus-menu .fm-foot{border-top:1px solid rgba(164,191,180,.14);padding-top:22px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap}
 body.ktk-calm-ui #menu-overlay #focus-menu .fm-more-links{display:flex;align-items:center;flex-wrap:wrap;gap:19px}
 body.ktk-calm-ui #menu-overlay #focus-menu .fm-text-link{border:0!important;border-radius:0!important;padding:7px 0;background:transparent!important;color:#b0c0b8!important;font:600 13px/1.3 system-ui,sans-serif!important;text-decoration:none!important;cursor:pointer;box-shadow:none!important}
@@ -15530,28 +15527,13 @@ body.ktk-calm-ui #menu-overlay #focus-menu .fm-hint{font:500 11px/1.5 system-ui,
             const panel=document.createElement('section');panel.id='focus-menu';
             panel.setAttribute('aria-label','Kill the King ana menüsü');
             panel.innerHTML=`
-              <div class="fm-eyebrow">KILL THE KING</div>
-              <h1>Savaşını seç.</h1>
-              <p class="fm-intro">Haritanı ve sınıfını belirle.</p>
               <div class="fm-main">
                <section class="fm-section" aria-label="Harita seçimi">
-                <div class="fm-kicker"><span>01</span> HARİTA</div>
                 <div class="fm-list" role="group" aria-label="Harita">
-                 <button class="fm-choice" type="button" data-focus-map="arena"><span class="fm-choice-index">01</span><span class="fm-choice-text">Arena</span></button>
-                 <button class="fm-choice" type="button" data-focus-map="meadow"><span class="fm-choice-index">02</span><span class="fm-choice-text">Meydan Savaşı</span></button>
-                 <button class="fm-choice" type="button" data-focus-map="siege"><span class="fm-choice-index">03</span><span class="fm-choice-text">Kale Kuşatması</span></button>
+                 <button class="fm-choice" type="button" data-focus-map="arena"><span class="fm-choice-text">Arena</span></button>
+                 <button class="fm-choice" type="button" data-focus-map="meadow"><span class="fm-choice-text">Meydan Savaşı</span></button>
+                 <button class="fm-choice" type="button" data-focus-map="siege"><span class="fm-choice-text">Kale Kuşatması</span></button>
                 </div>
-                <p id="fm-map-context" class="fm-context" aria-live="polite"></p>
-               </section>
-               <section class="fm-section" aria-label="Savaşçı seçimi">
-                <div class="fm-kicker"><span>02</span> SINIF</div>
-                <div class="fm-list" role="group" aria-label="Savaşçı sınıfı">
-                 <button type="button" class="fm-choice" data-focus-class="0"><span class="fm-choice-index">01</span><span class="fm-choice-text">Şövalye</span></button>
-                 <button type="button" class="fm-choice" data-focus-class="1"><span class="fm-choice-index">02</span><span class="fm-choice-text">Piyade</span></button>
-                 <button type="button" class="fm-choice" data-focus-class="2"><span class="fm-choice-index">03</span><span class="fm-choice-text">Okçu</span></button>
-                 <button type="button" class="fm-choice" data-focus-class="3"><span class="fm-choice-index">04</span><span class="fm-choice-text">Tüfekçi</span></button>
-                </div>
-                <p id="fm-class-context" class="fm-context" aria-live="polite"></p>
                </section>
               </div>
               <div class="fm-foot">
@@ -15586,20 +15568,16 @@ body.ktk-calm-ui #menu-overlay #focus-menu .fm-hint{font:500 11px/1.5 system-ui,
             const style=document.createElement('style');style.id='ktk-focus-menu-style';style.textContent=styleSource;document.head.appendChild(style);
             const old=(selector)=>document.querySelector('#ktk-original-menu '+selector);
             const isPressed=(el)=>!!el&&el.getAttribute('aria-pressed')==='true';
-            const mapDescriptions={arena:'Hızlı, serbest çatışma.',meadow:'70’e 70 açık alan savaşı. Birliğine komuta et.',siege:'70 savunmacı, 70 saldırgan. Kaleyi kuşat.'};
-            const classDescriptions=['Kılıç ve kalkan · 130 can','Uzun mızrak ve hücum · 110 can','Yay ve menzilli atış · 100 can','Yüksek hasar, yavaş atış · 100 can'];
             function mapChoice(){
               if(isPressed(old('#native-siege-start')))return 'siege';
               if(isPressed(old('#meadow-army-demo-btn')))return 'meadow';
               return 'arena';
             }
+            const setPressed=(button,pressed)=>{const value=String(pressed);if(button.getAttribute('aria-pressed')!==value)button.setAttribute('aria-pressed',value);};
             function sync(){
               const chosen=mapChoice();
-              for(const button of panel.querySelectorAll('[data-focus-map]'))button.setAttribute('aria-pressed',String(button.dataset.focusMap===chosen));
-              const classIdx=[0,1,2,3].find(i=>old('#card-class-'+i)?.classList.contains('selected'))??3;
-              for(const button of panel.querySelectorAll('[data-focus-class]'))button.setAttribute('aria-pressed',String(Number(button.dataset.focusClass)===classIdx));
-              panel.querySelector('#fm-map-context').textContent=mapDescriptions[chosen];
-              panel.querySelector('#fm-class-context').textContent=classDescriptions[classIdx];
+              for(const button of panel.querySelectorAll('[data-focus-map]'))setPressed(button,button.dataset.focusMap===chosen);
+              for(const button of panel.querySelectorAll('[data-approved-class]'))setPressed(button,Number(button.dataset.approvedClass)===player.classIdx);
               panel.querySelector('#fm-mode-opt').hidden=chosen!=='arena';
               for(const button of panel.querySelectorAll('[data-focus-mode]'))button.setAttribute('aria-pressed',String(isPressed(old('[data-arena-mode="'+button.dataset.focusMode+'"]'))));
               for(const button of panel.querySelectorAll('[data-focus-duration]'))button.setAttribute('aria-pressed',String(isPressed(old('[data-duration-seconds="'+button.dataset.focusDuration+'"]'))));
@@ -15625,9 +15603,6 @@ body.ktk-calm-ui #menu-overlay #focus-menu .fm-hint{font:500 11px/1.5 system-ui,
               }else if(!isPressed(old('#native-siege-start')))old('#native-siege-start')?.click();
               sync();
             });
-            for(const b of panel.querySelectorAll('[data-focus-class]'))b.addEventListener('click',()=>{
-              window.selectClass(Number(b.dataset.focusClass));sync();
-            });
             for(const b of panel.querySelectorAll('[data-focus-mode]'))b.addEventListener('click',()=>{old('[data-arena-mode="'+b.dataset.focusMode+'"]')?.click();sync();});
             for(const b of panel.querySelectorAll('[data-focus-duration]'))b.addEventListener('click',()=>{old('[data-duration-seconds="'+b.dataset.focusDuration+'"]')?.click();sync();});
             for(const b of panel.querySelectorAll('[data-focus-atmo]'))b.addEventListener('click',()=>{old('#atmo-btn-'+b.dataset.focusAtmo)?.click();sync();});
@@ -15638,7 +15613,6 @@ body.ktk-calm-ui #menu-overlay #focus-menu .fm-hint{font:500 11px/1.5 system-ui,
                 if(kind==='change'&&target.type==='checkbox')orig.checked=target.checked;
                 else orig.value=target.value;
                 orig.dispatchEvent(new Event(kind,{bubbles:true}));
-                if(kind==='input')orig.dispatchEvent(new Event('change',{bubbles:true}));
                 sync();
               });
             };
@@ -15656,11 +15630,12 @@ body.ktk-calm-ui #menu-overlay #focus-menu .fm-hint{font:500 11px/1.5 system-ui,
               });
             }
             const originalControls=[...original.querySelectorAll('#arena-map-controls button,#meadow-army-demo-btn,#native-siege-start,#match-mode-controls button,#match-duration-controls button,.class-card')];
-            const observer=new MutationObserver(()=>{queueMicrotask(sync);});
+            const observer=new MutationObserver(sync);
             originalControls.forEach(el=>observer.observe(el,{attributes:true,attributeFilter:['aria-pressed','class']}));
             observer.observe(nativePlay,{childList:true,characterData:true,subtree:true});
+            window.ktkSyncFocusMenu=sync;
             sync();
-            window.ktkFocusMenuV26Status=()=>({installed:true,oneOriginalGame:true,originalMapButtons:original.querySelectorAll('#arena-map-controls>button').length,originalClasses:original.querySelectorAll('.class-card').length,selectedMap:mapChoice(),visibleMapChoices:panel.querySelectorAll('[data-focus-map]').length,visibleClassChoices:panel.querySelectorAll('[data-focus-class]').length,originalPlayButton:nativePlay.id==='play-btn',settingsHidden:panel.querySelector('#fm-settings-drawer').hidden,helpHidden:panel.querySelector('#fm-help-drawer').hidden});
+            window.ktkFocusMenuV26Status=()=>({installed:true,oneOriginalGame:true,originalMapButtons:original.querySelectorAll('#arena-map-controls>button').length,originalClasses:original.querySelectorAll('.class-card').length,selectedMap:mapChoice(),visibleMapChoices:panel.querySelectorAll('[data-focus-map]').length,visibleClassChoices:new Set(Array.from(panel.querySelectorAll('[data-approved-class]'),b=>b.dataset.approvedClass)).size,originalPlayButton:nativePlay.id==='play-btn',settingsHidden:panel.querySelector('#fm-settings-drawer').hidden,helpHidden:panel.querySelector('#fm-help-drawer').hidden});
             return true;
           }
           return Object.freeze({install});
@@ -15677,20 +15652,19 @@ body.ktk-calm-ui #menu-overlay #focus-menu .fm-hint{font:500 11px/1.5 system-ui,
 <style id="ktk-approved-art-styles">/* Faithful approved class artwork; quiet live menu is still one original FPS. */
 body.ktk-calm-ui.ktk-approved-art #menu-overlay{background:rgba(9,16,19,.19)!important;backdrop-filter:blur(1px)!important}
 body.ktk-calm-ui.ktk-approved-art #menu-overlay>#focus-menu{max-width:1270px!important;width:100%!important;max-height:calc(100dvh - 12px)!important;padding:clamp(12px,1.9vw,24px)!important;border:0!important;background:rgba(11,19,22,.15)!important;box-shadow:none!important;scrollbar-color:#53635e transparent!important}
-body.ktk-calm-ui.ktk-approved-art #focus-menu>.fm-eyebrow{font:700 10px/1.2 system-ui,sans-serif!important;letter-spacing:.2em!important;margin:0 0 4px!important;color:#eee6d5!important}
-body.ktk-calm-ui.ktk-approved-art #menu-overlay #focus-menu>h1{font:700 clamp(22px,2.5vw,32px)/1.1 Georgia,serif!important;letter-spacing:-.02em!important;margin:0 0 8px!important;color:#fff4dd!important}
-body.ktk-calm-ui.ktk-approved-art #focus-menu>.fm-intro{display:none!important}
+
+
+
 body.ktk-calm-ui.ktk-approved-art #focus-menu>.fm-main{display:block!important;margin:6px 0 5px!important}
 body.ktk-calm-ui.ktk-approved-art #focus-menu>.fm-main>.fm-section:first-child{display:flex!important;align-items:center;gap:14px;flex-wrap:wrap}
-body.ktk-calm-ui.ktk-approved-art #focus-menu>.fm-main>.fm-section:last-child{display:none!important}
-body.ktk-calm-ui.ktk-approved-art #focus-menu .fm-kicker{font:650 11px/1.2 system-ui,sans-serif!important;margin:0!important;color:#ece4d5!important}
-body.ktk-calm-ui.ktk-approved-art #focus-menu .fm-kicker span{display:none!important}
+
+
 body.ktk-calm-ui.ktk-approved-art #focus-menu .fm-main .fm-list{display:flex!important;flex-direction:row!important;gap:8px!important;flex-wrap:wrap!important}
 body.ktk-calm-ui.ktk-approved-art #focus-menu [data-focus-map]{width:auto!important;min-height:33px!important;padding:6px 12px!important;border:1px solid rgba(231,223,204,.2)!important;border-radius:5px!important;background:rgba(27,34,36,.4)!important;color:#dfdaca!important;box-shadow:none!important}
 body.ktk-calm-ui.ktk-approved-art #focus-menu [data-focus-map][aria-pressed='true']{border-color:#d8c9a8!important;background:rgba(224,208,173,.13)!important;color:#fcf3dd!important}
-body.ktk-calm-ui.ktk-approved-art #focus-menu [data-focus-map] .fm-choice-index{display:none!important}
+
 body.ktk-calm-ui.ktk-approved-art #focus-menu [data-focus-map] .fm-choice-text{font:600 12px/1.2 system-ui,sans-serif!important}
-body.ktk-calm-ui.ktk-approved-art #focus-menu #fm-map-context{display:none!important}
+
 body.ktk-calm-ui.ktk-approved-art #focus-menu .approved-class-gallery{width:100%;margin:4px auto 0!important}
 body.ktk-calm-ui.ktk-approved-art #focus-menu .approved-gallery-head{font:650 10px/1.2 system-ui,sans-serif!important;letter-spacing:.15em!important;color:#f0e4d3!important;margin:0 0 4px!important}
 body.ktk-calm-ui.ktk-approved-art #focus-menu .approved-gallery-desktop{position:relative;width:100%;aspect-ratio:1672/625;overflow:hidden}
@@ -15732,27 +15706,17 @@ body.ktk-calm-ui.ktk-approved-art #focus-menu .fm-drawer{background:rgba(16,25,2
   const gallery=proto.content.firstElementChild.cloneNode(true);
   menu.insertBefore(gallery,foot);
   document.body.classList.add('ktk-approved-art');
-  const old=Array.from(menu.querySelectorAll('[data-focus-class]'));
   const art=Array.from(gallery.querySelectorAll('[data-approved-class]'));
-  function sync(){
-   for(const b of art){
-    const previous=old.find(c=>c.dataset.focusClass===b.dataset.approvedClass);
-    const val=String(previous?.getAttribute('aria-pressed')==='true');
-    if(b.getAttribute('aria-pressed')!==val)b.setAttribute('aria-pressed',val);
-   }
-  }
   for(const b of art)b.addEventListener('click',()=>{
-   const previous=old.find(c=>c.dataset.focusClass===b.dataset.approvedClass);
-   if(previous)previous.click();
-   sync();
+   if(arenaMatch.phase!=='menu')return;
+   window.selectClass(Number(b.dataset.approvedClass));
+   window.ktkSyncFocusMenu();
   });
-  const watcher=new MutationObserver(sync);
-  old.forEach(b=>watcher.observe(b,{attributes:true,attributeFilter:['aria-pressed']}));
-  sync();
+  window.ktkSyncFocusMenu();
   window.ktkApprovedArtworkStatus=()=>({installed:true,originalEngine:true,classes:new Set(art.map(b=>b.dataset.approvedClass)).size,
    maps:menu.querySelectorAll('[data-focus-map]').length,
    playButton:menu.contains(document.getElementById('play-btn')),
-   currentClass:old.find(b=>b.getAttribute('aria-pressed')==='true')?.dataset.focusClass??null,
+   currentClass:String(player.classIdx),
    imageReady:gallery.querySelector('.approved-gallery-picture')?.complete??false});
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});
@@ -15785,18 +15749,8 @@ body.ktk-calm-ui.ktk-approved-art #menu-overlay>#focus-menu{
  scrollbar-color:rgba(184,170,147,.48) transparent!important;
 }
 /* Intro typography drawn from the pictorial cream serif lettering. */
-body.ktk-calm-ui.ktk-approved-art #focus-menu>.fm-eyebrow{
- font:700 10px/1.3 system-ui,sans-serif!important;
- letter-spacing:.23em!important;
- color:#d6cbbc!important;
- margin:0 0 5px!important;
-}
-body.ktk-calm-ui.ktk-approved-art #menu-overlay #focus-menu>h1{
- font:600 clamp(27px,3vw,37px)/1.08 Georgia,'Palatino Linotype',serif!important;
- letter-spacing:-.025em!important;
- margin:0 0 13px!important;
- color:#f0e7d4!important;
-}
+
+
 body.ktk-calm-ui.ktk-approved-art #focus-menu>.fm-main{
  margin:0 0 15px!important;
  padding:4px 0 13px!important;
@@ -15810,12 +15764,7 @@ body.ktk-calm-ui.ktk-approved-art #focus-menu>.fm-main>.fm-section:first-child{
  align-items:center!important;
  padding:0!important;
 }
-body.ktk-calm-ui.ktk-approved-art #focus-menu .fm-kicker{
- font:700 10px/1.3 system-ui,sans-serif!important;
- letter-spacing:.18em!important;
- color:#d2c8b7!important;
- margin:0!important;
-}
+
 body.ktk-calm-ui.ktk-approved-art #focus-menu .fm-main .fm-list{
  display:flex!important;
  flex-flow:row wrap!important;
@@ -16080,7 +16029,7 @@ body #menu-overlay#menu-overlay#menu-overlay:not(.hidden)[data-ui32-ready]{visib
 body #menu-overlay#menu-overlay#menu-overlay::before,body #menu-overlay#menu-overlay#menu-overlay::after{display:none!important;content:none!important}
 body #menu-overlay #ktk-original-menu{display:none!important}
 body #menu-overlay#menu-overlay#menu-overlay>#focus-menu{position:relative!important;display:flex!important;flex-direction:column!important;align-items:stretch!important;justify-content:flex-start!important;width:100%!important;max-width:none!important;min-height:100dvh!important;max-height:none!important;margin:0!important;padding:0!important;overflow:visible!important;background:none!important;border:0!important;border-radius:0!important;box-shadow:none!important;backdrop-filter:none!important}
-body #menu-overlay #focus-menu>.fm-eyebrow,body #menu-overlay #focus-menu>h1,body #menu-overlay #focus-menu>.fm-intro{display:none!important}
+
 body #menu-overlay #focus-menu .ui32-backdrop{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;z-index:-1;pointer-events:none;filter:none;opacity:.45}
 body #menu-overlay #focus-menu[data-stage=class] .ui32-backdrop{opacity:0}
 body:has(#menu-overlay[data-ui32-ready=true]:not(.hidden)) canvas{visibility:hidden!important}
@@ -16090,7 +16039,7 @@ body #menu-overlay #focus-menu .ui32-stage-label{font:600 13px system-ui,sans-se
 body #menu-overlay#menu-overlay#menu-overlay #focus-menu>.fm-main{display:flex!important;flex:1!important;align-items:center!important;justify-content:center!important;margin:0!important;padding:20px!important;width:100%!important;max-width:none!important}
 body #menu-overlay#menu-overlay#menu-overlay #focus-menu[data-stage=class]>.fm-main{display:none!important}
 body #menu-overlay#menu-overlay#menu-overlay #focus-menu>.fm-main>.fm-section:first-child{display:block!important;width:min(1200px,100%)!important}
-body #menu-overlay #focus-menu .fm-main .fm-kicker{display:none!important}
+
 body #menu-overlay#menu-overlay#menu-overlay #focus-menu .fm-main .fm-list{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:clamp(12px,5vw,76px)!important;justify-items:center!important}
 body #menu-overlay#menu-overlay#menu-overlay #focus-menu [data-focus-map]{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;width:100%!important;min-height:200px!important;background:transparent!important;border:0!important;box-shadow:none!important;padding:12px!important;color:#f6e9cc!important;gap:12px!important}
 body #menu-overlay #focus-menu .ui32-emblem{width:min(100%,190px);height:auto;filter:drop-shadow(0 5px 12px #0009);transition:transform .18s,filter .18s}

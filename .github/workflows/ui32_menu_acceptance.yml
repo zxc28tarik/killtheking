@@ -1,7 +1,7 @@
 name: UI32 full-screen menu acceptance
 on:
   push:
-    branches: [main, codex/ui32-native-fullscreen-menu-flow]
+    branches: [main, 'codex/fit*', codex/ui32-native-fullscreen-menu-flow]
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -32,6 +32,7 @@ jobs:
               await p.goto(pathToFileURL(resolve('index.html')).href);
               await p.waitForFunction(()=>window.ktkUI32Status?.().ready==='true');
               const status=await p.evaluate(()=>window.ktkUI32Status());
+              assert.equal(await p.locator('[data-focus-class]').count(),0,'obsolete duplicate class controls');
               assert.equal(status.legacyHidden,true);assert.equal(status.stage,'map');assert.equal(status.mapEmblems,3);assert.equal(status.classes,4);
               const box=await p.locator('#menu-overlay').boundingBox();assert.ok(Math.abs(box.width-viewport.width)<2);
               await p.screenshot({path:'ui32-map-'+viewport.width+'.png',timeout:90000});
@@ -48,9 +49,13 @@ jobs:
                 await p.screenshot({path:'ui32-class-'+viewport.width+'-'+map+'.png',timeout:90000});
                 await p.locator('#ui32-back').click();
               }
-              await p.locator('[data-focus-map="arena"]').click();
+              const startMap=viewport.width===1920?'arena':viewport.width===1366?'meadow':'siege';
+              await p.locator('[data-focus-map="'+startMap+'"]').click();
               await p.locator('#play-btn').click();
               await p.waitForFunction(()=>window.ktkUI32Status().menuHidden);
+              const started=await p.evaluate(()=>window.ktkUI32Status());
+              assert.equal(started.phase,'playing');assert.equal(started.engineSiege,startMap==='siege');assert.equal(started.engineArmy,startMap!=='arena');
+              console.log('PASS actual match start',startMap);
               assert.deepEqual(errors,[]);
               console.log('PASS start and menu visibility',viewport.width);
               await p.close();
