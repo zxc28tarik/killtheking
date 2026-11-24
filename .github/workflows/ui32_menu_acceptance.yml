@@ -15,7 +15,8 @@ jobs:
       - run: npm install --no-save --no-package-lock playwright@1.58.2
       - run: npx playwright install --with-deps chromium
       - name: Exercise map and class selection, start, and menu visibility
-        run: node --input-type=module <<'JS'
+        run: |
+          node --input-type=module <<'JS'
           import { chromium } from 'playwright';
           import { resolve } from 'node:path';
           import { pathToFileURL } from 'node:url';
