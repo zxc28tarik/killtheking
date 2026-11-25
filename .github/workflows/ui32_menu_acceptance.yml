@@ -281,6 +281,11 @@ jobs:
                 assert.ok(guard.requestedRoutes>=1,'AK33 issued no real defensive route');
                 assert.ok(guard.realAcceptedRoutes>=1,
                   'AK33 could not find a traversable gate/inner garrison post');
+                assert.ok(guard.actualSquadPosition &&
+                  Math.hypot(guard.actualSquadPosition.x+24,
+                    guard.actualSquadPosition.z+31)>.05,
+                  'AK33 G5.4 squad did not physically advance from the genuine spawn');
+
                 console.log('AK33_REAL_G54_GARRISON',JSON.stringify(guard));
               }
               console.log('FIT09 SOFTWARE_WEBGL_DIAGNOSTIC',startMap,JSON.stringify(live));
