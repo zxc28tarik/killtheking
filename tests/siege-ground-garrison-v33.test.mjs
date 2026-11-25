@@ -55,7 +55,7 @@ test('AK33 never changes actor count, health, individual positions, weapons or d
 test('AK33 follows actual threat flank and staged rear intrusion with path validation',()=>{
  const {state,battle,calls}=mock();
  const v=ak.create(state,battle);
- assert.deepEqual(ak.preferred(ak.observe(state,{gateHp:600})),[]);
+ assert.equal(ak.preferred(ak.observe(state,{gateHp:600})).length,0);
  makeThreat(state,19,-62,5);
  let x=ak.observe(state,{gateHp:500});
  assert.equal(ak.preferred(x)[0],'eastGate');
