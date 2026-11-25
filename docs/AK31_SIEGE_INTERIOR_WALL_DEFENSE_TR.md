@@ -49,3 +49,21 @@ Mazgalın dokuda koyu çizilmesi **ateş deliği sayılmaz**. AK31'de aralıklı
 4. **Gerçek FPS/Windows GPU denemesi:** otomatik test PASS olsa da görsel kalite, örtü/nişan, FPS düşüşü ve insan tarafından oynanabilirlik ayrı kabul gerektirir.
 
 **Merge kararı:** PR'daki gerçek CI, Chromium/WebGL üç harita, G5.4 uzun kuşatma kontrolleri yapılmadan `main` dalına alınmamalı. Bunun dışında kullanıcı onayı olmadan sınıflar, silah dengeleri, oyun kuralları veya ışık/renkleri değiştirme.
+
+## AK32 uygulaması — dört gerçek sur çıkışı (25 Kasım)
+
+AK31'den sonraki büyük paket **ayrı bir HTML motoru veya kaplama hilesi değil**, mevcut üçüncü haritanın özgün FPS fizik sisteminde gerçek dört eğimli giriş oluşturur.
+
+- Dış surların iç yüzünde **batı ön, doğu ön, batı arka, doğu arka** olmak üzere dört rampanın her biri 26 m ilerler ve gerçek oyuncuyu 0'dan 9 m sur üstüne çıkarır.
+- Her rampada **20 sabit taş basamak/mesnet modeli** bulunur; hareket fiziği basamak yüksekliğini sürekli interpolasyonla hesaplar. Bu, 0.45m'lik fizik dışı sıçramalar yerine gerçek bir eğimli çıkıştır.
+- Her rampanın ucunda **surun üst yüzeyine fiziksel 9m kotunda bağlanan taş geçiş** vardır. Oyuncu mevcut FPS swept collision ve ramp side-entry engeline tabi olmaya devam eder. Duvarın içinden ışınlanma yoktur.
+- Dış surun boyunca yükseltilmiş, **gerçek mermi çarpışmalı ve gerçek hareket engelli aralıklı mazgallar** vardır; düz boyanmış siyah çizgi/teatral mazgal yoktur.
+- Mevcut dış surun üst yüzeyi y=9'dur; ilave dekoratif yer döşemesiyle tekrar üretilmez, ışık ve renk değiştirilmez.
+- Kule, koçbaşı, mancınık, kapı, 70+70 özgün asker ve AK31 iç avlu bariyerlerinin kara seviyesi rotaları değişmez. Yeni üst köprü ve mazgal AABB'leri `minY>2.65` olur: G5.4 kara seviyesi bot engellerine ve yer düzlemi `nativeSiegeConstrainOriginalG54` kuralına sokulmaz.
+- Kale modundan çıkıldığında hem yeni sur rampaları hem gerçek çarpışma/atış yüzeyleri ayrıştırılır. Arena ve Meydan'a sızan görünmez duvar olmamalıdır.
+
+**Yeni dosyalar:** `recovered/native-siege/native-siege-wall-access-v32.js`, `tests/siege-wall-access-v32.test.mjs`. Oynanabilir kök `index.html` ile `playables/KillTheKing_AK30_Amblemler_Korundu_Tam_Ekran_Arka_Plan.html` byte-eşittir. Canlı sayfa durumu `window.ktkSiegeWallAccessStatus()` ile izlenir.
+
+**Kesin sınır:** Bu paket **gerçek oyuncu sur yürüyüşü ve fiziksel atış örtüsü** sunar. **G5.4 botların sura çıkması, yükseltilmiş 3B atış göz hizası, siper mevzi tercih AI'sı ve güvenli geri iniş henüz uygulanmamıştır**; onaylı bir test olmadan uygulanmış gibi gösterilmeyecek. Bunlar AK33/AK34 içindir. Sadece bu paketle kalenin tüm üst hat savunmasının tamamlandığı söylenemez.
+
+**Kabul:** `node --test tests/*.test.mjs`, canlı kaynak eşliği, üç haritalı Chromium/WebGL; özellikle rampanın sonundan gerçek y=9 sur üstüne geçişin manuel FPS testinde teyidi. Otomatik simülasyon yayılım ve bot AI davranışını tek başına kanıtlamaz.
