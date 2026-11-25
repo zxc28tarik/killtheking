@@ -6935,7 +6935,19 @@ window.addEventListener('error', function(event) {
             grad.addColorStop(1.0, botC);
             ctx.fillStyle = grad;
             ctx.fillRect(0, 0, 32, 256);
-            return new THREE.CanvasTexture(c);
+            const texture=new THREE.CanvasTexture(c);
+            texture.userData.ktkGradientKey=JSON.stringify([topC,midC,botC]);
+            return texture;
+        }
+        function refreshSkyGradient(mesh,create,top,mid,bottom){
+            const previous=mesh.material.map,key=JSON.stringify([top,mid,bottom]);
+            if(previous?.userData.ktkGradientKey===key)return false;
+            const next=create(top,mid,bottom);
+            next.userData.ktkGradientKey=key;
+            mesh.material.map=next;
+            mesh.material.needsUpdate=true;
+            if(previous&&previous!==next)previous.dispose();
+            return true;
         }
 
         function buildSkyAndClouds() {
@@ -6982,9 +6994,8 @@ window.addEventListener('error', function(event) {
             currentAtmosphereIdx = idx % ATMOSPHERES.length;
             const atmo = ATMOSPHERES[currentAtmosphereIdx];
 
-            if (skyDomeMesh) {
-                skyDomeMesh.material.map = createSkyGradientTexture(atmo.topCol, atmo.midCol, atmo.botCol);
-                skyDomeMesh.material.needsUpdate = true;
+            if (skyDomeMesh&&!window.__ktkMeadowLightActive) {
+                refreshSkyGradient(skyDomeMesh,createSkyGradientTexture,atmo.topCol,atmo.midCol,atmo.botCol);
             }
             scene.fog.color.setHex(atmo.fogCol);
             scene.fog.density = atmo.fogDensity * activeArenaFogMultiplier;
@@ -7467,11 +7478,7 @@ const KTKMeadowNaturalLighting=(function(){
      !hemiLight||!skyDomeMesh||!createSkyGradientTexture)
    throw Error('Complete native G5.4 atmosphere required');
   const p=PRESETS[((idx%PRESETS.length)+PRESETS.length)%PRESETS.length];
-  const prevTexture=skyDomeMesh.material.map;
-  const nextTexture=createSkyGradientTexture(p.top,p.mid,p.horizon);
-  skyDomeMesh.material.map=nextTexture;
-  skyDomeMesh.material.needsUpdate=true;
-  if(prevTexture&&prevTexture!==nextTexture)prevTexture.dispose();
+  refreshSkyGradient(skyDomeMesh,createSkyGradientTexture,p.top,p.mid,p.horizon);
   scene.background.setHex(p.fog);
   scene.fog.color.setHex(p.fog);
   scene.fog.density=p.density;
@@ -15003,11 +15010,14 @@ const KTKCalmUIV25=(()=>{
                     const proj=barrelProjection.copy(b.pos);
                     proj.y+=2.7;proj.project(camera);
                     if (proj.z < 1.0) {
-                        b.label.style.display = 'block';
-                        b.label.style.left = `${(proj.x * 0.5 + 0.5) * window.innerWidth}px`;
-                        b.label.style.top = `${(-proj.y * 0.5 + 0.5) * window.innerHeight}px`;
-                    } else {
-                        b.label.style.display = 'none';
+                        const style=b.label.style;
+                        if(style.display!=='block')style.display='block';
+                        const left=`${(proj.x * 0.5 + 0.5) * window.innerWidth}px`;
+                        const top=`${(-proj.y * 0.5 + 0.5) * window.innerHeight}px`;
+                        if(style.left!==left)style.left=left;
+                        if(style.top!==top)style.top=top;
+                    } else if(b.label.style.display!=='none') {
+                        b.label.style.display='none';
                     }
                 }
             });
