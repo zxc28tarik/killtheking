@@ -266,6 +266,17 @@ jobs:
               assert.equal(live.phase,'playing');assert.equal(live.advanced,true);
               if(startMap!=='arena')assert.ok(live.armyAfter>live.armyBefore,'live army simulation must progress');
               assert.ok(live.frames.every(n=>Number.isFinite(n)&&n>=0));
+              if(startMap==='siege'){
+                const guard=await p.evaluate(()=>window.ktkSiegeGroundGarrisonStatus?.());
+                assert.equal(guard.installed,true,'AK33 real siege garrison must initialize');
+                assert.equal(guard.active,true);
+                assert.equal(guard.originalG54,true);
+                assert.equal(guard.totalSoldiers,140);
+                assert.equal(guard.noNewActors,true);
+                assert.equal(guard.noTeleport,true);
+                assert.equal(guard.noElevationFiringClaim,true);
+                console.log('AK33_REAL_G54_GARRISON',JSON.stringify(guard));
+              }
               console.log('FIT09 SOFTWARE_WEBGL_DIAGNOSTIC',startMap,JSON.stringify(live));
               assert.deepEqual(errors,[]);
               console.log('PASS start and menu visibility',viewport.width);
