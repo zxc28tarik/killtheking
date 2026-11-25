@@ -12414,14 +12414,58 @@ const KTKCalmUIV25=(()=>{
         const stuckArrows = [];
         const particles = [];
 
-        // FIT03b: each particle owns its geometry and material; arrows own
-        // only their geometry (goldMat/steelMat are shared with weapon models).
-        // Flying helmet clones share both geometry and material with live bots.
+        // OPT01: bounded particle mesh pool: geometry is shared, materials are
+        // reset when reused. Generic beam meshes still keep owned geometry.
+        // Flying helmets and arrows retain their previous ownership rules.
+        const effectCubeGeometry = new THREE.BoxGeometry(1, 1, 1);
+        const effectMeshPools = { basic: [], lambert: [], opaque: [] };
+        const EFFECT_POOL_LIMIT = 192; // per category, no unbounded retention
+        const effectStillVelocity = new THREE.Vector3();
+        function acquireEffectCube(kind, color, opacity, width, height = width, depth = width) {
+            const pool = effectMeshPools[kind];
+            if (!pool) throw new Error('Unknown effect mesh pool');
+            let mesh = pool.pop();
+            if (!mesh) {
+                const material = kind === 'lambert'
+                    ? new THREE.MeshLambertMaterial({ color, transparent: true, opacity })
+                    : new THREE.MeshBasicMaterial({
+                        color, transparent: kind !== 'opaque', opacity
+                    });
+                mesh = new THREE.Mesh(effectCubeGeometry, material);
+                mesh.userData.effectPoolKind = kind;
+            }
+            mesh.material.color.setHex(color);
+            mesh.material.opacity = opacity;
+            mesh.position.set(0, 0, 0);
+            mesh.scale.set(width, height, depth);
+            mesh.rotation.set(0, 0, 0);
+            mesh.quaternion.identity();
+            mesh.visible = true;
+            scene.add(mesh);
+            return mesh;
+        }
         function releaseParticle(mesh) {
             scene.remove(mesh);
+            const kind = mesh.userData.effectPoolKind;
+            if (kind && effectMeshPools[kind]) {
+                const pool = effectMeshPools[kind];
+                if (pool.length < EFFECT_POOL_LIMIT) {
+                    pool.push(mesh);
+                } else {
+                    mesh.material.dispose(); // shared cube geometry stays owned by the pool
+                }
+                return;
+            }
             mesh.geometry.dispose();
             mesh.material.dispose();
         }
+        window.ktkParticlePoolStatus = () => ({
+            active: particles.length,
+            freeBasic: effectMeshPools.basic.length,
+            freeLambert: effectMeshPools.lambert.length,
+            freeOpaque: effectMeshPools.opaque.length,
+            limitPerKind: EFFECT_POOL_LIMIT
+        });
         function releaseArrow(mesh) {
             scene.remove(mesh);
             mesh.traverse(child=>{if(child.isMesh)child.geometry.dispose();});
@@ -12455,17 +12499,12 @@ const KTKCalmUIV25=(()=>{
             for (let i = 0; i < count; i++) {
                 const size = 0.25 + Math.random() * 0.45;
                 const isSpark = i < 4;
-                const mat = new THREE.MeshLambertMaterial({
-                    color: isSpark ? 0xfbbf24 : 0xd1d5db,
-                    transparent: true,
-                    opacity: isSpark ? 0.95 : 0.78
-                });
-                const puff = new THREE.Mesh(new THREE.BoxGeometry(size, size, size), mat);
+                const puff = acquireEffectCube('lambert',
+                    isSpark ? 0xfbbf24 : 0xd1d5db, isSpark ? 0.95 : 0.78, size);
                 puff.position.copy(origin).addScaledVector(dir, 1.0 + Math.random() * 1.1);
                 puff.position.x += (Math.random() - 0.5) * 0.45;
                 puff.position.y += (Math.random() - 0.5) * 0.45;
                 puff.position.z += (Math.random() - 0.5) * 0.45;
-                scene.add(puff);
 
                 const lifeTime = isSpark ? 0.25 : (lingering * (0.65 + Math.random() * 0.45));
                 particles.push({
@@ -12477,7 +12516,7 @@ const KTKCalmUIV25=(()=>{
                     ),
                     life: lifeTime,
                     maxLife: lifeTime,
-                    grow: !isSpark,
+                    grow: !isSpark, baseSize: size,
                     drag: 0.94
                 });
             }
@@ -12488,11 +12527,9 @@ const KTKCalmUIV25=(()=>{
             const palette = metal ? [0xffe5a0, 0xfbbf24, 0xe2e8f0, 0xef4444] : [0xfca5a5, 0xef4444, 0xf59e0b];
             const count = isHeadshot ? 21 : metal ? 15 : 11;
             for (let i = 0; i < count; i++) {
-                const mat = new THREE.MeshBasicMaterial({ color: palette[i % palette.length], transparent: true, opacity: 0.96 });
                 const size = 0.06 + Math.random() * (metal ? 0.12 : 0.10);
-                const p = new THREE.Mesh(new THREE.BoxGeometry(size, size, size), mat);
+                const p = acquireEffectCube('basic', palette[i % palette.length], 0.96, size);
                 p.position.copy(pos);
-                scene.add(p);
                 const life = 0.19 + Math.random() * 0.19;
                 particles.push({
                     mesh: p,
@@ -12522,14 +12559,8 @@ const KTKCalmUIV25=(()=>{
             for (let i = 0; i < 36; i++) {
                 const cols = [0xff4500, 0xf59e0b, 0xef4444, 0x374151];
                 const size = 0.35 + Math.random() * 0.65;
-                const mat = new THREE.MeshBasicMaterial({
-                    color: cols[i % cols.length],
-                    transparent: true,
-                    opacity: 0.9
-                });
-                const p = new THREE.Mesh(new THREE.BoxGeometry(size, size, size), mat);
+                const p = acquireEffectCube('basic', cols[i % cols.length], 0.9, size);
                 p.position.copy(center);
-                scene.add(p);
                 particles.push({
                     mesh: p,
                     vel: new THREE.Vector3(
@@ -12539,7 +12570,7 @@ const KTKCalmUIV25=(()=>{
                     ),
                     life: 0.7 + Math.random() * 0.8,
                     maxLife: 1.5,
-                    grow: true,
+                    grow: true, baseSize: size,
                     gravity: i > 18
                 });
             }
@@ -14894,9 +14925,8 @@ const KTKCalmUIV25=(()=>{
                 t.flame.scale.y = 0.9 + Math.cos(nowSec * 15 + t.phase) * 0.22;
                 if (t.innerCore) t.innerCore.scale.y = 0.85 + Math.sin(nowSec * 18 + t.phase) * 0.2;
                 if (Math.random() < 0.06) {
-                    const ember = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 0.08), new THREE.MeshBasicMaterial({ color: 0xfbbf24 }));
+                    const ember = acquireEffectCube('opaque', 0xfbbf24, 1, 0.08);
                     ember.position.copy(t.basePos);
-                    scene.add(ember);
                     particles.push({
                         mesh: ember,
                         vel: new THREE.Vector3((Math.random() - 0.5) * 0.6, 1.5 + Math.random(), (Math.random() - 0.5) * 0.6),
@@ -15297,11 +15327,10 @@ const KTKCalmUIV25=(()=>{
                 arr.trailTimer -= dt;
                 if (arr.trailTimer <= 0) {
                     arr.trailTimer = 0.025;
-                    const trail = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 0.28), new THREE.MeshBasicMaterial({ color: 0xe5e7eb, transparent: true, opacity: 0.55 }));
+                    const trail = acquireEffectCube('basic', 0xe5e7eb, 0.55, 0.05, 0.05, 0.28);
                     trail.position.copy(prevPos);
                     trail.quaternion.copy(arr.mesh.quaternion);
-                    scene.add(trail);
-                    particles.push({ mesh: trail, vel: new THREE.Vector3(), life: 0.22, maxLife: 0.22, grow: false });
+                    particles.push({ mesh: trail, vel: effectStillVelocity, life: 0.22, maxLife: 0.22, grow: false });
                 }
 
                 // Swept collision: find the FIRST obstruction along the complete frame segment.
@@ -15406,7 +15435,9 @@ const KTKCalmUIV25=(()=>{
                 if (p.drag) p.vel.multiplyScalar(p.drag);
                 p.mesh.position.addScaledVector(p.vel, dt);
                 if (p.grow) {
-                    p.mesh.scale.addScalar(dt * 1.45);
+                    // Original geometry had size "baseSize" and a unit scale;
+                    // pooled geometry is 1x1x1, so preserve identical expansion.
+                    p.mesh.scale.addScalar(dt * 1.45 * (p.baseSize || 1));
                     if (p.mesh.material.transparent) {
                         p.mesh.material.opacity = Math.max(0, (p.life / p.maxLife) * 0.75);
                     }
@@ -15959,13 +15990,85 @@ const KTKCalmUIV25=(()=>{
             }
         }
 
+        // OPT02: optimized grass placement in the unpinned GAME layer.
+        // All original native gameplay modules and their pinned hashes remain intact.
+        const OPT_GRASS_GRID=10, OPT_GRASS_SLOTS=100;
+        const optGrassMod=(n,m)=>((n%m)+m)%m;
+        function optGrassRandom(seed){
+            let state=seed>>>0;
+            return ()=>{state=(Math.imul(state,1664525)+1013904223)>>>0;
+                return state/4294967296;};
+        }
+         function updateNearbyTuftsOptimized(mesh,spec,x,z){
+          if(!mesh||!Number.isFinite(x)||!Number.isFinite(z))return false;
+          const tileX=Math.floor(x/ArenaMeadowGrass.NEAR_TILE_SIZE),tileZ=Math.floor(z/ArenaMeadowGrass.NEAR_TILE_SIZE);
+          const data=mesh.userData;
+          if(!data.tileWorldX){
+           data.tileWorldX=new Int32Array(OPT_GRASS_SLOTS).fill(2147483647);
+           data.tileWorldZ=new Int32Array(OPT_GRASS_SLOTS).fill(2147483647);
+           data.tileObject=new THREE.Object3D();
+           data.tileColor=new THREE.Color();
+           data.solidSpec=null;data.solidProps=[];data.lastRegeneratedTiles=0;
+          }
+          if(data.lastTileX===tileX&&data.lastTileZ===tileZ&&data.solidSpec===spec)return false;
+          if(data.solidSpec!==spec){
+           data.solidProps=spec.boxes.filter(b=>b.solid);
+           data.solidSpec=spec;
+           data.tileWorldX.fill(2147483647);
+           data.tileWorldZ.fill(2147483647);
+          }
+          const originX=tileX-5,originZ=tileZ-5;
+          const shiftX=optGrassMod(originX,OPT_GRASS_GRID),shiftZ=optGrassMod(originZ,OPT_GRASS_GRID);
+          const instancesPerTile=Math.ceil(mesh.count/OPT_GRASS_SLOTS);
+          const props=data.solidProps,object=data.tileObject,color=data.tileColor;
+          let regenerated=0;
+          for(let slot=0;slot<OPT_GRASS_SLOTS;slot++){
+           // Each physical slot is attached to a world tile modulo 10; unchanged
+           // world tiles keep their matrices/colors when the camera crosses a cell.
+           const localX=optGrassMod(slot%OPT_GRASS_GRID-shiftX,OPT_GRASS_GRID);
+           const localZ=optGrassMod(Math.floor(slot/OPT_GRASS_GRID)-shiftZ,OPT_GRASS_GRID);
+           const worldTileX=originX+localX,worldTileZ=originZ+localZ;
+           if(data.tileWorldX[slot]===worldTileX&&data.tileWorldZ[slot]===worldTileZ)continue;
+           data.tileWorldX[slot]=worldTileX;data.tileWorldZ[slot]=worldTileZ;regenerated++;
+           const minX=worldTileX*ArenaMeadowGrass.NEAR_TILE_SIZE,minZ=worldTileZ*ArenaMeadowGrass.NEAR_TILE_SIZE;
+           const tileProps=props.filter(b=>
+            minX<b.x+b.w/2+.7&&minX+ArenaMeadowGrass.NEAR_TILE_SIZE>b.x-b.w/2-.7&&
+            minZ<b.z+b.d/2+.7&&minZ+ArenaMeadowGrass.NEAR_TILE_SIZE>b.z-b.d/2-.7);
+           for(let n=0;n<instancesPerTile;n++){
+            const index=slot*instancesPerTile+n;
+            if(index>=mesh.count)break;
+            const rng=optGrassRandom((Math.imul(worldTileX,73856093)^
+               Math.imul(worldTileZ,19349663)^Math.imul(n+1,83492791)^0xdecafbad)>>>0);
+            const offsetX=rng(),offsetZ=rng();
+            const px=(worldTileX+offsetX)*ArenaMeadowGrass.NEAR_TILE_SIZE;
+            const pz=(worldTileZ+offsetZ)*ArenaMeadowGrass.NEAR_TILE_SIZE;
+            const blocked=Math.abs(px)>=spec.half-ArenaMeadowGrass.EDGE_INSET||
+             Math.abs(pz)>=spec.half-ArenaMeadowGrass.EDGE_INSET||tileProps.some(b=>
+               Math.abs(px-b.x)<b.w/2+.7&&Math.abs(pz-b.z)<b.d/2+.7);
+            object.position.set(px,.02,pz);
+            object.rotation.set(0,rng()*6.28318530718,0);
+            const size=.46+.3*rng(),height=.34+.44*rng();
+            object.scale.set(blocked?0:size,blocked?0:height,blocked?0:size);
+            object.updateMatrix();mesh.setMatrixAt(index,object.matrix);
+            mesh.setColorAt(index,color.setHex(ArenaMeadowGrass.PALETTE[Math.floor(rng()*ArenaMeadowGrass.PALETTE.length)]));
+           }
+          }
+          if(regenerated){
+           mesh.instanceMatrix.needsUpdate=true;
+           if(mesh.instanceColor)mesh.instanceColor.needsUpdate=true;
+          }
+          data.lastTileX=tileX;data.lastTileZ=tileZ;
+          data.lastRegeneratedTiles=regenerated;
+          return regenerated>0;
+         }
+        
         function updateActiveMeadowGrass(){
             if(arenaMap!=='meadow'||!meadowDenseGrass||!meadowDenseGrass.visible)return false;
             const tile=ArenaMeadowGrass.NEAR_TILE_SIZE;
             const data=meadowDenseGrass.userData;
             if(data.lastTileX===Math.floor(player.pos.x/tile)&&
                data.lastTileZ===Math.floor(player.pos.z/tile))return false;
-            return ArenaMeadowGrass.updateNearbyTufts(THREE,meadowDenseGrass,meadowSpec,player.pos.x,player.pos.z);
+            return updateNearbyTuftsOptimized(meadowDenseGrass,meadowSpec,player.pos.x,player.pos.z);
         }
         function animate() {
             requestAnimationFrame(animate);
