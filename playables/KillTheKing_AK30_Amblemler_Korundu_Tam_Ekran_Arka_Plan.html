@@ -5386,6 +5386,45 @@ window.addEventListener('error', function(event) {
    activeRank[soldier.id]=nextRank[soldier.squadId]++;
   return scratch;
  }
+ // AK35 native archer detachment; original combat remains authoritative.
+ function siegeWallMove(state,u,squad,dt){
+  const p=u.ak35Wall;if(!p)return false;
+  if(squad.order==='retreat'||u.hp<p.initialHp*.36||state.ak35Recall)p.retreat=true;
+  if(p.retreat&&p.phase==='approach'){u.ak35Wall=null;return false;}
+  if(p.retreat&&p.phase==='post')p.phase='returnLanding';
+  if(p.retreat&&p.phase==='landing')p.phase='returnRamp';
+  if(p.retreat&&p.phase==='climb')p.phase='descend';
+  if(p.phase==='approach'&&!p.route){
+   if(state.tick%16!==u.id%16)return true;
+   p.route=planSquadRoute(state,u,{x:p.x,z:p.foot},.7);
+   if(!p.route){u.ak35Wall=null;return false;}
+  }
+  const target=p.phase==='approach'?p.route[0]:
+   p.phase==='climb'?{x:p.x,z:p.top}:
+   p.phase==='landing'||p.phase==='returnLanding'?{x:p.postX,z:p.top}:
+   p.phase==='post'?{x:p.postX,z:p.postZ}:
+   p.phase==='returnRamp'?{x:p.x,z:p.top}:{x:p.x,z:p.foot};
+  if(!target){u.ak35Wall=null;return false;}
+  const dx=target.x-u.x,dz=target.z-u.z,d=Math.hypot(dx,dz);
+  const f=d<.001?1:Math.min(1,TYPES[u.type].speed*u.pace*dt*.72/d);
+  const nx=u.x+dx*f,nz=u.z+dz*f;
+  const y=p.phase==='climb'||p.phase==='descend'?9*Math.max(0,Math.min(1,(p.foot-nz)/(p.foot-p.top))):p.phase==='approach'?0:9;
+  if(p.phase==='approach'&&!routeSegmentClear(state,u,{x:nx,z:nz},.55)){u.ak35Wall=null;return false;}
+  if(p.phase!=='approach'){
+   const intersects=b=>b.maxY>y+.12&&b.minY<y+2.5&&nx>b.minX-.35&&nx<b.maxX+.35&&nz>b.minZ-.35&&nz<b.maxZ+.35;
+   if((state.worldObstacles||[]).some(intersects)||(state.elevatedWorldObstacles||[]).some(intersects)){p.blocked=(p.blocked||0)+1;return true;}
+  }
+  u.x=nx;u.z=nz;u.siegeY=y;
+  if(f===1){
+   if(p.phase==='approach'){p.route.shift();if(!p.route.length)p.phase='climb';}
+   else if(p.phase==='climb')p.phase='landing';
+   else if(p.phase==='landing')p.phase='post';
+   else if(p.phase==='returnLanding')p.phase='returnRamp';
+   else if(p.phase==='returnRamp')p.phase='descend';
+   else if(p.phase==='descend'){u.siegeY=0;u.ak35Wall=null;}
+  }
+  return true;
+ }
  function oneTick(state,dt){
   state.elapsed+=dt;state.tick++;
   state.playerHitCooldown=Math.max(0,state.playerHitCooldown-dt);
@@ -5534,7 +5573,8 @@ window.addEventListener('error', function(event) {
     }
    }
    const dx=destX-soldier.x,dz=destZ-soldier.z,d=Math.hypot(dx,dz);
-   if(d>.3){const move=Math.min(Math.max(0,d-(squad.order==='charge'&&!ranged?.85:.3)),role.speed*dt*soldier.pace*(squad.formation==='shield'?.72:1));
+   const wallManaged=siegeWallMove(state,soldier,squad,dt);
+   if(!wallManaged&&d>.3){const move=Math.min(Math.max(0,d-(squad.order==='charge'&&!ranged?.85:.3)),role.speed*dt*soldier.pace*(squad.formation==='shield'?.72:1));
     let nextX=clamp(soldier.x+dx/d*move*(.82+.18*soldier.stamina),-BOUNDS,BOUNDS);
     let nextZ=clamp(soldier.z+dz/d*move*(.82+.18*soldier.stamina),-BOUNDS,BOUNDS);
     // Player-led ranks cannot cut straight through a physical obstacle even
@@ -5582,9 +5622,10 @@ window.addEventListener('error', function(event) {
    soldier.attackPose=Math.max(0,soldier.attackPose-dt);
    soldier.hitPose=Math.max(0,soldier.hitPose-dt);
    soldier.reload=Math.max(0,soldier.reload-dt);
+   if(soldier.ak35Wall&&soldier.ak35Wall.phase!=='post')continue;
    if(soldier.reload>0||(ranged&&squad.fireMode==='hold'))continue;
    if(personal==='guard'&&soldier.guardUntil>state.elapsed)continue;
-   if(personal==='return'&&(!enemy||dist(soldier,enemy)>role.range*.8))continue;
+   if(!soldier.ak35Wall&&personal==='return'&&(!enemy||dist(soldier,enemy)>role.range*.8))continue;
    if(ranged&&squad.fireMode==='volley'&&!squad.volleyReady)continue;
    // A blocked line is re-evaluated in short intervals, not every 80ms.
    if(ranged&&soldier.laneRetryUntil>state.elapsed)continue;
@@ -10709,7 +10750,7 @@ const KTKCalmUIV25=(()=>{
           siegePoseBuffer.length=soldiers.length;
           for(let i=0;i<soldiers.length;i++){
             const u=soldiers[i],p=siegePoseBuffer[i]||(siegePoseBuffer[i]={x:0,z:0});
-            p.x=u.x;p.z=u.z;
+            p.x=u.x;p.z=u.z;p.y=u.siegeY||0;
           }
           return siegePoseBuffer;
         }
@@ -10725,6 +10766,7 @@ const KTKCalmUIV25=(()=>{
           for(let i=0;i<meadowBattleState.soldiers.length;i++){
             const u=meadowBattleState.soldiers[i],old=before[i];
             if(!u.alive||!old||!Number.isFinite(u.x)||!Number.isFinite(u.z))continue;
+            if(u.ak35Wall&&(u.siegeY>0||old.y>0))continue;
             const from=old,to=siegeConstraintTo;
             to.x=u.x;to.z=u.z;
             if(Math.hypot(to.x-from.x,to.z-from.z)<1e-8)continue;
@@ -14052,6 +14094,15 @@ const KTKCalmUIV25=(()=>{
                     nativeSiegeMode?nativeSiegeWallAccessV32.wallBoxes:[]);
                 // The original G5.4 route authority must see ALL live AK26
                 // stone before a defender captain plans a single move.
+                if(nativeSiegeMode){
+                  const archers=meadowBattleState.soldiers.filter(u=>u.team==='red'&&u.type==='bow');
+                  const ramps35=KTKSiegeWallAccessV32.rampSpec;
+                  archers.slice(0,8).forEach((u,i)=>{
+                    const r=ramps35[i%4],side=Math.sign(r.minX);
+                    u.ak35Wall={x:(r.minX+r.maxX)/2+(i<4?-.8:.8),foot:r.maxZ,top:r.minZ,
+                      postX:side*111.6,postZ:r.minZ+(i<4?-2.5:2.5),phase:'approach',initialHp:u.hp};
+                  });
+                }
                 nativeSiegeDoctrineV27=nativeSiegeMode?
                   KTKSiegeDefenderDoctrineV27.create(meadowBattleState,ArenaArmyBattle):null;
                 nativeSiegeGarrisonV33=nativeSiegeMode?
@@ -15727,6 +15778,7 @@ const KTKCalmUIV25=(()=>{
                 const siegePreviousPositions=nativeSiegeMode?
                     captureSiegePoses(meadowBattleState.soldiers):null;
                 if(nativeSiegeMode){
+                    meadowBattleState.ak35Recall=nativeSiegeGateOpen;
                     nativeSiegeTowerProtectNativeActors();
                     nativeSiegeDefenderCounterfire();
                 }
