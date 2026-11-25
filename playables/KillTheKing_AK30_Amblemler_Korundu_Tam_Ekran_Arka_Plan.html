@@ -9624,6 +9624,36 @@ const KTKCalmUIV25=(()=>{
             metalness: 0.88,
             roughness: 0.20
         });
+        // WG01: shared gun-only forged iron finish, no armor texture or scene light changes.
+        const musketIronSurface=(()=>{
+            const size=64,data=new Uint8Array(size*size*4);
+            let seed=1600;
+            for(let y=0;y<size;y++)for(let x=0;x<size;x++){
+                seed=(Math.imul(seed,1664525)+1013904223)>>>0;
+                const grain=(seed>>>24)/255-.5;
+                const streak=Math.sin(x*.49+Math.sin(y*.098)*.35);
+                const broad=Math.sin(x*.09817477*3+y*.09817477);
+                const v=Math.max(0,Math.min(255,Math.round(145+grain*22+streak*9+broad*12)));
+                const i=(y*size+x)*4;
+                data[i]=data[i+1]=data[i+2]=v;data[i+3]=255;
+            }
+            const t=new THREE.DataTexture(data,size,size,THREE.RGBAFormat);
+            t.wrapS=t.wrapT=THREE.RepeatWrapping;
+            t.magFilter=THREE.LinearFilter;
+            t.minFilter=THREE.LinearMipmapLinearFilter;
+            t.generateMipmaps=true;t.needsUpdate=true;
+            return t;
+        })();
+        const musketIronMat=new THREE.MeshStandardMaterial({
+            name:'WG01 forged iron / barrel and lock',color:0x929292,
+            metalness:.76,roughness:.79,roughnessMap:musketIronSurface,
+            bumpMap:musketIronSurface,bumpScale:.003,envMapIntensity:.65
+        });
+        const musketBrassMat=new THREE.MeshStandardMaterial({
+            name:'WG01 aged brass / fittings',color:0xb59a60,
+            metalness:.72,roughness:.65,roughnessMap:musketIronSurface,
+            envMapIntensity:.65
+        });
         const rubyMat = new THREE.MeshStandardMaterial({ color: 0xdc2626, metalness: 0.25, roughness: 0.08, emissive: 0x450a0a });
         const darkWoodMat = new THREE.MeshStandardMaterial({
             map: walnutTexBundle.map,
@@ -9893,24 +9923,24 @@ const KTKCalmUIV25=(()=>{
             buttStock.scale.set(0.72, 1.0, 1.35);
             buttStock.position.set(0.26, -0.27, -0.06);
 
-            const brassButtplate = new THREE.Mesh(new THREE.CylinderGeometry(0.048, 0.068, 0.04, 10), goldMat);
+            const brassButtplate = new THREE.Mesh(new THREE.CylinderGeometry(0.048, 0.068, 0.04, 10), musketBrassMat);
             brassButtplate.rotation.x = Math.PI / 2 - 0.18;
             brassButtplate.scale.set(0.74, 1.0, 1.36);
             brassButtplate.position.set(0.26, -0.30, 0.11);
 
-            const stockFiligree = new THREE.Mesh(new THREE.BoxGeometry(0.088, 0.032, 0.28), goldMat);
+            const stockFiligree = new THREE.Mesh(new THREE.BoxGeometry(0.088, 0.032, 0.28), musketBrassMat);
             stockFiligree.position.set(0.26, -0.20, -0.45);
 
             // 2. Forged Octagonal Breech + Round Tapered Steel Barrel + Hollow Muzzle Bore
-            const breechOctagon = new THREE.Mesh(new THREE.CylinderGeometry(0.040, 0.045, 0.48, 8), gunmetalMat);
+            const breechOctagon = new THREE.Mesh(new THREE.CylinderGeometry(0.040, 0.045, 0.48, 8), musketIronMat);
             breechOctagon.rotation.x = Math.PI / 2;
             breechOctagon.position.set(0.26, -0.14, -0.52);
 
-            const roundBarrel = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.039, 0.88, 16), steelMat);
+            const roundBarrel = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.039, 0.88, 16), musketIronMat);
             roundBarrel.rotation.x = Math.PI / 2;
             roundBarrel.position.set(0.26, -0.14, -1.16);
 
-            const muzzleFlare = new THREE.Mesh(new THREE.CylinderGeometry(0.039, 0.033, 0.07, 16), goldMat);
+            const muzzleFlare = new THREE.Mesh(new THREE.CylinderGeometry(0.039, 0.033, 0.07, 16), musketBrassMat);
             muzzleFlare.rotation.x = Math.PI / 2;
             muzzleFlare.position.set(0.26, -0.14, -1.58);
 
@@ -9923,35 +9953,35 @@ const KTKCalmUIV25=(()=>{
 
             // 3. Brass Barrel Bands & Sights
             [-0.78, -1.12, -1.44].forEach(bz => {
-                const band = new THREE.Mesh(new THREE.CylinderGeometry(0.044, 0.046, 0.045, 12), goldMat);
+                const band = new THREE.Mesh(new THREE.CylinderGeometry(0.044, 0.046, 0.045, 12), musketBrassMat);
                 band.rotation.x = Math.PI / 2;
                 band.scale.set(1.0, 1.0, 1.25);
                 band.position.set(0.26, -0.165, bz);
                 musketGroup.add(band);
             });
 
-            const rearSight = new THREE.Mesh(new THREE.BoxGeometry(0.036, 0.026, 0.04), goldMat);
+            const rearSight = new THREE.Mesh(new THREE.BoxGeometry(0.036, 0.026, 0.04), musketBrassMat);
             rearSight.position.set(0.26, -0.095, -0.44);
-            const frontSight = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.042, 0.03), goldMat);
+            const frontSight = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.042, 0.03), musketBrassMat);
             frontSight.position.set(0.26, -0.098, -1.54);
 
             // 4. Authentic 1600s Flintlock Mechanism (Lockplate, Flash Pan, Frizzen & S-Hammer holding Flint)
-            const lockPlate = new THREE.Mesh(new THREE.BoxGeometry(0.022, 0.065, 0.26), ornateArmorMat);
+            const lockPlate = new THREE.Mesh(new THREE.BoxGeometry(0.022, 0.065, 0.26), musketIronMat);
             lockPlate.position.set(0.21, -0.16, -0.46);
 
-            const flashPan = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.020, 0.035, 10), goldMat);
+            const flashPan = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.020, 0.035, 10), musketBrassMat);
             flashPan.position.set(0.19, -0.14, -0.50);
 
-            const frizzenSteel = new THREE.Mesh(new THREE.BoxGeometry(0.022, 0.095, 0.045), steelMat);
+            const frizzenSteel = new THREE.Mesh(new THREE.BoxGeometry(0.022, 0.095, 0.045), musketIronMat);
             frizzenSteel.position.set(0.19, -0.095, -0.52);
             frizzenSteel.rotation.x = 0.25;
 
             // Animated S-Curved Flintlock Hammer Group (Cock + Jaws + Real Flint Stone)
             musketHammerMesh = new THREE.Group();
             musketHammerMesh.position.set(0.195, -0.15, -0.43);
-            const hammerNeck = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.018, 0.11, 8), goldMat);
+            const hammerNeck = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.018, 0.11, 8), musketBrassMat);
             hammerNeck.position.set(0, 0.05, 0);
-            const hammerJaws = new THREE.Mesh(new THREE.BoxGeometry(0.028, 0.032, 0.058), darkSteelMat);
+            const hammerJaws = new THREE.Mesh(new THREE.BoxGeometry(0.028, 0.032, 0.058), musketIronMat);
             hammerJaws.position.set(0, 0.095, -0.02);
             const flintStone = new THREE.Mesh(
                 new THREE.ConeGeometry(0.018, 0.048, 4),
@@ -9962,20 +9992,20 @@ const KTKCalmUIV25=(()=>{
             musketHammerMesh.add(hammerNeck, hammerJaws, flintStone);
 
             // 5. Brass Trigger Guard & Curved Trigger
-            const triggerGuard = new THREE.Mesh(new THREE.TorusGeometry(0.048, 0.008, 8, 14, Math.PI), goldMat);
+            const triggerGuard = new THREE.Mesh(new THREE.TorusGeometry(0.048, 0.008, 8, 14, Math.PI), musketBrassMat);
             triggerGuard.rotation.y = Math.PI / 2;
             triggerGuard.rotation.x = Math.PI;
             triggerGuard.position.set(0.26, -0.23, -0.38);
 
-            const triggerMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.008, 0.045, 6), steelMat);
+            const triggerMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.008, 0.045, 6), musketIronMat);
             triggerMesh.rotation.x = 0.35;
             triggerMesh.position.set(0.26, -0.235, -0.38);
 
             // 6. Cylindrical Ramrod with Brass Tip (Animated during Reload!)
             musketRamrodMesh = new THREE.Group();
-            const rodShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.010, 0.010, 1.18, 8), darkSteelMat);
+            const rodShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.010, 0.010, 1.18, 8), musketIronMat);
             rodShaft.rotation.x = Math.PI / 2;
-            const rodBrassTip = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.011, 0.08, 10), goldMat);
+            const rodBrassTip = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.011, 0.08, 10), musketBrassMat);
             rodBrassTip.rotation.x = Math.PI / 2;
             rodBrassTip.position.z = -0.58;
             musketRamrodMesh.add(rodShaft, rodBrassTip);
@@ -12180,19 +12210,19 @@ const KTKCalmUIV25=(()=>{
                 mStock.rotation.x = Math.PI / 2;
                 mStock.scale.set(0.75, 1.0, 1.25);
                 mStock.position.z = 0.58;
-                const mBarrel = new THREE.Mesh(new THREE.CylinderGeometry(0.048, 0.058, 2.08, 14), steelMat);
+                const mBarrel = new THREE.Mesh(new THREE.CylinderGeometry(0.048, 0.058, 2.08, 14), musketIronMat);
                 mBarrel.rotation.x = Math.PI / 2;
                 mBarrel.position.set(0, 0.08, 0.84);
-                const mMuzzle = new THREE.Mesh(new THREE.CylinderGeometry(0.058, 0.048, 0.10, 14), goldMat);
+                const mMuzzle = new THREE.Mesh(new THREE.CylinderGeometry(0.058, 0.048, 0.10, 14), musketBrassMat);
                 mMuzzle.rotation.x = Math.PI / 2;
                 mMuzzle.position.set(0, 0.08, 1.86);
                 for (let b = 0; b < 3; b++) {
-                    const band = new THREE.Mesh(new THREE.CylinderGeometry(0.068, 0.068, 0.07, 12), goldMat);
+                    const band = new THREE.Mesh(new THREE.CylinderGeometry(0.068, 0.068, 0.07, 12), musketBrassMat);
                     band.rotation.x = Math.PI / 2;
                     band.position.set(0, 0.05, 0.65 + b * 0.42);
                     weaponMount.add(band);
                 }
-                const mLock = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.14, 0.28), goldMat);
+                const mLock = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.14, 0.28), musketIronMat);
                 mLock.position.set(0.06, 0.06, 0.32);
                 weaponMount.add(mStock, mBarrel, mMuzzle, mLock);
                 weaponMount.rotation.x = Math.PI / 2.8;
