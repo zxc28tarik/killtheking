@@ -10,8 +10,8 @@ const KTKSiegeGroundGarrisonV33=(()=>{
  'use strict';
  const THINK=2.8,ORDER_GAP=11,ARRIVAL=8;
  const POSTS=Object.freeze({
-  westGate:Object.freeze({x:-29,z:-16}),
-  eastGate:Object.freeze({x:29,z:-16}),
+  westGate:Object.freeze({x:-24,z:-16}),
+  eastGate:Object.freeze({x:24,z:-16}),
   westInner:Object.freeze({x:-29,z:28}),
   eastInner:Object.freeze({x:29,z:28}),
   westFallback:Object.freeze({x:-24,z:13}),
