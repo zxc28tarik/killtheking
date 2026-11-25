@@ -9624,18 +9624,23 @@ const KTKCalmUIV25=(()=>{
             metalness: 0.88,
             roughness: 0.20
         });
-        // WG01: shared gun-only forged iron finish, no armor texture or scene light changes.
+        // WG02: packed, shared metal microfinish. Red = height, green = roughness.
+        // Periodic grain avoids a visible UV seam; no random work during gameplay.
         const musketIronSurface=(()=>{
-            const size=64,data=new Uint8Array(size*size*4);
+            const size=64,data=new Uint8Array(size*size*4),tau=Math.PI*2;
+            const byte=v=>Math.max(0,Math.min(255,Math.round(v)));
             let seed=1600;
             for(let y=0;y<size;y++)for(let x=0;x<size;x++){
                 seed=(Math.imul(seed,1664525)+1013904223)>>>0;
+                const u=x/size*tau,v=y/size*tau;
                 const grain=(seed>>>24)/255-.5;
-                const streak=Math.sin(x*.49+Math.sin(y*.098)*.35);
-                const broad=Math.sin(x*.09817477*3+y*.09817477);
-                const v=Math.max(0,Math.min(255,Math.round(145+grain*22+streak*9+broad*12)));
+                const flow=Math.sin(u*11+Math.sin(v)*.28);
+                const tooling=Math.sin(u*23+Math.sin(v*2)*.19);
+                const mottling=Math.sin(u*3+v)*Math.cos(v*2-u);
                 const i=(y*size+x)*4;
-                data[i]=data[i+1]=data[i+2]=v;data[i+3]=255;
+                data[i]=byte(128+flow*9+tooling*4+grain*9);
+                data[i+1]=byte(188+mottling*21+flow*10+grain*8);
+                data[i+2]=255;data[i+3]=255;
             }
             const t=new THREE.DataTexture(data,size,size,THREE.RGBAFormat);
             t.wrapS=t.wrapT=THREE.RepeatWrapping;
@@ -9645,14 +9650,40 @@ const KTKCalmUIV25=(()=>{
             return t;
         })();
         const musketIronMat=new THREE.MeshStandardMaterial({
-            name:'WG01 forged iron / barrel and lock',color:0x929292,
-            metalness:.76,roughness:.79,roughnessMap:musketIronSurface,
-            bumpMap:musketIronSurface,bumpScale:.003,envMapIntensity:.65
+            name:'WG02 satin forged iron',color:0x85888b,
+            metalness:.87,roughness:.68,roughnessMap:musketIronSurface,
+            bumpMap:musketIronSurface,bumpScale:.00065,envMapIntensity:.85
         });
         const musketBrassMat=new THREE.MeshStandardMaterial({
-            name:'WG01 aged brass / fittings',color:0xb59a60,
-            metalness:.72,roughness:.65,roughnessMap:musketIronSurface,
-            envMapIntensity:.65
+            name:'WG02 aged satin brass',color:0xb29a68,
+            metalness:.80,roughness:.74,roughnessMap:musketIronSurface,
+            envMapIntensity:.78
+        });
+        // A single small, baked stock texture: grain follows the cylinder length.
+        const musketWalnutMap=(()=>{
+            const size=128,data=new Uint8Array(size*size*4),tau=Math.PI*2;
+            let seed=1776;
+            for(let y=0;y<size;y++)for(let x=0;x<size;x++){
+                seed=(Math.imul(seed,1664525)+1013904223)>>>0;
+                const u=x/size*tau,v=y/size*tau;
+                const warp=u+.045*Math.sin(v)+.025*Math.sin(2*v+u);
+                const rings=Math.sin(warp*9+.25*Math.sin(u*3));
+                const fiber=Math.sin(warp*31+.5*Math.sin(u*5));
+                const grain=(seed>>>24)/255-.5;
+                const tone=rings*9+fiber*3+grain*3+Math.sin(u*3)*5;
+                const i=(y*size+x)*4;
+                data[i]=87+tone;data[i+1]=48+tone*.62;data[i+2]=27+tone*.38;data[i+3]=255;
+            }
+            const t=new THREE.DataTexture(data,size,size,THREE.RGBAFormat);
+            t.encoding=THREE.sRGBEncoding;
+            t.wrapS=t.wrapT=THREE.RepeatWrapping;
+            t.magFilter=THREE.LinearFilter;t.minFilter=THREE.LinearMipmapLinearFilter;
+            t.generateMipmaps=true;t.needsUpdate=true;
+            return t;
+        })();
+        const musketWoodMat=new THREE.MeshStandardMaterial({
+            name:'WG02 longitudinal oiled walnut',map:musketWalnutMap,
+            metalness:0,roughness:.64,envMapIntensity:.38
         });
         const rubyMat = new THREE.MeshStandardMaterial({ color: 0xdc2626, metalness: 0.25, roughness: 0.08, emissive: 0x450a0a });
         const darkWoodMat = new THREE.MeshStandardMaterial({
@@ -9909,16 +9940,16 @@ const KTKCalmUIV25=(()=>{
             leftSupportArm3.rotation.y = -0.32;
 
             // 1. Sculpted Walnut Fore-stock & Curved 1600s Fishtail Buttstock
-            const foreStock = new THREE.Mesh(new THREE.CylinderGeometry(0.036, 0.046, 0.92, 10), darkWoodMat);
+            const foreStock = new THREE.Mesh(new THREE.CylinderGeometry(0.036, 0.046, 0.92, 10), musketWoodMat);
             foreStock.rotation.x = Math.PI / 2;
             foreStock.scale.set(1.0, 1.0, 1.15);
             foreStock.position.set(0.26, -0.19, -0.82);
 
-            const wristGrip = new THREE.Mesh(new THREE.CylinderGeometry(0.036, 0.042, 0.28, 10), darkWoodMat);
+            const wristGrip = new THREE.Mesh(new THREE.CylinderGeometry(0.036, 0.042, 0.28, 10), musketWoodMat);
             wristGrip.rotation.x = Math.PI / 2 - 0.24;
             wristGrip.position.set(0.26, -0.22, -0.30);
 
-            const buttStock = new THREE.Mesh(new THREE.CylinderGeometry(0.044, 0.068, 0.36, 10), darkWoodMat);
+            const buttStock = new THREE.Mesh(new THREE.CylinderGeometry(0.044, 0.068, 0.36, 10), musketWoodMat);
             buttStock.rotation.x = Math.PI / 2 - 0.18;
             buttStock.scale.set(0.72, 1.0, 1.35);
             buttStock.position.set(0.26, -0.27, -0.06);
@@ -12206,7 +12237,7 @@ const KTKCalmUIV25=(()=>{
                 weaponMount.rotation.x = Math.PI / 2.2;
             } else {
                 // Realistic 1600s Flintlock Musket in Bot Hands (Walnut Stock, Round Steel Barrel, Brass Bands, Flintlock Hammer & Ramrod)
-                const mStock = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.082, 1.72, 10), darkWoodMat);
+                const mStock = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.082, 1.72, 10), musketWoodMat);
                 mStock.rotation.x = Math.PI / 2;
                 mStock.scale.set(0.75, 1.0, 1.25);
                 mStock.position.z = 0.58;
