@@ -7413,6 +7413,33 @@ window.addEventListener('error', function(event) {
         }
         let meadowNearGrass=null;
         let meadowDenseGrass=null;
+        // KTK-GRASS01 - 156-triangle Meshy model, vertex colors baked
+        // from the uploaded texture. No external file fetch or extra atlas.
+        const KTK_MESHY_GRASS_DATA='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';
+        function makeMeshyGrassGeometry(){
+            const packed=atob(KTK_MESHY_GRASS_DATA);
+            if(packed.length!==1536)throw Error('Embedded grass asset is invalid');
+            const positions=new Float32Array(178*3);
+            const colors=new Float32Array(178*3);
+            const indices=new Uint16Array(468);
+            for(let i=0;i<468;i++)indices[i]=packed.charCodeAt(i);
+            for(let i=0;i<positions.length;i++){
+                // GLB was centered vertically; place its base on y=0.
+                // Retain 0.4 local meadow blade scale for matching height.
+                const q=packed.charCodeAt(468+i);
+                positions[i]=.4*((q>127?q-256:q)/250+
+                    (i%3===1?.479736:0));
+                colors[i]=packed.charCodeAt(468+positions.length+i)/255;
+            }
+            const geometry=new THREE.BufferGeometry();
+            geometry.setIndex(new THREE.BufferAttribute(indices,1));
+            geometry.setAttribute('position',new THREE.BufferAttribute(positions,3));
+            geometry.setAttribute('color',new THREE.BufferAttribute(colors,3));
+            geometry.computeVertexNormals();
+            return geometry;
+        }
+        let ktkMeshyGrassHero=null;
+
 /* MAP2-V18 natural meadow-only lighting treatment.
  * Preserves the existing three [H] atmosphere options and native gameplay.
  * Reusable palette only, no extra draw calls or scene solids.
@@ -9542,6 +9569,31 @@ const KTKCalmUIV25=(()=>{
             meadowDenseGrass=ArenaMeadowGrass.createNearbyTufts(THREE,12000);
             meadowDenseGrass.geometry.scale(.40,.40,.40);
             scene.add(meadowDenseGrass);
+            // Replace one in four clumps with the uploaded full 3D grass.
+            // The OPT02 tile updater hides the matching cheaper tuft.
+            ktkMeshyGrassHero=new THREE.InstancedMesh(
+                makeMeshyGrassGeometry(),
+                new THREE.MeshLambertMaterial({
+                    color:0xffffff,vertexColors:true,side:THREE.DoubleSide
+                }),
+                Math.ceil(meadowDenseGrass.count/4));
+            ktkMeshyGrassHero.name='Meshy medieval grass / 3D instanced';
+            ktkMeshyGrassHero.castShadow=false;
+            ktkMeshyGrassHero.receiveShadow=false;
+            ktkMeshyGrassHero.frustumCulled=false;
+            meadowDenseGrass.userData.ktkMeshyGrassHero=ktkMeshyGrassHero;
+            scene.add(ktkMeshyGrassHero);
+            window.ktkMeshyGrassStatus=()=>({
+                source:'uploaded stylized_medieval_gra.glb',
+                trianglesPerClump:156,
+                threeDClumps:ktkMeshyGrassHero.count,
+                simpleClumps:meadowDenseGrass.count-ktkMeshyGrassHero.count,
+                totalNearClumps:meadowDenseGrass.count,
+                distantClumps:meadowNearGrass.count,
+                textures:0,
+                visible:ktkMeshyGrassHero.visible,
+                lastRegeneratedTiles:meadowDenseGrass.userData.lastRegeneratedTiles
+            });
             window.ktkMeadowGrassVisualStatus=()=>({count:meadowNearGrass.count,nearbyCount:meadowDenseGrass.count,visible:meadowNearGrass.visible,nearbyVisible:meadowDenseGrass.visible,lastTileX:meadowDenseGrass.userData.lastTileX});
             const meadowHorizon=KTKMeadowHorizon.build(THREE,scene,spec);
             const v19Groves=KTKBattlefieldVisualV19.addMeadowGroves(THREE,scene,spec);
@@ -16049,13 +16101,23 @@ const KTKCalmUIV25=(()=>{
             object.rotation.set(0,rng()*6.28318530718,0);
             const size=.46+.3*rng(),height=.34+.44*rng();
             object.scale.set(blocked?0:size,blocked?0:height,blocked?0:size);
-            object.updateMatrix();mesh.setMatrixAt(index,object.matrix);
+            object.updateMatrix();
+            const hero=mesh.userData.ktkMeshyGrassHero;
+            if(hero&&index%4===0){
+                hero.setMatrixAt(index/4,object.matrix);
+                // Only one clump per slot: hide the lightweight duplicate.
+                object.scale.set(0,0,0);
+                object.updateMatrix();
+            }
+            mesh.setMatrixAt(index,object.matrix);
             mesh.setColorAt(index,color.setHex(ArenaMeadowGrass.PALETTE[Math.floor(rng()*ArenaMeadowGrass.PALETTE.length)]));
            }
           }
           if(regenerated){
            mesh.instanceMatrix.needsUpdate=true;
            if(mesh.instanceColor)mesh.instanceColor.needsUpdate=true;
+           if(mesh.userData.ktkMeshyGrassHero)
+               mesh.userData.ktkMeshyGrassHero.instanceMatrix.needsUpdate=true;
           }
           data.lastTileX=tileX;data.lastTileZ=tileZ;
           data.lastRegeneratedTiles=regenerated;
@@ -16063,6 +16125,8 @@ const KTKCalmUIV25=(()=>{
          }
         
         function updateActiveMeadowGrass(){
+            if(ktkMeshyGrassHero)
+                ktkMeshyGrassHero.visible=arenaMap==='meadow'&&!!meadowDenseGrass?.visible;
             if(arenaMap!=='meadow'||!meadowDenseGrass||!meadowDenseGrass.visible)return false;
             const tile=ArenaMeadowGrass.NEAR_TILE_SIZE;
             const data=meadowDenseGrass.userData;
