@@ -13,6 +13,13 @@ const close=(a,b,eps=1e-7)=>Math.abs(a-b)<=eps;
 
 function mockInstall(){
  class Group{constructor(){this.children=[];}add(x){this.children.push(x);}}
+ class BoxGeometry{constructor(w,h,d){this.parameters={width:w,height:h,depth:d};}}
+ class Mesh{
+  constructor(geometry,material){
+   this.geometry=geometry;this.material=material;this.rotation={x:0};
+   this.position={x:0,y:0,z:0,set(x,y,z){this.x=x;this.y=y;this.z=z;}};
+  }
+ }
  const group=new Group(),mat={};
  const mesh=(parent,x,y,z,w,h,d,material)=>{
   const m={position:{x,y,z},w,h,d,material,name:''};
@@ -20,7 +27,7 @@ function mockInstall(){
  };
  const box=(x,y,z,w,h,d)=>({minX:x-w/2,maxX:x+w/2,minY:y-h/2,maxY:y+h/2,
   minZ:z-d/2,maxZ:z+d/2});
- return access.install({Group},group,mesh,box,{stone:mat,wood:mat});
+ return access.install({Group,BoxGeometry,Mesh},group,mesh,box,{stone:mat,wood:mat});
 }
 test('AK32 gives exactly four continuous authentic 0-to-9m ramp slopes',()=>{
  assert.equal(access.validate(),true);
@@ -66,7 +73,13 @@ test('AK32 physical bridge and teeth are genuine projectile blockers without gro
  assert.equal(built.fourContinuousWalkableRamps,true);
  assert.equal(built.originalG54HighLevelAI,false);
  assert.ok(built.merlons>=20);
- assert.equal(built.rampVisualMeshes.length,80,'20 visible gradient treads per ramp');
+ assert.equal(built.rampVisualMeshes.length,12,'4 true continuous slopes + 8 rail beams');
+ const decks=built.rampVisualMeshes.filter(m=>m.name?.startsWith('AK32_REAL_SLOPED_DECK_'));
+ assert.equal(decks.length,4);
+ for(const deck of decks){
+  assert.ok(close(deck.rotation.x,Math.atan2(9,26)));
+  assert.ok(close(deck.geometry.parameters.depth,Math.hypot(26,9)));
+ }
  assert.equal(built.highCoverAndRampShotMeshes.length,
   built.solidMeshes.length+built.rampVisualMeshes.length);
  assert.equal(built.wallBoxes.length,built.realAabbCount);
