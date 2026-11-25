@@ -107,3 +107,26 @@ test('AK32 native siege module is inline; actual playable is one identical origi
  assert.equal((h.match(/nativeSiegeWallBoxes\.push\(\.\.\.nativeSiegeWallAccessV32\.wallBoxes\)/g)||[]).length,0,
   'Ground-plane red G5.4 route constrain must ignore elevated wall elements');
 });
+test('AK32 actual Three.js raycast: stone merlon blocks, open embrasure transmits',()=>{
+ const THREE=require('../vendor/three-r128.js');
+ const group=new THREE.Group(),stone=new THREE.MeshBasicMaterial();
+ const mesh=(parent,x,y,z,w,h,d,material)=>{
+  const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);
+  m.position.set(x,y,z);parent.add(m);return m;
+ };
+ const box=(x,y,z,w,h,d)=>({
+  minX:x-w/2,maxX:x+w/2,minY:y-h/2,maxY:y+h/2,
+  minZ:z-d/2,maxZ:z+d/2
+ });
+ const built=access.install(THREE,group,mesh,box,{stone,wood:stone});
+ group.updateMatrixWorld(true);
+ const shoot=(z)=>{
+  const ray=new THREE.Raycaster(new THREE.Vector3(112,10.1,z),
+   new THREE.Vector3(1,0,0),0,13);
+  return ray.intersectObjects(built.highCoverAndRampShotMeshes,false);
+ };
+ assert.ok(shoot(-22).some(h=>h.object.name.includes('firing-merlon')),
+  'Native FPS shot should strike real merlon stone');
+ assert.equal(shoot(-16).length,0,
+  'The gap between raised stone blocks must be an authentic firing opening');
+});
