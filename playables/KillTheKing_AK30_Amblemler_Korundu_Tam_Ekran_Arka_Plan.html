@@ -2947,6 +2947,8 @@ window.addEventListener('error', function(event) {
 
  const dist=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
  const isRanged=type=>type==='musket'||type==='bow';
+ const baseY=u=>Number.isFinite(u?.siegeY)?u.siegeY:0;
+ const playerBaseY=s=>Number.isFinite(s?.playerPosition?.y)?s.playerPosition.y:0;
  const frontDir=team=>team==='blue'?1:-1;
  // Perception radii used by 7 AI captains and 140 soldiers. Avoid relying on
  // per-frame randomness: a commander has a persistent personality.
@@ -3047,6 +3049,15 @@ window.addEventListener('error', function(event) {
    }));
   return true;
  }
+ // AK34: physical high cover obstructs 3D gun/arrow rays, not G5.4 ground paths.
+ function setElevatedWorldObstacles(state,boxes=[]){
+  if(!state||!Array.isArray(boxes))return false;
+  state.elevatedWorldObstacles=boxes.filter(b=>b&&
+   [b.minX,b.maxX,b.minY,b.maxY,b.minZ,b.maxZ].every(Number.isFinite)&&
+   b.minX<b.maxX&&b.minY<b.maxY&&b.minZ<b.maxZ&&b.minY>2.65)
+   .map(b=>({minX:b.minX,maxX:b.maxX,minY:b.minY,maxY:b.maxY,minZ:b.minZ,maxZ:b.maxZ}));
+  return true;
+ }
  function boxRayEntry(origin,dir,distance,b){
   let entry=0,exit=distance;
   for(const axis of ['x','y','z']){
@@ -3067,6 +3078,8 @@ window.addEventListener('error', function(event) {
   let best=Infinity;
   for(const box of state.worldObstacles||[])
    best=Math.min(best,boxRayEntry(origin,ray,range,box));
+  for(const box of state.elevatedWorldObstacles||[])
+   best=Math.min(best,boxRayEntry(origin,ray,range,box));
   return best<=range?best:null;
  }
  function worldLineBlocked(state,from,to){
@@ -3078,10 +3091,10 @@ window.addEventListener('error', function(event) {
  // For a real projectile the first living body must win, irrespective of
  // affiliation. Friendly body blocks damage; projectile does not pass through.
  function rangedBodyBlocked(state,attacker,target){
-  const origin={x:attacker.x,y:1.85,z:attacker.z};
-  const to={x:target.x,y:1.85,z:target.z};
-  const dir={x:to.x-origin.x,y:0,z:to.z-origin.z};
-  const distance=Math.hypot(dir.x,dir.z);
+  const origin={x:attacker.x,y:baseY(attacker)+1.85,z:attacker.z};
+  const to={x:target.x,y:baseY(target)+1.85,z:target.z};
+  const dir={x:to.x-origin.x,y:to.y-origin.y,z:to.z-origin.z};
+  const distance=Math.hypot(dir.x,dir.y,dir.z);
   if(distance<.05)return false;
   const first=raycastSoldier(state,origin,dir,distance+.85,attacker.team,
    {firstBody:true,returnFriendly:true,ignoreSoldierId:attacker.id});
@@ -3099,7 +3112,9 @@ window.addEventListener('error', function(event) {
    const t=((ally.x-attacker.x)*dx+(ally.z-attacker.z)*dz)/distSq;
    if(t<=0||t>=.99)continue;
    const acrossX=attacker.x+t*dx-ally.x,acrossZ=attacker.z+t*dz-ally.z;
-   if(acrossX*acrossX+acrossZ*acrossZ<.75*.75)return true;
+   const shotY=baseY(attacker)+1.85+t*(baseY(target)-baseY(attacker));
+   if(acrossX*acrossX+acrossZ*acrossZ<.75*.75&&
+      Math.abs(shotY-(baseY(ally)+1.85))<1.6)return true;
   }
   return false;
  }
@@ -3255,7 +3270,7 @@ window.addEventListener('error', function(event) {
   }
   return {seed,elapsed:0,tick:0,playerType,playerTeam,playerSquadId:squads.find(s=>s.playerControlled).id,
    squads,soldiers,blueDeaths:0,redDeaths:0,winner:null,events:[],accumulator:0,
-   playerPosition:{x:playerTeam==='blue'?-176:176,z:squads.find(s=>s.playerControlled).z},
+   playerPosition:{x:playerTeam==='blue'?-176:176,y:0,z:squads.find(s=>s.playerControlled).z},
    playerHealth:100,playerActive:true,playerKills:0,playerHitCooldown:0,
    playerHits:[],combatEvents:[],worldObstacles:[],projectiles:[],nextProjectileId:1,
    teamPlans:{blue:{phase:'deploy',focusId:null,lastAt:-Infinity,rallies:0,operation:null,defense:null,
@@ -3511,10 +3526,11 @@ window.addEventListener('error', function(event) {
   if(!s||!FIRE_MODES[mode]||!isRanged(s.type)||(onlyPlayer&&!s.playerControlled))return false;
   s.fireMode=mode;s.volleyClock=0;s.volleyReady=false;s.volleyWindowUntil=0;s.stanceChanges++;return true;
  }
- function setPlayerPosition(state,x,z){
+ function setPlayerPosition(state,x,z,feetY=0){
   if(Number.isFinite(x)&&Number.isFinite(z)){
    state.playerPosition.x=clamp(x,-BOUNDS,BOUNDS);
    state.playerPosition.z=clamp(z,-BOUNDS,BOUNDS);
+   if(Number.isFinite(feetY))state.playerPosition.y=Math.max(0,feetY);
   }
  }
  // All commanders on the same team share a limited, periodically refreshed plan.
@@ -4996,7 +5012,7 @@ window.addEventListener('error', function(event) {
   const role=TYPES[attacker.type],range=role.range;
   const targetDistance=dist(attacker,target);
   if(targetDistance<.05||targetDistance>range+.75)return null;
-  const origin={x:attacker.x,y:1.85,z:attacker.z};
+  const origin={x:attacker.x,y:baseY(attacker)+1.85,z:attacker.z};
   const hRoll=options.horizontalRoll??seeded(state.seed,attacker.id,state.tick*31+target.id*17+301);
   const vRoll=options.verticalRoll??seeded(state.seed,attacker.id,state.tick*47+target.id*11+709);
   // Suppression and charging make aim more erratic, without randomizing every frame.
@@ -5005,7 +5021,7 @@ window.addEventListener('error', function(event) {
   const h=clamp(.5+(hRoll-.5)*penalty,0,1);
   const v=clamp(.5+(vRoll-.5)*penalty,0,1);
   const aim=WeaponBalance.aimedShot(attacker.type==='bow'?'archer':'musket',
-   origin,{x:target.x,y:0,z:target.z},h,v,3.2);
+   origin,{x:target.x,y:baseY(target),z:target.z},h,v,3.2);
   const direction={x:aim.point.x-origin.x,y:aim.point.y-origin.y,z:aim.point.z-origin.z};
   const hit=raycastSoldier(state,origin,direction,range+.85,attacker.team,
    {firstBody:true,returnFriendly:true,ignoreSoldierId:attacker.id});
@@ -5015,7 +5031,7 @@ window.addEventListener('error', function(event) {
  // objects, unlike the previous instant ray against the intended target.
  // Both enemy and friendly bodies stop arrows; only enemies lose HP.
  function makeArrowAim(state,attacker,targetBase,salt=0,options={}){
-  const origin={x:attacker.x,y:1.85,z:attacker.z};
+  const origin={x:attacker.x,y:baseY(attacker)+1.85,z:attacker.z};
   const dx=targetBase.x-origin.x,dz=targetBase.z-origin.z;
   const distance=Math.hypot(dx,dz);
   if(distance<.25||distance>TYPES.bow.range+2)return null;
@@ -5033,7 +5049,7 @@ window.addEventListener('error', function(event) {
  }
  function launchArrow(state,attacker,target,options={}){
   if(!state||!attacker?.alive||attacker.type!=='bow'||!target)return null;
-  const targetBase={x:target.x,y:0,z:target.z};
+  const targetBase={x:target.x,y:target===state.playerPosition?playerBaseY(state):baseY(target),z:target.z};
   const aim=makeArrowAim(state,attacker,targetBase,target.id??197,options);
   if(!aim)return null;
   // Bounded projectile pool prevents unbounded gameplay/render memory use.
@@ -5053,6 +5069,7 @@ window.addEventListener('error', function(event) {
   if(length<1e-8)return null;
   const dx=direction.x/length,dy=direction.y/length,dz=direction.z/length;
   const px=origin.x-state.playerPosition.x,pz=origin.z-state.playerPosition.z;
+  const floor=playerBaseY(state);
   const aa=dx*dx+dz*dz,rad=.8;
   let near=0,far=maxDistance;
   if(aa<1e-10){if(px*px+pz*pz>rad*rad)return null;}
@@ -5064,13 +5081,13 @@ window.addEventListener('error', function(event) {
    far=Math.min(far,(-bb+root)/(2*aa));
   }
   if(Math.abs(dy)>1e-10){
-   const lo=(.2-origin.y)/dy,hi=(3.55-origin.y)/dy;
+   const lo=(floor+.2-origin.y)/dy,hi=(floor+3.55-origin.y)/dy;
    near=Math.max(near,Math.min(lo,hi));far=Math.min(far,Math.max(lo,hi));
-  }else if(origin.y<.2||origin.y>3.55)return null;
+  }else if(origin.y<floor+.2||origin.y>floor+3.55)return null;
   if(near>far||near>maxDistance)return null;
   const y=origin.y+near*dy;
   const lateral=Math.abs(px*dz-pz*dx);
-  const zone=y>2.52?'head':y<1.1?'leg':lateral>.55?'arm':'body';
+  const zone=y-floor>2.52?'head':y-floor<1.1?'leg':lateral>.55?'arm':'body';
   return {distance:near,zone,point:{x:origin.x+near*dx,y,z:origin.z+near*dz}};
  }
  function damagePlayer(state,attacker,amount,zone='body'){
@@ -5120,8 +5137,8 @@ window.addEventListener('error', function(event) {
  }
  function tracePlayerMusket(state,attacker,options={}){
   if(attacker.team===state.playerTeam||!state.playerActive)return null;
-  const target={x:state.playerPosition.x,y:0,z:state.playerPosition.z};
-  const origin={x:attacker.x,y:1.85,z:attacker.z};
+  const target={x:state.playerPosition.x,y:playerBaseY(state),z:state.playerPosition.z};
+  const origin={x:attacker.x,y:baseY(attacker)+1.85,z:attacker.z};
   const h=options.horizontalRoll??seeded(state.seed,attacker.id,state.tick*31+311);
   const v=options.verticalRoll??seeded(state.seed,attacker.id,state.tick*47+719);
   const aim=WeaponBalance.aimedShot('musket',origin,target,h,v,3.2);
@@ -5190,9 +5207,10 @@ window.addEventListener('error', function(event) {
  function strike(state,attacker,target,role){
   const victimSquad=state.squads[target.squadId],attackerSquad=state.squads[attacker.squadId];
   const d=dist(attacker,target);
+  if(Math.abs(baseY(attacker)-baseY(target))>1.35)return null;
   // Neither pikes nor swords may reach through a solid obstacle.
-  if(worldLineBlocked(state,{x:attacker.x,y:1.85,z:attacker.z},
-    {x:target.x,y:1.85,z:target.z}))return null;
+  if(worldLineBlocked(state,{x:attacker.x,y:baseY(attacker)+1.85,z:attacker.z},
+    {x:target.x,y:baseY(target)+1.85,z:target.z}))return null;
   if(attacker.type==='bow')return launchArrow(state,attacker,target);
   if(isRanged(attacker.type)){
    // Muskets use near-instant geometric raycasts, bows have real flight.
@@ -5236,12 +5254,15 @@ window.addEventListener('error', function(event) {
   const aa=dx*dx+dz*dz,radius=.80;
   let bestTarget=null,bestY=0,bestZone=null,limit=maxDistance;
   const vertical=Math.abs(dy)>1e-9;
-  if(!vertical&&(origin.y<.20||origin.y>3.55))return null;
-  const ya=vertical?(.20-origin.y)/dy:0,yb=vertical?(3.55-origin.y)/dy:0;
-  const yLow=Math.min(ya,yb),yHigh=Math.max(ya,yb);
+  // AK34: each target owns an independent world-space vertical cylinder.
   for(const target of state.soldiers){
    if(!target.alive||target.id===options.ignoreSoldierId)continue;
    if(target.team===team&&!options.firstBody)continue;
+   const feet=baseY(target);
+   if(!vertical&&(origin.y<feet+.20||origin.y>feet+3.55))continue;
+   const ya=vertical?(feet+.20-origin.y)/dy:0;
+   const yb=vertical?(feet+3.55-origin.y)/dy:0;
+   const yLow=Math.min(ya,yb),yHigh=Math.max(ya,yb);
    const px=origin.x-target.x,pz=origin.z-target.z;
    let low,high;
    if(aa<1e-9){if(px*px+pz*pz>radius*radius)continue;low=0;high=limit;}
@@ -5261,7 +5282,7 @@ window.addEventListener('error', function(event) {
    if(entry<.02&&target.team===team)continue;
    const y=origin.y+entry*dy;
    const lateral=Math.abs(px*dz-pz*dx);
-   const zone=y>2.52?'head':y<1.1?'leg':lateral>.55?'arm':'body';
+   const zone=y-feet>2.52?'head':y-feet<1.1?'leg':lateral>.55?'arm':'body';
    limit=entry;
    bestTarget=target;bestY=y;bestZone=zone;
   }
@@ -5282,8 +5303,8 @@ window.addEventListener('error', function(event) {
    const dx=s.x-origin.x,dz=s.z-origin.z,d=Math.hypot(dx,dz);
    if(d>range+.65||d<1e-5||d>=best)continue;
    if((dx*fx+dz*fz)/d<halfAngleCos)continue;
-   const origin3={x:origin.x,y:1.65,z:origin.z};
-   const hit=raycastSoldier(state,origin3,{x:dx,y:0,z:dz},d+.8,team,
+   const origin3={x:origin.x,y:Number.isFinite(origin.y)?origin.y:1.65,z:origin.z};
+   const hit=raycastSoldier(state,origin3,{x:dx,y:baseY(s)+1.85-origin3.y,z:dz},d+.8,team,
     {firstBody:true,returnFriendly:true});
    if(!hit||hit.targetId!==s.id)continue;
    best=d;found=s;
@@ -5291,8 +5312,8 @@ window.addEventListener('error', function(event) {
   return found;
  }
  function firstBodyBeforePlayer(state,attacker){
-  const origin={x:attacker.x,y:1.85,z:attacker.z};
-  const direction={x:state.playerPosition.x-attacker.x,y:0,z:state.playerPosition.z-attacker.z};
+  const origin={x:attacker.x,y:baseY(attacker)+1.85,z:attacker.z};
+  const direction={x:state.playerPosition.x-attacker.x,y:playerBaseY(state)-baseY(attacker),z:state.playerPosition.z-attacker.z};
   const length=Math.hypot(direction.x,direction.z);
   if(length<1)return false;
   const impact=raycastSoldier(state,origin,direction,length-.8,attacker.team,
@@ -5310,9 +5331,9 @@ window.addEventListener('error', function(event) {
    return hit?damagePlayer(state,attacker,
      WeaponBalance.damage('musket',hit.zone),hit.zone):null;
   }
-  if(state.playerHitCooldown>0||d>role.range)return null;
-  if(worldLineBlocked(state,{x:attacker.x,y:1.85,z:attacker.z},
-    {x:state.playerPosition.x,y:1.85,z:state.playerPosition.z}))return null;
+  if(state.playerHitCooldown>0||d>role.range||Math.abs(baseY(attacker)-playerBaseY(state))>1.35)return null;
+  if(worldLineBlocked(state,{x:attacker.x,y:baseY(attacker)+1.85,z:attacker.z},
+    {x:state.playerPosition.x,y:playerBaseY(state)+1.85,z:state.playerPosition.z}))return null;
   const rng=seeded(state.seed,attacker.id,state.tick+933);
   if(rng>.77)return null;
   return damagePlayer(state,attacker,role.damage,'body');
@@ -5580,8 +5601,8 @@ window.addEventListener('error', function(event) {
    if(aimDot<(ranged?.67:.32))continue;
    if(ranged&&((!playerThreat&&rangedBodyBlocked(state,soldier,enemy))||
       (playerThreat&&worldLineBlocked(state,
-       {x:soldier.x,y:1.85,z:soldier.z},
-       {x:state.playerPosition.x,y:1.85,z:state.playerPosition.z}))||
+       {x:soldier.x,y:baseY(soldier)+1.85,z:soldier.z},
+       {x:state.playerPosition.x,y:playerBaseY(state)+1.85,z:state.playerPosition.z}))||
       (playerThreat&&(friendlyFireLaneBlocked(state,soldier,
        {...state.playerPosition,alive:true})||firstBodyBeforePlayer(state,soldier))))){
     // Don't expend ammunition through the backs of our own troops. A small
@@ -5709,7 +5730,7 @@ window.addEventListener('error', function(event) {
   deliverCommanderSignals,sendCommanderSignal,readEnemyDoctrine,selectEnemySquad,threatToRanged,nearestEnemy,
   damageSoldier,soldierGuard,traceRangedAttack,raycastSoldier,soldierInCone,setPlayerHealth,drainPlayerHits,drainCombatEvents,
   launchArrow,advanceProjectiles,raycastPlayer,tracePlayerMusket,ARROW_SPEED,ARROW_GRAVITY,MAX_ARROWS,
-  setWorldObstacles,firstWorldObstacle,worldLineBlocked,rangedBodyBlocked,firstBodyBeforePlayer,
+  setWorldObstacles,setElevatedWorldObstacles,firstWorldObstacle,worldLineBlocked,rangedBodyBlocked,firstBodyBeforePlayer,
   localAssessment,friendlyFireLaneBlocked,squadCohesionEstimate,
   updatePersonalTactics,incomingMeleeWarning,findSupportOpportunity,
   buildSpatialGrid,nearbySoldiers,distanceManeuver};
@@ -5859,7 +5880,7 @@ window.addEventListener('error', function(event) {
      stagger:0,hit:s.hitPose||0
     });
     lastPos[s.id].x=s.x;lastPos[s.id].z=s.z;
-    rootPosition.set(s.x,0,s.z);
+    rootPosition.set(s.x,Number.isFinite(s.siegeY)?s.siegeY:0,s.z);
     rootRotation.setFromAxisAngle(new THREE.Vector3(0,1,0),s.facing);
     rootScale.copy(s.alive?normalScale:hidden);
     rootTransform.compose(rootPosition,rootRotation,rootScale);
@@ -10899,32 +10920,7 @@ const KTKCalmUIV25=(()=>{
             if(!ok)st.towerReturnOrder=false;
           }
         }
-        // Original shared instanced G5.4 bot art remains unchanged. Only the
-        // matrix height of the 0..8 real soldiers on the tower is offset so
-        // their original helmets/arms/legs actually render ON the walkway.
-        const nativeSiegeTowerMatrix=new THREE.Matrix4();
-        function nativeSiegeTowerRenderSoldiers(){
-          const st=nativeSiegeEquipment;
-          if(!nativeSiegeMode||!st||!meadowBattleVisual)return;
-          for(const walk of [...st.towerClimbers.values(),
-                               ...st.towerFallers.values()]){
-            if(walk.y<=.001)continue;
-            const u=meadowBattleState.soldiers[walk.id];
-            if(!u?.alive)continue;
-            const group=meadowBattleVisual.roles[u.type];
-            if(!group)continue;
-            const slot=group.slots.get(u.id);
-            if(slot===undefined)continue;
-            for(const part of Object.values(group.parts)){
-              for(const inst of part.meshes){
-                inst.getMatrixAt(slot,nativeSiegeTowerMatrix);
-                nativeSiegeTowerMatrix.elements[13]+=walk.y;
-                inst.setMatrixAt(slot,nativeSiegeTowerMatrix);
-                inst.instanceMatrix.needsUpdate=true;
-              }
-            }
-          }
-        }
+        // AK34: original G5.4 instancing owns authoritative siegeY (no duplicate matrix offset).
         function nativeSiegeTowerUpdate(dt){
           const st=nativeSiegeEquipment;
           if(!st||st.towerDestroyed||st.towerHp<=0||
@@ -14050,6 +14046,8 @@ const KTKCalmUIV25=(()=>{
                 }
                 ArenaArmyBattle.setWorldObstacles(meadowBattleState,
                     nativeSiegeMode?nativeSiegeNativeBoxes():meadowSpec.boxes);
+                ArenaArmyBattle.setElevatedWorldObstacles(meadowBattleState,
+                    nativeSiegeMode?nativeSiegeWallAccessV32.wallBoxes:[]);
                 // The original G5.4 route authority must see ALL live AK26
                 // stone before a defender captain plans a single move.
                 nativeSiegeDoctrineV27=nativeSiegeMode?
@@ -14070,7 +14068,7 @@ const KTKCalmUIV25=(()=>{
                 const own=meadowBattleState.squads[meadowBattleState.playerSquadId];
                 player.pos.set(nativeSiegeMode?0:own.x-12,player.currentHeight,
                     nativeSiegeMode?-69:own.z);
-                ArenaArmyBattle.setPlayerPosition(meadowBattleState,player.pos.x,player.pos.z);
+                ArenaArmyBattle.setPlayerPosition(meadowBattleState,player.pos.x,player.pos.z,Math.max(0,player.pos.y-player.currentHeight));
                 if(nativeSiegeMode){
                     nativeSiegeDeploymentEvidence=KTKSiegeExpansionV25.deployment(
                       meadowBattleState,player.pos);
@@ -15722,7 +15720,7 @@ const KTKCalmUIV25=(()=>{
             // 6. Bot commanders and their units own the field battle simulation.
             if(meadowBattleMode&&meadowBattleState){
                 // The selected squad receives the actual player's position each frame.
-                ArenaArmyBattle.setPlayerPosition(meadowBattleState,player.pos.x,player.pos.z);
+                ArenaArmyBattle.setPlayerPosition(meadowBattleState,player.pos.x,player.pos.z,Math.max(0,player.pos.y-player.currentHeight));
                 ArenaArmyBattle.setPlayerHealth(meadowBattleState,player.hp);
                 const siegePreviousPositions=nativeSiegeMode?
                     captureSiegePoses(meadowBattleState.soldiers):null;
@@ -15770,7 +15768,7 @@ const KTKCalmUIV25=(()=>{
                         player.hp=player.maxHp;
                         const own=meadowBattleState.squads[meadowBattleState.playerSquadId];
                         player.pos.set(own.x-16,player.currentHeight,own.z);
-                        ArenaArmyBattle.setPlayerPosition(meadowBattleState,player.pos.x,player.pos.z);
+                        ArenaArmyBattle.setPlayerPosition(meadowBattleState,player.pos.x,player.pos.z,Math.max(0,player.pos.y-player.currentHeight));
                         ArenaArmyBattle.setPlayerHealth(meadowBattleState,player.hp);
                     }
                     updateHUD();
@@ -15778,7 +15776,7 @@ const KTKCalmUIV25=(()=>{
                 meadowBattleVisual.update(meadowBattleState,dt);
                 if(nativeSiegeMode){
                     nativeSiegeUpdate(dt);
-                    nativeSiegeTowerRenderSoldiers();
+                    /* AK34 native G5.4 instancing already renders correct elevation */
                 }
                 meadowBattleHudTimer-=dt;
                 if(meadowBattleHudTimer<=0){
