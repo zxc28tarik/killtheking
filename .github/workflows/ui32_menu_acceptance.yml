@@ -53,6 +53,17 @@ jobs:
                 assert.equal(siegeInterior.physicalProjectileCover,map==='siege');
                 if(map==='siege')
                   assert.ok(Object.values(siegeInterior.corridors).every(Boolean),'AK31 breached a real assault lane');
+                // AK32: original player/camera elevation is a genuine real-slope ramp.
+                // Ramparts and shot-blocking teeth MUST only appear in siege.
+                const upper=await p.evaluate(()=>window.ktkSiegeWallAccessStatus?.());
+                assert.equal(upper.installed,true);
+                assert.equal(upper.activated,map==='siege');
+                assert.equal(upper.rampCount,4);
+                assert.equal(upper.activeRamps,map==='siege'?4:0);
+                assert.equal(upper.wallHeight,9);
+                assert.ok(upper.physicalHighBoxes>=20);
+                assert.equal(upper.highShotCover,map==='siege');
+                assert.equal(upper.originalG54HighLevelAI,false);
                 for(const id of [0,1,2,3]){
                   await p.locator('[data-approved-class="'+id+'"]:visible').click();
                   assert.equal(await p.evaluate(()=>window.ktkApprovedArtworkStatus().currentClass),String(id));
