@@ -58,23 +58,36 @@ const KTKSiegeWallAccessV32=(()=>{
    wallBoxes.push(makeBox(x,y,z,w,h,d));
    return mesh;
   }
-  function rampSurface(x,y,z,w,h,d){
-   const mesh=makeMesh(root,x,y,z,w,h,d,mats.stone);
-   mesh.name='AK32_RAMP_VISUAL_SHOT_COVER';
-   rampVisualMeshes.push(mesh);
+  const rampSlope=Math.atan2(RISE,LENGTH);
+  const rampLength3d=Math.hypot(LENGTH,RISE);
+  function slopedRamp(e){
+   // Mesh rotation exactly matches the existing continuous N ramp equation.
+   // One true sloped stone deck + two wooden side beams per ramp; no
+   // 80 staircase box draw calls, no new lights, no per-frame allocation.
+   const deck=new THREE.Mesh(
+    new THREE.BoxGeometry(WIDTH,.38,rampLength3d),mats.stone);
+   deck.position.set(e.x,RISE/2,(e.minZ+e.maxZ)/2);
+   deck.rotation.x=rampSlope;
+   deck.castShadow=true;deck.receiveShadow=true;
+   deck.name='AK32_REAL_SLOPED_DECK_'+e.name;
+   root.add(deck);rampVisualMeshes.push(deck);
+   for(const side of [-1,1]){
+    const rail=new THREE.Mesh(new THREE.BoxGeometry(.25,.82,rampLength3d),
+     mats.wood||mats.stone);
+    rail.position.set(e.x+side*(WIDTH/2+.18),RISE/2+.68,
+     (e.minZ+e.maxZ)/2);
+    rail.rotation.x=rampSlope;
+    rail.castShadow=true;rail.receiveShadow=true;
+    rail.name='AK32_RAMP_SIDE_BEAM_'+e.name;
+    root.add(rail);rampVisualMeshes.push(rail);
+   }
   }
   for(const e of entrances){
    const side=Math.sign(e.x);
-   // Single segment per step is rendered as a solid sloped support. The
-   // original player physics uses continuous interpolated ramp heights;
-   // these steps are NOT wall colliders and cannot trap the player.
-   const count=20, dz=LENGTH/count;
-   for(let i=0;i<count;i++){
-    const z=e.maxZ-(i+.5)*dz;
-    const t=(i+.5)/count;
-    const top=RISE*t;
-    rampSurface(e.x,top/2,z,WIDTH,top,dz+.06);
-   }
+   // True sloped surfaces, exactly matching 0 -> 9m FPS ramp physics.
+   // The decks are projectile-interactive, not solid AABB walls:
+   // a cuboid collider here would incorrectly block players walking uphill.
+   slopedRamp(e);
    // Elevated seamless bridge joins the high ramp end to the ACTUAL
    // existing y=9 outer wall top, without filling its ground-level lane.
    // Width extends outside the curtain's inner face at x=109.5.
@@ -108,6 +121,7 @@ const KTKSiegeWallAccessV32=(()=>{
    bridgeCount:entrances.length,merlons:outerMerlons,
    realAabbCount:wallBoxes.length,
    highCoverAndRampShotMeshes:[...solidMeshes,...rampVisualMeshes],
+   rampDrawMeshes:rampVisualMeshes.length,
    originalG54HighLevelAI:false,
    noSceneOrColorChanges:true
   });
