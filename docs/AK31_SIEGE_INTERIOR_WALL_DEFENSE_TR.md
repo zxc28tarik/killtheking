@@ -67,3 +67,21 @@ AK31'den sonraki büyük paket **ayrı bir HTML motoru veya kaplama hilesi deği
 **Kesin sınır:** Bu paket **gerçek oyuncu sur yürüyüşü ve fiziksel atış örtüsü** sunar. **G5.4 botların sura çıkması, yükseltilmiş 3B atış göz hizası, siper mevzi tercih AI'sı ve güvenli geri iniş henüz uygulanmamıştır**; onaylı bir test olmadan uygulanmış gibi gösterilmeyecek. Bunlar AK33/AK34 içindir. Sadece bu paketle kalenin tüm üst hat savunmasının tamamlandığı söylenemez.
 
 **Kabul:** `node --test tests/*.test.mjs`, canlı kaynak eşliği, üç haritalı Chromium/WebGL; özellikle rampanın sonundan gerçek y=9 sur üstüne geçişin manuel FPS testinde teyidi. Otomatik simülasyon yayılım ve bot AI davranışını tek başına kanıtlamaz.
+
+## AK33 — G5.4 Gerçek Yer Seviyesi Savunma Kararları (25 Kasım)
+
+**Sorun:** Orijinal G5.4 piyade ve yay/tüfek ışınları hedefi hâlâ `y=0` civarında hesaplıyor; yalnızca `u.siegeY` ve mesh matrisi yükseltmek sahte/yenilmez asker ya da havada ateş anlamına gelir. Yüksek sur AI'sı henüz uygulanmadı. Öncelik gerçek ve testlenebilir orijinal düşman birliği davranışı.
+
+**Uygulandı:**
+- Yeni `KTKSiegeGroundGarrisonV33` yalnız asli Kale Kuşatması modunda ve oyun başladığında etkin.
+- **Mevcut kırmızı 10 tüfekçili G5.4 bölüğü**, düşmanın canlı x/z dağılımına göre batı/doğu kapı gerisi, kuzey iç geçit veya yedek atış mevzilerini seçer.
+- Tüm mevzi geçişleri `ArenaArmyBattle.setDestination(state, id, x, z, true)` üzerinden gerçekleşir; orijinal gerçek çarpışma / `tacticalRoute` sonucu reddederse hiçbir konum veya can değiştirilmez.
+- Yalnız kendi bölüğünü yönlendirir. Kırmızı mızraklı, kılıçlı ve okçu için AK27–28 mevcut rota/rezerve sistemi; mavi oyuncu F6–F10 emirleri aynen korunur.
+- **AK27 acil kapı savunması önceliklidir:** Kırmızı tüfekçiler için özgün `hold` aktive olursa AK33 yeni geçiş emri vermez.
+- Saniyede emir yağmuru yok: tehdit 2,8 saniyelik düşünme aralığında gözlemlenir; kabul edilmiş yeni emirler arasında en az 11 saniye vardır.
+- Yeni isabet, hasar, reload veya hayali tüfek sesi kodu eklenmedi; gerçek G5.4 savaş ve mermi sistemleri ateşi hesaplamaya devam eder.
+- `window.ktkSiegeGroundGarrisonStatus()` ile kurulan gerçek mevzi, verilen/reddedilen özgün emirler, grup canlı konumu ve öncelik raporlanır.
+
+**Kapsam sınırı:** AK33, surların **içinde ve dibinde** gerçek savunma kararları üretir; 9m yüksekliğe çıkan botları veya okçu/tüfekçilerin sur tepesinden atışını tamamlamaz. Bu teknik sınırın giderilmesi için gerçek 3B gövde, G5.4 ok fizik ve birinci temas ışını, gerçek nav yükseltisi ve asker görsel matrisleri **birlikte** değiştirilip regresyonu sağlanmalıdır. Böyle yapmadan askerleri yüksek sura koyma.
+
+**Kalite kapıları:** Yeni `tests/siege-ground-garrison-v33.test.mjs` özgün 140 asker, geçerli/geçersiz rota, komuta önceliği, hiçbir konum/HP mutasyonu ve kale-özel entegrasyonu denetler; `.github/workflows/ui32_menu_acceptance.yml` canlı Kale Kuşatması başlangıcında özgün 140 kişilik durumu doğrular. PR #86 taslak kalır, manuel Windows GPU ve yüksek sur robotları sonraki fazdır.
