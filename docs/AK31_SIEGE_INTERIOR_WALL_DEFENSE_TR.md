@@ -55,7 +55,7 @@ Mazgalın dokuda koyu çizilmesi **ateş deliği sayılmaz**. AK31'de aralıklı
 AK31'den sonraki büyük paket **ayrı bir HTML motoru veya kaplama hilesi değil**, mevcut üçüncü haritanın özgün FPS fizik sisteminde gerçek dört eğimli giriş oluşturur.
 
 - Dış surların iç yüzünde **batı ön, doğu ön, batı arka, doğu arka** olmak üzere dört rampanın her biri 26 m ilerler ve gerçek oyuncuyu 0'dan 9 m sur üstüne çıkarır.
-- Her rampada **20 sabit taş basamak/mesnet modeli** bulunur; hareket fiziği basamak yüksekliğini sürekli interpolasyonla hesaplar. Bu, 0.45m'lik fizik dışı sıçramalar yerine gerçek bir eğimli çıkıştır.
+- Her rampada **1 gerçek eğimli taş platform + 2 ahşap yan kiriş** kullanılır (dört rampa toplam yalnız 12 çizim nesnesi). Gerçek eğim geometrisi ile oyuncunun sürekli interpolasyonlu yükselti fiziği aynı 9/26 oranını taşır. Basamak kutuları ve görünmez sıçrama yoktur.
 - Her rampanın ucunda **surun üst yüzeyine fiziksel 9m kotunda bağlanan taş geçiş** vardır. Oyuncu mevcut FPS swept collision ve ramp side-entry engeline tabi olmaya devam eder. Duvarın içinden ışınlanma yoktur.
 - Dış surun boyunca yükseltilmiş, **gerçek mermi çarpışmalı ve gerçek hareket engelli aralıklı mazgallar** vardır; düz boyanmış siyah çizgi/teatral mazgal yoktur.
 - Mevcut dış surun üst yüzeyi y=9'dur; ilave dekoratif yer döşemesiyle tekrar üretilmez, ışık ve renk değiştirilmez.
