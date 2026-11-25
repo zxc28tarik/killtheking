@@ -51,3 +51,9 @@ Merged #76–81, #84–85 are not missing merely because branch refs remain. UI2
 - [ ] Code-level equivalence review of all historical queue items.
 - [ ] Verified main integration and canonical HTML export.
 - [ ] Close only resolved PRs.
+
+## REC02 implementation checkpoint
+- Unified recovery candidate PR #89, head c1d5d66245996b99718f1a734a34f83fa9439d4f; based on GR01 snapshot.
+- Compared #82/#83 against #84 and actual GR01 HTML. Hidden cloud guard, far barrel projection guard and reused vector already present; restored missing unchanged CSS guards and sky gradient reuse/disposal. No palette or bot decision edits introduced by REC02.
+- Both HTML copies share blob 276adad30df733d1ed3428e0e17656d70faab8a4. Added real browser gradient assertions; execution not yet confirmed.
+- #89 draft; mergeability initially false (may be pending computation). Do not merge until CI, conflict status, manual visual checks, and preexisting AK33–36 bot changes reviewed. #82/#83 remain open until equivalence and acceptance established. REC03–05 incomplete.
