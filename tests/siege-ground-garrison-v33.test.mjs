@@ -107,3 +107,20 @@ test('AK33 is packaged inside original one-game siege only; HTML and playable id
  assert.match(h,/window\.ktkSiegeGroundGarrisonStatus=\(\)=>/);
  assert.equal((h.match(/<script\b/g)||[]).length,31);
 });
+
+test('AK33 every defender goal has real clearance from AK26 and AK31 stone',()=>{
+ const source26=readFileSync(new URL('../recovered/native-siege/native-siege-defense-v26.js',import.meta.url),'utf8');
+ const source31=readFileSync(new URL('../recovered/native-siege/native-siege-interior-v31.js',import.meta.url),'utf8');
+ const world={};
+ vm.runInNewContext(source26+'\nthis.F26=KTKSiegeFortificationV26;',world);
+ vm.runInNewContext(source31+'\nthis.F31=KTKSiegeInteriorV31;',world);
+ const blocks=[...world.F26.features,...world.F31.features];
+ for(const [name,p] of Object.entries(ak.POSTS)){
+  for(const f of blocks){
+   const xClear=Math.abs(p.x-f.x)>f.w/2+3.4;
+   const zClear=Math.abs(p.z-f.z)>f.d/2+3.4;
+   assert.ok(xClear||zClear,
+    'G5.4 3.4m route clearance violated: '+name+' / '+f.name);
+  }
+ }
+});
