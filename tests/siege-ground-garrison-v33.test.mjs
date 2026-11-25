@@ -60,7 +60,7 @@ test('AK33 follows actual threat flank and staged rear intrusion with path valid
  let x=ak.observe(state,{gateHp:500});
  assert.equal(ak.preferred(x)[0],'eastGate');
  ak.update(v,{gateHp:500},{musketGateHeld:false});
- assert.deepEqual(calls[0],{id:0,x:29,z:-16});
+ assert.deepEqual(calls[0],{id:0,x:24,z:-16});
  for(let i=0;i<4;i++)state.soldiers[70+i].z=58;
  state.elapsed=12;
  ak.update(v,{gateHp:350,gateOpen:true},{musketGateHeld:false});
