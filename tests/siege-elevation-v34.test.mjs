@@ -34,7 +34,7 @@ test('AK34 original G5.4 actor cylinders occupy their real world elevation',()=>
  assert.equal(high?.targetId,0);
  assert.equal(high?.zone,'body');
  const down=battle.raycastSoldier(st,{x:0,y:10.85,z:0},{x:0,y:-9,z:24},30,'blue');
- assert.equal(down?.targetId,0,'nearest raised body must intercept the sloped shot first');
+ assert.equal(down?.targetId,1,'descending shot bypasses raised body it misses and can strike lower opponent');
 });
 test('AK34 elevated true stone blocks upper shots without ghost ground navigation',()=>{
  const st=world();const stones=[
