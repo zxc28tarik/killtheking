@@ -275,6 +275,12 @@ jobs:
                 assert.equal(guard.noNewActors,true);
                 assert.equal(guard.noTeleport,true);
                 assert.equal(guard.noElevationFiringClaim,true);
+                // Require real path planner acceptance on the actual 70v70
+                // start; a mocked AK33 test is never enough to call it usable.
+                assert.ok(guard.decisionCount>=1,'AK33 native garrison did not think');
+                assert.ok(guard.requestedRoutes>=1,'AK33 issued no real defensive route');
+                assert.ok(guard.realAcceptedRoutes>=1,
+                  'AK33 could not find a traversable gate/inner garrison post');
                 console.log('AK33_REAL_G54_GARRISON',JSON.stringify(guard));
               }
               console.log('FIT09 SOFTWARE_WEBGL_DIAGNOSTIC',startMap,JSON.stringify(live));
