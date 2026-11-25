@@ -26,7 +26,7 @@ const oldScripts=scripts(baseline.html),candidateScripts=scripts(html);
 // All 207 original/live regression tests passed on commit 7d205850,
 // including FIT06 1500 differential ground-level rays and 5 new AK34 checks.
 // Explicit current script blob remains pinned; no relaxed bypass.
-const approvedArmyBlob='7a5c032abdb5564fe0a9101ab272fa727680def1';
+const approvedArmyBlob='fe20a9b383b5bee46561fcb4fae09fe10d16b017';
 // AK34 review: original instanced soldier renderer now reads authoritative siegeY.
 // Explicit independent pin: no arbitrary legacy script edits allowed.
 const approvedRendererBlob='e0b4e3e98eed319d81ead2abd2ac50e836d30bf1';

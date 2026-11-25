@@ -4832,6 +4832,10 @@ window.addEventListener('error', function(event) {
   }
  }
  function nearestEnemy(state,soldier,range,preferredSquadId=null){
+  // AK36: elevated defenders select reachable firing lanes on a bounded clock.
+  if(soldier.ak35Wall?.phase==='post'&&range===TYPES[soldier.type].range){
+   return siegeWallVisibleEnemy(state,soldier,range);
+  }
   let best=range*range,target=null,preferred=null,preferredD=range*range;
   let remembered=null,rememberedDist=Infinity;
   const remembers=state.elapsed-(soldier.lastEnemyAt??-Infinity)<4.2;
@@ -5387,12 +5391,37 @@ window.addEventListener('error', function(event) {
   return scratch;
  }
  // AK35 native archer detachment; original combat remains authoritative.
+ function siegeWallVisibleEnemy(state,u,range){
+  const p=u.ak35Wall;
+  const valid=e=>e?.alive&&e.team!==u.team&&Math.hypot(e.x-u.x,e.z-u.z,baseY(e)-baseY(u))<=range;
+  const old=state.soldiers[p.visibleEnemyId];
+  if(state.elapsed<(p.nextSightAt||0)&&valid(old))return old;
+  if(state.elapsed<(p.nextSightAt||0)&&p.visibleEnemyId==null)return null;
+  p.nextSightAt=state.elapsed+.48+(u.id%5)*.04;
+  const candidates=[];
+  for(const e of nearbySoldiers(state,u.x,u.z,range)){
+   if(!valid(e))continue;
+   const d=Math.hypot(e.x-u.x,e.z-u.z,baseY(e)-baseY(u));
+   // Prefer imminent enemies on the same level; never fire through stone.
+   candidates.push({e,score:d-(baseY(e)>6?10:0)-(e.id===p.visibleEnemyId?3:0)});
+  }
+  candidates.sort((a,b)=>a.score-b.score||a.e.id-b.e.id);
+  p.visibleEnemyId=null;
+  for(const {e} of candidates.slice(0,8)){
+   if(!rangedBodyBlocked(state,u,e)){p.visibleEnemyId=e.id;return e;}
+  }
+  return null;
+ }
  function siegeWallMove(state,u,squad,dt){
   const p=u.ak35Wall;if(!p)return false;
   if(squad.order==='retreat'||u.hp<p.initialHp*.36||state.ak35Recall)p.retreat=true;
   if(p.retreat&&p.phase==='approach'){u.ak35Wall=null;return false;}
   if(p.retreat&&p.phase==='post')p.phase='returnLanding';
   if(p.retreat&&p.phase==='landing')p.phase='returnRamp';
+  if(p.phase==='post'&&!p.retreat){
+   // A real elevated enemy close to the post triggers a safe reverse route.
+   if(state.tick%12===u.id%12&&nearbySoldiers(state,u.x,u.z,9).some(e=>e.alive&&e.team!==u.team&&Math.abs(baseY(e)-baseY(u))<1.5&&dist(u,e)<8)){p.retreat=true;p.phase='returnLanding';}
+  }
   if(p.retreat&&p.phase==='climb')p.phase='descend';
   if(p.phase==='approach'&&!p.route){
    if(state.tick%16!==u.id%16)return true;
@@ -5604,7 +5633,7 @@ window.addEventListener('error', function(event) {
     ((soldier.id+state.seed)%5===0)&&dist(soldier,state.playerPosition)<role.range;
    const turnToPlayer=nearbyPlayer&&(!enemy||
     dist(soldier,state.playerPosition)<Math.max(15,dist(soldier,enemy)*1.0));
-   const defensiveThreat=(personal==='guard'||personal==='evade')&&closeThreat;
+   const defensiveThreat=!soldier.ak35Wall&&(personal==='guard'||personal==='evade')&&closeThreat;
    // Explicit player-facing orders govern the rank unless a danger is truly
    // close; archers should not silently swivel toward distant targets.
    const orderedFacing=squad.playerControlled&&squad.lockedFacing!=null&&
@@ -5624,7 +5653,7 @@ window.addEventListener('error', function(event) {
    soldier.reload=Math.max(0,soldier.reload-dt);
    if(soldier.ak35Wall&&soldier.ak35Wall.phase!=='post')continue;
    if(soldier.reload>0||(ranged&&squad.fireMode==='hold'))continue;
-   if(personal==='guard'&&soldier.guardUntil>state.elapsed)continue;
+   if(!soldier.ak35Wall&&personal==='guard'&&soldier.guardUntil>state.elapsed)continue;
    if(!soldier.ak35Wall&&personal==='return'&&(!enemy||dist(soldier,enemy)>role.range*.8))continue;
    if(ranged&&squad.fireMode==='volley'&&!squad.volleyReady)continue;
    // A blocked line is re-evaluated in short intervals, not every 80ms.
