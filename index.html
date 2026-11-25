@@ -3112,7 +3112,9 @@ window.addEventListener('error', function(event) {
    const t=((ally.x-attacker.x)*dx+(ally.z-attacker.z)*dz)/distSq;
    if(t<=0||t>=.99)continue;
    const acrossX=attacker.x+t*dx-ally.x,acrossZ=attacker.z+t*dz-ally.z;
-   const shotY=baseY(attacker)+1.85+t*(baseY(target)-baseY(attacker));
+   const targetY=Number.isFinite(target.siegeY)?target.siegeY:
+    (Number.isFinite(target.y)?target.y:0);
+   const shotY=baseY(attacker)+1.85+t*(targetY-baseY(attacker));
    if(acrossX*acrossX+acrossZ*acrossZ<.75*.75&&
       Math.abs(shotY-(baseY(ally)+1.85))<1.6)return true;
   }
@@ -5207,7 +5209,7 @@ window.addEventListener('error', function(event) {
  function strike(state,attacker,target,role){
   const victimSquad=state.squads[target.squadId],attackerSquad=state.squads[attacker.squadId];
   const d=dist(attacker,target);
-  if(Math.abs(baseY(attacker)-baseY(target))>1.35)return null;
+  if(!isRanged(attacker.type)&&Math.abs(baseY(attacker)-baseY(target))>1.35)return null;
   // Neither pikes nor swords may reach through a solid obstacle.
   if(worldLineBlocked(state,{x:attacker.x,y:baseY(attacker)+1.85,z:attacker.z},
     {x:target.x,y:baseY(target)+1.85,z:target.z}))return null;
@@ -5304,7 +5306,7 @@ window.addEventListener('error', function(event) {
    if(d>range+.65||d<1e-5||d>=best)continue;
    if((dx*fx+dz*fz)/d<halfAngleCos)continue;
    const origin3={x:origin.x,y:Number.isFinite(origin.y)?origin.y:1.65,z:origin.z};
-   const hit=raycastSoldier(state,origin3,{x:dx,y:baseY(s)+1.85-origin3.y,z:dz},d+.8,team,
+   const hit=raycastSoldier(state,origin3,{x:dx,y:baseY(s)+1.85-origin3.y,z:dz},Math.hypot(dx,baseY(s)+1.85-origin3.y,dz)+.8,team,
     {firstBody:true,returnFriendly:true});
    if(!hit||hit.targetId!==s.id)continue;
    best=d;found=s;
@@ -5314,7 +5316,7 @@ window.addEventListener('error', function(event) {
  function firstBodyBeforePlayer(state,attacker){
   const origin={x:attacker.x,y:baseY(attacker)+1.85,z:attacker.z};
   const direction={x:state.playerPosition.x-attacker.x,y:playerBaseY(state)-baseY(attacker),z:state.playerPosition.z-attacker.z};
-  const length=Math.hypot(direction.x,direction.z);
+  const length=Math.hypot(direction.x,direction.y,direction.z);
   if(length<1)return false;
   const impact=raycastSoldier(state,origin,direction,length-.8,attacker.team,
    {firstBody:true,returnFriendly:true,ignoreSoldierId:attacker.id});

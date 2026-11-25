@@ -26,7 +26,7 @@ const oldScripts=scripts(baseline.html),candidateScripts=scripts(html);
 // All 207 original/live regression tests passed on commit 7d205850,
 // including FIT06 1500 differential ground-level rays and 5 new AK34 checks.
 // Explicit current script blob remains pinned; no relaxed bypass.
-const approvedArmyBlob='3fbbe31256d96ae737825555bbdedc944c85fe75';
+const approvedArmyBlob='d6339f221955c4040349023fa2d404666b51ccc9';
 const blobIdentity=s=>createHash('sha1').update('blob '+Buffer.byteLength(s)+'\0').update(s).digest('hex');
 if(oldScripts.length!==29||candidateScripts.length!==31)
  throw Error('Unexpected native script count');

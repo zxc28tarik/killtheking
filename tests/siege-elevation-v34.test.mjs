@@ -86,3 +86,13 @@ test('AK34 keeps original 140 G5.4, 3-map HTML, and one render height authority'
   'no post-render double shifting of already correctly elevated G5.4 instances');
  assert.match(html,/Math\.max\(0,player\.pos\.y-player\.currentHeight\)/);
 });
+
+test('AK34 ranged attackers retain real uphill/downhill firing despite melee height guard',()=>{
+ const high={id:0,squadId:0,team:'red',type:'musket',x:0,z:0,siegeY:9,alive:true,hp:100,suppression:0};
+ const low={id:1,squadId:1,team:'blue',type:'pike',x:0,z:30,alive:true,hp:100};
+ const st={seed:16,tick:1,soldiers:[high,low],squads:[{order:'hold'},{order:'hold'}],
+  worldObstacles:[],elevatedWorldObstacles:[]};
+ const shot=battle.traceRangedAttack(st,high,low,{horizontalRoll:.5,verticalRoll:.5});
+ assert.equal(shot?.impact?.targetId,1,'real high musket must hit an unobstructed lower body');
+ assert.match(source,/if\(!isRanged\(attacker\.type\)&&Math\.abs\(baseY\(attacker\)-baseY\(target\)\)>1\.35\)/);
+});
