@@ -5258,7 +5258,7 @@ window.addEventListener('error', function(event) {
   for(const target of state.soldiers){
    if(!target.alive||target.id===options.ignoreSoldierId)continue;
    if(target.team===team&&!options.firstBody)continue;
-   const feet=baseY(target);
+   const feet=Number.isFinite(target.siegeY)?target.siegeY:0;
    if(!vertical&&(origin.y<feet+.20||origin.y>feet+3.55))continue;
    const ya=vertical?(feet+.20-origin.y)/dy:0;
    const yb=vertical?(feet+3.55-origin.y)/dy:0;
