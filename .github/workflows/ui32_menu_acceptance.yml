@@ -42,6 +42,32 @@ jobs:
                 const selected=await p.evaluate(()=>window.ktkUI32Status());
                 assert.equal(selected.selectedMap,map);assert.equal(selected.engineSiege,map==='siege');assert.equal(selected.engineArmy,map!=='arena');assert.equal(selected.engineMap,map==='meadow'?'meadow':'castle');
                 console.log('PASS actual map state',viewport.width,map);
+                // REC02: actual atmosphere transitions preserve exact gradient and release old maps.
+                const skyCheck=await p.evaluate(()=>{
+                  const original=currentAtmosphereIdx;
+                  let replaced=0,disposed=0,reused=0,wrong=0;
+                  try{
+                    for(const idx of [0,1,2,0]){
+                      const before=skyDomeMesh.material.map;
+                      let freed=0;const listener=()=>freed++;
+                      before.addEventListener('dispose',listener);
+                      window.setAtmosphere(idx);
+                      before.removeEventListener('dispose',listener);
+                      const active=skyDomeMesh.material.map;
+                      if(active!==before){replaced++;disposed+=freed;}else if(freed)wrong++;
+                      const preset=window.__ktkMeadowLightActive?KTKMeadowNaturalLighting.PRESETS[idx]:ATMOSPHERES[idx];
+                      const key=JSON.stringify(window.__ktkMeadowLightActive?[preset.top,preset.mid,preset.horizon]:[preset.topCol,preset.midCol,preset.botCol]);
+                      if(active.userData.ktkGradientKey!==key)wrong++;
+                      window.setAtmosphere(idx);
+                      if(skyDomeMesh.material.map===active)reused++;
+                    }
+                    return {replaced,disposed,reused,wrong};
+                  }finally{window.setAtmosphere(original);}
+                });
+                assert.ok(skyCheck.replaced>=3);
+                assert.equal(skyCheck.replaced,skyCheck.disposed);
+                assert.equal(skyCheck.reused,4);
+                assert.equal(skyCheck.wrong,0);
                 // AK31: check physical third-map collider/raycast registration in REAL Chromium.
                 const siegeInterior=await p.evaluate(()=>window.ktkSiegeInteriorStatus?.());
                 assert.ok(siegeInterior,'AK31 status missing in current native game');
