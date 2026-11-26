@@ -13333,7 +13333,7 @@ const KTKCalmUIV25=(()=>{
 
         function releaseChargedBow() {
             if (!player.isDrawingBow) return;
-            if (!isGameActive || arenaMatch.phase !== 'playing') {
+            if (!isGameActive || armyTacticalOpen || document.pointerLockElement !== canvas || arenaMatch.phase !== 'playing') {
                 player.isDrawingBow = false;
                 player.bowCharge = 0;
                 player.bowDrawSeconds = 0;
@@ -13615,6 +13615,17 @@ const KTKCalmUIV25=(()=>{
         function openArmyTacticalMap(){
             if(!meadowBattleMode||!meadowBattleState||arenaMatch.phase!=='playing')return;
             armyTacticalOpen=true;armyTacticalOverlay.classList.remove('hidden');
+            player.isDrawingBow=false;
+            player.bowCharge=0;
+            player.bowDrawSeconds=0;
+            player.isRMBDown=false;
+            player.isShielding=false;
+            player.shieldParryTime=0;
+            document.getElementById('bow-charge-ui').classList.add('hidden');
+            document.getElementById('shield-overlay').style.opacity='0';
+            document.getElementById('ads-overlay').style.opacity='0';
+            document.getElementById('crosshair').style.transform='scale(1)';
+            document.getElementById('hud-status-badge').textContent='HAZIR';
             armyMapMessage.textContent='Hedef noktası, bakış yönü veya düşman bölüğü seç.';
             for(const code in keys)keys[code]=false;
             if(document.pointerLockElement===canvas&&document.exitPointerLock)
@@ -14377,7 +14388,7 @@ const KTKCalmUIV25=(()=>{
         });
 
         window.addEventListener('mousedown', (e) => {
-            if (!isGameActive) return;
+            if (!isGameActive || armyTacticalOpen || document.pointerLockElement !== canvas) return;
             if (e.button === 0) {
                 if (player.classIdx === 2) {
                     // The old four-second cooldown is now incorporated into
