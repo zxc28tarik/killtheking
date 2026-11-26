@@ -10,10 +10,10 @@ Başlangıç: 38313f68117efd7fd32f9ccc4bd07ce5fcce48a6. Kullanıcının aktardı
 | BUG14 | Ölen okçunun etkisiz oku | Yüksek | Main'e işlendi; CI ve Chromium PASS |
 | BUG15 | Fıçı isabet önceliği | Yüksek | Main'e işlendi; CI ve Chromium PASS |
 | BUG16 | Dikey tavan çarpışması | Kritik | Main'e işlendi; CI ve Chromium PASS |
-| BUG17 | Yeniden doğuş hareketi | Yüksek | Kod adayı; CI bekliyor |
-| BUG18 | Maç sıfırlama | Yüksek | Kod adayı; CI bekliyor |
-| BUG19 | Fıçı durumunun taşınması | Orta | Açık |
-| BUG20 | Ters uçan ok modeli | Orta | Açık |
+| BUG17 | Yeniden doğuş hareketi | Yüksek | Main'e işlendi; CI ve Chromium PASS |
+| BUG18 | Maç sıfırlama | Yüksek | Main'e işlendi; CI ve Chromium PASS |
+| BUG19 | Fıçı durumunun taşınması | Orta | Kod adayı; CI bekliyor |
+| BUG20 | Ters uçan ok modeli | Orta | Kod adayı; CI bekliyor |
 
 BUG11: oyuncunun göz kotundaki gerçek konumu tek fizik başlangıcı; yön mevcut kamera quaternion'ından. TPS nişangâh yakın mesafe paralaks kalibrasyonu ve gerçek namlu modeli ayrı iş; hasar/silah menzili değişmedi. Ok ilk 0.9 m'yi atlamadan fizik adımına girer. BUG15 fıçı/asker önceliği bu aşamada bilinçli olarak değişmedi.
 BUG12: aynı BUG03 dikey sınırı (1.35) ve 3B 6.5 menzil; mevcut yatay yön eşiği korunur, duvar kontrolü gerçek ayak kotu+1.6 üzerinden. Arena ve ordu motoru aynı fizik kontrolünü kullanır; 85 hasar ve itme değiştirilmedi.
@@ -33,3 +33,8 @@ BUG15–16: PR #100, main 37fe4c4c1679e260c407fc2ac68c965f2ca989bd; 252/252, CI 
 
 BUG17: ortak respawnPlayerAt, mevcut spawn seçimleri korunur, hız sıfır, ayakta fizik yüksekliği, eski hareket ve aktif saldırı/ADS animasyonu temiz. Ölümde mevcut silah ve yetenek beklemeleri korunur; BUG18 yeni maçta sıfırlar. Ordu spawn koordinatları değiştirilmedi.
 BUG18: tüm eksik sayaçlar, silah durumları, input, kamera/recoil, HUD, eski bekleyen reload/hasar timer'ları sıfır. Sınıf, TPS tercihi ve ayarlar korunur. ArenaClock monoton kalır. 5 yeni test; CI/Chromium bekleniyor. BUG19 fıçı ayrı.
+
+BUG17–18: PR #101, main b87e1193ad65b10b164d424aefdaf6ec209981cb; 257/257, CI 45823334633 / 45823368895 ve Chromium 45823368725 PASS. Manuel doğuş/maç geçişi kabulü açık.
+
+BUG19: tüm kayıtlı harita fıçıları yeni maçta 40 HP, aktif, timer 0. Yalnız seçili haritada görünür; eski etiket saklanır; harita geçişi patlamış fıçıyı diriltmez. 15s normal maç içi süre korunur; ortak restore.
+BUG20: mevcut ok geometrisinin -Z ucu hem ilk atışta hem her fizik adımında hıza hizalanır, sıfır hızda son geçerli quaternion korunur. Yeni geometri veya kare başına vektör tahsisi yok; askerlerin simetrik instanced okları ve çarpışma değişmedi. 5 yeni test; CI/Chromium ve manuel görsel kabul bekliyor.
