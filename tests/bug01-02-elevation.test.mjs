@@ -54,6 +54,6 @@ test('BUG01/02 ranged attacks aim at world height, not old ground proxy',()=>{
 });
 test('BUG01/02 runtime uses real elevation and both release HTML copies match',()=>{
  assert.equal(html,readFileSync(new URL('../playables/KillTheKing_AK30_Amblemler_Korundu_Tam_Ekran_Arka_Plan.html',import.meta.url),'utf8'));
- assert.equal((html.match(/ArenaArmyBattle\.setPlayerPosition\(meadowBattleState,player\.pos\.x,player\.pos\.z,\s*player\.pos\.y-player\.currentHeight\)/g)||[]).length,3);
+ assert.equal((html.match(/ArenaArmyBattle\.setPlayerPosition\(meadowBattleState,player\.pos\.x,player\.pos\.z,\s*player\.pos\.y-player\.currentHeight,player\.currentHeight\)/g)||[]).length,3);
  assert.match(html,/u\.siegeY=walk\.y/);assert.match(html,/u\.siegeY=fall\.y/);
 });
