@@ -12398,6 +12398,12 @@ const KTKCalmUIV25=(()=>{
             for(const [name,data] of [['castle',castle],['meadow',meadow]])
                 for(const barrel of data.barrels)restoreBarrel(barrel,name===map);
         }
+        // BUG27/28: the same blast falloff and physical cover apply in every mode.
+        function barrelBlastDamage(center,target,blocked){
+            const dist=Math.hypot(target.x-center.x,target.y-center.y,target.z-center.z);
+            if(dist>=11.5||blocked(center,target))return 0;
+            return Math.round(160*(1-dist/12.5));
+        }
         function triggerBarrelExplosion(barrel) {
             if (!barrel.active) return;
             barrel.active = false;
@@ -12431,17 +12437,27 @@ const KTKCalmUIV25=(()=>{
                 });
             }
 
-            // Area damage to nearby bots
+            // Use the actual active mode's actors, never the hidden legacy bots.
             let killedByBarrel = 0;
-            bots.forEach(bot => {
-                if (bot.dead) return;
-                const dist = bot.mesh.position.distanceTo(barrel.pos);
-                if (dist < 11.5) {
-                    const dmg = Math.round(160 * (1 - dist / 12.5));
-                    damageBot(bot, dmg, false, 'Barut Fıçısı', '💥 ');
-                    if (bot.hp <= 0) killedByBarrel++;
+            if(meadowBattleMode&&meadowBattleState){
+                for(const soldier of meadowBattleState.soldiers){
+                    if(!soldier.alive||soldier.team===meadowBattleState.playerTeam)continue;
+                    const point=new THREE.Vector3(soldier.x,(soldier.siegeY||0)+1.2,soldier.z);
+                    const dmg=barrelBlastDamage(center,point,arenaWorldBlockBetween);
+                    if(!dmg)continue;
+                    const result=playerHitArmySoldier({targetId:soldier.id,soldier,point,zone:'body'},dmg,'Barut Fıçısı');
+                    if(result?.killed)killedByBarrel++;
                 }
-            });
+            }else{
+                for(const bot of bots){
+                    if(bot.dead||!ArenaTeams.canDamage(arenaMode,ArenaTeams.PLAYER_TEAM,botTeam(bot)))continue;
+                    const point=bot.mesh.position.clone().add(new THREE.Vector3(0,1.2,0));
+                    const dmg=barrelBlastDamage(center,point,arenaWorldBlockBetween);
+                    if(!dmg)continue;
+                    damageBot(bot,dmg,false,'Barut Fıçısı','💥 ',point);
+                    if(bot.hp<=0)killedByBarrel++;
+                }
+            }
 
             if (killedByBarrel > 0) {
                 showMedal('💥 BARUT İMHA!', '+100 KUŞATMA PATLAMASI', 'bg-orange-600 border-amber-300');
@@ -13154,7 +13170,7 @@ const KTKCalmUIV25=(()=>{
         // battle collision volumes (the 140 models are drawn in InstancedMeshes).
         function playerHitArmySoldier(hit,damage,weaponName){
             if(!meadowBattleMode||!meadowBattleState||!hit)return null;
-            const playerWeapon=weaponName==='Kalkan Çarpması'?'bash':
+            const playerWeapon=weaponName==='Barut Fıçısı'?null:weaponName==='Kalkan Çarpması'?'bash':
                 weaponName==='Süngü / Hançer'?'dagger':
                 ArenaWeaponBalance.weaponForRole(['knight','pikeman','archer','musket'][player.classIdx]);
             const result=ArenaArmyBattle.damageSoldier(meadowBattleState,hit.targetId,damage,
@@ -15312,7 +15328,7 @@ const KTKCalmUIV25=(()=>{
                 // Swept collision: find the FIRST obstruction along the complete frame segment.
                 // Earlier frame-end overlap checks could hit a bot behind a wall.
                 let impact = ArenaArrowCollision.sweep(prevPos, arr.mesh.position, {
-                    barrels:meadowBattleMode?[]:barrels,
+                    barrels:barrels,
                     bots:meadowBattleMode?[]:bots,
                     groundY: 0.15,
                     worldHit(from, to) {
