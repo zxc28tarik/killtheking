@@ -6842,7 +6842,19 @@ window.addEventListener('error', function(event) {
             grad.addColorStop(1.0, botC);
             ctx.fillStyle = grad;
             ctx.fillRect(0, 0, 32, 256);
-            return new THREE.CanvasTexture(c);
+            const texture=new THREE.CanvasTexture(c);
+            (texture.userData||(texture.userData={})).ktkGradientKey=JSON.stringify([topC,midC,botC]);
+            return texture;
+        }
+        function refreshSkyGradient(mesh,create,top,mid,bottom){
+            const previous=mesh.material.map,key=JSON.stringify([top,mid,bottom]);
+            if(previous?.userData?.ktkGradientKey===key)return false;
+            const next=create(top,mid,bottom);
+            (next.userData||(next.userData={})).ktkGradientKey=key;
+            mesh.material.map=next;
+            mesh.material.needsUpdate=true;
+            if(previous&&previous!==next)previous.dispose();
+            return true;
         }
 
         function buildSkyAndClouds() {
@@ -6889,9 +6901,8 @@ window.addEventListener('error', function(event) {
             currentAtmosphereIdx = idx % ATMOSPHERES.length;
             const atmo = ATMOSPHERES[currentAtmosphereIdx];
 
-            if (skyDomeMesh) {
-                skyDomeMesh.material.map = createSkyGradientTexture(atmo.topCol, atmo.midCol, atmo.botCol);
-                skyDomeMesh.material.needsUpdate = true;
+            if (skyDomeMesh&&!window.__ktkMeadowLightActive) {
+                refreshSkyGradient(skyDomeMesh,createSkyGradientTexture,atmo.topCol,atmo.midCol,atmo.botCol);
             }
             scene.fog.color.setHex(atmo.fogCol);
             scene.fog.density = atmo.fogDensity * activeArenaFogMultiplier;
@@ -7320,6 +7331,33 @@ window.addEventListener('error', function(event) {
         }
         let meadowNearGrass=null;
         let meadowDenseGrass=null;
+        // KTK-GRASS01 - 156-triangle Meshy model, vertex colors baked
+        // from the uploaded texture. No external file fetch or extra atlas.
+        const KTK_MESHY_GRASS_DATA='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';
+        function makeMeshyGrassGeometry(){
+            const packed=atob(KTK_MESHY_GRASS_DATA);
+            if(packed.length!==1536)throw Error('Embedded grass asset is invalid');
+            const positions=new Float32Array(178*3);
+            const colors=new Float32Array(178*3);
+            const indices=new Uint16Array(468);
+            for(let i=0;i<468;i++)indices[i]=packed.charCodeAt(i);
+            for(let i=0;i<positions.length;i++){
+                // GLB was centered vertically; place its base on y=0.
+                // Retain 0.4 local meadow blade scale for matching height.
+                const q=packed.charCodeAt(468+i);
+                positions[i]=.4*((q>127?q-256:q)/250+
+                    (i%3===1?.479736:0));
+                colors[i]=packed.charCodeAt(468+positions.length+i)/255;
+            }
+            const geometry=new THREE.BufferGeometry();
+            geometry.setIndex(new THREE.BufferAttribute(indices,1));
+            geometry.setAttribute('position',new THREE.BufferAttribute(positions,3));
+            geometry.setAttribute('color',new THREE.BufferAttribute(colors,3));
+            geometry.computeVertexNormals();
+            return geometry;
+        }
+        let ktkMeshyGrassHero=null;
+
 /* MAP2-V18 natural meadow-only lighting treatment.
  * Preserves the existing three [H] atmosphere options and native gameplay.
  * Reusable palette only, no extra draw calls or scene solids.
@@ -7347,11 +7385,7 @@ const KTKMeadowNaturalLighting=(function(){
      !hemiLight||!skyDomeMesh||!createSkyGradientTexture)
    throw Error('Complete native G5.4 atmosphere required');
   const p=PRESETS[((idx%PRESETS.length)+PRESETS.length)%PRESETS.length];
-  const prevTexture=skyDomeMesh.material.map;
-  const nextTexture=createSkyGradientTexture(p.top,p.mid,p.horizon);
-  skyDomeMesh.material.map=nextTexture;
-  skyDomeMesh.material.needsUpdate=true;
-  if(prevTexture&&prevTexture!==nextTexture)prevTexture.dispose();
+  refreshSkyGradient(skyDomeMesh,createSkyGradientTexture,p.top,p.mid,p.horizon);
   scene.background.setHex(p.fog);
   scene.fog.color.setHex(p.fog);
   scene.fog.density=p.density;
@@ -9059,6 +9093,31 @@ const KTKCalmUIV25=(()=>{
             meadowDenseGrass=ArenaMeadowGrass.createNearbyTufts(THREE,12000);
             meadowDenseGrass.geometry.scale(.40,.40,.40);
             scene.add(meadowDenseGrass);
+            // Replace one in four clumps with the uploaded full 3D grass.
+            // The OPT02 tile updater hides the matching cheaper tuft.
+            ktkMeshyGrassHero=new THREE.InstancedMesh(
+                makeMeshyGrassGeometry(),
+                new THREE.MeshLambertMaterial({
+                    color:0xffffff,vertexColors:true,side:THREE.DoubleSide
+                }),
+                Math.ceil(meadowDenseGrass.count/4));
+            ktkMeshyGrassHero.name='Meshy medieval grass / 3D instanced';
+            ktkMeshyGrassHero.castShadow=false;
+            ktkMeshyGrassHero.receiveShadow=false;
+            ktkMeshyGrassHero.frustumCulled=false;
+            meadowDenseGrass.userData.ktkMeshyGrassHero=ktkMeshyGrassHero;
+            scene.add(ktkMeshyGrassHero);
+            window.ktkMeshyGrassStatus=()=>({
+                source:'uploaded stylized_medieval_gra.glb',
+                trianglesPerClump:156,
+                threeDClumps:ktkMeshyGrassHero.count,
+                simpleClumps:meadowDenseGrass.count-ktkMeshyGrassHero.count,
+                totalNearClumps:meadowDenseGrass.count,
+                distantClumps:meadowNearGrass.count,
+                textures:0,
+                visible:ktkMeshyGrassHero.visible,
+                lastRegeneratedTiles:meadowDenseGrass.userData.lastRegeneratedTiles
+            });
             window.ktkMeadowGrassVisualStatus=()=>({count:meadowNearGrass.count,nearbyCount:meadowDenseGrass.count,visible:meadowNearGrass.visible,nearbyVisible:meadowDenseGrass.visible,lastTileX:meadowDenseGrass.userData.lastTileX});
             const meadowHorizon=KTKMeadowHorizon.build(THREE,scene,spec);
             const v19Groves=KTKBattlefieldVisualV19.addMeadowGroves(THREE,scene,spec);
@@ -9140,6 +9199,67 @@ const KTKCalmUIV25=(()=>{
             color: 0xfbbf24,
             metalness: 0.88,
             roughness: 0.20
+        });
+        // WG02: packed, shared metal microfinish. Red = height, green = roughness.
+        // Periodic grain avoids a visible UV seam; no random work during gameplay.
+        const musketIronSurface=(()=>{
+            const size=64,data=new Uint8Array(size*size*4),tau=Math.PI*2;
+            const byte=v=>Math.max(0,Math.min(255,Math.round(v)));
+            let seed=1600;
+            for(let y=0;y<size;y++)for(let x=0;x<size;x++){
+                seed=(Math.imul(seed,1664525)+1013904223)>>>0;
+                const u=x/size*tau,v=y/size*tau;
+                const grain=(seed>>>24)/255-.5;
+                const flow=Math.sin(u*11+Math.sin(v)*.28);
+                const tooling=Math.sin(u*23+Math.sin(v*2)*.19);
+                const mottling=Math.sin(u*3+v)*Math.cos(v*2-u);
+                const i=(y*size+x)*4;
+                data[i]=byte(128+flow*9+tooling*4+grain*9);
+                data[i+1]=byte(188+mottling*21+flow*10+grain*8);
+                data[i+2]=255;data[i+3]=255;
+            }
+            const t=new THREE.DataTexture(data,size,size,THREE.RGBAFormat);
+            t.wrapS=t.wrapT=THREE.RepeatWrapping;
+            t.magFilter=THREE.LinearFilter;
+            t.minFilter=THREE.LinearMipmapLinearFilter;
+            t.generateMipmaps=true;t.needsUpdate=true;
+            return t;
+        })();
+        const musketIronMat=new THREE.MeshStandardMaterial({
+            name:'WG02 satin forged iron',color:0x85888b,
+            metalness:.87,roughness:.68,roughnessMap:musketIronSurface,
+            bumpMap:musketIronSurface,bumpScale:.00065,envMapIntensity:.85
+        });
+        const musketBrassMat=new THREE.MeshStandardMaterial({
+            name:'WG02 aged satin brass',color:0xb29a68,
+            metalness:.80,roughness:.74,roughnessMap:musketIronSurface,
+            envMapIntensity:.78
+        });
+        // A single small, baked stock texture: grain follows the cylinder length.
+        const musketWalnutMap=(()=>{
+            const size=128,data=new Uint8Array(size*size*4),tau=Math.PI*2;
+            let seed=1776;
+            for(let y=0;y<size;y++)for(let x=0;x<size;x++){
+                seed=(Math.imul(seed,1664525)+1013904223)>>>0;
+                const u=x/size*tau,v=y/size*tau;
+                const warp=u+.045*Math.sin(v)+.025*Math.sin(2*v+u);
+                const rings=Math.sin(warp*9+.25*Math.sin(u*3));
+                const fiber=Math.sin(warp*31+.5*Math.sin(u*5));
+                const grain=(seed>>>24)/255-.5;
+                const tone=rings*9+fiber*3+grain*3+Math.sin(u*3)*5;
+                const i=(y*size+x)*4;
+                data[i]=87+tone;data[i+1]=48+tone*.62;data[i+2]=27+tone*.38;data[i+3]=255;
+            }
+            const t=new THREE.DataTexture(data,size,size,THREE.RGBAFormat);
+            t.encoding=THREE.sRGBEncoding;
+            t.wrapS=t.wrapT=THREE.RepeatWrapping;
+            t.magFilter=THREE.LinearFilter;t.minFilter=THREE.LinearMipmapLinearFilter;
+            t.generateMipmaps=true;t.needsUpdate=true;
+            return t;
+        })();
+        const musketWoodMat=new THREE.MeshStandardMaterial({
+            name:'WG02 longitudinal oiled walnut',map:musketWalnutMap,
+            metalness:0,roughness:.64,envMapIntensity:.38
         });
         const rubyMat = new THREE.MeshStandardMaterial({ color: 0xdc2626, metalness: 0.25, roughness: 0.08, emissive: 0x450a0a });
         const darkWoodMat = new THREE.MeshStandardMaterial({
@@ -9396,38 +9516,38 @@ const KTKCalmUIV25=(()=>{
             leftSupportArm3.rotation.y = -0.32;
 
             // 1. Sculpted Walnut Fore-stock & Curved 1600s Fishtail Buttstock
-            const foreStock = new THREE.Mesh(new THREE.CylinderGeometry(0.036, 0.046, 0.92, 10), darkWoodMat);
+            const foreStock = new THREE.Mesh(new THREE.CylinderGeometry(0.036, 0.046, 0.92, 10), musketWoodMat);
             foreStock.rotation.x = Math.PI / 2;
             foreStock.scale.set(1.0, 1.0, 1.15);
             foreStock.position.set(0.26, -0.19, -0.82);
 
-            const wristGrip = new THREE.Mesh(new THREE.CylinderGeometry(0.036, 0.042, 0.28, 10), darkWoodMat);
+            const wristGrip = new THREE.Mesh(new THREE.CylinderGeometry(0.036, 0.042, 0.28, 10), musketWoodMat);
             wristGrip.rotation.x = Math.PI / 2 - 0.24;
             wristGrip.position.set(0.26, -0.22, -0.30);
 
-            const buttStock = new THREE.Mesh(new THREE.CylinderGeometry(0.044, 0.068, 0.36, 10), darkWoodMat);
+            const buttStock = new THREE.Mesh(new THREE.CylinderGeometry(0.044, 0.068, 0.36, 10), musketWoodMat);
             buttStock.rotation.x = Math.PI / 2 - 0.18;
             buttStock.scale.set(0.72, 1.0, 1.35);
             buttStock.position.set(0.26, -0.27, -0.06);
 
-            const brassButtplate = new THREE.Mesh(new THREE.CylinderGeometry(0.048, 0.068, 0.04, 10), goldMat);
+            const brassButtplate = new THREE.Mesh(new THREE.CylinderGeometry(0.048, 0.068, 0.04, 10), musketBrassMat);
             brassButtplate.rotation.x = Math.PI / 2 - 0.18;
             brassButtplate.scale.set(0.74, 1.0, 1.36);
             brassButtplate.position.set(0.26, -0.30, 0.11);
 
-            const stockFiligree = new THREE.Mesh(new THREE.BoxGeometry(0.088, 0.032, 0.28), goldMat);
+            const stockFiligree = new THREE.Mesh(new THREE.BoxGeometry(0.088, 0.032, 0.28), musketBrassMat);
             stockFiligree.position.set(0.26, -0.20, -0.45);
 
             // 2. Forged Octagonal Breech + Round Tapered Steel Barrel + Hollow Muzzle Bore
-            const breechOctagon = new THREE.Mesh(new THREE.CylinderGeometry(0.040, 0.045, 0.48, 8), gunmetalMat);
+            const breechOctagon = new THREE.Mesh(new THREE.CylinderGeometry(0.040, 0.045, 0.48, 8), musketIronMat);
             breechOctagon.rotation.x = Math.PI / 2;
             breechOctagon.position.set(0.26, -0.14, -0.52);
 
-            const roundBarrel = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.039, 0.88, 16), steelMat);
+            const roundBarrel = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.039, 0.88, 16), musketIronMat);
             roundBarrel.rotation.x = Math.PI / 2;
             roundBarrel.position.set(0.26, -0.14, -1.16);
 
-            const muzzleFlare = new THREE.Mesh(new THREE.CylinderGeometry(0.039, 0.033, 0.07, 16), goldMat);
+            const muzzleFlare = new THREE.Mesh(new THREE.CylinderGeometry(0.039, 0.033, 0.07, 16), musketBrassMat);
             muzzleFlare.rotation.x = Math.PI / 2;
             muzzleFlare.position.set(0.26, -0.14, -1.58);
 
@@ -9440,35 +9560,35 @@ const KTKCalmUIV25=(()=>{
 
             // 3. Brass Barrel Bands & Sights
             [-0.78, -1.12, -1.44].forEach(bz => {
-                const band = new THREE.Mesh(new THREE.CylinderGeometry(0.044, 0.046, 0.045, 12), goldMat);
+                const band = new THREE.Mesh(new THREE.CylinderGeometry(0.044, 0.046, 0.045, 12), musketBrassMat);
                 band.rotation.x = Math.PI / 2;
                 band.scale.set(1.0, 1.0, 1.25);
                 band.position.set(0.26, -0.165, bz);
                 musketGroup.add(band);
             });
 
-            const rearSight = new THREE.Mesh(new THREE.BoxGeometry(0.036, 0.026, 0.04), goldMat);
+            const rearSight = new THREE.Mesh(new THREE.BoxGeometry(0.036, 0.026, 0.04), musketBrassMat);
             rearSight.position.set(0.26, -0.095, -0.44);
-            const frontSight = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.042, 0.03), goldMat);
+            const frontSight = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.042, 0.03), musketBrassMat);
             frontSight.position.set(0.26, -0.098, -1.54);
 
             // 4. Authentic 1600s Flintlock Mechanism (Lockplate, Flash Pan, Frizzen & S-Hammer holding Flint)
-            const lockPlate = new THREE.Mesh(new THREE.BoxGeometry(0.022, 0.065, 0.26), ornateArmorMat);
+            const lockPlate = new THREE.Mesh(new THREE.BoxGeometry(0.022, 0.065, 0.26), musketIronMat);
             lockPlate.position.set(0.21, -0.16, -0.46);
 
-            const flashPan = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.020, 0.035, 10), goldMat);
+            const flashPan = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.020, 0.035, 10), musketBrassMat);
             flashPan.position.set(0.19, -0.14, -0.50);
 
-            const frizzenSteel = new THREE.Mesh(new THREE.BoxGeometry(0.022, 0.095, 0.045), steelMat);
+            const frizzenSteel = new THREE.Mesh(new THREE.BoxGeometry(0.022, 0.095, 0.045), musketIronMat);
             frizzenSteel.position.set(0.19, -0.095, -0.52);
             frizzenSteel.rotation.x = 0.25;
 
             // Animated S-Curved Flintlock Hammer Group (Cock + Jaws + Real Flint Stone)
             musketHammerMesh = new THREE.Group();
             musketHammerMesh.position.set(0.195, -0.15, -0.43);
-            const hammerNeck = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.018, 0.11, 8), goldMat);
+            const hammerNeck = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.018, 0.11, 8), musketBrassMat);
             hammerNeck.position.set(0, 0.05, 0);
-            const hammerJaws = new THREE.Mesh(new THREE.BoxGeometry(0.028, 0.032, 0.058), darkSteelMat);
+            const hammerJaws = new THREE.Mesh(new THREE.BoxGeometry(0.028, 0.032, 0.058), musketIronMat);
             hammerJaws.position.set(0, 0.095, -0.02);
             const flintStone = new THREE.Mesh(
                 new THREE.ConeGeometry(0.018, 0.048, 4),
@@ -9479,20 +9599,20 @@ const KTKCalmUIV25=(()=>{
             musketHammerMesh.add(hammerNeck, hammerJaws, flintStone);
 
             // 5. Brass Trigger Guard & Curved Trigger
-            const triggerGuard = new THREE.Mesh(new THREE.TorusGeometry(0.048, 0.008, 8, 14, Math.PI), goldMat);
+            const triggerGuard = new THREE.Mesh(new THREE.TorusGeometry(0.048, 0.008, 8, 14, Math.PI), musketBrassMat);
             triggerGuard.rotation.y = Math.PI / 2;
             triggerGuard.rotation.x = Math.PI;
             triggerGuard.position.set(0.26, -0.23, -0.38);
 
-            const triggerMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.008, 0.045, 6), steelMat);
+            const triggerMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.008, 0.045, 6), musketIronMat);
             triggerMesh.rotation.x = 0.35;
             triggerMesh.position.set(0.26, -0.235, -0.38);
 
             // 6. Cylindrical Ramrod with Brass Tip (Animated during Reload!)
             musketRamrodMesh = new THREE.Group();
-            const rodShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.010, 0.010, 1.18, 8), darkSteelMat);
+            const rodShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.010, 0.010, 1.18, 8), musketIronMat);
             rodShaft.rotation.x = Math.PI / 2;
-            const rodBrassTip = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.011, 0.08, 10), goldMat);
+            const rodBrassTip = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.011, 0.08, 10), musketBrassMat);
             rodBrassTip.rotation.x = Math.PI / 2;
             rodBrassTip.position.z = -0.58;
             musketRamrodMesh.add(rodShaft, rodBrassTip);
@@ -11658,23 +11778,23 @@ const KTKCalmUIV25=(()=>{
                 weaponMount.rotation.x = Math.PI / 2.2;
             } else {
                 // Realistic 1600s Flintlock Musket in Bot Hands (Walnut Stock, Round Steel Barrel, Brass Bands, Flintlock Hammer & Ramrod)
-                const mStock = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.082, 1.72, 10), darkWoodMat);
+                const mStock = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.082, 1.72, 10), musketWoodMat);
                 mStock.rotation.x = Math.PI / 2;
                 mStock.scale.set(0.75, 1.0, 1.25);
                 mStock.position.z = 0.58;
-                const mBarrel = new THREE.Mesh(new THREE.CylinderGeometry(0.048, 0.058, 2.08, 14), steelMat);
+                const mBarrel = new THREE.Mesh(new THREE.CylinderGeometry(0.048, 0.058, 2.08, 14), musketIronMat);
                 mBarrel.rotation.x = Math.PI / 2;
                 mBarrel.position.set(0, 0.08, 0.84);
-                const mMuzzle = new THREE.Mesh(new THREE.CylinderGeometry(0.058, 0.048, 0.10, 14), goldMat);
+                const mMuzzle = new THREE.Mesh(new THREE.CylinderGeometry(0.058, 0.048, 0.10, 14), musketBrassMat);
                 mMuzzle.rotation.x = Math.PI / 2;
                 mMuzzle.position.set(0, 0.08, 1.86);
                 for (let b = 0; b < 3; b++) {
-                    const band = new THREE.Mesh(new THREE.CylinderGeometry(0.068, 0.068, 0.07, 12), goldMat);
+                    const band = new THREE.Mesh(new THREE.CylinderGeometry(0.068, 0.068, 0.07, 12), musketBrassMat);
                     band.rotation.x = Math.PI / 2;
                     band.position.set(0, 0.05, 0.65 + b * 0.42);
                     weaponMount.add(band);
                 }
-                const mLock = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.14, 0.28), goldMat);
+                const mLock = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.14, 0.28), musketIronMat);
                 mLock.position.set(0.06, 0.06, 0.32);
                 weaponMount.add(mStock, mBarrel, mMuzzle, mLock);
                 weaponMount.rotation.x = Math.PI / 2.8;
@@ -11835,14 +11955,58 @@ const KTKCalmUIV25=(()=>{
         const stuckArrows = [];
         const particles = [];
 
-        // FIT03b: each particle owns its geometry and material; arrows own
-        // only their geometry (goldMat/steelMat are shared with weapon models).
-        // Flying helmet clones share both geometry and material with live bots.
+        // OPT01: bounded particle mesh pool: geometry is shared, materials are
+        // reset when reused. Generic beam meshes still keep owned geometry.
+        // Flying helmets and arrows retain their previous ownership rules.
+        const effectCubeGeometry = new THREE.BoxGeometry(1, 1, 1);
+        const effectMeshPools = { basic: [], lambert: [], opaque: [] };
+        const EFFECT_POOL_LIMIT = 192; // per category, no unbounded retention
+        const effectStillVelocity = new THREE.Vector3();
+        function acquireEffectCube(kind, color, opacity, width, height = width, depth = width) {
+            const pool = effectMeshPools[kind];
+            if (!pool) throw new Error('Unknown effect mesh pool');
+            let mesh = pool.pop();
+            if (!mesh) {
+                const material = kind === 'lambert'
+                    ? new THREE.MeshLambertMaterial({ color, transparent: true, opacity })
+                    : new THREE.MeshBasicMaterial({
+                        color, transparent: kind !== 'opaque', opacity
+                    });
+                mesh = new THREE.Mesh(effectCubeGeometry, material);
+                mesh.userData.effectPoolKind = kind;
+            }
+            mesh.material.color.setHex(color);
+            mesh.material.opacity = opacity;
+            mesh.position.set(0, 0, 0);
+            mesh.scale.set(width, height, depth);
+            mesh.rotation.set(0, 0, 0);
+            mesh.quaternion.identity();
+            mesh.visible = true;
+            scene.add(mesh);
+            return mesh;
+        }
         function releaseParticle(mesh) {
             scene.remove(mesh);
+            const kind = mesh.userData.effectPoolKind;
+            if (kind && effectMeshPools[kind]) {
+                const pool = effectMeshPools[kind];
+                if (pool.length < EFFECT_POOL_LIMIT) {
+                    pool.push(mesh);
+                } else {
+                    mesh.material.dispose(); // shared cube geometry stays owned by the pool
+                }
+                return;
+            }
             mesh.geometry.dispose();
             mesh.material.dispose();
         }
+        window.ktkParticlePoolStatus = () => ({
+            active: particles.length,
+            freeBasic: effectMeshPools.basic.length,
+            freeLambert: effectMeshPools.lambert.length,
+            freeOpaque: effectMeshPools.opaque.length,
+            limitPerKind: EFFECT_POOL_LIMIT
+        });
         function releaseArrow(mesh) {
             scene.remove(mesh);
             mesh.traverse(child=>{if(child.isMesh)child.geometry.dispose();});
@@ -11876,17 +12040,12 @@ const KTKCalmUIV25=(()=>{
             for (let i = 0; i < count; i++) {
                 const size = 0.25 + Math.random() * 0.45;
                 const isSpark = i < 4;
-                const mat = new THREE.MeshLambertMaterial({
-                    color: isSpark ? 0xfbbf24 : 0xd1d5db,
-                    transparent: true,
-                    opacity: isSpark ? 0.95 : 0.78
-                });
-                const puff = new THREE.Mesh(new THREE.BoxGeometry(size, size, size), mat);
+                const puff = acquireEffectCube('lambert',
+                    isSpark ? 0xfbbf24 : 0xd1d5db, isSpark ? 0.95 : 0.78, size);
                 puff.position.copy(origin).addScaledVector(dir, 1.0 + Math.random() * 1.1);
                 puff.position.x += (Math.random() - 0.5) * 0.45;
                 puff.position.y += (Math.random() - 0.5) * 0.45;
                 puff.position.z += (Math.random() - 0.5) * 0.45;
-                scene.add(puff);
 
                 const lifeTime = isSpark ? 0.25 : (lingering * (0.65 + Math.random() * 0.45));
                 particles.push({
@@ -11898,7 +12057,7 @@ const KTKCalmUIV25=(()=>{
                     ),
                     life: lifeTime,
                     maxLife: lifeTime,
-                    grow: !isSpark,
+                    grow: !isSpark, baseSize: size,
                     drag: 0.94
                 });
             }
@@ -11909,11 +12068,9 @@ const KTKCalmUIV25=(()=>{
             const palette = metal ? [0xffe5a0, 0xfbbf24, 0xe2e8f0, 0xef4444] : [0xfca5a5, 0xef4444, 0xf59e0b];
             const count = isHeadshot ? 21 : metal ? 15 : 11;
             for (let i = 0; i < count; i++) {
-                const mat = new THREE.MeshBasicMaterial({ color: palette[i % palette.length], transparent: true, opacity: 0.96 });
                 const size = 0.06 + Math.random() * (metal ? 0.12 : 0.10);
-                const p = new THREE.Mesh(new THREE.BoxGeometry(size, size, size), mat);
+                const p = acquireEffectCube('basic', palette[i % palette.length], 0.96, size);
                 p.position.copy(pos);
-                scene.add(p);
                 const life = 0.19 + Math.random() * 0.19;
                 particles.push({
                     mesh: p,
@@ -11943,14 +12100,8 @@ const KTKCalmUIV25=(()=>{
             for (let i = 0; i < 36; i++) {
                 const cols = [0xff4500, 0xf59e0b, 0xef4444, 0x374151];
                 const size = 0.35 + Math.random() * 0.65;
-                const mat = new THREE.MeshBasicMaterial({
-                    color: cols[i % cols.length],
-                    transparent: true,
-                    opacity: 0.9
-                });
-                const p = new THREE.Mesh(new THREE.BoxGeometry(size, size, size), mat);
+                const p = acquireEffectCube('basic', cols[i % cols.length], 0.9, size);
                 p.position.copy(center);
-                scene.add(p);
                 particles.push({
                     mesh: p,
                     vel: new THREE.Vector3(
@@ -11960,7 +12111,7 @@ const KTKCalmUIV25=(()=>{
                     ),
                     life: 0.7 + Math.random() * 0.8,
                     maxLife: 1.5,
-                    grow: true,
+                    grow: true, baseSize: size,
                     gravity: i > 18
                 });
             }
@@ -14302,9 +14453,8 @@ const KTKCalmUIV25=(()=>{
                 t.flame.scale.y = 0.9 + Math.cos(nowSec * 15 + t.phase) * 0.22;
                 if (t.innerCore) t.innerCore.scale.y = 0.85 + Math.sin(nowSec * 18 + t.phase) * 0.2;
                 if (Math.random() < 0.06) {
-                    const ember = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 0.08), new THREE.MeshBasicMaterial({ color: 0xfbbf24 }));
+                    const ember = acquireEffectCube('opaque', 0xfbbf24, 1, 0.08);
                     ember.position.copy(t.basePos);
-                    scene.add(ember);
                     particles.push({
                         mesh: ember,
                         vel: new THREE.Vector3((Math.random() - 0.5) * 0.6, 1.5 + Math.random(), (Math.random() - 0.5) * 0.6),
@@ -14329,11 +14479,14 @@ const KTKCalmUIV25=(()=>{
                     const proj=barrelProjection.copy(b.pos);
                     proj.y+=2.7;proj.project(camera);
                     if (proj.z < 1.0) {
-                        b.label.style.display = 'block';
-                        b.label.style.left = `${(proj.x * 0.5 + 0.5) * window.innerWidth}px`;
-                        b.label.style.top = `${(-proj.y * 0.5 + 0.5) * window.innerHeight}px`;
-                    } else {
-                        b.label.style.display = 'none';
+                        const style=b.label.style;
+                        if(style.display!=='block')style.display='block';
+                        const left=`${(proj.x * 0.5 + 0.5) * window.innerWidth}px`;
+                        const top=`${(-proj.y * 0.5 + 0.5) * window.innerHeight}px`;
+                        if(style.left!==left)style.left=left;
+                        if(style.top!==top)style.top=top;
+                    } else if(b.label.style.display!=='none') {
+                        b.label.style.display='none';
                     }
                 }
             });
@@ -14705,11 +14858,10 @@ const KTKCalmUIV25=(()=>{
                 arr.trailTimer -= dt;
                 if (arr.trailTimer <= 0) {
                     arr.trailTimer = 0.025;
-                    const trail = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 0.28), new THREE.MeshBasicMaterial({ color: 0xe5e7eb, transparent: true, opacity: 0.55 }));
+                    const trail = acquireEffectCube('basic', 0xe5e7eb, 0.55, 0.05, 0.05, 0.28);
                     trail.position.copy(prevPos);
                     trail.quaternion.copy(arr.mesh.quaternion);
-                    scene.add(trail);
-                    particles.push({ mesh: trail, vel: new THREE.Vector3(), life: 0.22, maxLife: 0.22, grow: false });
+                    particles.push({ mesh: trail, vel: effectStillVelocity, life: 0.22, maxLife: 0.22, grow: false });
                 }
 
                 // Swept collision: find the FIRST obstruction along the complete frame segment.
@@ -14814,7 +14966,9 @@ const KTKCalmUIV25=(()=>{
                 if (p.drag) p.vel.multiplyScalar(p.drag);
                 p.mesh.position.addScaledVector(p.vel, dt);
                 if (p.grow) {
-                    p.mesh.scale.addScalar(dt * 1.45);
+                    // Original geometry had size "baseSize" and a unit scale;
+                    // pooled geometry is 1x1x1, so preserve identical expansion.
+                    p.mesh.scale.addScalar(dt * 1.45 * (p.baseSize || 1));
                     if (p.mesh.material.transparent) {
                         p.mesh.material.opacity = Math.max(0, (p.life / p.maxLife) * 0.75);
                     }
@@ -15366,13 +15520,97 @@ const KTKCalmUIV25=(()=>{
             }
         }
 
+        // OPT02: optimized grass placement in the unpinned GAME layer.
+        // All original native gameplay modules and their pinned hashes remain intact.
+        const OPT_GRASS_GRID=10, OPT_GRASS_SLOTS=100;
+        const optGrassMod=(n,m)=>((n%m)+m)%m;
+        function optGrassRandom(seed){
+            let state=seed>>>0;
+            return ()=>{state=(Math.imul(state,1664525)+1013904223)>>>0;
+                return state/4294967296;};
+        }
+         function updateNearbyTuftsOptimized(mesh,spec,x,z){
+          if(!mesh||!Number.isFinite(x)||!Number.isFinite(z))return false;
+          const tileX=Math.floor(x/ArenaMeadowGrass.NEAR_TILE_SIZE),tileZ=Math.floor(z/ArenaMeadowGrass.NEAR_TILE_SIZE);
+          const data=mesh.userData;
+          if(!data.tileWorldX){
+           data.tileWorldX=new Int32Array(OPT_GRASS_SLOTS).fill(2147483647);
+           data.tileWorldZ=new Int32Array(OPT_GRASS_SLOTS).fill(2147483647);
+           data.tileObject=new THREE.Object3D();
+           data.tileColor=new THREE.Color();
+           data.solidSpec=null;data.solidProps=[];data.lastRegeneratedTiles=0;
+          }
+          if(data.lastTileX===tileX&&data.lastTileZ===tileZ&&data.solidSpec===spec)return false;
+          if(data.solidSpec!==spec){
+           data.solidProps=spec.boxes.filter(b=>b.solid);
+           data.solidSpec=spec;
+           data.tileWorldX.fill(2147483647);
+           data.tileWorldZ.fill(2147483647);
+          }
+          const originX=tileX-5,originZ=tileZ-5;
+          const shiftX=optGrassMod(originX,OPT_GRASS_GRID),shiftZ=optGrassMod(originZ,OPT_GRASS_GRID);
+          const instancesPerTile=Math.ceil(mesh.count/OPT_GRASS_SLOTS);
+          const props=data.solidProps,object=data.tileObject,color=data.tileColor;
+          let regenerated=0;
+          for(let slot=0;slot<OPT_GRASS_SLOTS;slot++){
+           // Each physical slot is attached to a world tile modulo 10; unchanged
+           // world tiles keep their matrices/colors when the camera crosses a cell.
+           const localX=optGrassMod(slot%OPT_GRASS_GRID-shiftX,OPT_GRASS_GRID);
+           const localZ=optGrassMod(Math.floor(slot/OPT_GRASS_GRID)-shiftZ,OPT_GRASS_GRID);
+           const worldTileX=originX+localX,worldTileZ=originZ+localZ;
+           if(data.tileWorldX[slot]===worldTileX&&data.tileWorldZ[slot]===worldTileZ)continue;
+           data.tileWorldX[slot]=worldTileX;data.tileWorldZ[slot]=worldTileZ;regenerated++;
+           const minX=worldTileX*ArenaMeadowGrass.NEAR_TILE_SIZE,minZ=worldTileZ*ArenaMeadowGrass.NEAR_TILE_SIZE;
+           const tileProps=props.filter(b=>
+            minX<b.x+b.w/2+.7&&minX+ArenaMeadowGrass.NEAR_TILE_SIZE>b.x-b.w/2-.7&&
+            minZ<b.z+b.d/2+.7&&minZ+ArenaMeadowGrass.NEAR_TILE_SIZE>b.z-b.d/2-.7);
+           for(let n=0;n<instancesPerTile;n++){
+            const index=slot*instancesPerTile+n;
+            if(index>=mesh.count)break;
+            const rng=optGrassRandom((Math.imul(worldTileX,73856093)^
+               Math.imul(worldTileZ,19349663)^Math.imul(n+1,83492791)^0xdecafbad)>>>0);
+            const offsetX=rng(),offsetZ=rng();
+            const px=(worldTileX+offsetX)*ArenaMeadowGrass.NEAR_TILE_SIZE;
+            const pz=(worldTileZ+offsetZ)*ArenaMeadowGrass.NEAR_TILE_SIZE;
+            const blocked=Math.abs(px)>=spec.half-ArenaMeadowGrass.EDGE_INSET||
+             Math.abs(pz)>=spec.half-ArenaMeadowGrass.EDGE_INSET||tileProps.some(b=>
+               Math.abs(px-b.x)<b.w/2+.7&&Math.abs(pz-b.z)<b.d/2+.7);
+            object.position.set(px,.02,pz);
+            object.rotation.set(0,rng()*6.28318530718,0);
+            const size=.46+.3*rng(),height=.34+.44*rng();
+            object.scale.set(blocked?0:size,blocked?0:height,blocked?0:size);
+            object.updateMatrix();
+            const hero=mesh.userData.ktkMeshyGrassHero;
+            if(hero&&index%4===0){
+                hero.setMatrixAt(index/4,object.matrix);
+                // Only one clump per slot: hide the lightweight duplicate.
+                object.scale.set(0,0,0);
+                object.updateMatrix();
+            }
+            mesh.setMatrixAt(index,object.matrix);
+            mesh.setColorAt(index,color.setHex(ArenaMeadowGrass.PALETTE[Math.floor(rng()*ArenaMeadowGrass.PALETTE.length)]));
+           }
+          }
+          if(regenerated){
+           mesh.instanceMatrix.needsUpdate=true;
+           if(mesh.instanceColor)mesh.instanceColor.needsUpdate=true;
+           if(mesh.userData.ktkMeshyGrassHero)
+               mesh.userData.ktkMeshyGrassHero.instanceMatrix.needsUpdate=true;
+          }
+          data.lastTileX=tileX;data.lastTileZ=tileZ;
+          data.lastRegeneratedTiles=regenerated;
+          return regenerated>0;
+         }
+        
         function updateActiveMeadowGrass(){
+            if(ktkMeshyGrassHero)
+                ktkMeshyGrassHero.visible=arenaMap==='meadow'&&!!meadowDenseGrass?.visible;
             if(arenaMap!=='meadow'||!meadowDenseGrass||!meadowDenseGrass.visible)return false;
             const tile=ArenaMeadowGrass.NEAR_TILE_SIZE;
             const data=meadowDenseGrass.userData;
             if(data.lastTileX===Math.floor(player.pos.x/tile)&&
                data.lastTileZ===Math.floor(player.pos.z/tile))return false;
-            return ArenaMeadowGrass.updateNearbyTufts(THREE,meadowDenseGrass,meadowSpec,player.pos.x,player.pos.z);
+            return updateNearbyTuftsOptimized(meadowDenseGrass,meadowSpec,player.pos.x,player.pos.z);
         }
         function animate() {
             requestAnimationFrame(animate);
