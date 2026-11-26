@@ -30,7 +30,13 @@ jobs:
             for(const viewport of [{width:1920,height:1080},{width:1366,height:768},{width:390,height:844}]){
               const p=await b.newPage({viewport}); const errors=[]; p.on('pageerror',e=>errors.push(e.message));
               await p.goto(pathToFileURL(resolve('index.html')).href);
-              await p.waitForFunction(()=>window.ktkUI32Status?.().ready==='true');
+              try {
+                await p.waitForFunction(()=>window.ktkUI32Status?.().ready==='true',null,{timeout:30000});
+              } catch(error) {
+                console.error('REC03_BOOT_DIAGNOSTICS',JSON.stringify({errors,state:await p.evaluate(()=>({ready:document.readyState,three:typeof THREE,ui:typeof window.ktkUI32Status,overlay:document.getElementById('menu-overlay')?.dataset.ui32Ready??null,scripts:document.scripts.length}))}));
+                await p.screenshot({path:'ui32-boot-failure-'+viewport.width+'.png',timeout:90000}).catch(()=>{});
+                throw error;
+              }
               const status=await p.evaluate(()=>window.ktkUI32Status());
               assert.equal(await p.locator('[data-focus-class]').count(),0,'obsolete duplicate class controls');
               assert.equal(status.legacyHidden,true);assert.equal(status.stage,'map');assert.equal(status.mapEmblems,3);assert.equal(status.classes,4);
