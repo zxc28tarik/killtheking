@@ -92,6 +92,11 @@
             25% { transform: translate(-50%, -90%) scale(1.25); opacity: 1; }
             100% { transform: translate(-50%, -180%) scale(0.9); opacity: 0; }
         }
+        @keyframes floatDmgReuse {
+            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 1; }
+            25% { transform: translate(-50%, -90%) scale(1.25); opacity: 1; }
+            100% { transform: translate(-50%, -180%) scale(0.9); opacity: 0; }
+        }
         .dmg-number {
             position: absolute;
             pointer-events: none;
@@ -6746,11 +6751,23 @@ window.addEventListener('error', function(event) {
         // ============================================================================
         // 4. THREE.JS HD RENDERER, SKY DOME, CLOUDS, TORCHES & CASTLE ARENA
         // ============================================================================
+        const idleSceneState={dirty:true,rendered:0,skipped:0,wasPlaying:false};
+        function invalidateIdleScene(){idleSceneState.dirty=true;}
+        function shouldRenderScene(state,playing,hidden){
+            if(hidden){state.dirty=true;state.wasPlaying=false;state.skipped++;return false;}
+            const needed=playing||state.dirty||state.wasPlaying;
+            state.wasPlaying=playing;
+            if(!needed)state.skipped++;
+            return needed;
+        }
+        function acknowledgeSceneRender(state){state.dirty=false;state.rendered++;}
+        window.ktkIdleRenderStatus=()=>({...idleSceneState});
         const canvas = document.getElementById('game-canvas');
         const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(
             ArenaSettings.pixelRatio(gameSettings.quality,window.devicePixelRatio));
+        canvas.addEventListener('webglcontextrestored',invalidateIdleScene);
         renderer.shadowMap.enabled = true;
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         renderer.outputEncoding = THREE.sRGBEncoding;
@@ -6912,6 +6929,7 @@ window.addEventListener('error', function(event) {
         }
 
         window.setAtmosphere = function(idx) {
+            invalidateIdleScene();
             currentAtmosphereIdx = idx % ATMOSPHERES.length;
             const atmo = ATMOSPHERES[currentAtmosphereIdx];
 
@@ -8646,13 +8664,28 @@ const KTKSiegeFortificationV26=(()=>{
    noSeparateFPSRuntime:true
   });
  }
- function pathClear(points,extra=0.8){
-  if(!Array.isArray(points)||points.length<2)return false;
-  for(const point of points){
-   if(features.some(f=>overlaps(horizontal(f),{
-    minX:point.x-extra,maxX:point.x+extra,
-    minZ:point.z-extra,maxZ:point.z+extra
-   })))return false;
+ // BUG08: continuous swept square clearance against every physical block.
+ function pathClear(points,radius=0.8){
+  if(!Array.isArray(points)||points.length<2||
+   !Number.isFinite(radius)||radius<0||
+   !points.every(p=>p&&Number.isFinite(p.x)&&Number.isFinite(p.z)))return false;
+  for(let i=0;i<Math.max(1,points.length-1);i++){
+   const a=points[i],b=points[Math.min(i+1,points.length-1)];
+   for(const f of features){
+    let lo=0,hi=1;
+    for(const [axis,half] of [['x',f.w/2],['z',f.d/2]]){
+     const min=f[axis]-half-radius,max=f[axis]+half+radius;
+     const start=a[axis],delta=b[axis]-start;
+     if(Math.abs(delta)<1e-12){
+      if(start<min||start>max){lo=1;hi=0;break;}
+     }else{
+      const t0=(min-start)/delta,t1=(max-start)/delta;
+      lo=Math.max(lo,Math.min(t0,t1));hi=Math.min(hi,Math.max(t0,t1));
+      if(lo>hi)break;
+     }
+    }
+    if(lo<=hi)return false;
+   }
   }
   return true;
  }
@@ -8728,11 +8761,30 @@ const KTKSiegeInteriorV31=(()=>{
    a.z-a.d/2 < b.z+b.d/2+pad &&
    a.z+a.d/2 > b.z-b.d/2-pad;
  }
+ // BUG08: continuous swept square clearance against every physical block.
  function pathClear(points,radius=1){
-  return Array.isArray(points)&&points.length>0&&points.every(p=>
-   features.every(f=>
-    Math.abs(f.x-p.x)>f.w/2+radius ||
-    Math.abs(f.z-p.z)>f.d/2+radius));
+  if(!Array.isArray(points)||points.length<1||
+   !Number.isFinite(radius)||radius<0||
+   !points.every(p=>p&&Number.isFinite(p.x)&&Number.isFinite(p.z)))return false;
+  for(let i=0;i<Math.max(1,points.length-1);i++){
+   const a=points[i],b=points[Math.min(i+1,points.length-1)];
+   for(const f of features){
+    let lo=0,hi=1;
+    for(const [axis,half] of [['x',f.w/2],['z',f.d/2]]){
+     const min=f[axis]-half-radius,max=f[axis]+half+radius;
+     const start=a[axis],delta=b[axis]-start;
+     if(Math.abs(delta)<1e-12){
+      if(start<min||start>max){lo=1;hi=0;break;}
+     }else{
+      const t0=(min-start)/delta,t1=(max-start)/delta;
+      lo=Math.max(lo,Math.min(t0,t1));hi=Math.min(hi,Math.max(t0,t1));
+      if(lo>hi)break;
+     }
+    }
+    if(lo<=hi)return false;
+   }
+  }
+  return true;
  }
  function validate(){
   const seen=new Set();
@@ -9874,6 +9926,7 @@ const KTKCalmUIV25=(()=>{
         const playerClassModels = [];
 
         window.toggleThirdPerson = function() {
+            invalidateIdleScene();
             player.isThirdPerson = !player.isThirdPerson;
             player.tpsMotionState = ArenaCharacterMotion.createState();
             weaponHolder.visible = !player.isThirdPerson;
@@ -9889,6 +9942,7 @@ const KTKCalmUIV25=(()=>{
         window.selectClass = function(idx) {
             // Switching class mid battle would illegally grant a second squad.
             if(meadowBattleMode && arenaMatch.phase==='playing')return;
+            invalidateIdleScene();
             activeWeaponSwing = null;
             player.tpsMotionState = ArenaCharacterMotion.createState();
             player.classIdx = idx;
@@ -10027,6 +10081,7 @@ const KTKCalmUIV25=(()=>{
         function switchArenaMap(map) {
             if(!['castle','meadow'].includes(map))throw Error('Invalid arena map');
             if(map===arenaMap)return;
+            invalidateIdleScene();
             const selected=map==='castle'?castleMapData:meadowMapData;
             for(const [active,items] of [
                 [colliders,selected.colliders],[ramps,selected.ramps],
@@ -10291,6 +10346,7 @@ const KTKCalmUIV25=(()=>{
         let nativeSiegeGateOpen=false;
         function nativeSiegeCastleGeometry(enabled){
           if(!enabled&&nativeSiegeCastleEnabled===false)return;
+          invalidateIdleScene();
           nativeSiegeCastleEnabled=enabled;
           nativeSiegeParts.visible=enabled;
           nativeSiegeOriginalSouthVisual.visible=!enabled;
@@ -12113,7 +12169,16 @@ const KTKCalmUIV25=(()=>{
         // Flying helmets and arrows retain their previous ownership rules.
         const effectCubeGeometry = new THREE.BoxGeometry(1, 1, 1);
         const effectMeshPools = { basic: [], lambert: [], opaque: [] };
-        const EFFECT_POOL_LIMIT = 192; // per category, no unbounded retention
+        const EFFECT_POOL_LIMIT = 192; // free meshes per category
+        // BUG07: shared admission cap for every decorative particle producer.
+        const EFFECT_ACTIVE_LIMIT=320,EFFECT_NORMAL_LIMIT=256;
+        let skippedNormalEffects=0,skippedPriorityEffects=0;
+        function admitParticle(priority=false){
+            const limit=priority?EFFECT_ACTIVE_LIMIT:EFFECT_NORMAL_LIMIT;
+            if(particles.length<limit)return true;
+            if(priority)skippedPriorityEffects++;else skippedNormalEffects++;
+            return false;
+        }
         const effectStillVelocity = new THREE.Vector3();
         function acquireEffectCube(kind, color, opacity, width, height = width, depth = width) {
             const pool = effectMeshPools[kind];
@@ -12158,7 +12223,9 @@ const KTKCalmUIV25=(()=>{
             freeBasic: effectMeshPools.basic.length,
             freeLambert: effectMeshPools.lambert.length,
             freeOpaque: effectMeshPools.opaque.length,
-            limitPerKind: EFFECT_POOL_LIMIT
+            limitPerKind: EFFECT_POOL_LIMIT,
+            activeLimit:EFFECT_ACTIVE_LIMIT,normalLimit:EFFECT_NORMAL_LIMIT,
+            skippedNormalEffects,skippedPriorityEffects
         });
         function releaseArrow(mesh) {
             scene.remove(mesh);
@@ -12170,29 +12237,65 @@ const KTKCalmUIV25=(()=>{
             for(const a of stuckArrows)releaseArrow(a.mesh);
             for(const h of flyingHelmets)scene.remove(h.mesh);
             particles.length=arrows.length=stuckArrows.length=flyingHelmets.length=0;
+            skippedNormalEffects=skippedPriorityEffects=0;
+            clearDamageNumbers();
         }
 
+        // BUG09: bounded DOM pool; no per-hit timeout or layout-forcing reset.
+        const DAMAGE_NUMBER_LIMIT=48,DAMAGE_NUMBER_NORMAL_LIMIT=40,DAMAGE_NUMBER_LIFETIME=850;
+        const damageNumberFree=[],damageNumberActive=[];
+        const damageNumberProjection=new THREE.Vector3();
+        let damageNumberCreated=0,damageNumberDropped=0,damageNumberClipped=0;
+        function releaseDamageNumber(index){
+            const item=damageNumberActive[index];
+            item.el.remove();
+            damageNumberFree.push(item.el);
+            const last=damageNumberActive.pop();
+            if(index<damageNumberActive.length)damageNumberActive[index]=last;
+        }
+        function expireDamageNumbers(now){
+            for(let i=damageNumberActive.length-1;i>=0;i--)
+                if(damageNumberActive[i].expires<=now)releaseDamageNumber(i);
+        }
+        function clearDamageNumbers(){
+            while(damageNumberActive.length)releaseDamageNumber(damageNumberActive.length-1);
+        }
+        function damageProjectionVisible(p){
+            return Number.isFinite(p.x)&&Number.isFinite(p.y)&&Number.isFinite(p.z)&&
+                p.x>=-1&&p.x<=1&&p.y>=-1&&p.y<=1&&p.z>=-1&&p.z<1;
+        }
+        window.ktkDamageNumberStatus=()=>({active:damageNumberActive.length,free:damageNumberFree.length,
+            created:damageNumberCreated,dropped:damageNumberDropped,clipped:damageNumberClipped,limit:DAMAGE_NUMBER_LIMIT});
         function spawnFloatingDamage(worldPos, dmg, isHeadshot = false, extraTag = '') {
-            const container = document.getElementById('damage-numbers-container');
-            const proj = worldPos.clone().project(camera);
-            if (proj.z >= 1.0) return;
-
-            const sx = (proj.x * 0.5 + 0.5) * window.innerWidth + (Math.random() - 0.5) * 24;
-            const sy = (-proj.y * 0.5 + 0.5) * window.innerHeight;
-
-            const el = document.createElement('div');
-            el.className = `dmg-number krunker-text ${isHeadshot ? 'text-2xl sm:text-3xl text-rose-500' : 'text-lg sm:text-xl text-amber-300'}`;
-            el.style.left = `${sx}px`;
-            el.style.top = `${sy}px`;
-            el.textContent = isHeadshot ? `🎯 KRİTİK ${Math.round(dmg)}!` : `${extraTag}+${Math.round(dmg)}`;
+            camera.updateMatrixWorld();
+            const proj=damageNumberProjection.copy(worldPos).project(camera);
+            if(!damageProjectionVisible(proj)){damageNumberClipped++;return;}
+            const now=performance.now();
+            expireDamageNumbers(now);
+            const limit=isHeadshot?DAMAGE_NUMBER_LIMIT:DAMAGE_NUMBER_NORMAL_LIMIT;
+            if(damageNumberActive.length>=limit){damageNumberDropped++;return;}
+            const container=document.getElementById('damage-numbers-container');
+            if(!container)return;
+            const sx=Math.max(0,Math.min(window.innerWidth,
+                (proj.x*.5+.5)*window.innerWidth+(Math.random()-.5)*24));
+            const sy=(-proj.y*.5+.5)*window.innerHeight;
+            let el=damageNumberFree.pop();
+            if(!el){el=document.createElement('div');damageNumberCreated++;}
+            el._ktkDamageAlternate=!el._ktkDamageAlternate;
+            el.className=`dmg-number krunker-text ${isHeadshot ? 'text-2xl sm:text-3xl text-rose-500' : 'text-lg sm:text-xl text-amber-300'}`;
+            el.style.animationName=el._ktkDamageAlternate?'floatDmg':'floatDmgReuse';
+            el.style.left=`${sx}px`;
+            el.style.top=`${sy}px`;
+            el.textContent=isHeadshot?`🎯 KRİTİK ${Math.round(dmg)}!`:`${extraTag}+${Math.round(dmg)}`;
             container.appendChild(el);
-            setTimeout(() => el.remove(), 850);
+            damageNumberActive.push({el,expires:now+DAMAGE_NUMBER_LIFETIME});
         }
 
         function spawnSmokeCloud(origin, dir, count = 20, lingering = 2.8) {
             for (let i = 0; i < count; i++) {
                 const size = 0.25 + Math.random() * 0.45;
                 const isSpark = i < 4;
+                if(!admitParticle(isSpark))continue;
                 const puff = acquireEffectCube('lambert',
                     isSpark ? 0xfbbf24 : 0xd1d5db, isSpark ? 0.95 : 0.78, size);
                 puff.position.copy(origin).addScaledVector(dir, 1.0 + Math.random() * 1.1);
@@ -12222,6 +12325,7 @@ const KTKCalmUIV25=(()=>{
             const count = isHeadshot ? 21 : metal ? 15 : 11;
             for (let i = 0; i < count; i++) {
                 const size = 0.06 + Math.random() * (metal ? 0.12 : 0.10);
+                if(!admitParticle(i<4))continue;
                 const p = acquireEffectCube('basic', palette[i % palette.length], 0.96, size);
                 p.position.copy(pos);
                 const life = 0.19 + Math.random() * 0.19;
@@ -12253,6 +12357,7 @@ const KTKCalmUIV25=(()=>{
             for (let i = 0; i < 36; i++) {
                 const cols = [0xff4500, 0xf59e0b, 0xef4444, 0x374151];
                 const size = 0.35 + Math.random() * 0.65;
+                if(!admitParticle(i<8))continue;
                 const p = acquireEffectCube('basic', cols[i % cols.length], 0.9, size);
                 p.position.copy(center);
                 particles.push({
@@ -12676,7 +12781,7 @@ const KTKCalmUIV25=(()=>{
         function arenaShotTracer(start, end, isArrow) {
             const path = end.clone().sub(start);
             const length = path.length();
-            if (length < 0.1) return;
+            if (length < 0.1 || !admitParticle(true)) return;
             const geometry = new THREE.CylinderGeometry(isArrow ? 0.015 : 0.027, isArrow ? 0.015 : 0.027, length, 5);
             const material = new THREE.MeshBasicMaterial({ color: isArrow ? 0xfde68a : 0xffc879,
                 transparent: true, opacity: isArrow ? 0.85 : 0.94, depthWrite: false });
@@ -14072,8 +14177,10 @@ const KTKCalmUIV25=(()=>{
             sfx.setVolume(gameSettings.volume);
             const targetRatio = ArenaSettings.pixelRatio(
                 gameSettings.quality,window.devicePixelRatio);
-            if (Math.abs(renderer.getPixelRatio() - targetRatio) > .001)
+            if (Math.abs(renderer.getPixelRatio() - targetRatio) > .001){
                 renderer.setPixelRatio(targetRatio);
+                invalidateIdleScene();
+            }
         }
         function changeSetting(patch) {
             gameSettings = ArenaSettings.normalize({...gameSettings,...patch});
@@ -14329,6 +14436,7 @@ const KTKCalmUIV25=(()=>{
         const speedLinesCtx = speedLinesCanvas.getContext('2d');
 
         function resizeCanvases() {
+            invalidateIdleScene();
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
@@ -14608,7 +14716,7 @@ const KTKCalmUIV25=(()=>{
                 t.light.intensity = 1.25 + Math.sin(nowSec * 12 + t.phase) * 0.25;
                 t.flame.scale.y = 0.9 + Math.cos(nowSec * 15 + t.phase) * 0.22;
                 if (t.innerCore) t.innerCore.scale.y = 0.85 + Math.sin(nowSec * 18 + t.phase) * 0.2;
-                if (Math.random() < 0.06) {
+                if (Math.random() < 0.06 && admitParticle()) {
                     const ember = acquireEffectCube('opaque', 0xfbbf24, 1, 0.08);
                     ember.position.copy(t.basePos);
                     particles.push({
@@ -15014,10 +15122,12 @@ const KTKCalmUIV25=(()=>{
                 arr.trailTimer -= dt;
                 if (arr.trailTimer <= 0) {
                     arr.trailTimer = 0.025;
-                    const trail = acquireEffectCube('basic', 0xe5e7eb, 0.55, 0.05, 0.05, 0.28);
-                    trail.position.copy(prevPos);
-                    trail.quaternion.copy(arr.mesh.quaternion);
-                    particles.push({ mesh: trail, vel: effectStillVelocity, life: 0.22, maxLife: 0.22, grow: false });
+                    if(admitParticle()){
+                        const trail = acquireEffectCube('basic', 0xe5e7eb, 0.55, 0.05, 0.05, 0.28);
+                        trail.position.copy(prevPos);
+                        trail.quaternion.copy(arr.mesh.quaternion);
+                        particles.push({ mesh: trail, vel: effectStillVelocity, life: 0.22, maxLife: 0.22, grow: false });
+                    }
                 }
 
                 // Swept collision: find the FIRST obstruction along the complete frame segment.
@@ -15847,12 +15957,13 @@ const KTKCalmUIV25=(()=>{
             const now = performance.now();
             const rawDt = (now - lastTime) / 1000;
             lastTime = now;
-            // Fullscreen bitmap menu never displays the live 3D scene.
-            // Keep the clock current, but skip simulation/render work until play resumes.
-            if(menuOverlay.dataset.ui32Ready==='true'&&!menuOverlay.classList.contains('hidden')) return;
-            ArenaPerformance.record(performanceSamples,rawDt);
-
-            if(isGameActive&&arenaMatch.phase==='playing'){
+            // BUG09/10: cleanup continues even under the opaque menu; GPU work does not.
+            if(damageNumberActive.length)expireDamageNumbers(now);
+            const hidden=menuOverlay.dataset.ui32Ready==='true'&&!menuOverlay.classList.contains('hidden');
+            const playing=isGameActive&&arenaMatch.phase==='playing';
+            if(!shouldRenderScene(idleSceneState,playing,hidden))return;
+            if(playing){
+                ArenaPerformance.record(performanceSamples,rawDt);
                 fpsFrames++;fpsTimer+=Math.max(0,rawDt);
                 if(fpsTimer>=.5){
                     document.getElementById('hud-fps').textContent=Math.round(fpsFrames/fpsTimer);
@@ -15869,6 +15980,7 @@ const KTKCalmUIV25=(()=>{
             }
             updateActiveMeadowGrass();
             renderer.render(scene, camera);
+            acknowledgeSceneRender(idleSceneState);
         }
 
         // Perf report is computed only when inspected; no network logging.

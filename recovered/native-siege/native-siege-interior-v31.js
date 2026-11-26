@@ -68,11 +68,30 @@ const KTKSiegeInteriorV31=(()=>{
    a.z-a.d/2 < b.z+b.d/2+pad &&
    a.z+a.d/2 > b.z-b.d/2-pad;
  }
+ // BUG08: continuous swept square clearance against every physical block.
  function pathClear(points,radius=1){
-  return Array.isArray(points)&&points.length>0&&points.every(p=>
-   features.every(f=>
-    Math.abs(f.x-p.x)>f.w/2+radius ||
-    Math.abs(f.z-p.z)>f.d/2+radius));
+  if(!Array.isArray(points)||points.length<1||
+   !Number.isFinite(radius)||radius<0||
+   !points.every(p=>p&&Number.isFinite(p.x)&&Number.isFinite(p.z)))return false;
+  for(let i=0;i<Math.max(1,points.length-1);i++){
+   const a=points[i],b=points[Math.min(i+1,points.length-1)];
+   for(const f of features){
+    let lo=0,hi=1;
+    for(const [axis,half] of [['x',f.w/2],['z',f.d/2]]){
+     const min=f[axis]-half-radius,max=f[axis]+half+radius;
+     const start=a[axis],delta=b[axis]-start;
+     if(Math.abs(delta)<1e-12){
+      if(start<min||start>max){lo=1;hi=0;break;}
+     }else{
+      const t0=(min-start)/delta,t1=(max-start)/delta;
+      lo=Math.max(lo,Math.min(t0,t1));hi=Math.min(hi,Math.max(t0,t1));
+      if(lo>hi)break;
+     }
+    }
+    if(lo<=hi)return false;
+   }
+  }
+  return true;
  }
  function validate(){
   const seen=new Set();
