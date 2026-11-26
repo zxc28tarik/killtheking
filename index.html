@@ -3270,7 +3270,7 @@ window.addEventListener('error', function(event) {
   return {seed,elapsed:0,tick:0,playerType,playerTeam,playerSquadId:squads.find(s=>s.playerControlled).id,
    squads,soldiers,blueDeaths:0,redDeaths:0,winner:null,events:[],accumulator:0,
    playerPosition:{x:playerTeam==='blue'?-176:176,y:0,z:squads.find(s=>s.playerControlled).z},
-   playerHealth:100,playerActive:true,playerKills:0,playerHitCooldown:0,
+   playerBodyHeight:3.55,playerHealth:100,playerActive:true,playerKills:0,playerHitCooldown:0,
    playerHits:[],combatEvents:[],worldObstacles:[],projectiles:[],nextProjectileId:1,
    teamPlans:{blue:{phase:'deploy',focusId:null,lastAt:-Infinity,rallies:0,operation:null,defense:null,
      support:null,supportHistory:[],nextSupportId:1,lastSupportAt:-Infinity,
@@ -3525,11 +3525,14 @@ window.addEventListener('error', function(event) {
   if(!s||!FIRE_MODES[mode]||!isRanged(s.type)||(onlyPlayer&&!s.playerControlled))return false;
   s.fireMode=mode;s.volleyClock=0;s.volleyReady=false;s.volleyWindowUntil=0;s.stanceChanges++;return true;
  }
- function setPlayerPosition(state,x,z,feetY=0){
+ function setPlayerPosition(state,x,z,feetY=0,eyeHeight=2.35){
   if(Number.isFinite(x)&&Number.isFinite(z)){
    state.playerPosition.x=clamp(x,-BOUNDS,BOUNDS);
    state.playerPosition.z=clamp(z,-BOUNDS,BOUNDS);
    state.playerPosition.y=Number.isFinite(feetY)?feetY:0;
+   // BUG13: preserve standing geometry; interpolate towards Arena crouch height.
+   const standFraction=clamp((Number.isFinite(eyeHeight)?eyeHeight:2.35)-1.35,0,1);
+   state.playerBodyHeight=1.9+1.65*standFraction;
   }
  }
  // All commanders on the same team share a limited, periodically refreshed plan.
@@ -5070,6 +5073,8 @@ window.addEventListener('error', function(event) {
   const px=origin.x-state.playerPosition.x,pz=origin.z-state.playerPosition.z;
   const aa=dx*dx+dz*dz,rad=.8;
   const feet=Number.isFinite(state.playerPosition.y)?state.playerPosition.y:0;
+  const height=Number.isFinite(state.playerBodyHeight)?clamp(state.playerBodyHeight,1.9,3.55):3.55;
+  const scale=height/3.55;
   let near=0,far=maxDistance;
   if(aa<1e-10){if(px*px+pz*pz>rad*rad)return null;}
   else{
@@ -5080,13 +5085,13 @@ window.addEventListener('error', function(event) {
    far=Math.min(far,(-bb+root)/(2*aa));
   }
   if(Math.abs(dy)>1e-10){
-   const lo=(feet+.2-origin.y)/dy,hi=(feet+3.55-origin.y)/dy;
+   const lo=(feet+.2*scale-origin.y)/dy,hi=(feet+height-origin.y)/dy;
    near=Math.max(near,Math.min(lo,hi));far=Math.min(far,Math.max(lo,hi));
-  }else if(origin.y<feet+.2||origin.y>feet+3.55)return null;
+  }else if(origin.y<feet+.2*scale||origin.y>feet+height)return null;
   if(near>far||near>maxDistance)return null;
   const y=origin.y+near*dy;
   const lateral=Math.abs(px*dz-pz*dx);
-  const zone=y-feet>2.52?'head':y-feet<1.1?'leg':lateral>.55?'arm':'body';
+  const zone=y-feet>2.52*scale?'head':y-feet<1.1*scale?'leg':lateral>.55?'arm':'body';
   return {distance:near,zone,point:{x:origin.x+near*dx,y,z:origin.z+near*dz}};
  }
  function damagePlayer(state,attacker,amount,zone='body'){
@@ -5126,7 +5131,7 @@ window.addEventListener('error', function(event) {
    p.vy-=ARROW_GRAVITY*dt;p.life+=dt;p.distance+=length;
    if(kind==='soldier'&&body.soldier.team!==p.team)
     damageSoldier(state,body.targetId,WeaponBalance.damage('bow',body.zone,.55),
-     {attackerId:owner.id,weapon:'bow',zone:body.zone});
+     {attackerId:owner.id,weapon:'bow',zone:body.zone,projectile:p});
    else if(kind==='player')damagePlayer(state,owner,
     WeaponBalance.damage('bow',player.zone,.55),player.zone);
    if(kind||p.life>=ARROW_LIFETIME||p.distance>p.range||p.y<-.1||
@@ -5158,7 +5163,13 @@ window.addEventListener('error', function(event) {
   if(!target||!target.alive||!Number.isFinite(amount)||amount<=0)return null;
   const playerSource=opts.source==='player';
   const attacker=opts.attackerId==null?null:state.soldiers[opts.attackerId];
-  if(playerSource?target.team===state.playerTeam:(!attacker||!attacker.alive||attacker.team===target.team))return null;
+  // BUG14: only an already-launched, still-active arrow may outlive its owner.
+   const projectile=opts.projectile;
+   const inFlight=!!attacker&&opts.weapon==='bow'&&attacker.type==='bow'&&
+    projectile?.ownerId===attacker.id&&projectile.team===attacker.team&&
+    !!state.projectiles?.includes(projectile);
+   if(playerSource?target.team===state.playerTeam:
+    (!attacker||(!attacker.alive&&!inFlight)||attacker.team===target.team))return null;
   const squad=state.squads[target.squadId];
   const guard=soldierGuard(state,target,opts,amount);
   if(guard.blocked){
@@ -14048,7 +14059,7 @@ const KTKCalmUIV25=(()=>{
                 player.pos.set(nativeSiegeMode?0:own.x-12,player.currentHeight,
                     nativeSiegeMode?-69:own.z);
                 ArenaArmyBattle.setPlayerPosition(meadowBattleState,player.pos.x,player.pos.z,
-                    player.pos.y-player.currentHeight);
+                    player.pos.y-player.currentHeight,player.currentHeight);
                 if(nativeSiegeMode){
                     nativeSiegeDeploymentEvidence=KTKSiegeExpansionV25.deployment(
                       meadowBattleState,player.pos);
@@ -15710,7 +15721,7 @@ const KTKCalmUIV25=(()=>{
             if(meadowBattleMode&&meadowBattleState){
                 // The selected squad receives the actual player's position each frame.
                 ArenaArmyBattle.setPlayerPosition(meadowBattleState,player.pos.x,player.pos.z,
-                    player.pos.y-player.currentHeight);
+                    player.pos.y-player.currentHeight,player.currentHeight);
                 ArenaArmyBattle.setPlayerHealth(meadowBattleState,player.hp);
                 const siegePreviousPositions=nativeSiegeMode?
                     captureSiegePoses(meadowBattleState.soldiers):null;
@@ -15759,7 +15770,7 @@ const KTKCalmUIV25=(()=>{
                         const own=meadowBattleState.squads[meadowBattleState.playerSquadId];
                         player.pos.set(own.x-16,player.currentHeight,own.z);
                         ArenaArmyBattle.setPlayerPosition(meadowBattleState,player.pos.x,player.pos.z,
-                    player.pos.y-player.currentHeight);
+                    player.pos.y-player.currentHeight,player.currentHeight);
                         ArenaArmyBattle.setPlayerHealth(meadowBattleState,player.hp);
                     }
                     updateHUD();
