@@ -86,42 +86,5 @@ test('OPT01: cube geometry/material reused, reset and capped',()=>{
  release(ember);
 });
 
-test('OPT02: grass preserves all 12,000 positions while refreshing only changed tiles',()=>{
- const context={THREE,ArenaMeadowGrass:{
-  NEAR_TILE_SIZE:20,EDGE_INSET:4,
-  PALETTE:[0x4e742c,0x5d8433,0x6e933c,0x779b43,0x86a149]
- }};
- const source=part('        const OPT_GRASS_GRID=10', '        function updateActiveMeadowGrass(){');
- runInNewContext(source+'\n globalThis.update=updateNearbyTuftsOptimized;',context);
- const matrices=new Array(12000),colors=new Array(12000);
- let writes=0;
- const mesh={count:12000,userData:{lastTileX:Infinity,lastTileZ:Infinity},
-  instanceMatrix:{needsUpdate:false},instanceColor:{needsUpdate:false},
-  setMatrixAt(index,m){matrices[index]=m;writes++;},
-  setColorAt(index,c){colors[index]=c.hex;}
- };
- const spec={half:850,boxes:[
-  {solid:true,x:5,z:8,w:12,d:8},
-  {solid:true,x:-30,z:50,w:6,d:22}
- ]};
- const update=context.update;
- assert.equal(update(mesh,spec,1,1),true);
- assert.equal(writes,12000);
- assert.equal(mesh.userData.lastRegeneratedTiles,100);
- assert.equal(update(mesh,spec,2,2),false);
- assert.equal(writes,12000);
- assert.equal(update(mesh,spec,21,2),true);
- assert.equal(writes,13200);
- assert.equal(mesh.userData.lastRegeneratedTiles,10);
- assert.equal(update(mesh,spec,41,21),true);
- assert.equal(writes,15480);
- assert.equal(mesh.userData.lastRegeneratedTiles,19);
- const normalized=matrices.map((m,i)=>({
-  key:m.position[0].toFixed(5)+':'+m.position[2].toFixed(5),
-  color:colors[i]
- }));
- assert.equal(new Set(normalized.map(v=>v.key)).size,12000);
- assert.ok(normalized.every(v=>Number.isInteger(v.color)));
- assert.equal(update(mesh,spec,-500,-500),true);
- assert.equal(mesh.userData.lastRegeneratedTiles,100);
-});
+// OPT02 position and incremental-write assertions now run against actual r128
+// in bug05-06-grass-chunks.test.mjs (no monolithic mock buffer remains).
