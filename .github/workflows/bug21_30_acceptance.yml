@@ -1,0 +1,196 @@
+name: BUG21-30 targeted Chromium acceptance
+on:
+  push:
+    branches: [main]
+    paths:
+      - index.html
+      - .github/workflows/bug21_30_acceptance.yml
+  workflow_dispatch:
+jobs:
+  browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save --no-package-lock playwright@1.58.2
+      - run: npx playwright install --with-deps chromium
+      - name: Exercise targeted runtime contracts in the canonical HTML
+        run: |
+          node --input-type=module <<'JS'
+          import { chromium } from 'playwright';
+          import { resolve } from 'node:path';
+          import { pathToFileURL } from 'node:url';
+          import assert from 'node:assert/strict';
+          const browser=await chromium.launch({args:['--use-angle=swiftshader','--enable-unsafe-swiftshader','--disable-dev-shm-usage']});
+          const failures=[];
+          try{
+            for(const map of ['arena','meadow','siege']){
+              const p=await browser.newPage({viewport:{width:1280,height:720}});
+              const errors=[];p.on('pageerror',e=>errors.push(e.message));
+              try{
+                await p.goto(pathToFileURL(resolve('index.html')).href);
+                await p.waitForFunction(()=>window.ktkUI32Status?.().ready==='true',null,{timeout:30000});
+                await p.locator('[data-focus-map="arena"]').click();
+                await p.locator('#fm-toggle-settings').click();
+                await p.locator('#fm-quality').selectOption('low');
+                await p.locator('#ui32-back').click();
+                await p.locator('[data-focus-map="'+map+'"]').click();
+                await p.locator('[data-approved-class="2"]:visible').click();
+                await p.locator('#play-btn').click();
+                await p.waitForFunction(()=>window.ktkUI32Status().menuHidden);
+                const results=await p.evaluate(map=>{
+                  const out=[];
+                  const check=(name,fn)=>{try{fn();out.push({name,pass:true});}catch(e){out.push({name,pass:false,error:String(e.stack||e)});}};
+                  const must=(value,msg)=>{if(!value)throw new Error(msg);};
+                  const key=(type,code)=>window.dispatchEvent(new KeyboardEvent(type,{code,bubbles:true,cancelable:true}));
+                  const mouse=(type,button)=>window.dispatchEvent(new MouseEvent(type,{button,bubbles:true,cancelable:true}));
+                  // Synchronous fixtures avoid random bot timing. Input handlers run in
+                  // real Chromium; pointer-lock/focus are controlled only for the fixtures.
+                  const lock=Object.getOwnPropertyDescriptor(document,'pointerLockElement');
+                  const focus=Object.getOwnPropertyDescriptor(document,'hasFocus');
+                  const exit=Object.getOwnPropertyDescriptor(document,'exitPointerLock');
+                  let simulatedLock=canvas;
+                  Object.defineProperty(document,'pointerLockElement',{configurable:true,get:()=>simulatedLock});
+                  Object.defineProperty(document,'hasFocus',{configurable:true,value:()=>true});
+                  Object.defineProperty(document,'exitPointerLock',{configurable:true,value:()=>{simulatedLock=null;document.dispatchEvent(new Event('pointerlockchange'));}});
+                  try{
+                    must(arenaMatch.phase==='playing','match not playing');
+                    isGameActive=true;
+                    check('BUG30 '+map+' live scoreboard',()=>{
+                      key('keydown','Tab');
+                      const rows=[...document.querySelectorAll('#match-live-table .match-live-row')];
+                      must(liveScoreboardOverlay.getAttribute('aria-hidden')==='false','scoreboard hidden');
+                      if(map==='arena'){
+                        must(document.getElementById('match-live-actor-label').textContent==='OYUNCU','arena actor label');
+                        must(rows.length===ArenaMatch.leaderboard(player,bots).length,'arena row count');
+                      }else{
+                        must(rows.length===meadowBattleState.squads.length+1,'army rows do not match squads');
+                        must(rows.filter(r=>r.classList.contains('is-player')).length===1,'individual player row');
+                        must(document.getElementById('match-live-actor-label').textContent==='BİRLİK / OYUNCU','army actor label');
+                        const alive=team=>meadowBattleState.squads.reduce((n,s)=>n+(s.team===team?s.alive:0),0);
+                        must(document.getElementById('match-live-team-score').textContent.includes('MAVİ '+alive('blue')+' — '+alive('red')+' KIRMIZI'),'wrong army totals');
+                      }
+                      key('keyup','Tab');
+                      must(liveScoreboardOverlay.getAttribute('aria-hidden')==='true','TAB release did not hide');
+                    });
+                    if(map==='arena'){
+                      check('BUG29 launched bow survives class switch',()=>{
+                        must(player.classIdx===2,'archer not selected');
+                        player.lastBowShotAt=-1000;player.attackCooldown=0;
+                        mouse('mousedown',0);
+                        must(player.isDrawingBow,'bow did not draw');
+                        player.bowDrawSeconds=5;
+                        const before=arrows.length,origin=playerAttackOrigin();
+                        mouse('mouseup',0);
+                        must(arrows.length===before+1,'bow did not launch');
+                        const arr=arrows.at(-1),ctx=arr.attackContext;
+                        must(ctx?.weapon==='bow'&&ctx.name===CLASSES[2].weaponName,'wrong launch weapon');
+                        must(ctx.origin.x===origin.x&&ctx.origin.z===origin.z,'wrong launch origin');
+                        window.selectClass(3);
+                        must(player.classIdx===3&&arrows.includes(arr)&&arr.attackContext===ctx,'class switch altered projectile');
+                        must(Object.isFrozen(ctx)&&Object.isFrozen(ctx.origin),'launch context mutable');
+                      });
+                    }
+                    if(map!=='arena'){
+                      check('BUG25 independent C/O controls '+map,()=>{
+                        changeArmyFormation('line');
+                        key('keydown','KeyC');
+                        must(keys.KeyC===true&&currentSquad().formation==='line','C was consumed by formation');
+                        key('keyup','KeyC');
+                        key('keydown','KeyO');
+                        must(currentSquad().formation==='square'&&!keys.KeyC,'O did not independently set square');
+                        key('keyup','KeyO');
+                      });
+                      check('BUG22 tactical map cancels combat '+map,()=>{
+                        player.isDrawingBow=true;player.bowDrawSeconds=5;player.bowCharge=1;
+                        player.isRMBDown=true;player.isShielding=true;keys.KeyW=true;
+                        const before=arrows.length;
+                        key('keydown','KeyP');
+                        must(armyTacticalOpen&&!player.isDrawingBow&&!player.isRMBDown&&!player.isShielding&&!keys.KeyW,'tactical opening did not clear input');
+                        mouse('mouseup',0);mouse('mousedown',0);mouse('mousedown',2);
+                        must(arrows.length===before&&!player.isDrawingBow&&!player.isRMBDown,'tactical map triggered attack');
+                        armyTacticalOpen=false;armyTacticalOverlay.classList.add('hidden');simulatedLock=canvas;
+                      });
+                    }
+                    if(map==='meadow'){
+                      check('BUG23 airborne meadow boundary',()=>{
+                        const limit=meadowSpec.half-.75-player.radius;
+                        player.pos.set(limit+2,20,0);player.vel.set(12,0,3);
+                        resolvePlayerCollisions(.05);
+                        must(player.pos.x<=limit+1e-6&&player.vel.x===0,'airborne boundary escaped');
+                        must(player.vel.z>0,'tangential movement removed');
+                      });
+                      check('BUG27/28 live army blast and physical cover',()=>{
+                        const enemies=meadowBattleState.soldiers.filter(s=>s.alive&&s.team!==meadowBattleState.playerTeam);
+                        const friendly=meadowBattleState.soldiers.find(s=>s.alive&&s.team===meadowBattleState.playerTeam);
+                        must(enemies.length>=2&&friendly,'army actors missing');
+                        const [exposed,covered]=enemies;
+                        const place=(s,x,z)=>{s.x=x;s.z=z;s.siegeY=0;};
+                        place(exposed,503,500);place(covered,508,500);place(friendly,500,503);
+                        const hp=[exposed.hp,covered.hp,friendly.hp];
+                        const before=worldMeshes.slice();
+                        const wall=new THREE.Mesh(new THREE.BoxGeometry(1,4,6),new THREE.MeshBasicMaterial());
+                        wall.position.set(505,2,500);wall.updateMatrixWorld(true);
+                        worldMeshes.splice(0,worldMeshes.length,wall);
+                        try{
+                          const center=new THREE.Vector3(500,1.2,500);
+                          must(!arenaWorldBlockBetween(center,new THREE.Vector3(503,1.2,500)),'clear ray blocked');
+                          must(arenaWorldBlockBetween(center,new THREE.Vector3(508,1.2,500)),'solid wall missed');
+                          const barrel={active:true,pos:new THREE.Vector3(500,0,500),group:new THREE.Group(),label:document.createElement('span')};
+                          triggerBarrelExplosion(barrel);
+                          must(exposed.hp<hp[0],'BUG27 exposed army soldier not damaged');
+                          must(covered.hp===hp[1],'BUG28 damage crossed wall');
+                          must(friendly.hp===hp[2],'friendly damage');
+                          must(!barrel.active&&barrel.respawnTimer===15,'barrel lifecycle');
+                        }finally{
+                          worldMeshes.splice(0,worldMeshes.length,...before);wall.geometry.dispose();wall.material.dispose();
+                        }
+                      });
+                    }
+                    if(map==='siege'){
+                      check('BUG21 closed/open gate raycast and collider registration',()=>{
+                        must(!nativeSiegeGateOpen&&nativeSiegeGateMesh.visible,'gate not initially closed');
+                        must(!worldMeshes.includes(nativeSiegeOriginalSouthVisual)&&!worldMeshes.includes(nativeSiegeOriginalNorthVisual),'obsolete walls remain');
+                        must(nativeSiegeSouthWallMeshes.every(m=>worldMeshes.includes(m)),'physical replacement wall missing');
+                        must(worldMeshes.includes(nativeSiegeGateMesh)&&colliders.includes(nativeSiegeGateBox),'closed gate missing');
+                        nativeSiegeDamageGate(nativeSiegeEquipment.gateHp,'ram');
+                        must(nativeSiegeGateOpen&&!nativeSiegeGateMesh.visible,'gate did not open');
+                        must(!worldMeshes.includes(nativeSiegeGateMesh)&&!castleMapData.worldMeshes.includes(nativeSiegeGateMesh),'invisible gate blocks rays');
+                        must(!colliders.includes(nativeSiegeGateBox),'invisible gate blocks movement');
+                        nativeSiegeResetEquipment();
+                        must(worldMeshes.includes(nativeSiegeGateMesh)&&colliders.includes(nativeSiegeGateBox),'reset did not restore gate');
+                      });
+                      check('BUG26 TPS camera sweep against actual gate box',()=>{
+                        const box=nativeSiegeGateBox;
+                        const o={x:(box.minX+box.maxX)/2,y:(box.minY+box.maxY)/2,z:box.minZ-1};
+                        const f=thirdPersonCameraFraction(o,{x:0,y:0,z:4.2},[box]);
+                        must(f>=0&&f<1,'camera crossed closed gate');
+                        must(o.z+4.2*f<box.minZ,'camera inside gate');
+                        must(thirdPersonCameraFraction(o,{x:0,y:0,z:-4.2},[box])===1,'clear camera unnecessarily shortened');
+                      });
+                    }
+                    check('BUG24 focus loss clears input '+map,()=>{
+                      player.isDrawingBow=true;player.bowDrawSeconds=2;player.isRMBDown=true;player.isShielding=true;keys.KeyW=true;
+                      window.dispatchEvent(new Event('blur'));
+                      must(!isGameActive&&arenaMatch.phase==='paused','blur did not pause');
+                      must(!keys.KeyW&&!player.isDrawingBow&&!player.isRMBDown&&!player.isShielding,'stuck input');
+                      must(!armyTacticalOpen,'tactical overlay left open');
+                    });
+                  }finally{
+                    for(const [name,descriptor] of [['pointerLockElement',lock],['hasFocus',focus],['exitPointerLock',exit]]){
+                      if(descriptor)Object.defineProperty(document,name,descriptor);else delete document[name];
+                    }
+                  }
+                  return out;
+                },map);
+                for(const r of results){console.log(r.pass?'PASS':'FAIL',r.name,r.error||'');if(!r.pass)failures.push(r);}
+                assert.deepEqual(errors,[],'unexpected page errors');
+              }catch(e){failures.push({map,error:String(e.stack||e)});console.error('MAP FAILURE',map,e);}
+              finally{await p.close();}
+            }
+          }finally{await browser.close();}
+          assert.deepEqual(failures,[],'targeted browser contract failures');
+          JS
