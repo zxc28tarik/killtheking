@@ -10,8 +10,8 @@
 | BUG24 | Odak/fare kilidi sonrası takılı kontroller | Kod düzeltildi, tarayıcı kabulü bekliyor | cb7f7a1 |
 | BUG25 | C tuşu eğilme/kare formasyonu çakışması | Kod düzeltildi: C kayma, O kare; tarayıcı kabulü bekliyor | fbf83e8 |
 | BUG26 | Üçüncü şahıs kamerası duvarlardan geçiyor | Kod düzeltildi, 5 geometrik birim kontrolü geçti; tarayıcı kabulü bekliyor | fbf83e8 |
-| BUG27 | Fıçı patlamaları gerçek orduya hasar vermiyor | Açık | — |
-| BUG28 | Patlamalar duvar arkasına hasar veriyor | Açık | — |
+| BUG27 | Fıçı patlamaları gerçek orduya hasar vermiyor | Kod düzeltildi, tarayıcı kabulü bekliyor | 5051726 |
+| BUG28 | Patlamalar duvar arkasına hasar veriyor | Kod düzeltildi, 5 hasar hesabı kontrolü geçti; tarayıcı kabulü bekliyor | 5051726 |
 | BUG29 | Havadaki okun silah kimliği sınıf değişiminde yanlışlaşıyor | Açık | — |
 | BUG30 | Ordu savaşlarında eski Arena skorları gösteriliyor | Açık | — |
 
