@@ -22,7 +22,7 @@ const oldScripts=scripts(baseline.html),candidateScripts=scripts(html);
 // Preserve the archived native lineage by position. Only the explicitly
 // reviewed live army module may differ; pin its exact UTF-8 git blob identity.
 // The historical baseline stays immutable and is never exported over UI32.
-const approvedArmyBlob='a2ae6884e5bb81d9229d38ff95d615eb145bcedb';
+const approvedArmyBlob='2db9b2bf585868bf673024fd46027f77bbe1a91b';
 const blobIdentity=s=>createHash('sha1').update('blob '+Buffer.byteLength(s)+'\0').update(s).digest('hex');
 if(oldScripts.length!==29||candidateScripts.length!==31)
  throw Error('Unexpected native script count');

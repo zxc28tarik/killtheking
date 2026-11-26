@@ -2949,6 +2949,11 @@ window.addEventListener('error', function(event) {
  const isRanged=type=>type==='musket'||type==='bow';
  // BUG01–02: world-space body bases; ground actors retain exact old geometry.
  const bodyFeetY=u=>Number.isFinite(u?.siegeY)?u.siegeY:(Number.isFinite(u?.y)?u.y:0);
+ // BUG03: physical melee reach only; no target or decision policy changes.
+ function meleeElevationReach(a,b,range){
+  const dy=bodyFeetY(b)-bodyFeetY(a);
+  return Math.abs(dy)<=1.35&&Math.hypot(a.x-b.x,a.z-b.z,dy)<=range;
+ }
  const frontDir=team=>team==='blue'?1:-1;
  // Perception radii used by 7 AI captains and 140 soldiers. Avoid relying on
  // per-frame randomness: a commander has a persistent personality.
@@ -5196,9 +5201,10 @@ window.addEventListener('error', function(event) {
  function strike(state,attacker,target,role){
   const victimSquad=state.squads[target.squadId],attackerSquad=state.squads[attacker.squadId];
   const d=dist(attacker,target);
-  // Neither pikes nor swords may reach through a solid obstacle.
-  if(worldLineBlocked(state,{x:attacker.x,y:isRanged(attacker.type)?bodyFeetY(attacker)+1.85:1.85,z:attacker.z},
-    {x:target.x,y:isRanged(attacker.type)?bodyFeetY(target)+1.85:1.85,z:target.z}))return null;
+  // Neither pikes nor swords may reach across impossible heights or solid cover.
+  if(!isRanged(attacker.type)&&!meleeElevationReach(attacker,target,role.range))return null;
+  if(worldLineBlocked(state,{x:attacker.x,y:bodyFeetY(attacker)+1.85,z:attacker.z},
+    {x:target.x,y:bodyFeetY(target)+1.85,z:target.z}))return null;
   if(attacker.type==='bow')return launchArrow(state,attacker,target);
   if(isRanged(attacker.type)){
    // Muskets use near-instant geometric raycasts, bows have real flight.
@@ -5288,8 +5294,10 @@ window.addEventListener('error', function(event) {
    const dx=s.x-origin.x,dz=s.z-origin.z,d=Math.hypot(dx,dz);
    if(d>range+.65||d<1e-5||d>=best)continue;
    if((dx*fx+dz*fz)/d<halfAngleCos)continue;
-   const origin3={x:origin.x,y:1.65,z:origin.z};
-   const hit=raycastSoldier(state,origin3,{x:dx,y:0,z:dz},d+.8,team,
+   if(!meleeElevationReach(origin,s,range))continue;
+   const origin3={x:origin.x,y:bodyFeetY(origin)+1.65,z:origin.z};
+   const dy=bodyFeetY(s)+1.65-origin3.y;
+   const hit=raycastSoldier(state,origin3,{x:dx,y:dy,z:dz},Math.hypot(d,dy)+.8,team,
     {firstBody:true,returnFriendly:true});
    if(!hit||hit.targetId!==s.id)continue;
    best=d;found=s;
@@ -5316,9 +5324,9 @@ window.addEventListener('error', function(event) {
    return hit?damagePlayer(state,attacker,
      WeaponBalance.damage('musket',hit.zone),hit.zone):null;
   }
-  if(state.playerHitCooldown>0||d>role.range)return null;
-  if(worldLineBlocked(state,{x:attacker.x,y:1.85,z:attacker.z},
-    {x:state.playerPosition.x,y:1.85,z:state.playerPosition.z}))return null;
+  if(state.playerHitCooldown>0||d>role.range||!meleeElevationReach(attacker,state.playerPosition,role.range))return null;
+  if(worldLineBlocked(state,{x:attacker.x,y:bodyFeetY(attacker)+1.85,z:attacker.z},
+    {x:state.playerPosition.x,y:bodyFeetY(state.playerPosition)+1.85,z:state.playerPosition.z}))return null;
   const rng=seeded(state.seed,attacker.id,state.tick+933);
   if(rng>.77)return null;
   return damagePlayer(state,attacker,role.damage,'body');
@@ -5713,7 +5721,7 @@ window.addEventListener('error', function(event) {
   updateTeamPlan,buildOperation,buildSupportPlan,interpositionPoint,negotiateSupport,
   updateWithdrawalPlan,withdrawalGuardPost,finishWithdrawal,
   deliverCommanderSignals,sendCommanderSignal,readEnemyDoctrine,selectEnemySquad,threatToRanged,nearestEnemy,
-  damageSoldier,soldierGuard,traceRangedAttack,raycastSoldier,soldierInCone,setPlayerHealth,drainPlayerHits,drainCombatEvents,
+  damageSoldier,soldierGuard,traceRangedAttack,raycastSoldier,soldierInCone,meleeElevationReach,setPlayerHealth,drainPlayerHits,drainCombatEvents,
   launchArrow,advanceProjectiles,raycastPlayer,tracePlayerMusket,ARROW_SPEED,ARROW_GRAVITY,MAX_ARROWS,
   setWorldObstacles,firstWorldObstacle,worldLineBlocked,rangedBodyBlocked,firstBodyBeforePlayer,
   localAssessment,friendlyFireLaneBlocked,squadCohesionEstimate,
@@ -12996,9 +13004,10 @@ const KTKCalmUIV25=(()=>{
         function armyPlayerConeContact(range,threshold=.63){
             if(!meadowBattleMode||!meadowBattleState)return null;
             const facing=new THREE.Vector3(0,0,-1).applyQuaternion(camera.quaternion);
-            const soldier=ArenaArmyBattle.soldierInCone(meadowBattleState,player.pos,facing,range,'blue',threshold);
+            const feet={x:player.pos.x,y:player.pos.y-player.currentHeight,z:player.pos.z};
+            const soldier=ArenaArmyBattle.soldierInCone(meadowBattleState,feet,facing,range,'blue',threshold);
             if(!soldier)return null;
-            const point=new THREE.Vector3(soldier.x,1.65,soldier.z);
+            const point=new THREE.Vector3(soldier.x,(soldier.siegeY||0)+1.65,soldier.z);
             if(arenaWorldBlockBetween(camera.position,point))return null;
             return {soldier,targetId:soldier.id,zone:'body',point};
         }
@@ -13961,6 +13970,7 @@ const KTKCalmUIV25=(()=>{
             document.getElementById('bow-charge-ui').classList.add('hidden');
             document.getElementById('shield-overlay').style.opacity = '0';
             ArenaMatch.begin(arenaMatch);
+            lastTime=performance.now();fpsFrames=0;fpsTimer=0;
             syncMatchDurationControls();
             matchTimeSeconds = arenaMatch.remaining;
             setHudText(document.getElementById('hud-timer'),ArenaMatch.clock(matchTimeSeconds));
@@ -14093,7 +14103,7 @@ const KTKCalmUIV25=(()=>{
             sfx.init();
             if (arenaMatch.phase === 'menu' || arenaMatch.phase === 'results')
                 resetFreeForAllRound();
-            else ArenaMatch.resume(arenaMatch);
+            else {ArenaMatch.resume(arenaMatch);lastTime=performance.now();}
             isGameActive = arenaMatch.phase === 'playing';
             syncMatchDurationControls();
             syncMatchModeControls();
@@ -14151,7 +14161,7 @@ const KTKCalmUIV25=(()=>{
 
         document.addEventListener('pointerlockchange', () => {
             if (document.pointerLockElement === canvas) {
-                if (arenaMatch.phase === 'paused') ArenaMatch.resume(arenaMatch);
+                if (arenaMatch.phase === 'paused') {ArenaMatch.resume(arenaMatch);lastTime=performance.now();}
                 isGameActive = arenaMatch.phase === 'playing';
                 if (isGameActive) menuOverlay.classList.add('hidden');
             } else {
@@ -14578,7 +14588,7 @@ const KTKCalmUIV25=(()=>{
         const frameForward=new THREE.Vector3(),frameRight=new THREE.Vector3(),
             frameMove=new THREE.Vector3(),frameUp=new THREE.Vector3(0,1,0),
             frameCamBack=new THREE.Vector3(),barrelProjection=new THREE.Vector3();
-        function updateGame(dt) {
+        function updateGame(dt,clockDt=dt) {
             arenaClock += dt;
             if (player.shieldParryTime > 0) {
                 player.shieldParryTime = Math.max(0, player.shieldParryTime - dt);
@@ -15647,7 +15657,8 @@ const KTKCalmUIV25=(()=>{
                 }
             }
             // Match Timer, Radar & FPS Counter
-            const matchFinished = ArenaMatch.tick(arenaMatch, dt);
+            const matchFinished = ArenaMatch.tick(arenaMatch,
+                arenaMatch.remaining-clockDt<1e-8?arenaMatch.remaining:clockDt);
             matchTimeSeconds = arenaMatch.remaining;
             setHudText(document.getElementById('hud-timer'),ArenaMatch.clock(matchTimeSeconds));
             const nativeArmyWinner=meadowBattleMode&&meadowBattleState&&meadowBattleState.winner;
@@ -15668,13 +15679,6 @@ const KTKCalmUIV25=(()=>{
                 renderRadar();
             }
 
-            fpsFrames++;
-            fpsTimer += dt;
-            if (fpsTimer >= 0.5) {
-                document.getElementById('hud-fps').textContent = Math.round(fpsFrames / fpsTimer);
-                fpsFrames = 0;
-                fpsTimer = 0;
-            }
         }
 
         // OPT02: optimized grass placement in the unpinned GAME layer.
@@ -15769,23 +15773,43 @@ const KTKCalmUIV25=(()=>{
                data.lastTileZ===Math.floor(player.pos.z/tile))return false;
             return updateNearbyTuftsOptimized(meadowDenseGrass,meadowSpec,player.pos.x,player.pos.z);
         }
+        // BUG04: real active clock, bounded physics catch-up; no accumulated stall debt.
+        function runActiveFrame(rawDt,remaining,isPlaying,advance){
+            if(!Number.isFinite(rawDt)||rawDt<=0||!Number.isFinite(remaining)||remaining<=0)return;
+            const wall=Math.min(rawDt,remaining);
+            const simulated=Math.min(wall,.20);
+            const steps=Math.max(1,Math.ceil(simulated/.05-1e-9));
+            for(let i=0;i<steps&&isPlaying();i++){
+                const sim=simulated/steps;
+                const clock=i===steps-1?wall-(wall/steps)*i:wall/steps;
+                advance(sim,clock);
+            }
+        }
         function animate() {
             requestAnimationFrame(animate);
             const now = performance.now();
             const rawDt = (now - lastTime) / 1000;
-            const dt = Math.min(0.05, rawDt);
             lastTime = now;
             // Fullscreen bitmap menu never displays the live 3D scene.
             // Keep the clock current, but skip simulation/render work until play resumes.
             if(menuOverlay.dataset.ui32Ready==='true'&&!menuOverlay.classList.contains('hidden')) return;
             ArenaPerformance.record(performanceSamples,rawDt);
 
-            let gameDt = dt;
-            if (impactHoldSeconds > 0) {
-                impactHoldSeconds = Math.max(0, impactHoldSeconds - dt);
-                gameDt *= 0.16;
+            if(isGameActive&&arenaMatch.phase==='playing'){
+                fpsFrames++;fpsTimer+=Math.max(0,rawDt);
+                if(fpsTimer>=.5){
+                    document.getElementById('hud-fps').textContent=Math.round(fpsFrames/fpsTimer);
+                    fpsFrames=0;fpsTimer=0;
+                }
+                runActiveFrame(rawDt,arenaMatch.remaining,
+                    ()=>isGameActive&&arenaMatch.phase==='playing',
+                    (sim,clock)=>{
+                        // Hit-stop slows only physical animation/simulation, never match time.
+                        const hold=Math.min(Math.max(0,impactHoldSeconds),sim);
+                        impactHoldSeconds=Math.max(0,impactHoldSeconds-clock);
+                        updateGame(sim-hold*.84,clock);
+                    });
             }
-            if (isGameActive && arenaMatch.phase === 'playing') updateGame(gameDt);
             updateActiveMeadowGrass();
             renderer.render(scene, camera);
         }
