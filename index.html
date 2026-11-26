@@ -10163,8 +10163,10 @@ const KTKCalmUIV25=(()=>{
         function nativeSiegeAabb(x,y,z,w,h,d){return {
           minX:x-w/2,maxX:x+w/2,minY:y-h/2,maxY:y+h/2,
           minZ:z-d/2,maxZ:z+d/2};}
-        nativeSiegeMesh(nativeSiegeParts,-26,3.5,-42,36,7,5,nativeSiegeStone);
-        nativeSiegeMesh(nativeSiegeParts,26,3.5,-42,36,7,5,nativeSiegeStone);
+        const nativeSiegeSouthWallMeshes=[
+          nativeSiegeMesh(nativeSiegeParts,-26,3.5,-42,36,7,5,nativeSiegeStone),
+          nativeSiegeMesh(nativeSiegeParts,26,3.5,-42,36,7,5,nativeSiegeStone)
+        ];
         const nativeSiegeGateMesh=nativeSiegeMesh(nativeSiegeParts,
           0,3.5,-42,16,7,5,nativeSiegeGateMat);
         const v19SiegeDressing=KTKBattlefieldVisualV19.dressSiegeGate(THREE,nativeSiegeParts,nativeSiegeGateMesh);
@@ -10367,11 +10369,18 @@ const KTKCalmUIV25=(()=>{
           const originalIdx=source.indexOf(nativeSiegeOriginalSouthCollider);
           const northIdx=source.indexOf(nativeSiegeOriginalNorthCollider);
           const siegeWorld=castleMapData.worldMeshes;
-          const oldNorthMeshIdx=siegeWorld.indexOf(nativeSiegeOriginalNorthVisual);
+          const removeSiegeMesh=m=>{const i=siegeWorld.indexOf(m);if(i>=0)siegeWorld.splice(i,1);};
+          const syncSiegeGateRaycast=()=>{
+            removeSiegeMesh(nativeSiegeGateMesh);
+            if(enabled&&!nativeSiegeGateOpen)siegeWorld.push(nativeSiegeGateMesh);
+          };
           if(enabled){
             if(originalIdx>=0)source.splice(originalIdx,1);
-            if(northIdx>=0)source.splice(northIdx,1);
-            if(oldNorthMeshIdx>=0)siegeWorld.splice(oldNorthMeshIdx,1);
+            const currentNorthIdx=source.indexOf(nativeSiegeOriginalNorthCollider);
+            if(currentNorthIdx>=0)source.splice(currentNorthIdx,1);
+            removeSiegeMesh(nativeSiegeOriginalSouthVisual);
+            removeSiegeMesh(nativeSiegeOriginalNorthVisual);
+            for(const m of nativeSiegeSouthWallMeshes)if(!siegeWorld.includes(m))siegeWorld.push(m);
             for(const m of [...nativeSiegeExpansionV25.solidMeshes,
                             ...nativeSiegeDefenseV26.solidMeshes,
                             ...nativeSiegeInteriorV31.solidMeshes])
@@ -10386,6 +10395,9 @@ const KTKCalmUIV25=(()=>{
                             ...nativeSiegeInteriorV31.solidMeshes]){
               const j=siegeWorld.indexOf(m);if(j>=0)siegeWorld.splice(j,1);
             }
+            for(const m of nativeSiegeSouthWallMeshes)removeSiegeMesh(m);
+            if(!siegeWorld.includes(nativeSiegeOriginalSouthVisual))
+              siegeWorld.push(nativeSiegeOriginalSouthVisual);
             if(!siegeWorld.includes(nativeSiegeOriginalNorthVisual))
               siegeWorld.push(nativeSiegeOriginalNorthVisual);
             for(const b of [...nativeSiegeWallBoxes,nativeSiegeGateBox,
@@ -10403,6 +10415,7 @@ const KTKCalmUIV25=(()=>{
             if(!source.includes(nativeSiegeOriginalNorthCollider))
               source.push(nativeSiegeOriginalNorthCollider);
           }
+          syncSiegeGateRaycast();
           // Both player movement and AI routes use the SAME active collision set.
           if(arenaMap==='castle'){
             colliders.length=0;colliders.push(...source);
@@ -10470,6 +10483,8 @@ const KTKCalmUIV25=(()=>{
         function nativeSiegeResetEquipment(){
           nativeSiegeGateOpen=false;
           nativeSiegeGateMesh.visible=true;
+          if(!castleMapData.worldMeshes.includes(nativeSiegeGateMesh))castleMapData.worldMeshes.push(nativeSiegeGateMesh);
+          if(!worldMeshes.includes(nativeSiegeGateMesh))worldMeshes.push(nativeSiegeGateMesh);
           if(!castleMapData.colliders.includes(nativeSiegeGateBox))
             castleMapData.colliders.push(nativeSiegeGateBox);
           colliders.length=0;colliders.push(...castleMapData.colliders);
@@ -11132,6 +11147,9 @@ const KTKCalmUIV25=(()=>{
           if(st.gateHp===0){
             nativeSiegeGateOpen=true;
             nativeSiegeGateMesh.visible=false;
+            for(const list of [castleMapData.worldMeshes,worldMeshes]){
+              const i=list.indexOf(nativeSiegeGateMesh);if(i>=0)list.splice(i,1);
+            }
             const j=castleMapData.colliders.indexOf(nativeSiegeGateBox);
             if(j>=0)castleMapData.colliders.splice(j,1);
             colliders.length=0;colliders.push(...castleMapData.colliders);
@@ -11219,7 +11237,7 @@ const KTKCalmUIV25=(()=>{
               const a=new THREE.Vector3(p.x,p.y,p.z);
               const n=new THREE.Vector3(p.x+p.vx*h,p.y+p.vy*h-9.5*h*h,p.z+p.vz*h);
               const ray=new THREE.Raycaster(a,n.clone().sub(a).normalize(),0,a.distanceTo(n));
-              const impact=ray.intersectObjects([nativeSiegeGateMesh,...worldMeshes]
+              const impact=ray.intersectObjects(worldMeshes
                 .filter(m=>m.visible&&m!==nativeSiegeOriginalSouthVisual),false)[0];
               const delta=n.clone().sub(a),len=delta.length();
               const body=ArenaArmyBattle.raycastSoldier(meadowBattleState,
