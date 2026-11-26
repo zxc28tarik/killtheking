@@ -22,23 +22,34 @@ const oldScripts=scripts(baseline.html),candidateScripts=scripts(html);
 // Preserve the archived native lineage by position. Only the explicitly
 // reviewed live army module may differ; pin its exact UTF-8 git blob identity.
 // The historical baseline stays immutable and is never exported over UI32.
-const approvedArmyBlob='cfcab6b92eb788edcdfecec3325e3b22d3f40a4b';
+// AK34: reviewed native 3D siege cylinder/ballistic integration.
+// All 207 original/live regression tests passed on commit 7d205850,
+// including FIT06 1500 differential ground-level rays and 5 new AK34 checks.
+// Explicit current script blob remains pinned; no relaxed bypass.
+const approvedArmyBlob='fe20a9b383b5bee46561fcb4fae09fe10d16b017';
+// AK34 review: original instanced soldier renderer now reads authoritative siegeY.
+// Explicit independent pin: no arbitrary legacy script edits allowed.
+const approvedRendererBlob='e0b4e3e98eed319d81ead2abd2ac50e836d30bf1';
 const blobIdentity=s=>createHash('sha1').update('blob '+Buffer.byteLength(s)+'\0').update(s).digest('hex');
 if(oldScripts.length!==29||candidateScripts.length!==31)
  throw Error('Unexpected native script count');
 if(!oldScripts[26].includes('root.ArenaArmyBattle')||!candidateScripts[26].includes('root.ArenaArmyBattle')||
    blobIdentity(candidateScripts[26])!==approvedArmyBlob)
  throw Error('Unreviewed live army module: update the explicit approval only with regression evidence');
+if(!oldScripts[27].includes('root.ArenaArmyRender')||
+   !candidateScripts[27].includes('root.ArenaArmyRender')||
+   blobIdentity(candidateScripts[27])!==approvedRendererBlob)
+ throw Error('Unreviewed live army render module: update explicit approval only with regression evidence');
 let preserved=0;
 for(let i=0;i<28;i++){
  if(oldScripts[i]===candidateScripts[i])preserved++;
- else if(i!==26)throw Error('Unapproved original script changed: '+i);
+ else if(i!==26&&i!==27)throw Error('Unapproved original script changed: '+i);
 }
 const manifest={...baseline.manifest,unchangedOriginalScriptCount:preserved,bytes:Buffer.byteLength(html),sha256:createHash('sha256').update(html).digest('hex')};
 if(manifest.kind!=='SINGLE_NATIVE_FPS_THREE_MAPS'||
    manifest.oldIframeOrSeparateS3D1Runtime!==false||
    manifest.oneLiveGameDocument!==true||
-   manifest.unchangedOriginalScriptCount!==27)
+   manifest.unchangedOriginalScriptCount!==26)
  throw Error('Refusing incorrect non-native entrypoint');
 if(mode==='--write'){
  writeFileSync(dest,html,'utf8');

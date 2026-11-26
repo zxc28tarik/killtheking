@@ -2947,6 +2947,8 @@ window.addEventListener('error', function(event) {
 
  const dist=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
  const isRanged=type=>type==='musket'||type==='bow';
+ const baseY=u=>Number.isFinite(u?.siegeY)?u.siegeY:0;
+ const playerBaseY=s=>Number.isFinite(s?.playerPosition?.y)?s.playerPosition.y:0;
  const frontDir=team=>team==='blue'?1:-1;
  // Perception radii used by 7 AI captains and 140 soldiers. Avoid relying on
  // per-frame randomness: a commander has a persistent personality.
@@ -3047,6 +3049,15 @@ window.addEventListener('error', function(event) {
    }));
   return true;
  }
+ // AK34: physical high cover obstructs 3D gun/arrow rays, not G5.4 ground paths.
+ function setElevatedWorldObstacles(state,boxes=[]){
+  if(!state||!Array.isArray(boxes))return false;
+  state.elevatedWorldObstacles=boxes.filter(b=>b&&
+   [b.minX,b.maxX,b.minY,b.maxY,b.minZ,b.maxZ].every(Number.isFinite)&&
+   b.minX<b.maxX&&b.minY<b.maxY&&b.minZ<b.maxZ&&b.minY>2.65)
+   .map(b=>({minX:b.minX,maxX:b.maxX,minY:b.minY,maxY:b.maxY,minZ:b.minZ,maxZ:b.maxZ}));
+  return true;
+ }
  function boxRayEntry(origin,dir,distance,b){
   let entry=0,exit=distance;
   for(const axis of ['x','y','z']){
@@ -3067,6 +3078,8 @@ window.addEventListener('error', function(event) {
   let best=Infinity;
   for(const box of state.worldObstacles||[])
    best=Math.min(best,boxRayEntry(origin,ray,range,box));
+  for(const box of state.elevatedWorldObstacles||[])
+   best=Math.min(best,boxRayEntry(origin,ray,range,box));
   return best<=range?best:null;
  }
  function worldLineBlocked(state,from,to){
@@ -3078,10 +3091,10 @@ window.addEventListener('error', function(event) {
  // For a real projectile the first living body must win, irrespective of
  // affiliation. Friendly body blocks damage; projectile does not pass through.
  function rangedBodyBlocked(state,attacker,target){
-  const origin={x:attacker.x,y:1.85,z:attacker.z};
-  const to={x:target.x,y:1.85,z:target.z};
-  const dir={x:to.x-origin.x,y:0,z:to.z-origin.z};
-  const distance=Math.hypot(dir.x,dir.z);
+  const origin={x:attacker.x,y:baseY(attacker)+1.85,z:attacker.z};
+  const to={x:target.x,y:baseY(target)+1.85,z:target.z};
+  const dir={x:to.x-origin.x,y:to.y-origin.y,z:to.z-origin.z};
+  const distance=Math.hypot(dir.x,dir.y,dir.z);
   if(distance<.05)return false;
   const first=raycastSoldier(state,origin,dir,distance+.85,attacker.team,
    {firstBody:true,returnFriendly:true,ignoreSoldierId:attacker.id});
@@ -3099,7 +3112,11 @@ window.addEventListener('error', function(event) {
    const t=((ally.x-attacker.x)*dx+(ally.z-attacker.z)*dz)/distSq;
    if(t<=0||t>=.99)continue;
    const acrossX=attacker.x+t*dx-ally.x,acrossZ=attacker.z+t*dz-ally.z;
-   if(acrossX*acrossX+acrossZ*acrossZ<.75*.75)return true;
+   const targetY=Number.isFinite(target.siegeY)?target.siegeY:
+    (Number.isFinite(target.y)?target.y:0);
+   const shotY=baseY(attacker)+1.85+t*(targetY-baseY(attacker));
+   if(acrossX*acrossX+acrossZ*acrossZ<.75*.75&&
+      Math.abs(shotY-(baseY(ally)+1.85))<1.6)return true;
   }
   return false;
  }
@@ -3255,7 +3272,7 @@ window.addEventListener('error', function(event) {
   }
   return {seed,elapsed:0,tick:0,playerType,playerTeam,playerSquadId:squads.find(s=>s.playerControlled).id,
    squads,soldiers,blueDeaths:0,redDeaths:0,winner:null,events:[],accumulator:0,
-   playerPosition:{x:playerTeam==='blue'?-176:176,z:squads.find(s=>s.playerControlled).z},
+   playerPosition:{x:playerTeam==='blue'?-176:176,y:0,z:squads.find(s=>s.playerControlled).z},
    playerHealth:100,playerActive:true,playerKills:0,playerHitCooldown:0,
    playerHits:[],combatEvents:[],worldObstacles:[],projectiles:[],nextProjectileId:1,
    teamPlans:{blue:{phase:'deploy',focusId:null,lastAt:-Infinity,rallies:0,operation:null,defense:null,
@@ -3511,10 +3528,11 @@ window.addEventListener('error', function(event) {
   if(!s||!FIRE_MODES[mode]||!isRanged(s.type)||(onlyPlayer&&!s.playerControlled))return false;
   s.fireMode=mode;s.volleyClock=0;s.volleyReady=false;s.volleyWindowUntil=0;s.stanceChanges++;return true;
  }
- function setPlayerPosition(state,x,z){
+ function setPlayerPosition(state,x,z,feetY=0){
   if(Number.isFinite(x)&&Number.isFinite(z)){
    state.playerPosition.x=clamp(x,-BOUNDS,BOUNDS);
    state.playerPosition.z=clamp(z,-BOUNDS,BOUNDS);
+   if(Number.isFinite(feetY))state.playerPosition.y=Math.max(0,feetY);
   }
  }
  // All commanders on the same team share a limited, periodically refreshed plan.
@@ -4814,6 +4832,10 @@ window.addEventListener('error', function(event) {
   }
  }
  function nearestEnemy(state,soldier,range,preferredSquadId=null){
+  // AK36: elevated defenders select reachable firing lanes on a bounded clock.
+  if(soldier.ak35Wall?.phase==='post'&&range===TYPES[soldier.type].range){
+   return siegeWallVisibleEnemy(state,soldier,range);
+  }
   let best=range*range,target=null,preferred=null,preferredD=range*range;
   let remembered=null,rememberedDist=Infinity;
   const remembers=state.elapsed-(soldier.lastEnemyAt??-Infinity)<4.2;
@@ -4996,7 +5018,7 @@ window.addEventListener('error', function(event) {
   const role=TYPES[attacker.type],range=role.range;
   const targetDistance=dist(attacker,target);
   if(targetDistance<.05||targetDistance>range+.75)return null;
-  const origin={x:attacker.x,y:1.85,z:attacker.z};
+  const origin={x:attacker.x,y:baseY(attacker)+1.85,z:attacker.z};
   const hRoll=options.horizontalRoll??seeded(state.seed,attacker.id,state.tick*31+target.id*17+301);
   const vRoll=options.verticalRoll??seeded(state.seed,attacker.id,state.tick*47+target.id*11+709);
   // Suppression and charging make aim more erratic, without randomizing every frame.
@@ -5005,7 +5027,7 @@ window.addEventListener('error', function(event) {
   const h=clamp(.5+(hRoll-.5)*penalty,0,1);
   const v=clamp(.5+(vRoll-.5)*penalty,0,1);
   const aim=WeaponBalance.aimedShot(attacker.type==='bow'?'archer':'musket',
-   origin,{x:target.x,y:0,z:target.z},h,v,3.2);
+   origin,{x:target.x,y:baseY(target),z:target.z},h,v,3.2);
   const direction={x:aim.point.x-origin.x,y:aim.point.y-origin.y,z:aim.point.z-origin.z};
   const hit=raycastSoldier(state,origin,direction,range+.85,attacker.team,
    {firstBody:true,returnFriendly:true,ignoreSoldierId:attacker.id});
@@ -5015,7 +5037,7 @@ window.addEventListener('error', function(event) {
  // objects, unlike the previous instant ray against the intended target.
  // Both enemy and friendly bodies stop arrows; only enemies lose HP.
  function makeArrowAim(state,attacker,targetBase,salt=0,options={}){
-  const origin={x:attacker.x,y:1.85,z:attacker.z};
+  const origin={x:attacker.x,y:baseY(attacker)+1.85,z:attacker.z};
   const dx=targetBase.x-origin.x,dz=targetBase.z-origin.z;
   const distance=Math.hypot(dx,dz);
   if(distance<.25||distance>TYPES.bow.range+2)return null;
@@ -5033,7 +5055,7 @@ window.addEventListener('error', function(event) {
  }
  function launchArrow(state,attacker,target,options={}){
   if(!state||!attacker?.alive||attacker.type!=='bow'||!target)return null;
-  const targetBase={x:target.x,y:0,z:target.z};
+  const targetBase={x:target.x,y:target===state.playerPosition?playerBaseY(state):baseY(target),z:target.z};
   const aim=makeArrowAim(state,attacker,targetBase,target.id??197,options);
   if(!aim)return null;
   // Bounded projectile pool prevents unbounded gameplay/render memory use.
@@ -5053,6 +5075,7 @@ window.addEventListener('error', function(event) {
   if(length<1e-8)return null;
   const dx=direction.x/length,dy=direction.y/length,dz=direction.z/length;
   const px=origin.x-state.playerPosition.x,pz=origin.z-state.playerPosition.z;
+  const floor=playerBaseY(state);
   const aa=dx*dx+dz*dz,rad=.8;
   let near=0,far=maxDistance;
   if(aa<1e-10){if(px*px+pz*pz>rad*rad)return null;}
@@ -5064,13 +5087,13 @@ window.addEventListener('error', function(event) {
    far=Math.min(far,(-bb+root)/(2*aa));
   }
   if(Math.abs(dy)>1e-10){
-   const lo=(.2-origin.y)/dy,hi=(3.55-origin.y)/dy;
+   const lo=(floor+.2-origin.y)/dy,hi=(floor+3.55-origin.y)/dy;
    near=Math.max(near,Math.min(lo,hi));far=Math.min(far,Math.max(lo,hi));
-  }else if(origin.y<.2||origin.y>3.55)return null;
+  }else if(origin.y<floor+.2||origin.y>floor+3.55)return null;
   if(near>far||near>maxDistance)return null;
   const y=origin.y+near*dy;
   const lateral=Math.abs(px*dz-pz*dx);
-  const zone=y>2.52?'head':y<1.1?'leg':lateral>.55?'arm':'body';
+  const zone=y-floor>2.52?'head':y-floor<1.1?'leg':lateral>.55?'arm':'body';
   return {distance:near,zone,point:{x:origin.x+near*dx,y,z:origin.z+near*dz}};
  }
  function damagePlayer(state,attacker,amount,zone='body'){
@@ -5120,8 +5143,8 @@ window.addEventListener('error', function(event) {
  }
  function tracePlayerMusket(state,attacker,options={}){
   if(attacker.team===state.playerTeam||!state.playerActive)return null;
-  const target={x:state.playerPosition.x,y:0,z:state.playerPosition.z};
-  const origin={x:attacker.x,y:1.85,z:attacker.z};
+  const target={x:state.playerPosition.x,y:playerBaseY(state),z:state.playerPosition.z};
+  const origin={x:attacker.x,y:baseY(attacker)+1.85,z:attacker.z};
   const h=options.horizontalRoll??seeded(state.seed,attacker.id,state.tick*31+311);
   const v=options.verticalRoll??seeded(state.seed,attacker.id,state.tick*47+719);
   const aim=WeaponBalance.aimedShot('musket',origin,target,h,v,3.2);
@@ -5190,9 +5213,10 @@ window.addEventListener('error', function(event) {
  function strike(state,attacker,target,role){
   const victimSquad=state.squads[target.squadId],attackerSquad=state.squads[attacker.squadId];
   const d=dist(attacker,target);
+  if(!isRanged(attacker.type)&&Math.abs(baseY(attacker)-baseY(target))>1.35)return null;
   // Neither pikes nor swords may reach through a solid obstacle.
-  if(worldLineBlocked(state,{x:attacker.x,y:1.85,z:attacker.z},
-    {x:target.x,y:1.85,z:target.z}))return null;
+  if(worldLineBlocked(state,{x:attacker.x,y:baseY(attacker)+1.85,z:attacker.z},
+    {x:target.x,y:baseY(target)+1.85,z:target.z}))return null;
   if(attacker.type==='bow')return launchArrow(state,attacker,target);
   if(isRanged(attacker.type)){
    // Muskets use near-instant geometric raycasts, bows have real flight.
@@ -5236,12 +5260,15 @@ window.addEventListener('error', function(event) {
   const aa=dx*dx+dz*dz,radius=.80;
   let bestTarget=null,bestY=0,bestZone=null,limit=maxDistance;
   const vertical=Math.abs(dy)>1e-9;
-  if(!vertical&&(origin.y<.20||origin.y>3.55))return null;
-  const ya=vertical?(.20-origin.y)/dy:0,yb=vertical?(3.55-origin.y)/dy:0;
-  const yLow=Math.min(ya,yb),yHigh=Math.max(ya,yb);
+  // AK34: each target owns an independent world-space vertical cylinder.
   for(const target of state.soldiers){
    if(!target.alive||target.id===options.ignoreSoldierId)continue;
    if(target.team===team&&!options.firstBody)continue;
+   const feet=Number.isFinite(target.siegeY)?target.siegeY:0;
+   if(!vertical&&(origin.y<feet+.20||origin.y>feet+3.55))continue;
+   const ya=vertical?(feet+.20-origin.y)/dy:0;
+   const yb=vertical?(feet+3.55-origin.y)/dy:0;
+   const yLow=Math.min(ya,yb),yHigh=Math.max(ya,yb);
    const px=origin.x-target.x,pz=origin.z-target.z;
    let low,high;
    if(aa<1e-9){if(px*px+pz*pz>radius*radius)continue;low=0;high=limit;}
@@ -5261,7 +5288,7 @@ window.addEventListener('error', function(event) {
    if(entry<.02&&target.team===team)continue;
    const y=origin.y+entry*dy;
    const lateral=Math.abs(px*dz-pz*dx);
-   const zone=y>2.52?'head':y<1.1?'leg':lateral>.55?'arm':'body';
+   const zone=y-feet>2.52?'head':y-feet<1.1?'leg':lateral>.55?'arm':'body';
    limit=entry;
    bestTarget=target;bestY=y;bestZone=zone;
   }
@@ -5282,8 +5309,8 @@ window.addEventListener('error', function(event) {
    const dx=s.x-origin.x,dz=s.z-origin.z,d=Math.hypot(dx,dz);
    if(d>range+.65||d<1e-5||d>=best)continue;
    if((dx*fx+dz*fz)/d<halfAngleCos)continue;
-   const origin3={x:origin.x,y:1.65,z:origin.z};
-   const hit=raycastSoldier(state,origin3,{x:dx,y:0,z:dz},d+.8,team,
+   const origin3={x:origin.x,y:Number.isFinite(origin.y)?origin.y:1.65,z:origin.z};
+   const hit=raycastSoldier(state,origin3,{x:dx,y:baseY(s)+1.85-origin3.y,z:dz},Math.hypot(dx,baseY(s)+1.85-origin3.y,dz)+.8,team,
     {firstBody:true,returnFriendly:true});
    if(!hit||hit.targetId!==s.id)continue;
    best=d;found=s;
@@ -5291,9 +5318,9 @@ window.addEventListener('error', function(event) {
   return found;
  }
  function firstBodyBeforePlayer(state,attacker){
-  const origin={x:attacker.x,y:1.85,z:attacker.z};
-  const direction={x:state.playerPosition.x-attacker.x,y:0,z:state.playerPosition.z-attacker.z};
-  const length=Math.hypot(direction.x,direction.z);
+  const origin={x:attacker.x,y:baseY(attacker)+1.85,z:attacker.z};
+  const direction={x:state.playerPosition.x-attacker.x,y:playerBaseY(state)-baseY(attacker),z:state.playerPosition.z-attacker.z};
+  const length=Math.hypot(direction.x,direction.y,direction.z);
   if(length<1)return false;
   const impact=raycastSoldier(state,origin,direction,length-.8,attacker.team,
    {firstBody:true,returnFriendly:true,ignoreSoldierId:attacker.id});
@@ -5310,9 +5337,9 @@ window.addEventListener('error', function(event) {
    return hit?damagePlayer(state,attacker,
      WeaponBalance.damage('musket',hit.zone),hit.zone):null;
   }
-  if(state.playerHitCooldown>0||d>role.range)return null;
-  if(worldLineBlocked(state,{x:attacker.x,y:1.85,z:attacker.z},
-    {x:state.playerPosition.x,y:1.85,z:state.playerPosition.z}))return null;
+  if(state.playerHitCooldown>0||d>role.range||Math.abs(baseY(attacker)-playerBaseY(state))>1.35)return null;
+  if(worldLineBlocked(state,{x:attacker.x,y:baseY(attacker)+1.85,z:attacker.z},
+    {x:state.playerPosition.x,y:playerBaseY(state)+1.85,z:state.playerPosition.z}))return null;
   const rng=seeded(state.seed,attacker.id,state.tick+933);
   if(rng>.77)return null;
   return damagePlayer(state,attacker,role.damage,'body');
@@ -5362,6 +5389,70 @@ window.addEventListener('error', function(event) {
   for(const soldier of state.soldiers)if(soldier.alive)
    activeRank[soldier.id]=nextRank[soldier.squadId]++;
   return scratch;
+ }
+ // AK35 native archer detachment; original combat remains authoritative.
+ function siegeWallVisibleEnemy(state,u,range){
+  const p=u.ak35Wall;
+  const valid=e=>e?.alive&&e.team!==u.team&&Math.hypot(e.x-u.x,e.z-u.z,baseY(e)-baseY(u))<=range;
+  const old=state.soldiers[p.visibleEnemyId];
+  if(state.elapsed<(p.nextSightAt||0)&&valid(old))return old;
+  if(state.elapsed<(p.nextSightAt||0)&&p.visibleEnemyId==null)return null;
+  p.nextSightAt=state.elapsed+.48+(u.id%5)*.04;
+  const candidates=[];
+  for(const e of nearbySoldiers(state,u.x,u.z,range)){
+   if(!valid(e))continue;
+   const d=Math.hypot(e.x-u.x,e.z-u.z,baseY(e)-baseY(u));
+   // Prefer imminent enemies on the same level; never fire through stone.
+   candidates.push({e,score:d-(baseY(e)>6?10:0)-(e.id===p.visibleEnemyId?3:0)});
+  }
+  candidates.sort((a,b)=>a.score-b.score||a.e.id-b.e.id);
+  p.visibleEnemyId=null;
+  for(const {e} of candidates.slice(0,8)){
+   if(!rangedBodyBlocked(state,u,e)){p.visibleEnemyId=e.id;return e;}
+  }
+  return null;
+ }
+ function siegeWallMove(state,u,squad,dt){
+  const p=u.ak35Wall;if(!p)return false;
+  if(squad.order==='retreat'||u.hp<p.initialHp*.36||state.ak35Recall)p.retreat=true;
+  if(p.retreat&&p.phase==='approach'){u.ak35Wall=null;return false;}
+  if(p.retreat&&p.phase==='post')p.phase='returnLanding';
+  if(p.retreat&&p.phase==='landing')p.phase='returnRamp';
+  if(p.phase==='post'&&!p.retreat){
+   // A real elevated enemy close to the post triggers a safe reverse route.
+   if(state.tick%12===u.id%12&&nearbySoldiers(state,u.x,u.z,9).some(e=>e.alive&&e.team!==u.team&&Math.abs(baseY(e)-baseY(u))<1.5&&dist(u,e)<8)){p.retreat=true;p.phase='returnLanding';}
+  }
+  if(p.retreat&&p.phase==='climb')p.phase='descend';
+  if(p.phase==='approach'&&!p.route){
+   if(state.tick%16!==u.id%16)return true;
+   p.route=planSquadRoute(state,u,{x:p.x,z:p.foot},.7);
+   if(!p.route){u.ak35Wall=null;return false;}
+  }
+  const target=p.phase==='approach'?p.route[0]:
+   p.phase==='climb'?{x:p.x,z:p.top}:
+   p.phase==='landing'||p.phase==='returnLanding'?{x:p.postX,z:p.top}:
+   p.phase==='post'?{x:p.postX,z:p.postZ}:
+   p.phase==='returnRamp'?{x:p.x,z:p.top}:{x:p.x,z:p.foot};
+  if(!target){u.ak35Wall=null;return false;}
+  const dx=target.x-u.x,dz=target.z-u.z,d=Math.hypot(dx,dz);
+  const f=d<.001?1:Math.min(1,TYPES[u.type].speed*u.pace*dt*.72/d);
+  const nx=u.x+dx*f,nz=u.z+dz*f;
+  const y=p.phase==='climb'||p.phase==='descend'?9*Math.max(0,Math.min(1,(p.foot-nz)/(p.foot-p.top))):p.phase==='approach'?0:9;
+  if(p.phase==='approach'&&!routeSegmentClear(state,u,{x:nx,z:nz},.55)){u.ak35Wall=null;return false;}
+  if(p.phase!=='approach'){
+   const intersects=b=>b.maxY>y+.12&&b.minY<y+2.5&&nx>b.minX-.35&&nx<b.maxX+.35&&nz>b.minZ-.35&&nz<b.maxZ+.35;
+   if((state.worldObstacles||[]).some(intersects)||(state.elevatedWorldObstacles||[]).some(intersects)){p.blocked=(p.blocked||0)+1;return true;}
+  }
+  u.x=nx;u.z=nz;u.siegeY=y;
+  if(f===1){
+   if(p.phase==='approach'){p.route.shift();if(!p.route.length)p.phase='climb';}
+   else if(p.phase==='climb')p.phase='landing';
+   else if(p.phase==='landing')p.phase='post';
+   else if(p.phase==='returnLanding')p.phase='returnRamp';
+   else if(p.phase==='returnRamp')p.phase='descend';
+   else if(p.phase==='descend'){u.siegeY=0;u.ak35Wall=null;}
+  }
+  return true;
  }
  function oneTick(state,dt){
   state.elapsed+=dt;state.tick++;
@@ -5511,7 +5602,8 @@ window.addEventListener('error', function(event) {
     }
    }
    const dx=destX-soldier.x,dz=destZ-soldier.z,d=Math.hypot(dx,dz);
-   if(d>.3){const move=Math.min(Math.max(0,d-(squad.order==='charge'&&!ranged?.85:.3)),role.speed*dt*soldier.pace*(squad.formation==='shield'?.72:1));
+   const wallManaged=siegeWallMove(state,soldier,squad,dt);
+   if(!wallManaged&&d>.3){const move=Math.min(Math.max(0,d-(squad.order==='charge'&&!ranged?.85:.3)),role.speed*dt*soldier.pace*(squad.formation==='shield'?.72:1));
     let nextX=clamp(soldier.x+dx/d*move*(.82+.18*soldier.stamina),-BOUNDS,BOUNDS);
     let nextZ=clamp(soldier.z+dz/d*move*(.82+.18*soldier.stamina),-BOUNDS,BOUNDS);
     // Player-led ranks cannot cut straight through a physical obstacle even
@@ -5541,7 +5633,7 @@ window.addEventListener('error', function(event) {
     ((soldier.id+state.seed)%5===0)&&dist(soldier,state.playerPosition)<role.range;
    const turnToPlayer=nearbyPlayer&&(!enemy||
     dist(soldier,state.playerPosition)<Math.max(15,dist(soldier,enemy)*1.0));
-   const defensiveThreat=(personal==='guard'||personal==='evade')&&closeThreat;
+   const defensiveThreat=!soldier.ak35Wall&&(personal==='guard'||personal==='evade')&&closeThreat;
    // Explicit player-facing orders govern the rank unless a danger is truly
    // close; archers should not silently swivel toward distant targets.
    const orderedFacing=squad.playerControlled&&squad.lockedFacing!=null&&
@@ -5559,9 +5651,10 @@ window.addEventListener('error', function(event) {
    soldier.attackPose=Math.max(0,soldier.attackPose-dt);
    soldier.hitPose=Math.max(0,soldier.hitPose-dt);
    soldier.reload=Math.max(0,soldier.reload-dt);
+   if(soldier.ak35Wall&&soldier.ak35Wall.phase!=='post')continue;
    if(soldier.reload>0||(ranged&&squad.fireMode==='hold'))continue;
-   if(personal==='guard'&&soldier.guardUntil>state.elapsed)continue;
-   if(personal==='return'&&(!enemy||dist(soldier,enemy)>role.range*.8))continue;
+   if(!soldier.ak35Wall&&personal==='guard'&&soldier.guardUntil>state.elapsed)continue;
+   if(!soldier.ak35Wall&&personal==='return'&&(!enemy||dist(soldier,enemy)>role.range*.8))continue;
    if(ranged&&squad.fireMode==='volley'&&!squad.volleyReady)continue;
    // A blocked line is re-evaluated in short intervals, not every 80ms.
    if(ranged&&soldier.laneRetryUntil>state.elapsed)continue;
@@ -5580,8 +5673,8 @@ window.addEventListener('error', function(event) {
    if(aimDot<(ranged?.67:.32))continue;
    if(ranged&&((!playerThreat&&rangedBodyBlocked(state,soldier,enemy))||
       (playerThreat&&worldLineBlocked(state,
-       {x:soldier.x,y:1.85,z:soldier.z},
-       {x:state.playerPosition.x,y:1.85,z:state.playerPosition.z}))||
+       {x:soldier.x,y:baseY(soldier)+1.85,z:soldier.z},
+       {x:state.playerPosition.x,y:playerBaseY(state)+1.85,z:state.playerPosition.z}))||
       (playerThreat&&(friendlyFireLaneBlocked(state,soldier,
        {...state.playerPosition,alive:true})||firstBodyBeforePlayer(state,soldier))))){
     // Don't expend ammunition through the backs of our own troops. A small
@@ -5709,7 +5802,7 @@ window.addEventListener('error', function(event) {
   deliverCommanderSignals,sendCommanderSignal,readEnemyDoctrine,selectEnemySquad,threatToRanged,nearestEnemy,
   damageSoldier,soldierGuard,traceRangedAttack,raycastSoldier,soldierInCone,setPlayerHealth,drainPlayerHits,drainCombatEvents,
   launchArrow,advanceProjectiles,raycastPlayer,tracePlayerMusket,ARROW_SPEED,ARROW_GRAVITY,MAX_ARROWS,
-  setWorldObstacles,firstWorldObstacle,worldLineBlocked,rangedBodyBlocked,firstBodyBeforePlayer,
+  setWorldObstacles,setElevatedWorldObstacles,firstWorldObstacle,worldLineBlocked,rangedBodyBlocked,firstBodyBeforePlayer,
   localAssessment,friendlyFireLaneBlocked,squadCohesionEstimate,
   updatePersonalTactics,incomingMeleeWarning,findSupportOpportunity,
   buildSpatialGrid,nearbySoldiers,distanceManeuver};
@@ -5859,7 +5952,7 @@ window.addEventListener('error', function(event) {
      stagger:0,hit:s.hitPose||0
     });
     lastPos[s.id].x=s.x;lastPos[s.id].z=s.z;
-    rootPosition.set(s.x,0,s.z);
+    rootPosition.set(s.x,Number.isFinite(s.siegeY)?s.siegeY:0,s.z);
     rootRotation.setFromAxisAngle(new THREE.Vector3(0,1,0),s.facing);
     rootScale.copy(s.alive?normalScale:hidden);
     rootTransform.compose(rootPosition,rootRotation,rootScale);
@@ -6842,7 +6935,19 @@ window.addEventListener('error', function(event) {
             grad.addColorStop(1.0, botC);
             ctx.fillStyle = grad;
             ctx.fillRect(0, 0, 32, 256);
-            return new THREE.CanvasTexture(c);
+            const texture=new THREE.CanvasTexture(c);
+            (texture.userData||(texture.userData={})).ktkGradientKey=JSON.stringify([topC,midC,botC]);
+            return texture;
+        }
+        function refreshSkyGradient(mesh,create,top,mid,bottom){
+            const previous=mesh.material.map,key=JSON.stringify([top,mid,bottom]);
+            if(previous?.userData?.ktkGradientKey===key)return false;
+            const next=create(top,mid,bottom);
+            (next.userData||(next.userData={})).ktkGradientKey=key;
+            mesh.material.map=next;
+            mesh.material.needsUpdate=true;
+            if(previous&&previous!==next)previous.dispose();
+            return true;
         }
 
         function buildSkyAndClouds() {
@@ -6889,9 +6994,8 @@ window.addEventListener('error', function(event) {
             currentAtmosphereIdx = idx % ATMOSPHERES.length;
             const atmo = ATMOSPHERES[currentAtmosphereIdx];
 
-            if (skyDomeMesh) {
-                skyDomeMesh.material.map = createSkyGradientTexture(atmo.topCol, atmo.midCol, atmo.botCol);
-                skyDomeMesh.material.needsUpdate = true;
+            if (skyDomeMesh&&!window.__ktkMeadowLightActive) {
+                refreshSkyGradient(skyDomeMesh,createSkyGradientTexture,atmo.topCol,atmo.midCol,atmo.botCol);
             }
             scene.fog.color.setHex(atmo.fogCol);
             scene.fog.density = atmo.fogDensity * activeArenaFogMultiplier;
@@ -7320,6 +7424,33 @@ window.addEventListener('error', function(event) {
         }
         let meadowNearGrass=null;
         let meadowDenseGrass=null;
+        // KTK-GRASS01 - 156-triangle Meshy model, vertex colors baked
+        // from the uploaded texture. No external file fetch or extra atlas.
+        const KTK_MESHY_GRASS_DATA='AAECAAIECAkKAAMBCAoOCA8JICEiEBIUEBUWEBQVEBESKissNzM2Ki0rQEE4U1RVQDg6WVpbXmFiZ2hpZ2lrZ2tqR0hJISUkS09MS0xNTkxPISQiISMlj5GVjImLj5WWVU5QVVROQUU/QT84GRobGR4dGRwaEhETGR8eGR0cdXp5KSUjfYR+mJmamJyimJqcmKKhmKGZAQcCCwkMCwoJREJGUlFPUk9LDAkNBwUCnqCdrKernqOgnp2fhYaHhYqGhYuKhY2LhY6NGBMXJignJickMTIzMTQyWlxbPTw5R0pIPTk+Tk9QcnNsgXyAgYCCcnRwcnBzpqqtrq+woJydoKOchoqJhomIhoiHc21sc25tc3Bup6Srp6WkAgUEMjQ1mZuaOzo8iouJnJqdnKOiCQ8NfH1+fH+AfH5/bW5vPDo5lZeWMzI2ERcTIiQnIicoUE9RkpSTpKWmOD45OD8+ODk6bnBxcXB0ZGZlICMhrrGvAQMGdXl2fYOEeHZ7d3Z4dXZ3Z2poaG1vaGptbG1qKy8wKy0vLi8tQUNFQUJDRENCREVDj5CRj5KQkpOQkZCTU1dUU1ZXWFdWWFRXqailqaqopqiqpqWoXmJfY2RlWl1cXl9g8Yno+Kbt68vm9Yjz6ajh3gDJ/Yju9M7a8Yno86fZ/Yju+Kbt9M7a3gDJ9Yjz6ajhAAD2Ahn3EBP4G0oHErr4C4j8AIj6FE8EJXgiEBP4C4j8Err4BogIBgwDJXgiG0oHAAD2AIgFAhn3AIj6BgwDBogIJXgiDVARFE8EC4j8G8LgHbbeL+K/EbzcCJnjBojlCIj0HbbeCJnjL+K/CIj0BojlEbzcG8Lg2eQM3ssXxAESrQQbxf8Y+4gK9Ij+9aIEz/8V8K8Q9uYj9eIe9wMs9/AY/QZB+4gK9aIEAIgF9Ij+9/AYAIgF9aIE+4gKAPEd9uYj/QZB9wMsz/8Vxf8Y8K8QxAESwQEXrQQb+s8C6AYLAIj69Ij+68r4+s8C68r46AYLAIj6/Yju9Ij+68r4AIj6/YjuMCDrBLz0KyDyJvTwRzXzLuroEcnnEIjsCIj0PfnWQfDZQf3dK+fbY+fWBLz0Ien1KyDyRzXzC4j8CIj0JvTwLuroJvTwCIj0EIjsQfDZQf3dY+fWIen1C4j8v+Ht6oj35K/49Ij+9Yjz1L/sveLhzN7lnNHVr+LkzN7lvuDmv+HtveLhr+LknNHV5K/49Yjz9Ij+8eTeBojl8OPn/Yju7xTS7BfkyWDP2kbZ10XMBr7n//Le30jQ//Le7BfkBr7n2kbZ+NDo8OPn/Yju30jQyWDPBLz0BojlBLz0/YjuBr7nMEILKjYIIC4INEMMPUoNYWcPLTwKHioILToJOkUKUFsNWmEQRFEMLj8LLD0JJDIIGycHEx8FFyQGFiAFLTsJHikHGSQGFiEGKzwKIC0IKTUIGycIIzAIUFgOFiAGGycIITAIOUIJM0IKGyYHITAIN0EJR0AILzsJLjsJNEIKMD0JKjcIPU0MLTsJJDIIGCMGGSYGJDEIGSQGJTMIGCMGHisGNT4KGycHIy8IIC4IVV0PLDgJSFQMO0QKFSAGFSAFNkQLGyYHHi0IIjIJEx8FFyMGHCkHGyYHFiEGGyYHGyYHGiUGOUgLJjQIO0kMFB8GIzEIHCkIHSkHNkEJOkIJHSoIMT8JNkIKFiAGKDcIGycHGSUHIzAIGycHLDoJJzUJHSgHHCgHGSYHMz8JGycHKzcIKDUIMz0JGCQHMz8JJTMHGycGMT8KGCQGNkUJMkEKUVoOOkkLM0AJLz0JMUAKaW0UVl0PFyIGWFYNLz8KNUMKFSIGLzsJLDgJIS4IGygHJTMIOUUKGyYHJDIIGiYHO0UKMD0KRE8NLToJNEULR00MGSUGGCMGMz0JPEYKPUgLRFENOUYLOUMKKTcIMj8JFB8FOUkKHikHeXcbFiIGaW0UQE0KYWkTXGEQIy4IGCMFHCYIIzAIUlwPNUEJLjwJGicIPEoMFB4GLkAKEh4FMj8KFB8GGSUGNUMJHSgHGCMHHSgHGCMH';
+        function makeMeshyGrassGeometry(){
+            const packed=atob(KTK_MESHY_GRASS_DATA);
+            if(packed.length!==1536)throw Error('Embedded grass asset is invalid');
+            const positions=new Float32Array(178*3);
+            const colors=new Float32Array(178*3);
+            const indices=new Uint16Array(468);
+            for(let i=0;i<468;i++)indices[i]=packed.charCodeAt(i);
+            for(let i=0;i<positions.length;i++){
+                // GLB was centered vertically; place its base on y=0.
+                // Retain 0.4 local meadow blade scale for matching height.
+                const q=packed.charCodeAt(468+i);
+                positions[i]=.4*((q>127?q-256:q)/250+
+                    (i%3===1?.479736:0));
+                colors[i]=packed.charCodeAt(468+positions.length+i)/255;
+            }
+            const geometry=new THREE.BufferGeometry();
+            geometry.setIndex(new THREE.BufferAttribute(indices,1));
+            geometry.setAttribute('position',new THREE.BufferAttribute(positions,3));
+            geometry.setAttribute('color',new THREE.BufferAttribute(colors,3));
+            geometry.computeVertexNormals();
+            return geometry;
+        }
+        let ktkMeshyGrassHero=null;
+
 /* MAP2-V18 natural meadow-only lighting treatment.
  * Preserves the existing three [H] atmosphere options and native gameplay.
  * Reusable palette only, no extra draw calls or scene solids.
@@ -7347,11 +7478,7 @@ const KTKMeadowNaturalLighting=(function(){
      !hemiLight||!skyDomeMesh||!createSkyGradientTexture)
    throw Error('Complete native G5.4 atmosphere required');
   const p=PRESETS[((idx%PRESETS.length)+PRESETS.length)%PRESETS.length];
-  const prevTexture=skyDomeMesh.material.map;
-  const nextTexture=createSkyGradientTexture(p.top,p.mid,p.horizon);
-  skyDomeMesh.material.map=nextTexture;
-  skyDomeMesh.material.needsUpdate=true;
-  if(prevTexture&&prevTexture!==nextTexture)prevTexture.dispose();
+  refreshSkyGradient(skyDomeMesh,createSkyGradientTexture,p.top,p.mid,p.horizon);
   scene.background.setHex(p.fog);
   scene.fog.color.setHex(p.fog);
   scene.fog.density=p.density;
@@ -8611,6 +8738,396 @@ const KTKSiegeFortificationV26=(()=>{
  return Object.freeze({install,validate,features,roles,zones,pathClear,overlaps});
 })();
 /**
+ * AK31 - Authentic siege interior / ground-level wall stations.
+ * Only native third-map physics. The original G5.4 actors, 600 HP gate,
+ * three siege machines, and 70v70 force balance remain authoritative.
+ * All named blocks are both physical sweep colliders and projectile cover.
+ * Gaps between blocks are REAL openings, not painted-on arrow slits.
+ * Wall-top garrisons are intentionally NOT claimed: G5.4 is ground-plane.
+ */
+const KTKSiegeInteriorV31=(()=>{
+ 'use strict';
+ const blocks=[
+  // Gate-to-bailey flank: fighting pockets facing the two lateral approaches.
+  ['west-gate-flank','inner-wall',-68,-21,12,3,3.2],
+  ['east-gate-flank','inner-wall',68,-21,12,3,3.2],
+  ['west-wall-post-a','wall-post',-97,-14,6,3,2.8],
+  ['west-wall-post-b','wall-post',-97,14,6,3,2.8],
+  ['west-wall-post-c','wall-post',-97,36,6,3,2.8],
+  ['east-wall-post-a','wall-post',97,-14,6,3,2.8],
+  ['east-wall-post-b','wall-post',97,14,6,3,2.8],
+  ['east-wall-post-c','wall-post',97,36,6,3,2.8],
+  // The original z=42 inner keep has a true 16m postern, not an extra gate.
+  ['postern-west-cheek','postern-flank',-20,49,4,3,3.3],
+  ['postern-east-cheek','postern-flank',20,49,4,3,3.3],
+  // Widely spaced wall-foot casemates: 5m+ real sight / movement gaps.
+  ['west-wall-pocket-1','wall-post',-98,96,6,3,2.7],
+  ['west-wall-pocket-2','wall-post',-98,106,6,3,2.7],
+  ['west-wall-pocket-3','wall-post',-98,116,6,3,2.7],
+  ['east-wall-pocket-1','wall-post',98,96,6,3,2.7],
+  ['east-wall-pocket-2','wall-post',98,106,6,3,2.7],
+  ['east-wall-pocket-3','wall-post',98,116,6,3,2.7],
+  // First rear-bailey exchange: real anti-rush traverses and side detours.
+  ['west-bailey-traverse','crossfire',-43,104,22,4,3.6],
+  ['east-bailey-traverse','crossfire',43,104,22,4,3.6],
+  ['west-counter-battery','crossfire',-27,127,13,3.5,2.9],
+  ['east-counter-battery','crossfire',27,127,13,3.5,2.9],
+  // Second alternating line protects the rear redoubt without a sealed door.
+  ['west-rear-traverse','rear-defense',-49,149,22,4,3.8],
+  ['east-rear-traverse','rear-defense',49,149,22,4,3.8],
+  ['west-last-stand','rear-defense',-18,170,9,3.5,3.0],
+  ['east-last-stand','rear-defense',18,170,9,3.5,3.0],
+  ['west-wall-pocket-4','wall-post',-98,148,6,3,2.7],
+  ['west-wall-pocket-5','wall-post',-98,164,6,3,2.7],
+  ['east-wall-pocket-4','wall-post',98,148,6,3,2.7],
+  ['east-wall-pocket-5','wall-post',98,164,6,3,2.7],
+  // Two THREE-WALLED open guardrooms. Entrance faces south: attackers can
+  // push inside; retreat or defending fire must use actual openings.
+  ['west-guardroom-west','guardroom',-93,159,3,15,4.0],
+  ['west-guardroom-east','guardroom',-73,159,3,15,4.0],
+  ['west-guardroom-rear','guardroom',-83,167,20,3,4.0],
+  ['east-guardroom-west','guardroom',73,159,3,15,4.0],
+  ['east-guardroom-east','guardroom',93,159,3,15,4.0],
+  ['east-guardroom-rear','guardroom',83,167,20,3,4.0]
+ ];
+ const features=Object.freeze(blocks.map(([name,role,x,z,w,d,h])=>Object.freeze({name,role,x,z,w,d,h})));
+ const reserved=Object.freeze([
+  {name:'gate-and-ram',x:0,z:-62,r:10,minZ:-92,maxZ:-32},
+  {name:'siege-tower',x:28,z:-60,r:7,minZ:-82,maxZ:-32},
+  {name:'catapult',x:-22,z:-69,r:7,minZ:-90,maxZ:-50},
+  {name:'west-breach',x:-19,z:-5,r:4,minZ:-29,maxZ:26},
+  {name:'east-breach',x:19,z:-5,r:4,minZ:-29,maxZ:26},
+  {name:'original-postern',x:0,z:61,r:10,minZ:42,maxZ:88},
+  {name:'rear-archer-reserve',x:8,z:84,r:10,minZ:71,maxZ:95},
+  {name:'rear-center-push',x:0,z:143,r:10,minZ:91,maxZ:176}
+ ]);
+ function touches(a,b,pad=0){
+  return a.x-a.w/2 < b.x+b.w/2+pad &&
+   a.x+a.w/2 > b.x-b.w/2-pad &&
+   a.z-a.d/2 < b.z+b.d/2+pad &&
+   a.z+a.d/2 > b.z-b.d/2-pad;
+ }
+ function pathClear(points,radius=1){
+  return Array.isArray(points)&&points.length>0&&points.every(p=>
+   features.every(f=>
+    Math.abs(f.x-p.x)>f.w/2+radius ||
+    Math.abs(f.z-p.z)>f.d/2+radius));
+ }
+ function validate(){
+  const seen=new Set();
+  for(const f of features){
+   if(seen.has(f.name)||f.w<=0||f.d<=0||f.h<=0)
+    throw Error('AK31 invalid fortification '+f.name);
+   seen.add(f.name);
+   if(Math.abs(f.x)+f.w/2>=109||f.z+f.d/2>=181||
+      f.z-f.d/2<=-41)throw Error('AK31 exterior wall overlap '+f.name);
+   for(const zone of reserved){
+    // Real protected corridors; no feature may intrude into the defender /
+    // attacker staging regions and the original breach and reserve routes.
+    const minX=zone.x-zone.r,maxX=zone.x+zone.r;
+    if(f.x+f.w/2>minX&&f.x-f.w/2<maxX&&
+       f.z+f.d/2>zone.minZ&&f.z-f.d/2<zone.maxZ)
+     throw Error('AK31 blocks '+zone.name+': '+f.name);
+   }
+  }
+  if(!pathClear([{x:0,z:-37},{x:0,z:-19},{x:0,z:0},
+   {x:-19,z:10},{x:19,z:10},{x:0,z:49},{x:0,z:62},
+   {x:0,z:83},{x:0,z:105},{x:0,z:130},{x:0,z:170}],2))
+   throw Error('AK31 live assault lane obstructed');
+  return true;
+ }
+ validate();
+ function install(THREE,parts,makeMesh,makeBox,mats){
+  if(!THREE?.Group||!parts||!makeMesh||!makeBox||!mats?.stone)
+   throw Error('AK31 needs the original native siege scene');
+  const root=new THREE.Group();
+  root.name='AK31_REAL_SIEGE_WALL_FIGHTING_POSTS_AND_OPEN_BAILEY';
+  parts.add(root);
+  const wallBoxes=[],solidMeshes=[];
+  let posts=0,guardrooms=0;
+  for(const f of features){
+   // Use the existing physically light, native stone material. No lights,
+   // bloom, color grades, texture atlases or per-frame new objects.
+   const m=makeMesh(root,f.x,f.h/2,f.z,f.w,f.h,f.d,mats.stone);
+   m.name='AK31_PHYSICAL_'+f.name;
+   solidMeshes.push(m);
+   wallBoxes.push(makeBox(f.x,f.h/2,f.z,f.w,f.h,f.d));
+   if(f.role==='wall-post')posts++;
+   if(f.role==='guardroom')guardrooms++;
+  }
+  return Object.freeze({
+   root,wallBoxes,solidMeshes,features,
+   realWallStations:posts,openGuardroomWalls:guardrooms,
+   realCollisionBoxes:wallBoxes.length,
+   physicalProjectileCover:true,openingIsRealGeometry:true,
+   noNewActors:true,noAdditionalLights:true
+  });
+ }
+ return Object.freeze({features,reserved,pathClear,validate,install});
+})();
+/**
+ * AK32 — genuine player-accessible outer curtain, native siege map ONLY.
+ * Four 0->9m graded ramps on inner walls, physical high-level bridges and
+ * collision/projectile-active crenels. No teleport, invisible jump, lighting,
+ * extra soldiers, or modification to the three-map arena's original ramps.
+ *
+ * The original G5.4 ground-plane AI cannot patrol these elevated routes yet.
+ * These routes are authentic for the FPS player and use ArenaPlayerCollision.
+ */
+const KTKSiegeWallAccessV32=(()=>{
+ 'use strict';
+ const RISE=9, LENGTH=26, WIDTH=5.5, X=106.25;
+ const entrances=Object.freeze([
+  Object.freeze({name:'west-front',x:-X,minZ:48,maxZ:48+LENGTH}),
+  Object.freeze({name:'east-front',x:X,minZ:48,maxZ:48+LENGTH}),
+  Object.freeze({name:'west-rear',x:-X,minZ:123,maxZ:123+LENGTH}),
+  Object.freeze({name:'east-rear',x:X,minZ:123,maxZ:123+LENGTH})
+ ]);
+ const rampSpec=Object.freeze(entrances.map(e=>Object.freeze({
+  minX:e.x-WIDTH/2,maxX:e.x+WIDTH/2,
+  minZ:e.minZ,maxZ:e.maxZ,startY:0,endY:RISE,dir:'N',
+  ak32Name:e.name
+ })));
+ function heightAt(r,x,z){
+  if(x<r.minX||x>r.maxX||z<r.minZ||z>r.maxZ)return null;
+  return r.startY+Math.max(0,Math.min(1,
+   (r.maxZ-z)/(r.maxZ-r.minZ)))*(r.endY-r.startY);
+ }
+ function validate(){
+  if(rampSpec.length!==4||rampSpec.some(r=>
+   r.endY!==9||r.startY!==0||r.dir!=='N'||r.maxZ-r.minZ<24))
+   throw Error('AK32 four walkable ramps required');
+  for(const r of rampSpec){
+   const midX=(r.minX+r.maxX)/2;
+   if(heightAt(r,midX,r.maxZ)!==0||heightAt(r,midX,r.minZ)!==RISE)
+    throw Error('AK32 ramp incorrect slope '+r.ak32Name);
+   for(let i=0;i<104;i++){
+    const a=r.maxZ-(i/104)*LENGTH;
+    const b=r.maxZ-((i+1)/104)*LENGTH;
+    if(Math.abs(heightAt(r,midX,a)-heightAt(r,midX,b))>.65)
+     throw Error('AK32 impossible vertical step '+r.ak32Name);
+   }
+  }
+  return true;
+ }
+ validate();
+ function install(THREE,parts,makeMesh,makeBox,mats){
+  if(!THREE?.Group||!parts||!makeMesh||!makeBox||!mats?.stone)
+   throw Error('AK32 needs the native third-map scene and geometry helpers');
+  const root=new THREE.Group();
+  root.name='AK32_TRUE_WALKABLE_OUTER_CURTAIN_AND_FOUR_RAMPS';
+  parts.add(root);
+  const wallBoxes=[],solidMeshes=[],rampVisualMeshes=[];
+  function physical(x,y,z,w,h,d,mat=mats.stone,name=''){
+   const mesh=makeMesh(root,x,y,z,w,h,d,mat);
+   mesh.name='AK32_REAL_'+name;
+   solidMeshes.push(mesh);
+   wallBoxes.push(makeBox(x,y,z,w,h,d));
+   return mesh;
+  }
+  const rampSlope=Math.atan2(RISE,LENGTH);
+  const rampLength3d=Math.hypot(LENGTH,RISE);
+  function slopedRamp(e){
+   // Mesh rotation exactly matches the existing continuous N ramp equation.
+   // One true sloped stone deck + two wooden side beams per ramp; no
+   // 80 staircase box draw calls, no new lights, no per-frame allocation.
+   const deck=new THREE.Mesh(
+    new THREE.BoxGeometry(WIDTH,.38,rampLength3d),mats.stone);
+   deck.position.set(e.x,RISE/2,(e.minZ+e.maxZ)/2);
+   deck.rotation.x=rampSlope;
+   deck.castShadow=true;deck.receiveShadow=true;
+   deck.name='AK32_REAL_SLOPED_DECK_'+e.name;
+   root.add(deck);rampVisualMeshes.push(deck);
+   for(const side of [-1,1]){
+    const rail=new THREE.Mesh(new THREE.BoxGeometry(.25,.82,rampLength3d),
+     mats.wood||mats.stone);
+    rail.position.set(e.x+side*(WIDTH/2+.18),RISE/2+.68,
+     (e.minZ+e.maxZ)/2);
+    rail.rotation.x=rampSlope;
+    rail.castShadow=true;rail.receiveShadow=true;
+    rail.name='AK32_RAMP_SIDE_BEAM_'+e.name;
+    root.add(rail);rampVisualMeshes.push(rail);
+   }
+  }
+  for(const e of entrances){
+   const side=Math.sign(e.x);
+   // True sloped surfaces, exactly matching 0 -> 9m FPS ramp physics.
+   // The decks are projectile-interactive, not solid AABB walls:
+   // a cuboid collider here would incorrectly block players walking uphill.
+   slopedRamp(e);
+   // Elevated seamless bridge joins the high ramp end to the ACTUAL
+   // existing y=9 outer wall top, without filling its ground-level lane.
+   // Width extends outside the curtain's inner face at x=109.5.
+   const bridgeX=side*109.4;
+   physical(bridgeX,8.86,e.minZ-.8,12.4,.28,8.0,
+    mats.stone,e.name+'-continuous-high-landing');
+   // Elevated shoulder-guards: restrict shooting angles only where true
+   // stone exists, while preserving open entry from the interior ramp.
+   const approachZ=e.minZ+3.0;
+   physical(side*100.7,9.7,approachZ,1.2,1.4,4.0,
+    mats.stone,e.name+'-inner-landing-guard');
+  }
+  // Genuine raised exterior teeth, with uninterrupted 4m+ firing gaps.
+  // NEVER place them along the real tower bridge entry on the south wall:
+  // only z>=-25 side curtains are treated here.
+  let outerMerlons=0;
+  for(const side of [-1,1]){
+   for(let z=-22;z<=166;z+=12){
+    // Keep the preexisting tower volumes and the wall-ramp crossings clear.
+    if(entrances.some(e=>Math.sign(e.x)===side&&Math.abs(e.minZ-z)<6))continue;
+    physical(side*114.55,10.1,z,1.5,2.2,4.2,
+     mats.stone,(side<0?'west':'east')+'-firing-merlon-'+z);
+    outerMerlons++;
+   }
+  }
+  return Object.freeze({
+   root,ramps:rampSpec.map(r=>({...r})),
+   wallBoxes,solidMeshes,rampVisualMeshes,
+   fourContinuousWalkableRamps:true,
+   slopeLength:LENGTH,wallHeight:RISE,
+   bridgeCount:entrances.length,merlons:outerMerlons,
+   realAabbCount:wallBoxes.length,
+   highCoverAndRampShotMeshes:[...solidMeshes,...rampVisualMeshes],
+   rampDrawMeshes:rampVisualMeshes.length,
+   originalG54HighLevelAI:false,
+   noSceneOrColorChanges:true
+  });
+ }
+ return Object.freeze({heightAt,validate,entrances,rampSpec,install});
+})();
+/**
+ * AK33 — native G5.4 defensive positioning for wall-foot and inner bailey.
+ * Controlled ORIGINAL red musket squad (no extra actors / rounds / damage).
+ * Uses ONLY original G5.4 setDestination / path validation / combat.
+ *
+ * The G5.4 combat renderer is ground-plane: do not present this as elevated
+ * bot firing. Sur-top bot traversal needs authoritative 3D body/arrow/LOS.
+ */
+const KTKSiegeGroundGarrisonV33=(()=>{
+ 'use strict';
+ const THINK=2.8,ORDER_GAP=11,ARRIVAL=8;
+ const POSTS=Object.freeze({
+  westGate:Object.freeze({x:-24,z:-16}),
+  eastGate:Object.freeze({x:24,z:-16}),
+  westInner:Object.freeze({x:-29,z:28}),
+  eastInner:Object.freeze({x:29,z:28}),
+  westFallback:Object.freeze({x:-24,z:13}),
+  eastFallback:Object.freeze({x:24,z:13})
+ });
+ const dist=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
+ const alive=u=>!!u&&u.alive&&u.hp>0;
+ function observe(state,equipment){
+  const enemy=state.soldiers.filter(u=>alive(u)&&u.team==='blue');
+  const gate=enemy.filter(u=>u.z>-86&&u.z<25&&Math.abs(u.x)<52);
+  const through=enemy.filter(u=>u.z>-38&&u.z<38&&Math.abs(u.x)<47);
+  const postern=enemy.filter(u=>u.z>=33&&u.z<96&&Math.abs(u.x)<80);
+  const findSide=arr=>arr.reduce((n,u)=>n+(u.x>=0?1:-1),0)>=0?'east':'west';
+  const gateSide=findSide(gate),interiorSide=findSide(postern.length?postern:through);
+  return Object.freeze({
+   gateThreats:gate.length,throughGate:through.length,
+   posternThreats:postern.length,gateSide,interiorSide,
+   gateHp:equipment?.gateHp??600,
+   gateOpen:!!equipment?.gateOpen,
+   towerBreached:!!equipment?.towerCrossed
+  });
+ }
+ function create(state,battle){
+  if(state?.soldiers?.length!==140||!state?.squads||
+     !battle?.setDestination||!battle?.issueOrder)
+   throw Error('AK33 requires genuine 140 G5.4 soldier state and orders');
+  const musket=state.squads.find(s=>s.team==='red'&&s.type==='musket');
+  if(!musket||musket.alive<=0)throw Error('AK33 real red musket squad required');
+  return {state,battle,musketId:musket.id,
+   lastCheck:-Infinity,lastOrder:-Infinity,
+   posts:POSTS,requests:0,accepted:0,rejected:0,holds:0,
+   stage:null,assigned:null,arrivals:0,
+   protectedByDoctrine:false,decisions:0,events:[],
+   lastObserved:observe(state,{gateHp:600})};
+ }
+ function preferred(obs){
+  if(obs.posternThreats>=2)
+   return [obs.interiorSide==='east'?'eastInner':'westInner',
+    obs.interiorSide==='east'?'eastFallback':'westFallback'];
+  if(obs.throughGate>=3||obs.gateOpen||obs.towerBreached)
+   return [obs.gateSide==='east'?'eastGate':'westGate',
+    obs.gateSide==='east'?'eastFallback':'westFallback'];
+  if(obs.gateThreats>=3||obs.gateHp<600)
+   return [obs.gateSide==='east'?'eastGate':'westGate',
+    obs.gateSide==='east'?'eastFallback':'westFallback'];
+  return [];
+ }
+ function update(runtime,equipment,doctrine){
+  if(!runtime?.state||runtime.state.winner)return status(runtime);
+  const t=runtime.state.elapsed;
+  if(t-runtime.lastCheck<THINK)return status(runtime);
+  runtime.lastCheck=t;runtime.decisions++;
+  const obs=observe(runtime.state,equipment);
+  runtime.lastObserved=obs;
+  const s=runtime.state.squads.find(u=>u.id===runtime.musketId);
+  if(!s?.alive)return status(runtime);
+  if(runtime.assigned&&dist(s,runtime.assigned)<ARRIVAL)
+   runtime.arrivals++;
+  // Original AK27 emergency hold and any external red-garrison authority
+  // outrank this optional patrol. Never erase a critical defensive order.
+  if(doctrine?.musketGateHeld){
+   runtime.protectedByDoctrine=true;runtime.holds++;
+   return status(runtime);
+  }
+  if(s.siegeDefenseAIControlled&&!s.ak33GroundGuardControlled){
+   runtime.holds++;return status(runtime);
+  }
+  const choices=preferred(obs);
+  if(!choices.length||t-runtime.lastOrder<ORDER_GAP)return status(runtime);
+  if(runtime.stage===choices[0]&&runtime.assigned)return status(runtime);
+  // Probe via the actual G5.4 route planner, not fake unobstructed points.
+  // A failed order restores the prior captain authority immediately.
+  for(const key of choices){
+   const goal=POSTS[key],prior=s.playerControlled;
+   s.playerControlled=true;
+   runtime.requests++;
+   const ok=runtime.battle.setDestination(runtime.state,s.id,goal.x,goal.z,true);
+   if(!ok){
+    s.playerControlled=prior;runtime.rejected++;
+    continue;
+   }
+   s.siegeDefenseAIControlled=true;s.ak33GroundGuardControlled=true;
+   s.aiRole='siege-ground-crossfire';
+   s.tacticalReason='Gerçek sur dibi/kapı içi atış mevzisine rota ile geç';
+   if(s.fireMode==='hold')s.fireMode='free';
+   s.formation='line';
+   runtime.accepted++;
+   runtime.lastOrder=t;runtime.stage=key;runtime.assigned={...goal};
+   runtime.events.push({time:t,stage:key,x:goal.x,z:goal.z,id:s.id});
+   if(runtime.events.length>10)runtime.events.shift();
+   break;
+  }
+  return status(runtime);
+ }
+ function status(runtime){
+  if(!runtime)return {installed:false};
+  const s=runtime.state.squads.find(u=>u.id===runtime.musketId);
+  return {installed:true,originalG54:true,
+   totalSoldiers:runtime.state.soldiers.length,
+   squadId:runtime.musketId,
+   decisionCount:runtime.decisions,
+   requestedRoutes:runtime.requests,
+   realAcceptedRoutes:runtime.accepted,
+   deniedRoutes:runtime.rejected,
+   arrivalsSampled:runtime.arrivals,
+   doctrineEmergencyPriority:runtime.protectedByDoctrine,
+   doctrineHolds:runtime.holds,
+   currentPost:runtime.stage,
+   actualSquadPosition:s?{x:s.x,z:s.z}:null,
+   target:runtime.assigned?{...runtime.assigned}:null,
+   threats:{...runtime.lastObserved},
+   events:runtime.events.map(e=>({...e})),
+   noNewShots:true,noNewActors:true,
+   noTeleport:true,noElevationFiringClaim:true,
+   noBlueOverrides:true};
+ }
+ return Object.freeze({POSTS,THINK,ORDER_GAP,observe,preferred,create,update,status});
+})();
+/**
  * AK27 REAL SIEGE DEFENDER DOCTRINE — coordination of ORIGINAL G5.4 actors.
  *
  * No fake soldiers, damage, invisible aura, instant teleport or second AI
@@ -9059,6 +9576,31 @@ const KTKCalmUIV25=(()=>{
             meadowDenseGrass=ArenaMeadowGrass.createNearbyTufts(THREE,12000);
             meadowDenseGrass.geometry.scale(.40,.40,.40);
             scene.add(meadowDenseGrass);
+            // Replace one in four clumps with the uploaded full 3D grass.
+            // The OPT02 tile updater hides the matching cheaper tuft.
+            ktkMeshyGrassHero=new THREE.InstancedMesh(
+                makeMeshyGrassGeometry(),
+                new THREE.MeshLambertMaterial({
+                    color:0xffffff,vertexColors:true,side:THREE.DoubleSide
+                }),
+                Math.ceil(meadowDenseGrass.count/4));
+            ktkMeshyGrassHero.name='Meshy medieval grass / 3D instanced';
+            ktkMeshyGrassHero.castShadow=false;
+            ktkMeshyGrassHero.receiveShadow=false;
+            ktkMeshyGrassHero.frustumCulled=false;
+            meadowDenseGrass.userData.ktkMeshyGrassHero=ktkMeshyGrassHero;
+            scene.add(ktkMeshyGrassHero);
+            window.ktkMeshyGrassStatus=()=>({
+                source:'uploaded stylized_medieval_gra.glb',
+                trianglesPerClump:156,
+                threeDClumps:ktkMeshyGrassHero.count,
+                simpleClumps:meadowDenseGrass.count-ktkMeshyGrassHero.count,
+                totalNearClumps:meadowDenseGrass.count,
+                distantClumps:meadowNearGrass.count,
+                textures:0,
+                visible:ktkMeshyGrassHero.visible,
+                lastRegeneratedTiles:meadowDenseGrass.userData.lastRegeneratedTiles
+            });
             window.ktkMeadowGrassVisualStatus=()=>({count:meadowNearGrass.count,nearbyCount:meadowDenseGrass.count,visible:meadowNearGrass.visible,nearbyVisible:meadowDenseGrass.visible,lastTileX:meadowDenseGrass.userData.lastTileX});
             const meadowHorizon=KTKMeadowHorizon.build(THREE,scene,spec);
             const v19Groves=KTKBattlefieldVisualV19.addMeadowGroves(THREE,scene,spec);
@@ -9140,6 +9682,67 @@ const KTKCalmUIV25=(()=>{
             color: 0xfbbf24,
             metalness: 0.88,
             roughness: 0.20
+        });
+        // WG02: packed, shared metal microfinish. Red = height, green = roughness.
+        // Periodic grain avoids a visible UV seam; no random work during gameplay.
+        const musketIronSurface=(()=>{
+            const size=64,data=new Uint8Array(size*size*4),tau=Math.PI*2;
+            const byte=v=>Math.max(0,Math.min(255,Math.round(v)));
+            let seed=1600;
+            for(let y=0;y<size;y++)for(let x=0;x<size;x++){
+                seed=(Math.imul(seed,1664525)+1013904223)>>>0;
+                const u=x/size*tau,v=y/size*tau;
+                const grain=(seed>>>24)/255-.5;
+                const flow=Math.sin(u*11+Math.sin(v)*.28);
+                const tooling=Math.sin(u*23+Math.sin(v*2)*.19);
+                const mottling=Math.sin(u*3+v)*Math.cos(v*2-u);
+                const i=(y*size+x)*4;
+                data[i]=byte(128+flow*9+tooling*4+grain*9);
+                data[i+1]=byte(188+mottling*21+flow*10+grain*8);
+                data[i+2]=255;data[i+3]=255;
+            }
+            const t=new THREE.DataTexture(data,size,size,THREE.RGBAFormat);
+            t.wrapS=t.wrapT=THREE.RepeatWrapping;
+            t.magFilter=THREE.LinearFilter;
+            t.minFilter=THREE.LinearMipmapLinearFilter;
+            t.generateMipmaps=true;t.needsUpdate=true;
+            return t;
+        })();
+        const musketIronMat=new THREE.MeshStandardMaterial({
+            name:'WG02 satin forged iron',color:0x85888b,
+            metalness:.87,roughness:.68,roughnessMap:musketIronSurface,
+            bumpMap:musketIronSurface,bumpScale:.00065,envMapIntensity:.85
+        });
+        const musketBrassMat=new THREE.MeshStandardMaterial({
+            name:'WG02 aged satin brass',color:0xb29a68,
+            metalness:.80,roughness:.74,roughnessMap:musketIronSurface,
+            envMapIntensity:.78
+        });
+        // A single small, baked stock texture: grain follows the cylinder length.
+        const musketWalnutMap=(()=>{
+            const size=128,data=new Uint8Array(size*size*4),tau=Math.PI*2;
+            let seed=1776;
+            for(let y=0;y<size;y++)for(let x=0;x<size;x++){
+                seed=(Math.imul(seed,1664525)+1013904223)>>>0;
+                const u=x/size*tau,v=y/size*tau;
+                const warp=u+.045*Math.sin(v)+.025*Math.sin(2*v+u);
+                const rings=Math.sin(warp*9+.25*Math.sin(u*3));
+                const fiber=Math.sin(warp*31+.5*Math.sin(u*5));
+                const grain=(seed>>>24)/255-.5;
+                const tone=rings*9+fiber*3+grain*3+Math.sin(u*3)*5;
+                const i=(y*size+x)*4;
+                data[i]=87+tone;data[i+1]=48+tone*.62;data[i+2]=27+tone*.38;data[i+3]=255;
+            }
+            const t=new THREE.DataTexture(data,size,size,THREE.RGBAFormat);
+            t.encoding=THREE.sRGBEncoding;
+            t.wrapS=t.wrapT=THREE.RepeatWrapping;
+            t.magFilter=THREE.LinearFilter;t.minFilter=THREE.LinearMipmapLinearFilter;
+            t.generateMipmaps=true;t.needsUpdate=true;
+            return t;
+        })();
+        const musketWoodMat=new THREE.MeshStandardMaterial({
+            name:'WG02 longitudinal oiled walnut',map:musketWalnutMap,
+            metalness:0,roughness:.64,envMapIntensity:.38
         });
         const rubyMat = new THREE.MeshStandardMaterial({ color: 0xdc2626, metalness: 0.25, roughness: 0.08, emissive: 0x450a0a });
         const darkWoodMat = new THREE.MeshStandardMaterial({
@@ -9396,38 +9999,38 @@ const KTKCalmUIV25=(()=>{
             leftSupportArm3.rotation.y = -0.32;
 
             // 1. Sculpted Walnut Fore-stock & Curved 1600s Fishtail Buttstock
-            const foreStock = new THREE.Mesh(new THREE.CylinderGeometry(0.036, 0.046, 0.92, 10), darkWoodMat);
+            const foreStock = new THREE.Mesh(new THREE.CylinderGeometry(0.036, 0.046, 0.92, 10), musketWoodMat);
             foreStock.rotation.x = Math.PI / 2;
             foreStock.scale.set(1.0, 1.0, 1.15);
             foreStock.position.set(0.26, -0.19, -0.82);
 
-            const wristGrip = new THREE.Mesh(new THREE.CylinderGeometry(0.036, 0.042, 0.28, 10), darkWoodMat);
+            const wristGrip = new THREE.Mesh(new THREE.CylinderGeometry(0.036, 0.042, 0.28, 10), musketWoodMat);
             wristGrip.rotation.x = Math.PI / 2 - 0.24;
             wristGrip.position.set(0.26, -0.22, -0.30);
 
-            const buttStock = new THREE.Mesh(new THREE.CylinderGeometry(0.044, 0.068, 0.36, 10), darkWoodMat);
+            const buttStock = new THREE.Mesh(new THREE.CylinderGeometry(0.044, 0.068, 0.36, 10), musketWoodMat);
             buttStock.rotation.x = Math.PI / 2 - 0.18;
             buttStock.scale.set(0.72, 1.0, 1.35);
             buttStock.position.set(0.26, -0.27, -0.06);
 
-            const brassButtplate = new THREE.Mesh(new THREE.CylinderGeometry(0.048, 0.068, 0.04, 10), goldMat);
+            const brassButtplate = new THREE.Mesh(new THREE.CylinderGeometry(0.048, 0.068, 0.04, 10), musketBrassMat);
             brassButtplate.rotation.x = Math.PI / 2 - 0.18;
             brassButtplate.scale.set(0.74, 1.0, 1.36);
             brassButtplate.position.set(0.26, -0.30, 0.11);
 
-            const stockFiligree = new THREE.Mesh(new THREE.BoxGeometry(0.088, 0.032, 0.28), goldMat);
+            const stockFiligree = new THREE.Mesh(new THREE.BoxGeometry(0.088, 0.032, 0.28), musketBrassMat);
             stockFiligree.position.set(0.26, -0.20, -0.45);
 
             // 2. Forged Octagonal Breech + Round Tapered Steel Barrel + Hollow Muzzle Bore
-            const breechOctagon = new THREE.Mesh(new THREE.CylinderGeometry(0.040, 0.045, 0.48, 8), gunmetalMat);
+            const breechOctagon = new THREE.Mesh(new THREE.CylinderGeometry(0.040, 0.045, 0.48, 8), musketIronMat);
             breechOctagon.rotation.x = Math.PI / 2;
             breechOctagon.position.set(0.26, -0.14, -0.52);
 
-            const roundBarrel = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.039, 0.88, 16), steelMat);
+            const roundBarrel = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.039, 0.88, 16), musketIronMat);
             roundBarrel.rotation.x = Math.PI / 2;
             roundBarrel.position.set(0.26, -0.14, -1.16);
 
-            const muzzleFlare = new THREE.Mesh(new THREE.CylinderGeometry(0.039, 0.033, 0.07, 16), goldMat);
+            const muzzleFlare = new THREE.Mesh(new THREE.CylinderGeometry(0.039, 0.033, 0.07, 16), musketBrassMat);
             muzzleFlare.rotation.x = Math.PI / 2;
             muzzleFlare.position.set(0.26, -0.14, -1.58);
 
@@ -9440,35 +10043,35 @@ const KTKCalmUIV25=(()=>{
 
             // 3. Brass Barrel Bands & Sights
             [-0.78, -1.12, -1.44].forEach(bz => {
-                const band = new THREE.Mesh(new THREE.CylinderGeometry(0.044, 0.046, 0.045, 12), goldMat);
+                const band = new THREE.Mesh(new THREE.CylinderGeometry(0.044, 0.046, 0.045, 12), musketBrassMat);
                 band.rotation.x = Math.PI / 2;
                 band.scale.set(1.0, 1.0, 1.25);
                 band.position.set(0.26, -0.165, bz);
                 musketGroup.add(band);
             });
 
-            const rearSight = new THREE.Mesh(new THREE.BoxGeometry(0.036, 0.026, 0.04), goldMat);
+            const rearSight = new THREE.Mesh(new THREE.BoxGeometry(0.036, 0.026, 0.04), musketBrassMat);
             rearSight.position.set(0.26, -0.095, -0.44);
-            const frontSight = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.042, 0.03), goldMat);
+            const frontSight = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.042, 0.03), musketBrassMat);
             frontSight.position.set(0.26, -0.098, -1.54);
 
             // 4. Authentic 1600s Flintlock Mechanism (Lockplate, Flash Pan, Frizzen & S-Hammer holding Flint)
-            const lockPlate = new THREE.Mesh(new THREE.BoxGeometry(0.022, 0.065, 0.26), ornateArmorMat);
+            const lockPlate = new THREE.Mesh(new THREE.BoxGeometry(0.022, 0.065, 0.26), musketIronMat);
             lockPlate.position.set(0.21, -0.16, -0.46);
 
-            const flashPan = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.020, 0.035, 10), goldMat);
+            const flashPan = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.020, 0.035, 10), musketBrassMat);
             flashPan.position.set(0.19, -0.14, -0.50);
 
-            const frizzenSteel = new THREE.Mesh(new THREE.BoxGeometry(0.022, 0.095, 0.045), steelMat);
+            const frizzenSteel = new THREE.Mesh(new THREE.BoxGeometry(0.022, 0.095, 0.045), musketIronMat);
             frizzenSteel.position.set(0.19, -0.095, -0.52);
             frizzenSteel.rotation.x = 0.25;
 
             // Animated S-Curved Flintlock Hammer Group (Cock + Jaws + Real Flint Stone)
             musketHammerMesh = new THREE.Group();
             musketHammerMesh.position.set(0.195, -0.15, -0.43);
-            const hammerNeck = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.018, 0.11, 8), goldMat);
+            const hammerNeck = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.018, 0.11, 8), musketBrassMat);
             hammerNeck.position.set(0, 0.05, 0);
-            const hammerJaws = new THREE.Mesh(new THREE.BoxGeometry(0.028, 0.032, 0.058), darkSteelMat);
+            const hammerJaws = new THREE.Mesh(new THREE.BoxGeometry(0.028, 0.032, 0.058), musketIronMat);
             hammerJaws.position.set(0, 0.095, -0.02);
             const flintStone = new THREE.Mesh(
                 new THREE.ConeGeometry(0.018, 0.048, 4),
@@ -9479,20 +10082,20 @@ const KTKCalmUIV25=(()=>{
             musketHammerMesh.add(hammerNeck, hammerJaws, flintStone);
 
             // 5. Brass Trigger Guard & Curved Trigger
-            const triggerGuard = new THREE.Mesh(new THREE.TorusGeometry(0.048, 0.008, 8, 14, Math.PI), goldMat);
+            const triggerGuard = new THREE.Mesh(new THREE.TorusGeometry(0.048, 0.008, 8, 14, Math.PI), musketBrassMat);
             triggerGuard.rotation.y = Math.PI / 2;
             triggerGuard.rotation.x = Math.PI;
             triggerGuard.position.set(0.26, -0.23, -0.38);
 
-            const triggerMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.008, 0.045, 6), steelMat);
+            const triggerMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.008, 0.045, 6), musketIronMat);
             triggerMesh.rotation.x = 0.35;
             triggerMesh.position.set(0.26, -0.235, -0.38);
 
             // 6. Cylindrical Ramrod with Brass Tip (Animated during Reload!)
             musketRamrodMesh = new THREE.Group();
-            const rodShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.010, 0.010, 1.18, 8), darkSteelMat);
+            const rodShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.010, 0.010, 1.18, 8), musketIronMat);
             rodShaft.rotation.x = Math.PI / 2;
-            const rodBrassTip = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.011, 0.08, 10), goldMat);
+            const rodBrassTip = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.011, 0.08, 10), musketBrassMat);
             rodBrassTip.rotation.x = Math.PI / 2;
             rodBrassTip.position.z = -0.58;
             musketRamrodMesh.add(rodShaft, rodBrassTip);
@@ -9953,10 +10556,27 @@ const KTKCalmUIV25=(()=>{
           THREE,nativeSiegeParts,nativeSiegeMesh,nativeSiegeAabb,
           {stone:nativeSiegeStone,wood:nativeSiegeWood});
         nativeSiegeWallBoxes.push(...nativeSiegeDefenseV26.wallBoxes);
+        // AK31: real interior/casemate collision, projectile cover and navigation.
+        const nativeSiegeInteriorV31=KTKSiegeInteriorV31.install(
+          THREE,nativeSiegeParts,nativeSiegeMesh,nativeSiegeAabb,
+          {stone:nativeSiegeStone,wood:nativeSiegeWood});
+        nativeSiegeWallBoxes.push(...nativeSiegeInteriorV31.wallBoxes);
+        // AK32 elevated parts deliberately stay OUT of the ground-only G5.4
+        // anti-wall/route arrays: only the real FPS y=9 surface is walkable.
+        const nativeSiegeWallAccessV32=KTKSiegeWallAccessV32.install(
+          THREE,nativeSiegeParts,nativeSiegeMesh,nativeSiegeAabb,
+          {stone:nativeSiegeStone,wood:nativeSiegeWood});
         let nativeSiegeDefenseSpawnIntrusions=null;
         // AK27: this is a siege-specific commander over ORIGINAL red G5.4
         // captains, never a separate battle, soldier pool or combat model.
         let nativeSiegeDoctrineV27=null;
+        // AK33: genuine G5.4 ground-level wall-foot garrison, not fake high AI.
+        let nativeSiegeGarrisonV33=null;
+        window.ktkSiegeGroundGarrisonStatus=()=>({
+          ...KTKSiegeGroundGarrisonV33.status(nativeSiegeGarrisonV33),
+          active:!!nativeSiegeMode&&!!meadowBattleState,
+          sameNativeCombat:true,noElevatedBotFire:true
+        });
         // AK28 real collision-aware passage audit and bounded G5.4 AI
         // route recovery. No new actor, no alternative movement engine.
         let nativeSiegeRouteWatchV28=null;
@@ -9998,6 +10618,30 @@ const KTKCalmUIV25=(()=>{
             innerPostern:KTKSiegeFortificationV26.pathClear([{x:0,z:46},{x:0,z:62},{x:0,z:83}])
           }
         });
+        window.ktkSiegeInteriorStatus=()=>({
+          installed:true,activated:nativeSiegeCastleEnabled,
+          collisionBlocks:nativeSiegeInteriorV31.realCollisionBoxes,
+          wallPosts:nativeSiegeInteriorV31.realWallStations,
+          openGuardroomWalls:nativeSiegeInteriorV31.openGuardroomWalls,
+          physicalProjectileCover:nativeSiegeCastleEnabled&&
+            nativeSiegeInteriorV31.solidMeshes.every(m=>worldMeshes.includes(m)),
+          sameG54Army:true,gateHpUnchanged:true,
+          corridors:{westBreach:KTKSiegeInteriorV31.pathClear([{x:-19,z:-24},{x:-19,z:12}]),
+            eastBreach:KTKSiegeInteriorV31.pathClear([{x:19,z:-24},{x:19,z:12}]),
+            postern:KTKSiegeInteriorV31.pathClear([{x:0,z:50},{x:0,z:83}]),
+            rear:KTKSiegeInteriorV31.pathClear([{x:0,z:104},{x:0,z:130},{x:0,z:170}])}
+        });
+        window.ktkSiegeWallAccessStatus=()=>({
+          installed:true,activated:nativeSiegeCastleEnabled,
+          rampCount:nativeSiegeWallAccessV32.ramps.length,
+          activeRamps:nativeSiegeWallAccessV32.ramps.filter(r=>ramps.includes(r)).length,
+          physicalHighBoxes:nativeSiegeWallAccessV32.realAabbCount,
+          highShotCover:nativeSiegeCastleEnabled&&
+            nativeSiegeWallAccessV32.highCoverAndRampShotMeshes.every(m=>worldMeshes.includes(m)),
+          wallHeight:nativeSiegeWallAccessV32.wallHeight,
+          playerAccessible:true,originalG54HighLevelAI:false,
+          nativeSiegeOnly:true
+        });
         let nativeSiegeDeploymentEvidence=null;
         window.ktkSiegeExpandedMapStatus=()=>({
           castleWidth:nativeSiegeExpansionV25.castleWidth,
@@ -10034,23 +10678,36 @@ const KTKCalmUIV25=(()=>{
             if(northIdx>=0)source.splice(northIdx,1);
             if(oldNorthMeshIdx>=0)siegeWorld.splice(oldNorthMeshIdx,1);
             for(const m of [...nativeSiegeExpansionV25.solidMeshes,
-                            ...nativeSiegeDefenseV26.solidMeshes])
+                            ...nativeSiegeDefenseV26.solidMeshes,
+                            ...nativeSiegeInteriorV31.solidMeshes,
+                            ...nativeSiegeWallAccessV32.highCoverAndRampShotMeshes])
               if(!siegeWorld.includes(m))siegeWorld.push(m);
-            for(const b of [...nativeSiegeWallBoxes,nativeSiegeGateBox,
-                nativeSiegeRamCollision,nativeSiegeCatapultCollision,
+            for(const b of [...nativeSiegeWallBoxes,...nativeSiegeWallAccessV32.wallBoxes,
+                nativeSiegeGateBox,nativeSiegeRamCollision,nativeSiegeCatapultCollision,
                 ...nativeSiegeTowerCollisions])
               if(!source.includes(b)&&(!nativeSiegeGateOpen||b!==nativeSiegeGateBox))source.push(b);
+            for(const r of nativeSiegeWallAccessV32.ramps){
+              if(!castleMapData.ramps.includes(r))castleMapData.ramps.push(r);
+              if(!ramps.includes(r))ramps.push(r);
+            }
           }else{
             for(const m of [...nativeSiegeExpansionV25.solidMeshes,
-                            ...nativeSiegeDefenseV26.solidMeshes]){
+                            ...nativeSiegeDefenseV26.solidMeshes,
+                            ...nativeSiegeInteriorV31.solidMeshes,
+                            ...nativeSiegeWallAccessV32.highCoverAndRampShotMeshes]){
               const j=siegeWorld.indexOf(m);if(j>=0)siegeWorld.splice(j,1);
             }
             if(!siegeWorld.includes(nativeSiegeOriginalNorthVisual))
               siegeWorld.push(nativeSiegeOriginalNorthVisual);
-            for(const b of [...nativeSiegeWallBoxes,nativeSiegeGateBox,
-                nativeSiegeRamCollision,nativeSiegeCatapultCollision,
+            for(const b of [...nativeSiegeWallBoxes,...nativeSiegeWallAccessV32.wallBoxes,
+                nativeSiegeGateBox,nativeSiegeRamCollision,nativeSiegeCatapultCollision,
                 ...nativeSiegeTowerCollisions]){
               const i=source.indexOf(b);if(i>=0)source.splice(i,1);
+            }
+            for(const r of nativeSiegeWallAccessV32.ramps){
+              const i=castleMapData.ramps.indexOf(r);
+              if(i>=0)castleMapData.ramps.splice(i,1);
+              const j=ramps.indexOf(r);if(j>=0)ramps.splice(j,1);
             }
             for(const r of nativeSiegeTowerRamps){
               const i=castleMapData.ramps.indexOf(r);
@@ -10242,7 +10899,7 @@ const KTKCalmUIV25=(()=>{
           siegePoseBuffer.length=soldiers.length;
           for(let i=0;i<soldiers.length;i++){
             const u=soldiers[i],p=siegePoseBuffer[i]||(siegePoseBuffer[i]={x:0,z:0});
-            p.x=u.x;p.z=u.z;
+            p.x=u.x;p.z=u.z;p.y=u.siegeY||0;
           }
           return siegePoseBuffer;
         }
@@ -10258,6 +10915,7 @@ const KTKCalmUIV25=(()=>{
           for(let i=0;i<meadowBattleState.soldiers.length;i++){
             const u=meadowBattleState.soldiers[i],old=before[i];
             if(!u.alive||!old||!Number.isFinite(u.x)||!Number.isFinite(u.z))continue;
+            if(u.ak35Wall&&(u.siegeY>0||old.y>0))continue;
             const from=old,to=siegeConstraintTo;
             to.x=u.x;to.z=u.z;
             if(Math.hypot(to.x-from.x,to.z-from.z)<1e-8)continue;
@@ -10455,32 +11113,7 @@ const KTKCalmUIV25=(()=>{
             if(!ok)st.towerReturnOrder=false;
           }
         }
-        // Original shared instanced G5.4 bot art remains unchanged. Only the
-        // matrix height of the 0..8 real soldiers on the tower is offset so
-        // their original helmets/arms/legs actually render ON the walkway.
-        const nativeSiegeTowerMatrix=new THREE.Matrix4();
-        function nativeSiegeTowerRenderSoldiers(){
-          const st=nativeSiegeEquipment;
-          if(!nativeSiegeMode||!st||!meadowBattleVisual)return;
-          for(const walk of [...st.towerClimbers.values(),
-                               ...st.towerFallers.values()]){
-            if(walk.y<=.001)continue;
-            const u=meadowBattleState.soldiers[walk.id];
-            if(!u?.alive)continue;
-            const group=meadowBattleVisual.roles[u.type];
-            if(!group)continue;
-            const slot=group.slots.get(u.id);
-            if(slot===undefined)continue;
-            for(const part of Object.values(group.parts)){
-              for(const inst of part.meshes){
-                inst.getMatrixAt(slot,nativeSiegeTowerMatrix);
-                nativeSiegeTowerMatrix.elements[13]+=walk.y;
-                inst.setMatrixAt(slot,nativeSiegeTowerMatrix);
-                inst.instanceMatrix.needsUpdate=true;
-              }
-            }
-          }
-        }
+        // AK34: original G5.4 instancing owns authoritative siegeY (no duplicate matrix offset).
         function nativeSiegeTowerUpdate(dt){
           const st=nativeSiegeEquipment;
           if(!st||st.towerDestroyed||st.towerHp<=0||
@@ -10920,6 +11553,11 @@ const KTKCalmUIV25=(()=>{
             });
           if(nativeSiegeRouteWatchV28)
             KTKSiegeRouteWatchV28.update(nativeSiegeRouteWatchV28);
+          if(nativeSiegeGarrisonV33)
+            KTKSiegeGroundGarrisonV33.update(nativeSiegeGarrisonV33,{
+              gateOpen:nativeSiegeGateOpen,gateHp:st.gateHp,
+              towerCrossed:st.towerCrossed
+            },nativeSiegeDoctrineV27);
           const attackers=meadowBattleState.soldiers.filter(u=>u.alive&&u.hp>0&&
             u.team==='blue'&&Math.abs(u.x)<28&&u.z>4).length;
           const defenders=meadowBattleState.soldiers.filter(u=>u.alive&&u.hp>0&&
@@ -11658,23 +12296,23 @@ const KTKCalmUIV25=(()=>{
                 weaponMount.rotation.x = Math.PI / 2.2;
             } else {
                 // Realistic 1600s Flintlock Musket in Bot Hands (Walnut Stock, Round Steel Barrel, Brass Bands, Flintlock Hammer & Ramrod)
-                const mStock = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.082, 1.72, 10), darkWoodMat);
+                const mStock = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.082, 1.72, 10), musketWoodMat);
                 mStock.rotation.x = Math.PI / 2;
                 mStock.scale.set(0.75, 1.0, 1.25);
                 mStock.position.z = 0.58;
-                const mBarrel = new THREE.Mesh(new THREE.CylinderGeometry(0.048, 0.058, 2.08, 14), steelMat);
+                const mBarrel = new THREE.Mesh(new THREE.CylinderGeometry(0.048, 0.058, 2.08, 14), musketIronMat);
                 mBarrel.rotation.x = Math.PI / 2;
                 mBarrel.position.set(0, 0.08, 0.84);
-                const mMuzzle = new THREE.Mesh(new THREE.CylinderGeometry(0.058, 0.048, 0.10, 14), goldMat);
+                const mMuzzle = new THREE.Mesh(new THREE.CylinderGeometry(0.058, 0.048, 0.10, 14), musketBrassMat);
                 mMuzzle.rotation.x = Math.PI / 2;
                 mMuzzle.position.set(0, 0.08, 1.86);
                 for (let b = 0; b < 3; b++) {
-                    const band = new THREE.Mesh(new THREE.CylinderGeometry(0.068, 0.068, 0.07, 12), goldMat);
+                    const band = new THREE.Mesh(new THREE.CylinderGeometry(0.068, 0.068, 0.07, 12), musketBrassMat);
                     band.rotation.x = Math.PI / 2;
                     band.position.set(0, 0.05, 0.65 + b * 0.42);
                     weaponMount.add(band);
                 }
-                const mLock = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.14, 0.28), goldMat);
+                const mLock = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.14, 0.28), musketIronMat);
                 mLock.position.set(0.06, 0.06, 0.32);
                 weaponMount.add(mStock, mBarrel, mMuzzle, mLock);
                 weaponMount.rotation.x = Math.PI / 2.8;
@@ -11835,14 +12473,58 @@ const KTKCalmUIV25=(()=>{
         const stuckArrows = [];
         const particles = [];
 
-        // FIT03b: each particle owns its geometry and material; arrows own
-        // only their geometry (goldMat/steelMat are shared with weapon models).
-        // Flying helmet clones share both geometry and material with live bots.
+        // OPT01: bounded particle mesh pool: geometry is shared, materials are
+        // reset when reused. Generic beam meshes still keep owned geometry.
+        // Flying helmets and arrows retain their previous ownership rules.
+        const effectCubeGeometry = new THREE.BoxGeometry(1, 1, 1);
+        const effectMeshPools = { basic: [], lambert: [], opaque: [] };
+        const EFFECT_POOL_LIMIT = 192; // per category, no unbounded retention
+        const effectStillVelocity = new THREE.Vector3();
+        function acquireEffectCube(kind, color, opacity, width, height = width, depth = width) {
+            const pool = effectMeshPools[kind];
+            if (!pool) throw new Error('Unknown effect mesh pool');
+            let mesh = pool.pop();
+            if (!mesh) {
+                const material = kind === 'lambert'
+                    ? new THREE.MeshLambertMaterial({ color, transparent: true, opacity })
+                    : new THREE.MeshBasicMaterial({
+                        color, transparent: kind !== 'opaque', opacity
+                    });
+                mesh = new THREE.Mesh(effectCubeGeometry, material);
+                mesh.userData.effectPoolKind = kind;
+            }
+            mesh.material.color.setHex(color);
+            mesh.material.opacity = opacity;
+            mesh.position.set(0, 0, 0);
+            mesh.scale.set(width, height, depth);
+            mesh.rotation.set(0, 0, 0);
+            mesh.quaternion.identity();
+            mesh.visible = true;
+            scene.add(mesh);
+            return mesh;
+        }
         function releaseParticle(mesh) {
             scene.remove(mesh);
+            const kind = mesh.userData.effectPoolKind;
+            if (kind && effectMeshPools[kind]) {
+                const pool = effectMeshPools[kind];
+                if (pool.length < EFFECT_POOL_LIMIT) {
+                    pool.push(mesh);
+                } else {
+                    mesh.material.dispose(); // shared cube geometry stays owned by the pool
+                }
+                return;
+            }
             mesh.geometry.dispose();
             mesh.material.dispose();
         }
+        window.ktkParticlePoolStatus = () => ({
+            active: particles.length,
+            freeBasic: effectMeshPools.basic.length,
+            freeLambert: effectMeshPools.lambert.length,
+            freeOpaque: effectMeshPools.opaque.length,
+            limitPerKind: EFFECT_POOL_LIMIT
+        });
         function releaseArrow(mesh) {
             scene.remove(mesh);
             mesh.traverse(child=>{if(child.isMesh)child.geometry.dispose();});
@@ -11876,17 +12558,12 @@ const KTKCalmUIV25=(()=>{
             for (let i = 0; i < count; i++) {
                 const size = 0.25 + Math.random() * 0.45;
                 const isSpark = i < 4;
-                const mat = new THREE.MeshLambertMaterial({
-                    color: isSpark ? 0xfbbf24 : 0xd1d5db,
-                    transparent: true,
-                    opacity: isSpark ? 0.95 : 0.78
-                });
-                const puff = new THREE.Mesh(new THREE.BoxGeometry(size, size, size), mat);
+                const puff = acquireEffectCube('lambert',
+                    isSpark ? 0xfbbf24 : 0xd1d5db, isSpark ? 0.95 : 0.78, size);
                 puff.position.copy(origin).addScaledVector(dir, 1.0 + Math.random() * 1.1);
                 puff.position.x += (Math.random() - 0.5) * 0.45;
                 puff.position.y += (Math.random() - 0.5) * 0.45;
                 puff.position.z += (Math.random() - 0.5) * 0.45;
-                scene.add(puff);
 
                 const lifeTime = isSpark ? 0.25 : (lingering * (0.65 + Math.random() * 0.45));
                 particles.push({
@@ -11898,7 +12575,7 @@ const KTKCalmUIV25=(()=>{
                     ),
                     life: lifeTime,
                     maxLife: lifeTime,
-                    grow: !isSpark,
+                    grow: !isSpark, baseSize: size,
                     drag: 0.94
                 });
             }
@@ -11909,11 +12586,9 @@ const KTKCalmUIV25=(()=>{
             const palette = metal ? [0xffe5a0, 0xfbbf24, 0xe2e8f0, 0xef4444] : [0xfca5a5, 0xef4444, 0xf59e0b];
             const count = isHeadshot ? 21 : metal ? 15 : 11;
             for (let i = 0; i < count; i++) {
-                const mat = new THREE.MeshBasicMaterial({ color: palette[i % palette.length], transparent: true, opacity: 0.96 });
                 const size = 0.06 + Math.random() * (metal ? 0.12 : 0.10);
-                const p = new THREE.Mesh(new THREE.BoxGeometry(size, size, size), mat);
+                const p = acquireEffectCube('basic', palette[i % palette.length], 0.96, size);
                 p.position.copy(pos);
-                scene.add(p);
                 const life = 0.19 + Math.random() * 0.19;
                 particles.push({
                     mesh: p,
@@ -11943,14 +12618,8 @@ const KTKCalmUIV25=(()=>{
             for (let i = 0; i < 36; i++) {
                 const cols = [0xff4500, 0xf59e0b, 0xef4444, 0x374151];
                 const size = 0.35 + Math.random() * 0.65;
-                const mat = new THREE.MeshBasicMaterial({
-                    color: cols[i % cols.length],
-                    transparent: true,
-                    opacity: 0.9
-                });
-                const p = new THREE.Mesh(new THREE.BoxGeometry(size, size, size), mat);
+                const p = acquireEffectCube('basic', cols[i % cols.length], 0.9, size);
                 p.position.copy(center);
-                scene.add(p);
                 particles.push({
                     mesh: p,
                     vel: new THREE.Vector3(
@@ -11960,7 +12629,7 @@ const KTKCalmUIV25=(()=>{
                     ),
                     life: 0.7 + Math.random() * 0.8,
                     maxLife: 1.5,
-                    grow: true,
+                    grow: true, baseSize: size,
                     gravity: i > 18
                 });
             }
@@ -13601,10 +14270,23 @@ const KTKCalmUIV25=(()=>{
                 }
                 ArenaArmyBattle.setWorldObstacles(meadowBattleState,
                     nativeSiegeMode?nativeSiegeNativeBoxes():meadowSpec.boxes);
+                ArenaArmyBattle.setElevatedWorldObstacles(meadowBattleState,
+                    nativeSiegeMode?nativeSiegeWallAccessV32.wallBoxes:[]);
                 // The original G5.4 route authority must see ALL live AK26
                 // stone before a defender captain plans a single move.
+                if(nativeSiegeMode){
+                  const archers=meadowBattleState.soldiers.filter(u=>u.team==='red'&&u.type==='bow');
+                  const ramps35=KTKSiegeWallAccessV32.rampSpec;
+                  archers.slice(0,8).forEach((u,i)=>{
+                    const r=ramps35[i%4],side=Math.sign(r.minX);
+                    u.ak35Wall={x:(r.minX+r.maxX)/2+(i<4?-.8:.8),foot:r.maxZ,top:r.minZ,
+                      postX:side*111.6,postZ:r.minZ+(i<4?-2.5:2.5),phase:'approach',initialHp:u.hp};
+                  });
+                }
                 nativeSiegeDoctrineV27=nativeSiegeMode?
                   KTKSiegeDefenderDoctrineV27.create(meadowBattleState,ArenaArmyBattle):null;
+                nativeSiegeGarrisonV33=nativeSiegeMode?
+                  KTKSiegeGroundGarrisonV33.create(meadowBattleState,ArenaArmyBattle):null;
                 nativeSiegeRouteWatchV28=nativeSiegeMode?
                   KTKSiegeRouteWatchV28.create(
                     meadowBattleState,ArenaArmyBattle,nativeSiegeDoctrineV27):null;
@@ -13619,7 +14301,7 @@ const KTKCalmUIV25=(()=>{
                 const own=meadowBattleState.squads[meadowBattleState.playerSquadId];
                 player.pos.set(nativeSiegeMode?0:own.x-12,player.currentHeight,
                     nativeSiegeMode?-69:own.z);
-                ArenaArmyBattle.setPlayerPosition(meadowBattleState,player.pos.x,player.pos.z);
+                ArenaArmyBattle.setPlayerPosition(meadowBattleState,player.pos.x,player.pos.z,Math.max(0,player.pos.y-player.currentHeight));
                 if(nativeSiegeMode){
                     nativeSiegeDeploymentEvidence=KTKSiegeExpansionV25.deployment(
                       meadowBattleState,player.pos);
@@ -14302,9 +14984,8 @@ const KTKCalmUIV25=(()=>{
                 t.flame.scale.y = 0.9 + Math.cos(nowSec * 15 + t.phase) * 0.22;
                 if (t.innerCore) t.innerCore.scale.y = 0.85 + Math.sin(nowSec * 18 + t.phase) * 0.2;
                 if (Math.random() < 0.06) {
-                    const ember = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 0.08), new THREE.MeshBasicMaterial({ color: 0xfbbf24 }));
+                    const ember = acquireEffectCube('opaque', 0xfbbf24, 1, 0.08);
                     ember.position.copy(t.basePos);
-                    scene.add(ember);
                     particles.push({
                         mesh: ember,
                         vel: new THREE.Vector3((Math.random() - 0.5) * 0.6, 1.5 + Math.random(), (Math.random() - 0.5) * 0.6),
@@ -14329,11 +15010,14 @@ const KTKCalmUIV25=(()=>{
                     const proj=barrelProjection.copy(b.pos);
                     proj.y+=2.7;proj.project(camera);
                     if (proj.z < 1.0) {
-                        b.label.style.display = 'block';
-                        b.label.style.left = `${(proj.x * 0.5 + 0.5) * window.innerWidth}px`;
-                        b.label.style.top = `${(-proj.y * 0.5 + 0.5) * window.innerHeight}px`;
-                    } else {
-                        b.label.style.display = 'none';
+                        const style=b.label.style;
+                        if(style.display!=='block')style.display='block';
+                        const left=`${(proj.x * 0.5 + 0.5) * window.innerWidth}px`;
+                        const top=`${(-proj.y * 0.5 + 0.5) * window.innerHeight}px`;
+                        if(style.left!==left)style.left=left;
+                        if(style.top!==top)style.top=top;
+                    } else if(b.label.style.display!=='none') {
+                        b.label.style.display='none';
                     }
                 }
             });
@@ -14705,11 +15389,10 @@ const KTKCalmUIV25=(()=>{
                 arr.trailTimer -= dt;
                 if (arr.trailTimer <= 0) {
                     arr.trailTimer = 0.025;
-                    const trail = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 0.28), new THREE.MeshBasicMaterial({ color: 0xe5e7eb, transparent: true, opacity: 0.55 }));
+                    const trail = acquireEffectCube('basic', 0xe5e7eb, 0.55, 0.05, 0.05, 0.28);
                     trail.position.copy(prevPos);
                     trail.quaternion.copy(arr.mesh.quaternion);
-                    scene.add(trail);
-                    particles.push({ mesh: trail, vel: new THREE.Vector3(), life: 0.22, maxLife: 0.22, grow: false });
+                    particles.push({ mesh: trail, vel: effectStillVelocity, life: 0.22, maxLife: 0.22, grow: false });
                 }
 
                 // Swept collision: find the FIRST obstruction along the complete frame segment.
@@ -14814,7 +15497,9 @@ const KTKCalmUIV25=(()=>{
                 if (p.drag) p.vel.multiplyScalar(p.drag);
                 p.mesh.position.addScaledVector(p.vel, dt);
                 if (p.grow) {
-                    p.mesh.scale.addScalar(dt * 1.45);
+                    // Original geometry had size "baseSize" and a unit scale;
+                    // pooled geometry is 1x1x1, so preserve identical expansion.
+                    p.mesh.scale.addScalar(dt * 1.45 * (p.baseSize || 1));
                     if (p.mesh.material.transparent) {
                         p.mesh.material.opacity = Math.max(0, (p.life / p.maxLife) * 0.75);
                     }
@@ -15271,11 +15956,12 @@ const KTKCalmUIV25=(()=>{
             // 6. Bot commanders and their units own the field battle simulation.
             if(meadowBattleMode&&meadowBattleState){
                 // The selected squad receives the actual player's position each frame.
-                ArenaArmyBattle.setPlayerPosition(meadowBattleState,player.pos.x,player.pos.z);
+                ArenaArmyBattle.setPlayerPosition(meadowBattleState,player.pos.x,player.pos.z,Math.max(0,player.pos.y-player.currentHeight));
                 ArenaArmyBattle.setPlayerHealth(meadowBattleState,player.hp);
                 const siegePreviousPositions=nativeSiegeMode?
                     captureSiegePoses(meadowBattleState.soldiers):null;
                 if(nativeSiegeMode){
+                    meadowBattleState.ak35Recall=nativeSiegeGateOpen;
                     nativeSiegeTowerProtectNativeActors();
                     nativeSiegeDefenderCounterfire();
                 }
@@ -15319,7 +16005,7 @@ const KTKCalmUIV25=(()=>{
                         player.hp=player.maxHp;
                         const own=meadowBattleState.squads[meadowBattleState.playerSquadId];
                         player.pos.set(own.x-16,player.currentHeight,own.z);
-                        ArenaArmyBattle.setPlayerPosition(meadowBattleState,player.pos.x,player.pos.z);
+                        ArenaArmyBattle.setPlayerPosition(meadowBattleState,player.pos.x,player.pos.z,Math.max(0,player.pos.y-player.currentHeight));
                         ArenaArmyBattle.setPlayerHealth(meadowBattleState,player.hp);
                     }
                     updateHUD();
@@ -15327,7 +16013,7 @@ const KTKCalmUIV25=(()=>{
                 meadowBattleVisual.update(meadowBattleState,dt);
                 if(nativeSiegeMode){
                     nativeSiegeUpdate(dt);
-                    nativeSiegeTowerRenderSoldiers();
+                    /* AK34 native G5.4 instancing already renders correct elevation */
                 }
                 meadowBattleHudTimer-=dt;
                 if(meadowBattleHudTimer<=0){
@@ -15366,13 +16052,97 @@ const KTKCalmUIV25=(()=>{
             }
         }
 
+        // OPT02: optimized grass placement in the unpinned GAME layer.
+        // All original native gameplay modules and their pinned hashes remain intact.
+        const OPT_GRASS_GRID=10, OPT_GRASS_SLOTS=100;
+        const optGrassMod=(n,m)=>((n%m)+m)%m;
+        function optGrassRandom(seed){
+            let state=seed>>>0;
+            return ()=>{state=(Math.imul(state,1664525)+1013904223)>>>0;
+                return state/4294967296;};
+        }
+         function updateNearbyTuftsOptimized(mesh,spec,x,z){
+          if(!mesh||!Number.isFinite(x)||!Number.isFinite(z))return false;
+          const tileX=Math.floor(x/ArenaMeadowGrass.NEAR_TILE_SIZE),tileZ=Math.floor(z/ArenaMeadowGrass.NEAR_TILE_SIZE);
+          const data=mesh.userData;
+          if(!data.tileWorldX){
+           data.tileWorldX=new Int32Array(OPT_GRASS_SLOTS).fill(2147483647);
+           data.tileWorldZ=new Int32Array(OPT_GRASS_SLOTS).fill(2147483647);
+           data.tileObject=new THREE.Object3D();
+           data.tileColor=new THREE.Color();
+           data.solidSpec=null;data.solidProps=[];data.lastRegeneratedTiles=0;
+          }
+          if(data.lastTileX===tileX&&data.lastTileZ===tileZ&&data.solidSpec===spec)return false;
+          if(data.solidSpec!==spec){
+           data.solidProps=spec.boxes.filter(b=>b.solid);
+           data.solidSpec=spec;
+           data.tileWorldX.fill(2147483647);
+           data.tileWorldZ.fill(2147483647);
+          }
+          const originX=tileX-5,originZ=tileZ-5;
+          const shiftX=optGrassMod(originX,OPT_GRASS_GRID),shiftZ=optGrassMod(originZ,OPT_GRASS_GRID);
+          const instancesPerTile=Math.ceil(mesh.count/OPT_GRASS_SLOTS);
+          const props=data.solidProps,object=data.tileObject,color=data.tileColor;
+          let regenerated=0;
+          for(let slot=0;slot<OPT_GRASS_SLOTS;slot++){
+           // Each physical slot is attached to a world tile modulo 10; unchanged
+           // world tiles keep their matrices/colors when the camera crosses a cell.
+           const localX=optGrassMod(slot%OPT_GRASS_GRID-shiftX,OPT_GRASS_GRID);
+           const localZ=optGrassMod(Math.floor(slot/OPT_GRASS_GRID)-shiftZ,OPT_GRASS_GRID);
+           const worldTileX=originX+localX,worldTileZ=originZ+localZ;
+           if(data.tileWorldX[slot]===worldTileX&&data.tileWorldZ[slot]===worldTileZ)continue;
+           data.tileWorldX[slot]=worldTileX;data.tileWorldZ[slot]=worldTileZ;regenerated++;
+           const minX=worldTileX*ArenaMeadowGrass.NEAR_TILE_SIZE,minZ=worldTileZ*ArenaMeadowGrass.NEAR_TILE_SIZE;
+           const tileProps=props.filter(b=>
+            minX<b.x+b.w/2+.7&&minX+ArenaMeadowGrass.NEAR_TILE_SIZE>b.x-b.w/2-.7&&
+            minZ<b.z+b.d/2+.7&&minZ+ArenaMeadowGrass.NEAR_TILE_SIZE>b.z-b.d/2-.7);
+           for(let n=0;n<instancesPerTile;n++){
+            const index=slot*instancesPerTile+n;
+            if(index>=mesh.count)break;
+            const rng=optGrassRandom((Math.imul(worldTileX,73856093)^
+               Math.imul(worldTileZ,19349663)^Math.imul(n+1,83492791)^0xdecafbad)>>>0);
+            const offsetX=rng(),offsetZ=rng();
+            const px=(worldTileX+offsetX)*ArenaMeadowGrass.NEAR_TILE_SIZE;
+            const pz=(worldTileZ+offsetZ)*ArenaMeadowGrass.NEAR_TILE_SIZE;
+            const blocked=Math.abs(px)>=spec.half-ArenaMeadowGrass.EDGE_INSET||
+             Math.abs(pz)>=spec.half-ArenaMeadowGrass.EDGE_INSET||tileProps.some(b=>
+               Math.abs(px-b.x)<b.w/2+.7&&Math.abs(pz-b.z)<b.d/2+.7);
+            object.position.set(px,.02,pz);
+            object.rotation.set(0,rng()*6.28318530718,0);
+            const size=.46+.3*rng(),height=.34+.44*rng();
+            object.scale.set(blocked?0:size,blocked?0:height,blocked?0:size);
+            object.updateMatrix();
+            const hero=mesh.userData.ktkMeshyGrassHero;
+            if(hero&&index%4===0){
+                hero.setMatrixAt(index/4,object.matrix);
+                // Only one clump per slot: hide the lightweight duplicate.
+                object.scale.set(0,0,0);
+                object.updateMatrix();
+            }
+            mesh.setMatrixAt(index,object.matrix);
+            mesh.setColorAt(index,color.setHex(ArenaMeadowGrass.PALETTE[Math.floor(rng()*ArenaMeadowGrass.PALETTE.length)]));
+           }
+          }
+          if(regenerated){
+           mesh.instanceMatrix.needsUpdate=true;
+           if(mesh.instanceColor)mesh.instanceColor.needsUpdate=true;
+           if(mesh.userData.ktkMeshyGrassHero)
+               mesh.userData.ktkMeshyGrassHero.instanceMatrix.needsUpdate=true;
+          }
+          data.lastTileX=tileX;data.lastTileZ=tileZ;
+          data.lastRegeneratedTiles=regenerated;
+          return regenerated>0;
+         }
+        
         function updateActiveMeadowGrass(){
+            if(ktkMeshyGrassHero)
+                ktkMeshyGrassHero.visible=arenaMap==='meadow'&&!!meadowDenseGrass?.visible;
             if(arenaMap!=='meadow'||!meadowDenseGrass||!meadowDenseGrass.visible)return false;
             const tile=ArenaMeadowGrass.NEAR_TILE_SIZE;
             const data=meadowDenseGrass.userData;
             if(data.lastTileX===Math.floor(player.pos.x/tile)&&
                data.lastTileZ===Math.floor(player.pos.z/tile))return false;
-            return ArenaMeadowGrass.updateNearbyTufts(THREE,meadowDenseGrass,meadowSpec,player.pos.x,player.pos.z);
+            return updateNearbyTuftsOptimized(meadowDenseGrass,meadowSpec,player.pos.x,player.pos.z);
         }
         function animate() {
             requestAnimationFrame(animate);
