@@ -283,7 +283,7 @@ window.addEventListener('error', function(event) {
           <div class="mt-1 text-sky-300">Dizilişler</div>
           <div class="army-commands">
            <button data-army-formation="line">Z · Saf</button><button data-army-formation="column">X · Kol</button>
-           <button data-army-formation="square">C · Kare</button><button data-army-formation="wedge">B · Kama</button>
+           <button data-army-formation="square">O · Kare</button><button data-army-formation="wedge">B · Kama</button>
            <button data-army-formation="loose">M · Dağınık</button><button data-army-formation="shield">I · Kalkan duvarı</button>
           </div>
           <div class="mt-1 text-sky-300">Saf aralığı (sadece senin birliğin)</div>
@@ -14486,7 +14486,7 @@ const KTKCalmUIV25=(()=>{
                 if(e.code==='BracketRight'){e.preventDefault();setArmySpacing(Math.min(1.65,currentSquad().spacingScale+.1));return;}
                 const orderHotkeys={KeyG:'follow',KeyJ:'hold',KeyK:'advance',KeyL:'charge',
                     KeyU:'retreat',KeyY:'flank',KeyN:'skirmish'};
-                const formationHotkeys={KeyZ:'line',KeyX:'column',KeyC:'square',
+                const formationHotkeys={KeyZ:'line',KeyX:'column',KeyO:'square',
                     KeyB:'wedge',KeyM:'loose',KeyI:'shield'};
                 const fireHotkeys={Digit7:'free',Digit8:'volley',Digit9:'hold'};
                 if(orderHotkeys[e.code]){e.preventDefault();issuePlayerOrder(orderHotkeys[e.code]);return;}
@@ -14596,6 +14596,31 @@ const KTKCalmUIV25=(()=>{
             // Keep feet fixed during crouch/stand transitions, including mid-air.
             player.currentHeight=nextHeight;
             player.pos.y=feet+nextHeight;
+        }
+
+        // BUG26: sweep a small camera volume from the player eye to its
+        // desired shoulder position. Shorten the arm before any solid AABB.
+        function thirdPersonCameraFraction(origin,offset,solids,padding=.24){
+            let nearest=1;
+            for(const b of solids){
+                let enter=0,exit=nearest;
+                for(const axis of ['X','Y','Z']){
+                    const k=axis.toLowerCase();
+                    const start=origin[k],delta=offset[k];
+                    const lo=b['min'+axis]-padding,hi=b['max'+axis]+padding;
+                    if(Math.abs(delta)<1e-8){
+                        if(start<lo||start>hi){enter=Infinity;break;}
+                    }else{
+                        const a=(lo-start)/delta,c=(hi-start)/delta;
+                        enter=Math.max(enter,Math.min(a,c));
+                        exit=Math.min(exit,Math.max(a,c));
+                        if(enter>exit)break;
+                    }
+                }
+                if(enter<=exit&&enter<nearest)
+                    nearest=Math.max(0,enter-.02);
+            }
+            return nearest;
         }
 
         function resolvePlayerCollisions(dt) {
@@ -15054,7 +15079,8 @@ const KTKCalmUIV25=(()=>{
 
                 if (player.isThirdPerson && playerCharGroup) {
                     const camBack = frameCamBack.set(.65,.65,4.2).applyAxisAngle(frameUp,player.yaw);
-                    camera.position.copy(player.pos).add(camBack);
+                    const cameraFraction=thirdPersonCameraFraction(player.pos,camBack,colliders);
+                    camera.position.copy(player.pos).addScaledVector(camBack,cameraFraction);
 
                     // Update player's own 3D character mesh pose & animations
                     playerCharGroup.position.set(player.pos.x, player.pos.y - player.currentHeight, player.pos.z);
