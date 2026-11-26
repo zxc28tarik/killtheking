@@ -10163,8 +10163,10 @@ const KTKCalmUIV25=(()=>{
         function nativeSiegeAabb(x,y,z,w,h,d){return {
           minX:x-w/2,maxX:x+w/2,minY:y-h/2,maxY:y+h/2,
           minZ:z-d/2,maxZ:z+d/2};}
-        nativeSiegeMesh(nativeSiegeParts,-26,3.5,-42,36,7,5,nativeSiegeStone);
-        nativeSiegeMesh(nativeSiegeParts,26,3.5,-42,36,7,5,nativeSiegeStone);
+        const nativeSiegeFrontWallMeshes=[
+          nativeSiegeMesh(nativeSiegeParts,-26,3.5,-42,36,7,5,nativeSiegeStone),
+          nativeSiegeMesh(nativeSiegeParts,26,3.5,-42,36,7,5,nativeSiegeStone)
+        ];
         const nativeSiegeGateMesh=nativeSiegeMesh(nativeSiegeParts,
           0,3.5,-42,16,7,5,nativeSiegeGateMat);
         const v19SiegeDressing=KTKBattlefieldVisualV19.dressSiegeGate(THREE,nativeSiegeParts,nativeSiegeGateMesh);
@@ -10356,6 +10358,23 @@ const KTKCalmUIV25=(()=>{
           min:-312,max:312,step:5,upperEdge:1000,upperLevel:0};
         const nativeSiegeGateBox=nativeSiegeAabb(0,3.5,-42,16,7,5);
         let nativeSiegeGateOpen=false;
+        // BUG21: raycast cover must follow the same geometry lifecycle as movement.
+        function syncNativeSiegeFrontCover(list,enabled,gateOpen,original,flanks,gate){
+          function membership(mesh,wanted){
+            for(let i=list.length-1;i>=0;i--)if(list[i]===mesh)list.splice(i,1);
+            if(wanted)list.push(mesh);
+          }
+          membership(original,!enabled);
+          for(const mesh of flanks)membership(mesh,enabled);
+          membership(gate,enabled&&!gateOpen);
+        }
+        function refreshNativeSiegeFrontCover(){
+          syncNativeSiegeFrontCover(castleMapData.worldMeshes,nativeSiegeCastleEnabled,
+            nativeSiegeGateOpen,nativeSiegeOriginalSouthVisual,nativeSiegeFrontWallMeshes,nativeSiegeGateMesh);
+          if(arenaMap==='castle'){
+            worldMeshes.length=0;worldMeshes.push(...castleMapData.worldMeshes);
+          }
+        }
         function nativeSiegeCastleGeometry(enabled){
           if(!enabled&&nativeSiegeCastleEnabled===false)return;
           invalidateIdleScene();
@@ -10403,6 +10422,7 @@ const KTKCalmUIV25=(()=>{
             if(!source.includes(nativeSiegeOriginalNorthCollider))
               source.push(nativeSiegeOriginalNorthCollider);
           }
+          refreshNativeSiegeFrontCover();
           // Both player movement and AI routes use the SAME active collision set.
           if(arenaMap==='castle'){
             colliders.length=0;colliders.push(...source);
@@ -10470,6 +10490,7 @@ const KTKCalmUIV25=(()=>{
         function nativeSiegeResetEquipment(){
           nativeSiegeGateOpen=false;
           nativeSiegeGateMesh.visible=true;
+          refreshNativeSiegeFrontCover();
           if(!castleMapData.colliders.includes(nativeSiegeGateBox))
             castleMapData.colliders.push(nativeSiegeGateBox);
           colliders.length=0;colliders.push(...castleMapData.colliders);
@@ -11132,6 +11153,7 @@ const KTKCalmUIV25=(()=>{
           if(st.gateHp===0){
             nativeSiegeGateOpen=true;
             nativeSiegeGateMesh.visible=false;
+            refreshNativeSiegeFrontCover();
             const j=castleMapData.colliders.indexOf(nativeSiegeGateBox);
             if(j>=0)castleMapData.colliders.splice(j,1);
             colliders.length=0;colliders.push(...castleMapData.colliders);
@@ -11219,8 +11241,7 @@ const KTKCalmUIV25=(()=>{
               const a=new THREE.Vector3(p.x,p.y,p.z);
               const n=new THREE.Vector3(p.x+p.vx*h,p.y+p.vy*h-9.5*h*h,p.z+p.vz*h);
               const ray=new THREE.Raycaster(a,n.clone().sub(a).normalize(),0,a.distanceTo(n));
-              const impact=ray.intersectObjects([nativeSiegeGateMesh,...worldMeshes]
-                .filter(m=>m.visible&&m!==nativeSiegeOriginalSouthVisual),false)[0];
+              const impact=ray.intersectObjects(worldMeshes.filter(m=>m.visible),false)[0];
               const delta=n.clone().sub(a),len=delta.length();
               const body=ArenaArmyBattle.raycastSoldier(meadowBattleState,
                 {x:a.x,y:a.y,z:a.z},
@@ -13175,7 +13196,7 @@ const KTKCalmUIV25=(()=>{
 
         // Quick Melee [F] or [V] (Bayonet / Dagger / Shield Bash / Spear Surge)
         function performQuickAbilityOrMelee() {
-            if (!isGameActive) return;
+            if (!isGameActive || armyTacticalOpen) return;
 
             // Class 0 (Knight): Shield Bash Dash!
             if (player.classIdx === 0 && player.abilityCooldown <= 0) {
@@ -13247,7 +13268,7 @@ const KTKCalmUIV25=(()=>{
         }
 
         function performPrimaryAttack() {
-            if (!isGameActive) return;
+            if (!isGameActive || armyTacticalOpen) return;
             const cls = CLASSES[player.classIdx];
 
             // If Knight is holding Shield (Right-Click) + clicks Left-Click -> Shield Bash!
@@ -13333,7 +13354,7 @@ const KTKCalmUIV25=(()=>{
 
         function releaseChargedBow() {
             if (!player.isDrawingBow) return;
-            if (!isGameActive || arenaMatch.phase !== 'playing') {
+            if (!isGameActive || armyTacticalOpen || arenaMatch.phase !== 'playing') {
                 player.isDrawingBow = false;
                 player.bowCharge = 0;
                 player.bowDrawSeconds = 0;
@@ -13612,9 +13633,21 @@ const KTKCalmUIV25=(()=>{
             if(meadowBattleMode&&arenaMatch.phase==='playing'&&canvas.requestPointerLock)
                 canvas.requestPointerLock();
         }
+        // BUG22: opening the command overlay cancels held combat input, not cooldowns.
+        function cancelTacticalCombatInput(){
+            Object.assign(player,{isDrawingBow:false,bowCharge:0,bowDrawSeconds:0,
+                isRMBDown:false,isShielding:false,shieldParryTime:0});
+            activeWeaponSwing=null;
+            document.getElementById('bow-charge-ui').classList.add('hidden');
+            document.getElementById('shield-overlay').style.opacity='0';
+            document.getElementById('ads-overlay').style.opacity='0';
+            document.getElementById('crosshair').style.transform='scale(1)';
+            document.getElementById('hud-status-badge').textContent='HAZIR';
+        }
         function openArmyTacticalMap(){
             if(!meadowBattleMode||!meadowBattleState||arenaMatch.phase!=='playing')return;
             armyTacticalOpen=true;armyTacticalOverlay.classList.remove('hidden');
+            cancelTacticalCombatInput();
             armyMapMessage.textContent='Hedef noktası, bakış yönü veya düşman bölüğü seç.';
             for(const code in keys)keys[code]=false;
             if(document.pointerLockElement===canvas&&document.exitPointerLock)
@@ -14085,6 +14118,8 @@ const KTKCalmUIV25=(()=>{
                 if(nativeSiegeMode){
                     nativeSiegeCastleGeometry(true);
                     nativeSiegeDeployOriginalG54(meadowBattleState);
+                    // Restore the closed gate before the new army receives its obstacles.
+                    nativeSiegeResetEquipment();
                 }
                 ArenaArmyBattle.setWorldObstacles(meadowBattleState,
                     nativeSiegeMode?nativeSiegeNativeBoxes():meadowSpec.boxes);
@@ -14124,7 +14159,6 @@ const KTKCalmUIV25=(()=>{
                     if(nativeSiegeDefenseSpawnIntrusions)
                       throw Error('AK26: genuine G5.4 soldiers spawned in defensive stone');
                 }
-                if(nativeSiegeMode)nativeSiegeResetEquipment();
                 meadowArmySelectedOrder='hold';
                 // Class remains the player's weapon class, but now also dictates troop ownership.
                 player.yaw=nativeSiegeMode?Math.PI:-Math.PI/2; // Castle attackers look toward north (+z).
@@ -14377,7 +14411,7 @@ const KTKCalmUIV25=(()=>{
         });
 
         window.addEventListener('mousedown', (e) => {
-            if (!isGameActive) return;
+            if (!isGameActive || armyTacticalOpen || document.pointerLockElement!==canvas) return;
             if (e.button === 0) {
                 if (player.classIdx === 2) {
                     // The old four-second cooldown is now incorporated into
@@ -14415,6 +14449,7 @@ const KTKCalmUIV25=(()=>{
         });
 
         window.addEventListener('mouseup', (e) => {
+            if (armyTacticalOpen) return;
             if (e.button === 0 && player.classIdx === 2 && player.isDrawingBow) {
                 releaseChargedBow();
             } else if (e.button === 2) {
