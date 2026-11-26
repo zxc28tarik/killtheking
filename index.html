@@ -10108,9 +10108,8 @@ const KTKCalmUIV25=(()=>{
             skyClouds.forEach(c=>{c.mesh.visible=map==='castle';});
             window.ktkMeadowSkyVisualStatus=()=>({skyRadius:240*skyDomeMesh.scale.x,meadowHalf:meadowSpec.half,mode:arenaMap,visibleClouds:skyClouds.filter(c=>c.mesh.visible).length});
             scene.background.setHex(map==='meadow'?0xb9c5b6:0xd97736);
-            castleMapData.barrels.forEach(barrel=>{
-                barrel.label.style.display=map==='castle'&&barrel.active?'block':'none';
-            });
+            // A map toggle must not revive a destroyed barrel or show stale labels.
+            syncBarrelVisibility(castleMapData,meadowMapData,map);
             // Build a fresh A* graph against the selected map's actual solids.
             // Old navigator instances must not retain the shared mutable arrays.
             navigator=ArenaNavigation.createNavigator(colliders,ramps,selected.navigation);
@@ -12174,6 +12173,14 @@ const KTKCalmUIV25=(()=>{
         // 8. PROJECTILES, STICKING ARROWS, VOLUMETRIC SMOKE & FLOATING DAMAGE NUMBERS
         // ============================================================================
         const arrows = [];
+        // BUG20: the existing arrow tip points along local -Z, not +Z.
+        const playerArrowForward=new THREE.Vector3(0,0,-1);
+        const playerArrowDirection=new THREE.Vector3();
+        function orientPlayerArrow(mesh,velocity) {
+            if(velocity.lengthSq()<1e-12)return;
+            mesh.quaternion.setFromUnitVectors(playerArrowForward,
+                playerArrowDirection.copy(velocity).normalize());
+        }
         const stuckArrows = [];
         const particles = [];
 
@@ -12354,6 +12361,25 @@ const KTKCalmUIV25=(()=>{
             }
         }
 
+        // BUG19: logical and visible state share a single restore path.
+        function restoreBarrel(barrel,visible) {
+            barrel.active=true;
+            barrel.hp=40;
+            barrel.respawnTimer=0;
+            barrel.group.visible=visible;
+            barrel.label.style.display='none';
+        }
+        function syncBarrelVisibility(castle,meadow,map) {
+            for(const [name,data] of [['castle',castle],['meadow',meadow]])
+                for(const barrel of data.barrels){
+                    barrel.group.visible=name===map&&barrel.active;
+                    barrel.label.style.display='none';
+                }
+        }
+        function resetRoundBarrels(castle,meadow,map) {
+            for(const [name,data] of [['castle',castle],['meadow',meadow]])
+                for(const barrel of data.barrels)restoreBarrel(barrel,name===map);
+        }
         function triggerBarrelExplosion(barrel) {
             if (!barrel.active) return;
             barrel.active = false;
@@ -13349,7 +13375,7 @@ const KTKCalmUIV25=(()=>{
             arrowGroup.add(shaft, head);
             // Sweep from the player itself, including the first 0.9 m of travel.
             arrowGroup.position.copy(origin);
-            arrowGroup.quaternion.copy(camera.quaternion);
+            orientPlayerArrow(arrowGroup,dir);
             scene.add(arrowGroup);
 
             const speed = 38 + charge * 46; // Up to 84 speed at full draw!
@@ -13989,6 +14015,7 @@ const KTKCalmUIV25=(()=>{
 
         function resetFreeForAllRound() {
             clearRoundTransients();
+            resetRoundBarrels(castleMapData,meadowMapData,arenaMap);
             renderSpeedLines(0);
             KTKNativeArmyMatchFinish.restoreHud(document);
             KTKBattlefieldVisualV19.setBattleUi(document,meadowBattleMode);
@@ -14816,9 +14843,7 @@ const KTKCalmUIV25=(()=>{
                 if (!b.active) {
                     b.respawnTimer -= dt;
                     if (b.respawnTimer <= 0) {
-                        b.active = true;
-                        b.hp = 40;
-                        b.group.visible = true;
+                        restoreBarrel(b,true);
                     }
                 } else {
                     const dToPlayer = b.pos.distanceTo(player.pos);
@@ -15199,7 +15224,7 @@ const KTKCalmUIV25=(()=>{
 
                 const prevPos = arr.mesh.position.clone();
                 arr.mesh.position.addScaledVector(arr.vel, dt);
-                arr.mesh.lookAt(arr.mesh.position.clone().add(arr.vel));
+                orientPlayerArrow(arr.mesh,arr.vel);
 
                 // Spawn wind trail cube behind arrow
                 arr.trailTimer -= dt;
