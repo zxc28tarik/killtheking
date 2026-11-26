@@ -6,8 +6,8 @@ Kaynak: main HTML blob ad24dbde04012cc8d90b0cca0b4bb8fb560d71ab. Kullanıcı tal
 | BUG02 | Oyuncu ayak kotu G5.4 motoruna aktarılmıyor | Kritik | Main'e işlendi; yüksek oyuncu gövdesi, ok/tüfek rayları ve sıfır kot regresyonu |
 | BUG03 | Yakın dövüş dikey erişim kontrolü eksik | Kritik | Main'e işlendi; farklı kotlarda hayalet vuruş yok |
 | BUG04 | dt 0.05 sınırı gerçek maç süresini FPS'e bağlı kılıyor | Kritik | Main'e işlendi; gerçek zaman, duraklama ve fizik adımı ayrımı |
-| BUG05 | 3000 x 156 üçgen Meshy çim, frustum culling kapalı | Yüksek | Kod adayı; görünüm korunarak görünür alan işi ve ölçüm |
-| BUG06 | Çim değişiminde tüm instance tamponları dirty | Yüksek | Kod adayı; değişen aralık aktarımı, aynı görünüm |
+| BUG05 | 3000 x 156 üçgen Meshy çim, frustum culling kapalı | Yüksek | Main'e işlendi; görünüm korunarak görünür alan işi ve ölçüm |
+| BUG06 | Çim değişiminde tüm instance tamponları dirty | Yüksek | Main'e işlendi; değişen aralık aktarımı, aynı görünüm |
 | BUG07 | Efekt havuzu yalnız boş nesneleri sınırlıyor | Yüksek | Açık; aktif efekt yükü sınırlı, kritik efekt korunur |
 | BUG08 | Kale pathClear yalnız örnek noktaları kontrol ediyor | Yüksek | Açık; sürekli segment/süpürme testi |
 | BUG09 | Hasar göstergeleri DOM/timer churn ve ekran dışı üretim | Orta | Açık; ekran sınırları ve sınırlı yeniden kullanım |
@@ -26,3 +26,5 @@ BUG03–04: PR #95 merged 875a3cfd107bb8f96a7a2d11e6d1dd8942ab0ac4. 218/218 test
 
 ## BUG05–06 kod adayı
 25 bölgesel batch x 2 malzeme, 9000 basit + 3000 Meshy, eski deterministik yerleşim korunur; 3000 sıfır ölçekli yinelenen basit çim kaldırıldı. Konservatif dünya AABB frustum testi ve r128 scalar updateRange birleştirme; görünmeyen gruplarda bekleyen aktarım korunur. Draw call artabilir; gerçek GPU kazancı ölçülmedi. OPT02/GR01 testleri yeni gerçek r128 topolojisine uyarlandı, kabul testleri bekleniyor.
+
+BUG05–06: PR #96 merged 46b91cc3cd1c3155c086a87f42add079510a139e; 222/222 tests and Chromium runs 45813544468 / 45813544317 PASS. Actual GPU FPS/visual acceptance outstanding.
