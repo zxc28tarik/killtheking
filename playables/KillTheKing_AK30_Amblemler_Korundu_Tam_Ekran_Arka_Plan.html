@@ -8646,13 +8646,28 @@ const KTKSiegeFortificationV26=(()=>{
    noSeparateFPSRuntime:true
   });
  }
- function pathClear(points,extra=0.8){
-  if(!Array.isArray(points)||points.length<2)return false;
-  for(const point of points){
-   if(features.some(f=>overlaps(horizontal(f),{
-    minX:point.x-extra,maxX:point.x+extra,
-    minZ:point.z-extra,maxZ:point.z+extra
-   })))return false;
+ // BUG08: continuous swept square clearance against every physical block.
+ function pathClear(points,radius=0.8){
+  if(!Array.isArray(points)||points.length<2||
+   !Number.isFinite(radius)||radius<0||
+   !points.every(p=>p&&Number.isFinite(p.x)&&Number.isFinite(p.z)))return false;
+  for(let i=0;i<Math.max(1,points.length-1);i++){
+   const a=points[i],b=points[Math.min(i+1,points.length-1)];
+   for(const f of features){
+    let lo=0,hi=1;
+    for(const [axis,half] of [['x',f.w/2],['z',f.d/2]]){
+     const min=f[axis]-half-radius,max=f[axis]+half+radius;
+     const start=a[axis],delta=b[axis]-start;
+     if(Math.abs(delta)<1e-12){
+      if(start<min||start>max){lo=1;hi=0;break;}
+     }else{
+      const t0=(min-start)/delta,t1=(max-start)/delta;
+      lo=Math.max(lo,Math.min(t0,t1));hi=Math.min(hi,Math.max(t0,t1));
+      if(lo>hi)break;
+     }
+    }
+    if(lo<=hi)return false;
+   }
   }
   return true;
  }
@@ -8728,11 +8743,30 @@ const KTKSiegeInteriorV31=(()=>{
    a.z-a.d/2 < b.z+b.d/2+pad &&
    a.z+a.d/2 > b.z-b.d/2-pad;
  }
+ // BUG08: continuous swept square clearance against every physical block.
  function pathClear(points,radius=1){
-  return Array.isArray(points)&&points.length>0&&points.every(p=>
-   features.every(f=>
-    Math.abs(f.x-p.x)>f.w/2+radius ||
-    Math.abs(f.z-p.z)>f.d/2+radius));
+  if(!Array.isArray(points)||points.length<1||
+   !Number.isFinite(radius)||radius<0||
+   !points.every(p=>p&&Number.isFinite(p.x)&&Number.isFinite(p.z)))return false;
+  for(let i=0;i<Math.max(1,points.length-1);i++){
+   const a=points[i],b=points[Math.min(i+1,points.length-1)];
+   for(const f of features){
+    let lo=0,hi=1;
+    for(const [axis,half] of [['x',f.w/2],['z',f.d/2]]){
+     const min=f[axis]-half-radius,max=f[axis]+half+radius;
+     const start=a[axis],delta=b[axis]-start;
+     if(Math.abs(delta)<1e-12){
+      if(start<min||start>max){lo=1;hi=0;break;}
+     }else{
+      const t0=(min-start)/delta,t1=(max-start)/delta;
+      lo=Math.max(lo,Math.min(t0,t1));hi=Math.min(hi,Math.max(t0,t1));
+      if(lo>hi)break;
+     }
+    }
+    if(lo<=hi)return false;
+   }
+  }
+  return true;
  }
  function validate(){
   const seen=new Set();
@@ -12113,7 +12147,16 @@ const KTKCalmUIV25=(()=>{
         // Flying helmets and arrows retain their previous ownership rules.
         const effectCubeGeometry = new THREE.BoxGeometry(1, 1, 1);
         const effectMeshPools = { basic: [], lambert: [], opaque: [] };
-        const EFFECT_POOL_LIMIT = 192; // per category, no unbounded retention
+        const EFFECT_POOL_LIMIT = 192; // free meshes per category
+        // BUG07: shared admission cap for every decorative particle producer.
+        const EFFECT_ACTIVE_LIMIT=320,EFFECT_NORMAL_LIMIT=256;
+        let skippedNormalEffects=0,skippedPriorityEffects=0;
+        function admitParticle(priority=false){
+            const limit=priority?EFFECT_ACTIVE_LIMIT:EFFECT_NORMAL_LIMIT;
+            if(particles.length<limit)return true;
+            if(priority)skippedPriorityEffects++;else skippedNormalEffects++;
+            return false;
+        }
         const effectStillVelocity = new THREE.Vector3();
         function acquireEffectCube(kind, color, opacity, width, height = width, depth = width) {
             const pool = effectMeshPools[kind];
@@ -12158,7 +12201,9 @@ const KTKCalmUIV25=(()=>{
             freeBasic: effectMeshPools.basic.length,
             freeLambert: effectMeshPools.lambert.length,
             freeOpaque: effectMeshPools.opaque.length,
-            limitPerKind: EFFECT_POOL_LIMIT
+            limitPerKind: EFFECT_POOL_LIMIT,
+            activeLimit:EFFECT_ACTIVE_LIMIT,normalLimit:EFFECT_NORMAL_LIMIT,
+            skippedNormalEffects,skippedPriorityEffects
         });
         function releaseArrow(mesh) {
             scene.remove(mesh);
@@ -12170,6 +12215,7 @@ const KTKCalmUIV25=(()=>{
             for(const a of stuckArrows)releaseArrow(a.mesh);
             for(const h of flyingHelmets)scene.remove(h.mesh);
             particles.length=arrows.length=stuckArrows.length=flyingHelmets.length=0;
+            skippedNormalEffects=skippedPriorityEffects=0;
         }
 
         function spawnFloatingDamage(worldPos, dmg, isHeadshot = false, extraTag = '') {
@@ -12193,6 +12239,7 @@ const KTKCalmUIV25=(()=>{
             for (let i = 0; i < count; i++) {
                 const size = 0.25 + Math.random() * 0.45;
                 const isSpark = i < 4;
+                if(!admitParticle(isSpark))continue;
                 const puff = acquireEffectCube('lambert',
                     isSpark ? 0xfbbf24 : 0xd1d5db, isSpark ? 0.95 : 0.78, size);
                 puff.position.copy(origin).addScaledVector(dir, 1.0 + Math.random() * 1.1);
@@ -12222,6 +12269,7 @@ const KTKCalmUIV25=(()=>{
             const count = isHeadshot ? 21 : metal ? 15 : 11;
             for (let i = 0; i < count; i++) {
                 const size = 0.06 + Math.random() * (metal ? 0.12 : 0.10);
+                if(!admitParticle(i<4))continue;
                 const p = acquireEffectCube('basic', palette[i % palette.length], 0.96, size);
                 p.position.copy(pos);
                 const life = 0.19 + Math.random() * 0.19;
@@ -12253,6 +12301,7 @@ const KTKCalmUIV25=(()=>{
             for (let i = 0; i < 36; i++) {
                 const cols = [0xff4500, 0xf59e0b, 0xef4444, 0x374151];
                 const size = 0.35 + Math.random() * 0.65;
+                if(!admitParticle(i<8))continue;
                 const p = acquireEffectCube('basic', cols[i % cols.length], 0.9, size);
                 p.position.copy(center);
                 particles.push({
@@ -12676,7 +12725,7 @@ const KTKCalmUIV25=(()=>{
         function arenaShotTracer(start, end, isArrow) {
             const path = end.clone().sub(start);
             const length = path.length();
-            if (length < 0.1) return;
+            if (length < 0.1 || !admitParticle(true)) return;
             const geometry = new THREE.CylinderGeometry(isArrow ? 0.015 : 0.027, isArrow ? 0.015 : 0.027, length, 5);
             const material = new THREE.MeshBasicMaterial({ color: isArrow ? 0xfde68a : 0xffc879,
                 transparent: true, opacity: isArrow ? 0.85 : 0.94, depthWrite: false });
@@ -14608,7 +14657,7 @@ const KTKCalmUIV25=(()=>{
                 t.light.intensity = 1.25 + Math.sin(nowSec * 12 + t.phase) * 0.25;
                 t.flame.scale.y = 0.9 + Math.cos(nowSec * 15 + t.phase) * 0.22;
                 if (t.innerCore) t.innerCore.scale.y = 0.85 + Math.sin(nowSec * 18 + t.phase) * 0.2;
-                if (Math.random() < 0.06) {
+                if (Math.random() < 0.06 && admitParticle()) {
                     const ember = acquireEffectCube('opaque', 0xfbbf24, 1, 0.08);
                     ember.position.copy(t.basePos);
                     particles.push({
@@ -15014,10 +15063,12 @@ const KTKCalmUIV25=(()=>{
                 arr.trailTimer -= dt;
                 if (arr.trailTimer <= 0) {
                     arr.trailTimer = 0.025;
-                    const trail = acquireEffectCube('basic', 0xe5e7eb, 0.55, 0.05, 0.05, 0.28);
-                    trail.position.copy(prevPos);
-                    trail.quaternion.copy(arr.mesh.quaternion);
-                    particles.push({ mesh: trail, vel: effectStillVelocity, life: 0.22, maxLife: 0.22, grow: false });
+                    if(admitParticle()){
+                        const trail = acquireEffectCube('basic', 0xe5e7eb, 0.55, 0.05, 0.05, 0.28);
+                        trail.position.copy(prevPos);
+                        trail.quaternion.copy(arr.mesh.quaternion);
+                        particles.push({ mesh: trail, vel: effectStillVelocity, life: 0.22, maxLife: 0.22, grow: false });
+                    }
                 }
 
                 // Swept collision: find the FIRST obstruction along the complete frame segment.

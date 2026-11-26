@@ -8,8 +8,8 @@ Kaynak: main HTML blob ad24dbde04012cc8d90b0cca0b4bb8fb560d71ab. Kullanıcı tal
 | BUG04 | dt 0.05 sınırı gerçek maç süresini FPS'e bağlı kılıyor | Kritik | Main'e işlendi; gerçek zaman, duraklama ve fizik adımı ayrımı |
 | BUG05 | 3000 x 156 üçgen Meshy çim, frustum culling kapalı | Yüksek | Main'e işlendi; görünüm korunarak görünür alan işi ve ölçüm |
 | BUG06 | Çim değişiminde tüm instance tamponları dirty | Yüksek | Main'e işlendi; değişen aralık aktarımı, aynı görünüm |
-| BUG07 | Efekt havuzu yalnız boş nesneleri sınırlıyor | Yüksek | Açık; aktif efekt yükü sınırlı, kritik efekt korunur |
-| BUG08 | Kale pathClear yalnız örnek noktaları kontrol ediyor | Yüksek | Açık; sürekli segment/süpürme testi |
+| BUG07 | Efekt havuzu yalnız boş nesneleri sınırlıyor | Yüksek | Kod adayı; aktif efekt yükü sınırlı, kritik efekt korunur |
+| BUG08 | Kale pathClear yalnız örnek noktaları kontrol ediyor | Yüksek | Kod adayı; sürekli segment/süpürme testi |
 | BUG09 | Hasar göstergeleri DOM/timer churn ve ekran dışı üretim | Orta | Açık; ekran sınırları ve sınırlı yeniden kullanım |
 | BUG10 | Duraklamada gereksiz WebGL çizimi | Orta | Açık; duraklama/sonuç ekranı, resize/resume doğrulaması |
 İlk paket BUG01–02: yalnız fiziksel Y tutarlılığı, AK33/35/36 AI davranışları aktarılmayacak. BUG03 ayrı tutulur. #89 adayındaki ilgili fizik kodu referans olabilir; körlemesine dal birleştirilmez.
@@ -28,3 +28,6 @@ BUG03–04: PR #95 merged 875a3cfd107bb8f96a7a2d11e6d1dd8942ab0ac4. 218/218 test
 25 bölgesel batch x 2 malzeme, 9000 basit + 3000 Meshy, eski deterministik yerleşim korunur; 3000 sıfır ölçekli yinelenen basit çim kaldırıldı. Konservatif dünya AABB frustum testi ve r128 scalar updateRange birleştirme; görünmeyen gruplarda bekleyen aktarım korunur. Draw call artabilir; gerçek GPU kazancı ölçülmedi. OPT02/GR01 testleri yeni gerçek r128 topolojisine uyarlandı, kabul testleri bekleniyor.
 
 BUG05–06: PR #96 merged 46b91cc3cd1c3155c086a87f42add079510a139e; 222/222 tests and Chromium runs 45813544468 / 45813544317 PASS. Actual GPU FPS/visual acceptance outstanding.
+
+## BUG07–08 kod adayı
+BUG07: 256 normal / 320 toplam aktif dekoratif parçacık; öncelikli kıvılcım, patlama ve atış izi için 64 rezerv; tüm 6 üretici girişinde kontrol. Okların fiziksel çarpışması, hasar ve diğer savaş kuralları aynı. Aşırı yükte öncelikli efekt de sınırda atlanabilir; gerçek FPS ölçümü yok. BUG08: AK26 ve AK31 sürekli segment/şişirilmiş AABB (konservatif kare ayak izi) testi, temas dahil; bozuk veri reddedilir, mevcut geometri değiştirilmedi. İki kaynak modül ve iki HTML eşlendi. Altı regresyon testi; CI/Chromium bekleniyor.
