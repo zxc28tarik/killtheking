@@ -146,6 +146,10 @@ jobs:
               const resourceCheck=await p.evaluate(()=>{
                 let particleGeometry=0,particleMaterial=0,arrowGeometry=0,sharedMaterial=0,helmetGeometry=0,helmetMaterial=0;
                 const origin=new THREE.Vector3(0,5,0),dir=new THREE.Vector3(1,0,0);
+                clearRoundTransients();
+                // Empty enough slots so all five particles can be returned without overflow.
+                const held=[];
+                while(effectMeshPools.lambert.length)held.push(effectMeshPools.lambert.pop());
                 const initial=particles.length;
                 spawnSmokeCloud(origin,dir,5);
                 const smoke=particles.slice(initial);
@@ -172,10 +176,17 @@ jobs:
                 clearRoundTransients();clearRoundTransients();
                 const result={particleGeometry,particleMaterial,arrowGeometry,sharedMaterial,helmetGeometry,helmetMaterial,
                   remaining:particles.length+arrows.length+stuckArrows.length+flyingHelmets.length,
-                  detached:[...smoke.map(p=>p.mesh),arrow,stuck,helmet].every(m=>m.parent===null)};
+                  detached:[...smoke.map(p=>p.mesh),arrow,stuck,helmet].every(m=>m.parent===null),
+                  returned:smoke.every(p=>effectMeshPools.lambert.includes(p.mesh)),
+                  sharedGeometry:smoke.every(p=>p.mesh.geometry===effectCubeGeometry)};
+                spawnSmokeCloud(origin,dir,5);
+                result.reused=particles.length===5&&particles.every(p=>smoke.some(q=>p.mesh===q.mesh));
+                clearRoundTransients();
+                for(const mesh of held)releaseParticle(mesh);
+                result.bounded=effectMeshPools.lambert.length<=EFFECT_POOL_LIMIT;
                 shared.dispose();hg.dispose();hm.dispose();return result;
               });
-              assert.deepEqual(resourceCheck,{particleGeometry:5,particleMaterial:5,arrowGeometry:3,sharedMaterial:0,helmetGeometry:0,helmetMaterial:0,remaining:0,detached:true});
+              assert.deepEqual(resourceCheck,{particleGeometry:0,particleMaterial:0,arrowGeometry:3,sharedMaterial:0,helmetGeometry:0,helmetMaterial:0,remaining:0,detached:true,returned:true,sharedGeometry:true,reused:true,bounded:true});
               console.log('PASS FIT03b owned resource disposal and shared resource protection',viewport.width);
               // FIT03c: compare old allocating ray queries and reused scratch storage.
               const sightCheck=await p.evaluate(()=>{
