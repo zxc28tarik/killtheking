@@ -13633,19 +13633,8 @@ const KTKCalmUIV25=(()=>{
         function openArmyTacticalMap(){
             if(!meadowBattleMode||!meadowBattleState||arenaMatch.phase!=='playing')return;
             armyTacticalOpen=true;armyTacticalOverlay.classList.remove('hidden');
-            player.isDrawingBow=false;
-            player.bowCharge=0;
-            player.bowDrawSeconds=0;
-            player.isRMBDown=false;
-            player.isShielding=false;
-            player.shieldParryTime=0;
-            document.getElementById('bow-charge-ui').classList.add('hidden');
-            document.getElementById('shield-overlay').style.opacity='0';
-            document.getElementById('ads-overlay').style.opacity='0';
-            document.getElementById('crosshair').style.transform='scale(1)';
-            document.getElementById('hud-status-badge').textContent='HAZIR';
+            clearPlayerCombatInput();
             armyMapMessage.textContent='Hedef noktası, bakış yönü veya düşman bölüğü seç.';
-            for(const code in keys)keys[code]=false;
             if(document.pointerLockElement===canvas&&document.exitPointerLock)
                 document.exitPointerLock();
             drawArmyTacticalMap();
@@ -14363,22 +14352,34 @@ const KTKCalmUIV25=(()=>{
             playBtn.textContent = 'YENİ MAÇ BAŞLAT';
         });
 
+        // BUG24: input state is owned by the active, focused game view.
+        function clearPlayerCombatInput(){
+            for(const code in keys)keys[code]=false;
+            player.isDrawingBow=false;
+            player.bowCharge=0;
+            player.bowDrawSeconds=0;
+            player.isRMBDown=false;
+            player.isShielding=false;
+            player.shieldParryTime=0;
+            document.getElementById('bow-charge-ui').classList.add('hidden');
+            document.getElementById('shield-overlay').style.opacity='0';
+            document.getElementById('ads-overlay').style.opacity='0';
+            document.getElementById('crosshair').style.transform='scale(1)';
+            document.getElementById('hud-status-badge').textContent='HAZIR';
+            hideLiveScoreboard();
+        }
         document.addEventListener('pointerlockchange', () => {
             if (document.pointerLockElement === canvas) {
                 if (arenaMatch.phase === 'paused') {ArenaMatch.resume(arenaMatch);lastTime=performance.now();}
                 isGameActive = arenaMatch.phase === 'playing';
                 if (isGameActive) menuOverlay.classList.add('hidden');
             } else {
+                clearPlayerCombatInput();
                 if(armyTacticalOpen&&meadowBattleMode&&arenaMatch.phase==='playing'){
                     isGameActive=true;
                     menuOverlay.classList.add('hidden');
                     return;
                 }
-                hideLiveScoreboard();
-                player.isDrawingBow = false;
-                player.bowCharge = 0;
-                player.bowDrawSeconds = 0;
-                document.getElementById('bow-charge-ui').classList.add('hidden');
                 if (arenaMatch.phase === 'playing') ArenaMatch.pause(arenaMatch);
                 isGameActive = false;
                 activeWeaponSwing = null;
@@ -14466,7 +14467,7 @@ const KTKCalmUIV25=(()=>{
                 }
                 return;
             }
-            if(meadowBattleMode&&isGameActive&&arenaMatch.phase==='playing'&&!e.repeat){
+            if(meadowBattleMode&&isGameActive&&document.pointerLockElement===canvas&&arenaMatch.phase==='playing'&&!e.repeat){
                 if(e.code==='F10'){e.preventDefault();KTKNativeSiegeHud.flip();return;}
                 if(nativeSiegeMode){
                     const siegeHotkeys={F6:'native-siege-tower-order',
@@ -14504,6 +14505,7 @@ const KTKCalmUIV25=(()=>{
                 }
                 return;
             }
+            if (!isGameActive || document.pointerLockElement !== canvas || !document.hasFocus()) return;
             keys[e.code] = true;
             if (e.code === 'Digit1') selectClass(0);
             if (e.code === 'Digit2') selectClass(1);
@@ -14523,19 +14525,23 @@ const KTKCalmUIV25=(()=>{
             }
             keys[e.code] = false;
         });
-        window.addEventListener('blur', () => {
-            hideLiveScoreboard();
-            player.isDrawingBow = false;
-            player.bowCharge = 0;
-            player.bowDrawSeconds = 0;
-            document.getElementById('bow-charge-ui').classList.add('hidden');
-            Object.keys(keys).forEach(key => { keys[key] = false; });
-            if (arenaMatch.phase === 'playing') {
-                ArenaMatch.pause(arenaMatch);
-                isGameActive = false;
-                if (document.pointerLockElement === canvas && document.exitPointerLock)
-                    document.exitPointerLock();
-            }
+        function suspendUnfocusedGame(){
+            clearPlayerCombatInput();
+            if (arenaMatch.phase !== 'playing') return;
+            armyTacticalOpen=false;
+            armyTacticalOverlay.classList.add('hidden');
+            ArenaMatch.pause(arenaMatch);
+            isGameActive=false;
+            activeWeaponSwing=null;
+            syncMatchDurationControls();
+            menuOverlay.classList.remove('hidden');
+            playBtn.textContent='MAÇA DEVAM ET';
+            if(document.pointerLockElement===canvas&&document.exitPointerLock)
+                document.exitPointerLock();
+        }
+        window.addEventListener('blur',suspendUnfocusedGame);
+        document.addEventListener('visibilitychange',()=>{
+            if(document.hidden)suspendUnfocusedGame();
         });
 
         const speedLinesCanvas = document.getElementById('speed-lines-canvas');
@@ -14609,6 +14615,16 @@ const KTKCalmUIV25=(()=>{
             });
             player.pos.x = terrain.x;
             player.pos.z = terrain.z;
+            // BUG23: the visible meadow fence is low by design, but its playable
+            // boundary must hold even during a jump or high-speed slide-hop.
+            if(arenaMap==='meadow'){
+                const limit=Math.max(0,meadowSpec.half-.75-rad);
+                const x=Math.max(-limit,Math.min(limit,player.pos.x));
+                const z=Math.max(-limit,Math.min(limit,player.pos.z));
+                if(x!==player.pos.x&&Math.sign(player.vel.x)===Math.sign(player.pos.x))player.vel.x=0;
+                if(z!==player.pos.z&&Math.sign(player.vel.z)===Math.sign(player.pos.z))player.vel.z=0;
+                player.pos.x=x;player.pos.z=z;
+            }
             // Keep tangential slide-hop movement; stop only blocked axes.
             if (swept.hitX || terrain.hitX) player.vel.x = 0;
             if (swept.hitZ || terrain.hitZ) player.vel.z = 0;
