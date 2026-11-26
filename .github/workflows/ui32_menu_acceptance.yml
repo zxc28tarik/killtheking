@@ -30,7 +30,13 @@ jobs:
             for(const viewport of [{width:1920,height:1080},{width:1366,height:768},{width:390,height:844}]){
               const p=await b.newPage({viewport}); const errors=[]; p.on('pageerror',e=>errors.push(e.message));
               await p.goto(pathToFileURL(resolve('index.html')).href);
-              await p.waitForFunction(()=>window.ktkUI32Status?.().ready==='true');
+              try {
+                await p.waitForFunction(()=>window.ktkUI32Status?.().ready==='true',null,{timeout:30000});
+              } catch(error) {
+                console.error('REC03_BOOT_DIAGNOSTICS',JSON.stringify({errors,state:await p.evaluate(()=>({ready:document.readyState,three:typeof THREE,ui:typeof window.ktkUI32Status,overlay:document.getElementById('menu-overlay')?.dataset.ui32Ready??null,scripts:document.scripts.length}))}));
+                await p.screenshot({path:'ui32-boot-failure-'+viewport.width+'.png',timeout:90000}).catch(()=>{});
+                throw error;
+              }
               const status=await p.evaluate(()=>window.ktkUI32Status());
               assert.equal(await p.locator('[data-focus-class]').count(),0,'obsolete duplicate class controls');
               assert.equal(status.legacyHidden,true);assert.equal(status.stage,'map');assert.equal(status.mapEmblems,3);assert.equal(status.classes,4);
@@ -42,6 +48,32 @@ jobs:
                 const selected=await p.evaluate(()=>window.ktkUI32Status());
                 assert.equal(selected.selectedMap,map);assert.equal(selected.engineSiege,map==='siege');assert.equal(selected.engineArmy,map!=='arena');assert.equal(selected.engineMap,map==='meadow'?'meadow':'castle');
                 console.log('PASS actual map state',viewport.width,map);
+                // REC02: actual atmosphere transitions preserve exact gradient and release old maps.
+                const skyCheck=await p.evaluate(()=>{
+                  const original=currentAtmosphereIdx;
+                  let replaced=0,disposed=0,reused=0,wrong=0;
+                  try{
+                    for(const idx of [0,1,2,0]){
+                      const before=skyDomeMesh.material.map;
+                      let freed=0;const listener=()=>freed++;
+                      before.addEventListener('dispose',listener);
+                      window.setAtmosphere(idx);
+                      before.removeEventListener('dispose',listener);
+                      const active=skyDomeMesh.material.map;
+                      if(active!==before){replaced++;disposed+=freed;}else if(freed)wrong++;
+                      const preset=window.__ktkMeadowLightActive?KTKMeadowNaturalLighting.PRESETS[idx]:ATMOSPHERES[idx];
+                      const key=JSON.stringify(window.__ktkMeadowLightActive?[preset.top,preset.mid,preset.horizon]:[preset.topCol,preset.midCol,preset.botCol]);
+                      if(active.userData.ktkGradientKey!==key)wrong++;
+                      window.setAtmosphere(idx);
+                      if(skyDomeMesh.material.map===active)reused++;
+                    }
+                    return {replaced,disposed,reused,wrong};
+                  }finally{window.setAtmosphere(original);}
+                });
+                assert.ok(skyCheck.replaced>=3);
+                assert.equal(skyCheck.replaced,skyCheck.disposed);
+                assert.equal(skyCheck.reused,4);
+                assert.equal(skyCheck.wrong,0);
                 for(const id of [0,1,2,3]){
                   await p.locator('[data-approved-class="'+id+'"]:visible').click();
                   assert.equal(await p.evaluate(()=>window.ktkApprovedArtworkStatus().currentClass),String(id));
@@ -92,6 +124,10 @@ jobs:
               const resourceCheck=await p.evaluate(()=>{
                 let particleGeometry=0,particleMaterial=0,arrowGeometry=0,sharedMaterial=0,helmetGeometry=0,helmetMaterial=0;
                 const origin=new THREE.Vector3(0,5,0),dir=new THREE.Vector3(1,0,0);
+                clearRoundTransients();
+                // Empty enough slots so all five particles can be returned without overflow.
+                const held=[];
+                while(effectMeshPools.lambert.length)held.push(effectMeshPools.lambert.pop());
                 const initial=particles.length;
                 spawnSmokeCloud(origin,dir,5);
                 const smoke=particles.slice(initial);
@@ -118,10 +154,17 @@ jobs:
                 clearRoundTransients();clearRoundTransients();
                 const result={particleGeometry,particleMaterial,arrowGeometry,sharedMaterial,helmetGeometry,helmetMaterial,
                   remaining:particles.length+arrows.length+stuckArrows.length+flyingHelmets.length,
-                  detached:[...smoke.map(p=>p.mesh),arrow,stuck,helmet].every(m=>m.parent===null)};
+                  detached:[...smoke.map(p=>p.mesh),arrow,stuck,helmet].every(m=>m.parent===null),
+                  returned:smoke.every(p=>effectMeshPools.lambert.includes(p.mesh)),
+                  sharedGeometry:smoke.every(p=>p.mesh.geometry===effectCubeGeometry)};
+                spawnSmokeCloud(origin,dir,5);
+                result.reused=particles.length===5&&particles.every(p=>smoke.some(q=>p.mesh===q.mesh));
+                clearRoundTransients();
+                for(const mesh of held)releaseParticle(mesh);
+                result.bounded=effectMeshPools.lambert.length<=EFFECT_POOL_LIMIT;
                 shared.dispose();hg.dispose();hm.dispose();return result;
               });
-              assert.deepEqual(resourceCheck,{particleGeometry:5,particleMaterial:5,arrowGeometry:3,sharedMaterial:0,helmetGeometry:0,helmetMaterial:0,remaining:0,detached:true});
+              assert.deepEqual(resourceCheck,{particleGeometry:0,particleMaterial:0,arrowGeometry:3,sharedMaterial:0,helmetGeometry:0,helmetMaterial:0,remaining:0,detached:true,returned:true,sharedGeometry:true,reused:true,bounded:true});
               console.log('PASS FIT03b owned resource disposal and shared resource protection',viewport.width);
               // FIT03c: compare old allocating ray queries and reused scratch storage.
               const sightCheck=await p.evaluate(()=>{
