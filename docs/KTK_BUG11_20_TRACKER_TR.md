@@ -12,8 +12,8 @@ Başlangıç: 38313f68117efd7fd32f9ccc4bd07ce5fcce48a6. Kullanıcının aktardı
 | BUG16 | Dikey tavan çarpışması | Kritik | Main'e işlendi; CI ve Chromium PASS |
 | BUG17 | Yeniden doğuş hareketi | Yüksek | Main'e işlendi; CI ve Chromium PASS |
 | BUG18 | Maç sıfırlama | Yüksek | Main'e işlendi; CI ve Chromium PASS |
-| BUG19 | Fıçı durumunun taşınması | Orta | Kod adayı; CI bekliyor |
-| BUG20 | Ters uçan ok modeli | Orta | Kod adayı; CI bekliyor |
+| BUG19 | Fıçı durumunun taşınması | Orta | Main'e işlendi; CI ve Chromium PASS |
+| BUG20 | Ters uçan ok modeli | Orta | Main'e işlendi; CI ve Chromium PASS |
 
 BUG11: oyuncunun göz kotundaki gerçek konumu tek fizik başlangıcı; yön mevcut kamera quaternion'ından. TPS nişangâh yakın mesafe paralaks kalibrasyonu ve gerçek namlu modeli ayrı iş; hasar/silah menzili değişmedi. Ok ilk 0.9 m'yi atlamadan fizik adımına girer. BUG15 fıçı/asker önceliği bu aşamada bilinçli olarak değişmedi.
 BUG12: aynı BUG03 dikey sınırı (1.35) ve 3B 6.5 menzil; mevcut yatay yön eşiği korunur, duvar kontrolü gerçek ayak kotu+1.6 üzerinden. Arena ve ordu motoru aynı fizik kontrolünü kullanır; 85 hasar ve itme değiştirilmedi.
@@ -38,3 +38,6 @@ BUG17–18: PR #101, main b87e1193ad65b10b164d424aefdaf6ec209981cb; 257/257, CI 
 
 BUG19: tüm kayıtlı harita fıçıları yeni maçta 40 HP, aktif, timer 0. Yalnız seçili haritada görünür; eski etiket saklanır; harita geçişi patlamış fıçıyı diriltmez. 15s normal maç içi süre korunur; ortak restore.
 BUG20: mevcut ok geometrisinin -Z ucu hem ilk atışta hem her fizik adımında hıza hizalanır, sıfır hızda son geçerli quaternion korunur. Yeni geometri veya kare başına vektör tahsisi yok; askerlerin simetrik instanced okları ve çarpışma değişmedi. 5 yeni test; CI/Chromium ve manuel görsel kabul bekliyor.
+
+## Nihai kapanış
+BUG19–20: PR #102, main 3053822f38e32e8b1ea2c53dd82dc17277ae65d5; 262/262, CI 45824123097 / 45824145750, Chromium 45824145929 PASS. BUG11–20 10/10 otomatik entegrasyon tamamlandı. Manuel FPS/TPS, donanım ve canlı savaş kabulü ayrı açık doğrulamalardır.
