@@ -6936,14 +6936,14 @@ window.addEventListener('error', function(event) {
             ctx.fillStyle = grad;
             ctx.fillRect(0, 0, 32, 256);
             const texture=new THREE.CanvasTexture(c);
-            texture.userData.ktkGradientKey=JSON.stringify([topC,midC,botC]);
+            (texture.userData||(texture.userData={})).ktkGradientKey=JSON.stringify([topC,midC,botC]);
             return texture;
         }
         function refreshSkyGradient(mesh,create,top,mid,bottom){
             const previous=mesh.material.map,key=JSON.stringify([top,mid,bottom]);
-            if(previous?.userData.ktkGradientKey===key)return false;
+            if(previous?.userData?.ktkGradientKey===key)return false;
             const next=create(top,mid,bottom);
-            next.userData.ktkGradientKey=key;
+            (next.userData||(next.userData={})).ktkGradientKey=key;
             mesh.material.map=next;
             mesh.material.needsUpdate=true;
             if(previous&&previous!==next)previous.dispose();
