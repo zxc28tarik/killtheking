@@ -8,10 +8,10 @@ Başlangıç: 38313f68117efd7fd32f9ccc4bd07ce5fcce48a6. Kullanıcının aktardı
 | BUG12 | Kalkan çarpması farklı katlar | Kritik | Main'e işlendi; CI ve Chromium PASS |
 | BUG13 | Eğilme isabet hacmi | Kritik | Main'e işlendi; CI ve Chromium PASS |
 | BUG14 | Ölen okçunun etkisiz oku | Yüksek | Main'e işlendi; CI ve Chromium PASS |
-| BUG15 | Fıçı isabet önceliği | Yüksek | Kod adayı; CI bekliyor |
-| BUG16 | Dikey tavan çarpışması | Kritik | Kod adayı; CI bekliyor |
-| BUG17 | Yeniden doğuş hareketi | Yüksek | Açık |
-| BUG18 | Maç sıfırlama | Yüksek | Açık |
+| BUG15 | Fıçı isabet önceliği | Yüksek | Main'e işlendi; CI ve Chromium PASS |
+| BUG16 | Dikey tavan çarpışması | Kritik | Main'e işlendi; CI ve Chromium PASS |
+| BUG17 | Yeniden doğuş hareketi | Yüksek | Kod adayı; CI bekliyor |
+| BUG18 | Maç sıfırlama | Yüksek | Kod adayı; CI bekliyor |
 | BUG19 | Fıçı durumunun taşınması | Orta | Açık |
 | BUG20 | Ters uçan ok modeli | Orta | Açık |
 
@@ -28,3 +28,8 @@ BUG13–14: PR #99, main 1943ea8a1332c680938415b50845f0e749494bb1; 245/245, CI 4
 
 BUG15: tek en yakın dünya/fıçı/bot/ordu isabeti, dost asker atışı durdurur. Hasar ve menzil değişmedi.
 BUG16: üst yüzey altına fiziksel tavan sınırı, yukarı hız iptali, ayak kotu sabit crouch/stand geçişi, hızlı düşüşte platform yakalama. Var olan XZ/ramp çözümü korunur. 7 yeni test; CI ve canlı kabul bekleniyor.
+
+BUG15–16: PR #100, main 37fe4c4c1679e260c407fc2ac68c965f2ca989bd; 252/252, CI 45822538774 / 45822564801 ve Chromium 45822564698 PASS. Manuel tavan/rampa kabulü açık.
+
+BUG17: ortak respawnPlayerAt, mevcut spawn seçimleri korunur, hız sıfır, ayakta fizik yüksekliği, eski hareket ve aktif saldırı/ADS animasyonu temiz. Ölümde mevcut silah ve yetenek beklemeleri korunur; BUG18 yeni maçta sıfırlar. Ordu spawn koordinatları değiştirilmedi.
+BUG18: tüm eksik sayaçlar, silah durumları, input, kamera/recoil, HUD, eski bekleyen reload/hasar timer'ları sıfır. Sınıf, TPS tercihi ve ayarlar korunur. ArenaClock monoton kalır. 5 yeni test; CI/Chromium bekleniyor. BUG19 fıçı ayrı.

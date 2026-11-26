@@ -9919,6 +9919,8 @@ const KTKCalmUIV25=(()=>{
 
         const keys = {};
         let activeWeaponSwing = null;
+        let pendingMusketReload = null;
+        let damageOverlayTimeout = null;
         let lastWeaponSwingRaycasts = 0;
         let isGameActive = false;
         let arenaMode = 'ffa'; // Default stays the approved everyone-vs-everyone mode.
@@ -12995,7 +12997,8 @@ const KTKCalmUIV25=(()=>{
                 player.cameraImpactYaw += (Math.random() - 0.5) * 0.045;
                 const overlay = document.getElementById('damage-overlay');
                 overlay.style.opacity = '1';
-                setTimeout(() => { overlay.style.opacity = '0'; }, 180);
+                clearTimeout(damageOverlayTimeout);
+                damageOverlayTimeout = setTimeout(() => { overlay.style.opacity = '0'; damageOverlayTimeout=null; }, 180);
             }
             player.hp -= incomingDmg;
             if (player.hp <= 0) {
@@ -13006,12 +13009,10 @@ const KTKCalmUIV25=(()=>{
                     second:arenaMatch.durationSeconds - arenaMatch.remaining
                 });
                 player.streak = 0;
-                player.hp = player.maxHp;
                 addKillFeed(bot.name, bot.weapon, 'Sen_1600', false);
                 addScorePopup('YENİDEN DOĞDUN!', 'text-rose-400');
                 const sp = chooseArenaRespawn(arenaSpawnPool(false), null, false);
-                player.pos.set(sp.x, sp.y + 1.5, sp.z);
-                player.tpsMotionState = ArenaCharacterMotion.createState();
+                respawnPlayerAt(sp);
                 // The killer returns to fighting the whole arena, not camping the respawn.
                 bot.arenaTargetType = null;
                 bot.arenaTargetId = null;
@@ -13294,7 +13295,9 @@ const KTKCalmUIV25=(()=>{
                         zone==='head',cls.weaponName,'',hit.point);
                 }
 
-                setTimeout(() => {
+                clearTimeout(pendingMusketReload);
+                pendingMusketReload = setTimeout(() => {
+                    pendingMusketReload=null;
                     if (player.classIdx === 3 && player.ammo === 0 && !player.isReloading) {
                         startReload();
                     }
@@ -13931,6 +13934,59 @@ const KTKCalmUIV25=(()=>{
             syncMatchDurationControls();
         }));
 
+        // BUG17/18: reset the physical life independently of round-only weapon clocks.
+        function resetPlayerLifeMotion() {
+            player.vel.set(0,0,0);
+            player.currentHeight=player.standHeight;
+            player.onGround=false;
+            player.isSliding=false;
+            player.bhopChain=0;
+            player.walkCycle=0;
+            player.tpsMotionState=ArenaCharacterMotion.createState();
+            activeWeaponSwing=null;
+            lastWeaponSwingRaycasts=0;
+            Object.assign(player,{attackAnimTime:0,isDrawingBow:false,bowCharge:0,bowDrawSeconds:0,
+                isRMBDown:false,isShielding:false,shieldParryTime:0,swayX:0,swayY:0,
+                shakeIntensity:0,weaponKick:0,weaponTilt:0,cameraImpactPitch:0,cameraImpactYaw:0});
+            impactHoldSeconds=0;
+        }
+
+        function resetPlayerCombatHud() {
+            for(const id of ['bow-charge-ui'])document.getElementById(id).classList.add('hidden');
+            for(const id of ['shield-overlay','ads-overlay','damage-overlay','hitmarker'])
+                document.getElementById(id).style.opacity='0';
+            document.getElementById('crosshair').style.transform='scale(1)';
+            document.getElementById('hud-status-badge').textContent='HAZIR';
+            document.getElementById('hud-slide-indicator').textContent='SHIFT + SPACE: SLIDE-HOP';
+            document.getElementById('bow-charge-fill').style.width='0%';
+            clearTimeout(damageOverlayTimeout);damageOverlayTimeout=null;
+            clearTimeout(hitmarkerTimeout);hitmarkerTimeout=null;
+            clearTimeout(impactTextTimeout);impactTextTimeout=null;
+            impactTextEl.textContent='';
+            impactVignetteEl.className='impact-vignette';
+            muzzleLight.intensity=0;
+        }
+
+        function respawnPlayerAt(spawn) {
+            resetPlayerLifeMotion();
+            player.hp=player.maxHp;
+            player.pos.set(spawn.x,spawn.y+player.currentHeight,spawn.z);
+            resetPlayerCombatHud();
+        }
+
+        function resetPlayerRoundState() {
+            clearTimeout(pendingMusketReload);pendingMusketReload=null;
+            Object.assign(player,{kills:0,deaths:0,streak:0,parries:0,ammo:1,
+                lastBowShotAt:-Infinity,lastMusketShotAt:-Infinity,isReloading:false,reloadTimer:0,
+                lastReloadStep:1,attackCooldown:0,abilityCooldown:0,quickMeleeTime:0,
+                shieldParryCooldown:0,comboStep:0});
+            Object.keys(keys).forEach(key=>{keys[key]=false;});
+            document.getElementById('reload-indicator').classList.add('hidden');
+            document.getElementById('reload-bar-fill').style.width='0%';
+            document.getElementById('reload-stage-text').textContent='1/3 BARUT DÖKÜLÜYOR...';
+            for(const id of ['medal-container','score-popup-container'])document.getElementById(id).replaceChildren();
+        }
+
         function resetFreeForAllRound() {
             clearRoundTransients();
             renderSpeedLines(0);
@@ -13940,35 +13996,9 @@ const KTKCalmUIV25=(()=>{
             scoreboardRefreshSeconds = 0;
             ArenaTelemetry.reset(arenaTelemetry);
             telemetrySampleAccumulator = 0;
-            player.kills = 0;
-            player.deaths = 0;
-            player.streak = 0;
-            player.hp = player.maxHp;
-            player.vel.set(0, 0, 0);
-            player.onGround = false;
-            player.isSliding = false;
-            player.currentHeight = player.standHeight;
-            player.ammo = 1;
-            player.lastBowShotAt = -Infinity;
-            player.lastMusketShotAt = -Infinity;
-            player.isReloading = false;
-            player.reloadTimer = 0;
-            player.attackCooldown = 0;
-            player.attackAnimTime = 0;
-            player.weaponKick = 0;
-            player.shakeIntensity = 0;
-            player.shieldParryTime = 0;
-            player.shieldParryCooldown = 0;
-            player.isShielding = false;
-            player.bowCharge = 0;
-            player.bowDrawSeconds = 0;
-            player.isDrawingBow = false;
-            player.bhopChain = 0;
-            player.tpsMotionState = ArenaCharacterMotion.createState();
-            activeWeaponSwing = null;
-            impactHoldSeconds = 0;
+            resetPlayerRoundState();
             const safeSpawn = chooseArenaRespawn(arenaSpawnPool(false), null, false);
-            player.pos.set(safeSpawn.x, safeSpawn.y + player.currentHeight, safeSpawn.z);
+            respawnPlayerAt(safeSpawn);
             bots.forEach(bot => {
                 const patrolPool=arenaSpawnPool(bot.preferWall);
                 bot.targetPoint=patrolPool[(bot.id+2)%patrolPool.length].clone();
@@ -15790,9 +15820,8 @@ const KTKCalmUIV25=(()=>{
                         addKillFeed('Kırmızı '+ArenaArmyBattle.TYPES[hit.type].name,
                             'Meydan Savaşı','Sen_1600',false);
                         addScorePopup('YENİDEN DOĞDUN!', 'text-rose-400');
-                        player.hp=player.maxHp;
                         const own=meadowBattleState.squads[meadowBattleState.playerSquadId];
-                        player.pos.set(own.x-16,player.currentHeight,own.z);
+                        respawnPlayerAt({x:own.x-16,y:0,z:own.z});
                         ArenaArmyBattle.setPlayerPosition(meadowBattleState,player.pos.x,player.pos.z,
                     player.pos.y-player.currentHeight,player.currentHeight);
                         ArenaArmyBattle.setPlayerHealth(meadowBattleState,player.hp);
