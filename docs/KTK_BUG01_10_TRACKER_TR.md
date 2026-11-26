@@ -4,8 +4,8 @@ Kaynak: main HTML blob ad24dbde04012cc8d90b0cca0b4bb8fb560d71ab. Kullanıcı tal
 |---|---|---|---|
 | BUG01 | Kuşatma kulesindeki askerlerin görsel Y kotu ile isabet silindiri uyuşmuyor | Kritik | Main'e işlendi; yüksek ve zemin hedeflerinin gerçek ray/ok isabeti |
 | BUG02 | Oyuncu ayak kotu G5.4 motoruna aktarılmıyor | Kritik | Main'e işlendi; yüksek oyuncu gövdesi, ok/tüfek rayları ve sıfır kot regresyonu |
-| BUG03 | Yakın dövüş dikey erişim kontrolü eksik | Kritik | Kod adayı; farklı kotlarda hayalet vuruş yok |
-| BUG04 | dt 0.05 sınırı gerçek maç süresini FPS'e bağlı kılıyor | Kritik | Kod adayı; gerçek zaman, duraklama ve fizik adımı ayrımı |
+| BUG03 | Yakın dövüş dikey erişim kontrolü eksik | Kritik | Main'e işlendi; farklı kotlarda hayalet vuruş yok |
+| BUG04 | dt 0.05 sınırı gerçek maç süresini FPS'e bağlı kılıyor | Kritik | Main'e işlendi; gerçek zaman, duraklama ve fizik adımı ayrımı |
 | BUG05 | 3000 x 156 üçgen Meshy çim, frustum culling kapalı | Yüksek | Açık; görünüm korunarak görünür alan işi ve ölçüm |
 | BUG06 | Çim değişiminde tüm instance tamponları dirty | Yüksek | Açık; değişen aralık aktarımı, aynı görünüm |
 | BUG07 | Efekt havuzu yalnız boş nesneleri sınırlıyor | Yüksek | Açık; aktif efekt yükü sınırlı, kritik efekt korunur |
@@ -21,3 +21,5 @@ BUG01–02: PR #94 merged 4ab30f1450c6f3a3e7fc4c8b554c0375857a9ac8. 211/211 test
 
 ## BUG03–04 kod adayı
 BUG03: gerçek 3B menzil ve 1.35 m dikey erişim sınırı; yer düzeyi ve yüksek hedeflerde gerçek görüş hattı, oyuncu cone ayak kotu. AI taktikleri değişmedi. BUG04: gerçek aktif maç saati, 50 ms fizik alt adımı, en fazla 200 ms kare başı telafi; ağır donmada fazla fizik süresi atılır ama maç saati gerçek zamanı sayar. Hit-stop maç saatini yavaşlatmaz; FPS gerçek kare üzerinden sayılır. 7 yeni test; CI/Chromium bekleniyor. BUG05–10 açık.
+
+BUG03–04: PR #95 merged 875a3cfd107bb8f96a7a2d11e6d1dd8942ab0ac4. 218/218 tests and Chromium runs 45812273568 / 45812273395 PASS. Manual hardware / live battle outstanding.
