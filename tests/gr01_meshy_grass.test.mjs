@@ -46,11 +46,9 @@ test('GR01 original Meshy model decodes with 178 vertices, 156 faces and ground 
     assert.ok(Array.from(g.attributes.color.array).every(v=>v>0&&v<=1));
 });
 test('GR01 preserves total turf density and caps new high-detail clumps to one quarter',()=>{
-    assert.match(main,/Math\.ceil\(meadowDenseGrass\.count\/4\)/);
-    assert.match(main,/index%4===0/);
-    assert.match(main,/hero\.setMatrixAt\(index\/4,object\.matrix\)/);
-    assert.match(main,/object\.scale\.set\(0,0,0\)/);
-    assert.match(main,/mesh\.userData\.ktkMeshyGrassHero\.instanceMatrix\.needsUpdate=true/);
+    assert.match(main,/root\.count=12000;hero\.count=3000/);
+    assert.match(main,/if\(n%4===0\)\{chunk\.detail\.setMatrixAt/);
+    assert.match(main,/markGrassRange\(chunk\.detail\.instanceMatrix/);
     assert.match(main,/ktkMeshyGrassHero\.visible=arenaMap==='meadow'/);
     const ids=Array.from({length:12000},(_,i)=>i);
     assert.equal(ids.filter(i=>i%4===0).length,3000);

@@ -9232,22 +9232,11 @@ const KTKCalmUIV25=(()=>{
             meadowNearGrass=ArenaMeadowGrass.createInstancedTufts(THREE,spec,2700);
             meadowNearGrass.geometry.scale(.40,.40,.40);
             scene.add(meadowNearGrass);
-            meadowDenseGrass=ArenaMeadowGrass.createNearbyTufts(THREE,12000);
-            meadowDenseGrass.geometry.scale(.40,.40,.40);
+            // BUG05/06: identical 12,000 logical placements, packed into 25
+            // spatial batches per material. No zero-scale duplicate for Meshy.
+            meadowDenseGrass=createGrassChunkSet();
+            ktkMeshyGrassHero=meadowDenseGrass.userData.ktkMeshyGrassHero;
             scene.add(meadowDenseGrass);
-            // Replace one in four clumps with the uploaded full 3D grass.
-            // The OPT02 tile updater hides the matching cheaper tuft.
-            ktkMeshyGrassHero=new THREE.InstancedMesh(
-                makeMeshyGrassGeometry(),
-                new THREE.MeshLambertMaterial({
-                    color:0xffffff,vertexColors:true,side:THREE.DoubleSide
-                }),
-                Math.ceil(meadowDenseGrass.count/4));
-            ktkMeshyGrassHero.name='Meshy medieval grass / 3D instanced';
-            ktkMeshyGrassHero.castShadow=false;
-            ktkMeshyGrassHero.receiveShadow=false;
-            ktkMeshyGrassHero.frustumCulled=false;
-            meadowDenseGrass.userData.ktkMeshyGrassHero=ktkMeshyGrassHero;
             scene.add(ktkMeshyGrassHero);
             window.ktkMeshyGrassStatus=()=>({
                 source:'uploaded stylized_medieval_gra.glb',
@@ -9258,7 +9247,9 @@ const KTKCalmUIV25=(()=>{
                 distantClumps:meadowNearGrass.count,
                 textures:0,
                 visible:ktkMeshyGrassHero.visible,
-                lastRegeneratedTiles:meadowDenseGrass.userData.lastRegeneratedTiles
+                lastRegeneratedTiles:meadowDenseGrass.userData.lastRegeneratedTiles,
+                visibleChunks:meadowDenseGrass.userData.visibleChunks||0,
+                totalChunks:25,scheduledComponents:meadowDenseGrass.userData.scheduledComponents||0
             });
             window.ktkMeadowGrassVisualStatus=()=>({count:meadowNearGrass.count,nearbyCount:meadowDenseGrass.count,visible:meadowNearGrass.visible,nearbyVisible:meadowDenseGrass.visible,lastTileX:meadowDenseGrass.userData.lastTileX});
             const meadowHorizon=KTKMeadowHorizon.build(THREE,scene,spec);
@@ -15690,88 +15681,154 @@ const KTKCalmUIV25=(()=>{
             return ()=>{state=(Math.imul(state,1664525)+1013904223)>>>0;
                 return state/4294967296;};
         }
-         function updateNearbyTuftsOptimized(mesh,spec,x,z){
-          if(!mesh||!Number.isFinite(x)||!Number.isFinite(z))return false;
-          const tileX=Math.floor(x/ArenaMeadowGrass.NEAR_TILE_SIZE),tileZ=Math.floor(z/ArenaMeadowGrass.NEAR_TILE_SIZE);
-          const data=mesh.userData;
-          if(!data.tileWorldX){
-           data.tileWorldX=new Int32Array(OPT_GRASS_SLOTS).fill(2147483647);
-           data.tileWorldZ=new Int32Array(OPT_GRASS_SLOTS).fill(2147483647);
-           data.tileObject=new THREE.Object3D();
-           data.tileColor=new THREE.Color();
-           data.solidSpec=null;data.solidProps=[];data.lastRegeneratedTiles=0;
-          }
-          if(data.lastTileX===tileX&&data.lastTileZ===tileZ&&data.solidSpec===spec)return false;
-          if(data.solidSpec!==spec){
-           data.solidProps=spec.boxes.filter(b=>b.solid);
-           data.solidSpec=spec;
-           data.tileWorldX.fill(2147483647);
-           data.tileWorldZ.fill(2147483647);
-          }
-          const originX=tileX-5,originZ=tileZ-5;
-          const shiftX=optGrassMod(originX,OPT_GRASS_GRID),shiftZ=optGrassMod(originZ,OPT_GRASS_GRID);
-          const instancesPerTile=Math.ceil(mesh.count/OPT_GRASS_SLOTS);
-          const props=data.solidProps,object=data.tileObject,color=data.tileColor;
-          let regenerated=0;
-          for(let slot=0;slot<OPT_GRASS_SLOTS;slot++){
-           // Each physical slot is attached to a world tile modulo 10; unchanged
-           // world tiles keep their matrices/colors when the camera crosses a cell.
-           const localX=optGrassMod(slot%OPT_GRASS_GRID-shiftX,OPT_GRASS_GRID);
-           const localZ=optGrassMod(Math.floor(slot/OPT_GRASS_GRID)-shiftZ,OPT_GRASS_GRID);
-           const worldTileX=originX+localX,worldTileZ=originZ+localZ;
-           if(data.tileWorldX[slot]===worldTileX&&data.tileWorldZ[slot]===worldTileZ)continue;
-           data.tileWorldX[slot]=worldTileX;data.tileWorldZ[slot]=worldTileZ;regenerated++;
-           const minX=worldTileX*ArenaMeadowGrass.NEAR_TILE_SIZE,minZ=worldTileZ*ArenaMeadowGrass.NEAR_TILE_SIZE;
-           const tileProps=props.filter(b=>
-            minX<b.x+b.w/2+.7&&minX+ArenaMeadowGrass.NEAR_TILE_SIZE>b.x-b.w/2-.7&&
-            minZ<b.z+b.d/2+.7&&minZ+ArenaMeadowGrass.NEAR_TILE_SIZE>b.z-b.d/2-.7);
-           for(let n=0;n<instancesPerTile;n++){
-            const index=slot*instancesPerTile+n;
-            if(index>=mesh.count)break;
-            const rng=optGrassRandom((Math.imul(worldTileX,73856093)^
-               Math.imul(worldTileZ,19349663)^Math.imul(n+1,83492791)^0xdecafbad)>>>0);
-            const offsetX=rng(),offsetZ=rng();
-            const px=(worldTileX+offsetX)*ArenaMeadowGrass.NEAR_TILE_SIZE;
-            const pz=(worldTileZ+offsetZ)*ArenaMeadowGrass.NEAR_TILE_SIZE;
-            const blocked=Math.abs(px)>=spec.half-ArenaMeadowGrass.EDGE_INSET||
-             Math.abs(pz)>=spec.half-ArenaMeadowGrass.EDGE_INSET||tileProps.some(b=>
-               Math.abs(px-b.x)<b.w/2+.7&&Math.abs(pz-b.z)<b.d/2+.7);
-            object.position.set(px,.02,pz);
-            object.rotation.set(0,rng()*6.28318530718,0);
-            const size=.46+.3*rng(),height=.34+.44*rng();
-            object.scale.set(blocked?0:size,blocked?0:height,blocked?0:size);
-            object.updateMatrix();
-            const hero=mesh.userData.ktkMeshyGrassHero;
-            if(hero&&index%4===0){
-                hero.setMatrixAt(index/4,object.matrix);
-                // Only one clump per slot: hide the lightweight duplicate.
-                object.scale.set(0,0,0);
-                object.updateMatrix();
+        // r128 has no per-instance culling. Keep 25 small shared-geometry batches
+        // and use conservative world-space boxes (including toroidal wrap seams).
+        function createGrassChunkSet(){
+            const root=new THREE.Group(),hero=new THREE.Group();
+            root.name='Nearby meadow turf (spatial batches)';
+            hero.name='Meshy medieval grass / spatial batches';
+            root.count=12000;hero.count=3000;
+            const first=ArenaMeadowGrass.createNearbyTufts(THREE,360);
+            first.geometry.scale(.40,.40,.40);
+            const heroGeometry=makeMeshyGrassGeometry();
+            const heroMaterial=new THREE.MeshLambertMaterial({
+                color:0xffffff,vertexColors:true,side:THREE.DoubleSide
+            });
+            const chunks=[];
+            const configure=mesh=>{
+                mesh.castShadow=false;mesh.receiveShadow=false;
+                mesh.frustumCulled=false;mesh.visible=false;
+                mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+                mesh.instanceMatrix.onUpload(()=>{mesh.instanceMatrix.updateRange.count=-1;});
+            };
+            for(let i=0;i<25;i++){
+                const simple=i===0?first:new THREE.InstancedMesh(first.geometry,first.material,360);
+                const detail=new THREE.InstancedMesh(heroGeometry,heroMaterial,120);
+                configure(simple);configure(detail);
+                root.add(simple);hero.add(detail);
+                chunks.push({simple,detail,bounds:new THREE.Box3(),tiles:new Array(4)});
             }
-            mesh.setMatrixAt(index,object.matrix);
-            mesh.setColorAt(index,color.setHex(ArenaMeadowGrass.PALETTE[Math.floor(rng()*ArenaMeadowGrass.PALETTE.length)]));
-           }
-          }
-          if(regenerated){
-           mesh.instanceMatrix.needsUpdate=true;
-           if(mesh.instanceColor)mesh.instanceColor.needsUpdate=true;
-           if(mesh.userData.ktkMeshyGrassHero)
-               mesh.userData.ktkMeshyGrassHero.instanceMatrix.needsUpdate=true;
-          }
-          data.lastTileX=tileX;data.lastTileZ=tileZ;
-          data.lastRegeneratedTiles=regenerated;
-          return regenerated>0;
-         }
-        
+            Object.assign(root.userData,{
+                ktkMeshyGrassHero:hero,chunks,lastTileX:Infinity,lastTileZ:Infinity,
+                tileWorldX:new Int32Array(100).fill(2147483647),
+                tileWorldZ:new Int32Array(100).fill(2147483647),
+                tileObject:new THREE.Object3D(),tileColor:new THREE.Color(),
+                solidSpec:null,solidProps:[],lastRegeneratedTiles:0,
+                frustum:new THREE.Frustum(),viewProjection:new THREE.Matrix4(),
+                visibleChunks:0,scheduledComponents:0
+            });
+            return root;
+        }
+        function grassChunkAddress(slot){
+            const x=slot%10,z=Math.floor(slot/10);
+            return {chunk:Math.floor(z/2)*5+Math.floor(x/2),sub:(z%2)*2+x%2};
+        }
+        // r128 exposes a single contiguous updateRange in scalar components.
+        // Merge any outstanding range if a culled chunk has not uploaded yet.
+        function markGrassRange(attribute,offset,count){
+            const r=attribute.updateRange;
+            if(r.count<0){r.offset=offset;r.count=count;}
+            else{const end=Math.max(r.offset+r.count,offset+count);
+                r.offset=Math.min(r.offset,offset);r.count=end-r.offset;}
+            attribute.needsUpdate=true;
+        }
+        function updateNearbyTuftsOptimized(mesh,spec,x,z){
+            if(!mesh||!Number.isFinite(x)||!Number.isFinite(z))return false;
+            const tileSize=ArenaMeadowGrass.NEAR_TILE_SIZE;
+            const tileX=Math.floor(x/tileSize),tileZ=Math.floor(z/tileSize);
+            const data=mesh.userData;
+            if(data.lastTileX===tileX&&data.lastTileZ===tileZ&&data.solidSpec===spec)return false;
+            if(data.solidSpec!==spec){
+                data.solidProps=spec.boxes.filter(b=>b.solid);data.solidSpec=spec;
+                data.tileWorldX.fill(2147483647);data.tileWorldZ.fill(2147483647);
+            }
+            const originX=tileX-5,originZ=tileZ-5;
+            const shiftX=optGrassMod(originX,OPT_GRASS_GRID),shiftZ=optGrassMod(originZ,OPT_GRASS_GRID);
+            const props=data.solidProps,object=data.tileObject,color=data.tileColor;
+            const dirty=new Set();
+            let regenerated=0;
+            for(let slot=0;slot<OPT_GRASS_SLOTS;slot++){
+                const localX=optGrassMod(slot%OPT_GRASS_GRID-shiftX,OPT_GRASS_GRID);
+                const localZ=optGrassMod(Math.floor(slot/OPT_GRASS_GRID)-shiftZ,OPT_GRASS_GRID);
+                const worldTileX=originX+localX,worldTileZ=originZ+localZ;
+                if(data.tileWorldX[slot]===worldTileX&&data.tileWorldZ[slot]===worldTileZ)continue;
+                data.tileWorldX[slot]=worldTileX;data.tileWorldZ[slot]=worldTileZ;regenerated++;
+                const address=grassChunkAddress(slot),chunk=data.chunks[address.chunk],sub=address.sub;
+                const minX=worldTileX*tileSize,minZ=worldTileZ*tileSize;
+                chunk.tiles[sub]={x:minX,z:minZ};dirty.add(chunk);
+                const tileProps=props.filter(b=>
+                    minX<b.x+b.w/2+.7&&minX+tileSize>b.x-b.w/2-.7&&
+                    minZ<b.z+b.d/2+.7&&minZ+tileSize>b.z-b.d/2-.7);
+                let simpleIndex=sub*90,heroIndex=sub*30;
+                for(let n=0;n<120;n++){
+                    const rng=optGrassRandom((Math.imul(worldTileX,73856093)^
+                        Math.imul(worldTileZ,19349663)^Math.imul(n+1,83492791)^0xdecafbad)>>>0);
+                    const offsetX=rng(),offsetZ=rng();
+                    const px=(worldTileX+offsetX)*tileSize,pz=(worldTileZ+offsetZ)*tileSize;
+                    const blocked=Math.abs(px)>=spec.half-ArenaMeadowGrass.EDGE_INSET||
+                        Math.abs(pz)>=spec.half-ArenaMeadowGrass.EDGE_INSET||tileProps.some(b=>
+                            Math.abs(px-b.x)<b.w/2+.7&&Math.abs(pz-b.z)<b.d/2+.7);
+                    object.position.set(px,.02,pz);
+                    object.rotation.set(0,rng()*6.28318530718,0);
+                    const size=.46+.3*rng(),height=.34+.44*rng();
+                    object.scale.set(blocked?0:size,blocked?0:height,blocked?0:size);
+                    object.updateMatrix();
+                    // Old slot index is slot*120+n: its modulo 4 equals n%4.
+                    const shade=ArenaMeadowGrass.PALETTE[Math.floor(rng()*ArenaMeadowGrass.PALETTE.length)];
+                    if(n%4===0){chunk.detail.setMatrixAt(heroIndex++,object.matrix);}
+                    else{
+                        chunk.simple.setMatrixAt(simpleIndex,object.matrix);
+                        chunk.simple.setColorAt(simpleIndex++,color.setHex(shade));
+                    }
+                }
+                const colors=chunk.simple.instanceColor;
+                if(!chunk.colorConfigured){
+                    colors.setUsage(THREE.DynamicDrawUsage);
+                    colors.onUpload(()=>{colors.updateRange.count=-1;});
+                    chunk.colorConfigured=true;
+                }
+                markGrassRange(chunk.simple.instanceMatrix,sub*90*16,90*16);
+                markGrassRange(colors,sub*90*3,90*3);
+                markGrassRange(chunk.detail.instanceMatrix,sub*30*16,30*16);
+            }
+            let scheduledComponents=0;
+            for(const c of dirty){
+                const bounds=c.bounds;bounds.makeEmpty();
+                // Direct scalar union avoids per-frame allocation; margins exceed all blades.
+                for(const tile of c.tiles){
+                    if(!tile)continue;
+                    bounds.min.x=Math.min(bounds.min.x,tile.x-1);
+                    bounds.min.y=-1;bounds.min.z=Math.min(bounds.min.z,tile.z-1);
+                    bounds.max.x=Math.max(bounds.max.x,tile.x+tileSize+1);
+                    bounds.max.y=2;bounds.max.z=Math.max(bounds.max.z,tile.z+tileSize+1);
+                }
+                scheduledComponents+=c.simple.instanceMatrix.updateRange.count+
+                    c.simple.instanceColor.updateRange.count+c.detail.instanceMatrix.updateRange.count;
+            }
+            data.lastTileX=tileX;data.lastTileZ=tileZ;
+            data.lastRegeneratedTiles=regenerated;data.scheduledComponents=scheduledComponents;
+            return regenerated>0;
+        }
+        function cullGrassChunks(root,viewCamera){
+            const data=root.userData;
+            viewCamera.updateMatrixWorld();
+            data.viewProjection.multiplyMatrices(viewCamera.projectionMatrix,viewCamera.matrixWorldInverse);
+            data.frustum.setFromProjectionMatrix(data.viewProjection);
+            let visible=0;
+            for(const c of data.chunks){
+                const show=!c.bounds.isEmpty()&&data.frustum.intersectsBox(c.bounds);
+                c.simple.visible=show;c.detail.visible=show;
+                if(show)visible++;
+            }
+            data.visibleChunks=visible;return visible;
+        }
         function updateActiveMeadowGrass(){
             if(ktkMeshyGrassHero)
                 ktkMeshyGrassHero.visible=arenaMap==='meadow'&&!!meadowDenseGrass?.visible;
             if(arenaMap!=='meadow'||!meadowDenseGrass||!meadowDenseGrass.visible)return false;
-            const tile=ArenaMeadowGrass.NEAR_TILE_SIZE;
-            const data=meadowDenseGrass.userData;
-            if(data.lastTileX===Math.floor(player.pos.x/tile)&&
-               data.lastTileZ===Math.floor(player.pos.z/tile))return false;
-            return updateNearbyTuftsOptimized(meadowDenseGrass,meadowSpec,player.pos.x,player.pos.z);
+            const changed=updateNearbyTuftsOptimized(meadowDenseGrass,meadowSpec,player.pos.x,player.pos.z);
+            cullGrassChunks(meadowDenseGrass,camera);
+            return changed;
         }
         // BUG04: real active clock, bounded physics catch-up; no accumulated stall debt.
         function runActiveFrame(rawDt,remaining,isPlaying,advance){
