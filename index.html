@@ -13012,9 +13012,28 @@ const KTKCalmUIV25=(()=>{
             updateHUD();
         }
 
+        // BUG11: the camera controls aim, never the physical attack origin.
+        function playerAttackOrigin() {
+            return player.pos.clone();
+        }
+        function playerAttackDirection() {
+            return new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion).normalize();
+        }
+        // BUG12: identical physical elevation/reach rule for both game engines.
+        function shieldBashPoint(target, forward, threshold) {
+            const feet = {x:player.pos.x,y:player.pos.y-player.currentHeight,z:player.pos.z};
+            if(!ArenaArmyBattle.meleeElevationReach(feet,target,6.5))return null;
+            const horizontal = new THREE.Vector3(target.x-feet.x,0,target.z-feet.z);
+            if(horizontal.lengthSq()<1e-8||forward.dot(horizontal.normalize())<threshold)return null;
+            const point = new THREE.Vector3(target.x,target.y+1.6,target.z);
+            const origin = new THREE.Vector3(feet.x,feet.y+1.6,feet.z);
+            return arenaWorldBlockBetween(origin,point)?null:point;
+        }
+
         // Check if player hit an explosive barrel along ray
-        function checkBarrelHit(maxDist) {
-            raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+        function checkBarrelHit(maxDist, origin=playerAttackOrigin(), dir=playerAttackDirection()) {
+            raycaster.set(origin, dir);
+            raycaster.near = 0.01;
             raycaster.far = maxDist;
             const barrelMeshes = [];
             barrels.forEach(b => {
@@ -13023,7 +13042,7 @@ const KTKCalmUIV25=(()=>{
             const hits = raycaster.intersectObjects(barrelMeshes, false);
             if (hits.length > 0) {
                 const barrel = barrels[hits[0].object.userData.barrelIndex];
-                if (barrel && !arenaWorldBlockBetween(camera.position, hits[0].point)) {
+                if (barrel && !arenaWorldBlockBetween(origin, hits[0].point)) {
                     triggerHitmarker(false);
                     triggerBarrelExplosion(barrel);
                     return true;
@@ -13042,13 +13061,13 @@ const KTKCalmUIV25=(()=>{
             barrels.filter(b => b.active).forEach(b => b.group.traverse(c => {
                 if (c.isMesh) targets.push(c);
             }));
-            const initialDir = new THREE.Vector3(0, 0, -1)
-                .applyQuaternion(camera.quaternion).normalize();
+            const origin = playerAttackOrigin();
+            const initialDir = playerAttackDirection();
             return ArenaMeleeContact.selectContact({kind, reach: range,
                 castRay(angle, reach) {
                     const dir = initialDir.clone().applyAxisAngle(
                         new THREE.Vector3(0, 1, 0), angle);
-                    raycaster.set(camera.position, dir);
+                    raycaster.set(origin, dir);
                     raycaster.near = 0.01;
                     raycaster.far = reach;
                     const hits = raycaster.intersectObjects(targets, false);
@@ -13104,7 +13123,7 @@ const KTKCalmUIV25=(()=>{
             const soldier=ArenaArmyBattle.soldierInCone(meadowBattleState,feet,facing,range,'blue',threshold);
             if(!soldier)return null;
             const point=new THREE.Vector3(soldier.x,(soldier.siegeY||0)+1.65,soldier.z);
-            if(arenaWorldBlockBetween(camera.position,point))return null;
+            if(arenaWorldBlockBetween(playerAttackOrigin(),point))return null;
             return {soldier,targetId:soldier.id,zone:'body',point};
         }
 
@@ -13128,10 +13147,8 @@ const KTKCalmUIV25=(()=>{
                 if(meadowBattleMode&&meadowBattleState){
                     for(const unit of meadowBattleState.soldiers){
                         if(!unit.alive||unit.team!=='red')continue;
-                        const vec=new THREE.Vector3(unit.x-player.pos.x,0,unit.z-player.pos.z);
-                        if(vec.length()>6.5||forward.dot(vec.normalize())<.52)continue;
-                        const point=new THREE.Vector3(unit.x,1.6,unit.z);
-                        if(arenaWorldBlockBetween(camera.position,point))continue;
+                        const point=shieldBashPoint({x:unit.x,y:Number.isFinite(unit.siegeY)?unit.siegeY:0,z:unit.z},forward,.52);
+                        if(!point)continue;
                         playerHitArmySoldier({targetId:unit.id,soldier:unit,zone:'body',point},
                             85,'Kalkan Çarpması');
                     }
@@ -13139,10 +13156,7 @@ const KTKCalmUIV25=(()=>{
                 // Knockback & damage nearby bots in front
                 bots.forEach(bot => {
                     if (bot.dead) return;
-                    const toBot = bot.mesh.position.clone().sub(player.pos);
-                    if (toBot.length() < 6.5 && forward.dot(toBot.normalize()) > 0.5 &&
-                        !arenaWorldBlockBetween(player.pos.clone().add(new THREE.Vector3(0, 1.5, 0)),
-                            bot.mesh.position.clone().add(new THREE.Vector3(0, 1.5, 0)))) {
+                    if (shieldBashPoint(bot.mesh.position,forward,.5)) {
                         damageBot(bot, 85, false, 'Kalkan Çarpması', '🛡️ ');
                         applyBotWorldKnockback(bot, forward, 4.5);
                     }
@@ -13210,7 +13224,8 @@ const KTKCalmUIV25=(()=>{
             registerWeaponSwing(cls.id === 3 ? 'musket' : cls.id === 1 ? 'spear' : 'melee');
             player.comboStep = (player.comboStep + 1) % 2;
 
-            const dir = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion).normalize();
+            const origin = playerAttackOrigin();
+            const dir = playerAttackDirection();
 
             // [0] SWORD or [1] MOMENTUM SPEAR
             if (cls.type === 'melee') {
@@ -13237,25 +13252,26 @@ const KTKCalmUIV25=(()=>{
                 player.ammo = 0;
                 player.lastMusketShotAt = arenaClock;
                 player.shakeIntensity = 0.35;
-                muzzleLight.position.copy(camera.position).addScaledVector(dir, 1.2);
+                muzzleLight.position.copy(origin).addScaledVector(dir, 1.2);
                 muzzleLight.intensity = 3.5;
                 updateHUD();
 
                 // Camera and viewmodel recoil are now handled as decaying impulses.
 
                 // Volumetric lingering black-powder smoke cloud
-                spawnSmokeCloud(meadowBattleMode?camera.position.clone().addScaledVector(dir,5):camera.position,dir,meadowBattleMode?8:22,meadowBattleMode?1.0:3.0);
+                spawnSmokeCloud(meadowBattleMode?origin.clone().addScaledVector(dir,5):origin,dir,meadowBattleMode?8:22,meadowBattleMode?1.0:3.0);
 
-                if (!checkBarrelHit(cls.range)) {
+                if (!checkBarrelHit(cls.range,origin,dir)) {
                     if(meadowBattleMode&&meadowBattleState){
                         const armyImpact=ArenaArmyBattle.raycastSoldier(
-                            meadowBattleState,camera.position,dir,cls.range,'blue',{firstBody:true});
-                        if(armyImpact&&!arenaWorldBlockBetween(camera.position,
+                            meadowBattleState,origin,dir,cls.range,'blue',{firstBody:true});
+                        if(armyImpact&&!arenaWorldBlockBetween(origin,
                            new THREE.Vector3(armyImpact.point.x,armyImpact.point.y,armyImpact.point.z)))
                             playerHitArmySoldier(armyImpact,
                                 ArenaWeaponBalance.damage('musket',armyImpact.zone),cls.weaponName);
                     }else{
-                    raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+                    raycaster.set(origin,dir);
+                    raycaster.near = 0.01;
                     raycaster.far = cls.range;
                     const botMeshes = [];
                     bots.filter(b => !b.dead).forEach(b => b.mesh.traverse(c => {
@@ -13263,7 +13279,7 @@ const KTKCalmUIV25=(()=>{
                     }));
                     const hits = raycaster.intersectObjects(botMeshes, false);
 
-                    if (hits.length > 0 && !arenaWorldBlockBetween(camera.position, hits[0].point)) {
+                    if (hits.length > 0 && !arenaWorldBlockBetween(origin, hits[0].point)) {
                         const hit = hits[0];
                         const bot = bots[hit.object.userData.botIndex];
                         const zone = ArenaWeaponBalance.zoneFromMesh(
@@ -13316,7 +13332,8 @@ const KTKCalmUIV25=(()=>{
             registerWeaponSwing('bow');
 
             sfx.playBowRelease(charge);
-            const dir = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion).normalize();
+            const origin = playerAttackOrigin();
+            const dir = playerAttackDirection();
 
             // Create physical 3D arrow with feathered fletching
             const arrowGroup = new THREE.Group();
@@ -13325,7 +13342,8 @@ const KTKCalmUIV25=(()=>{
             head.rotation.x = -Math.PI / 2;
             head.position.z = -0.68;
             arrowGroup.add(shaft, head);
-            arrowGroup.position.copy(camera.position).addScaledVector(dir, 0.9);
+            // Sweep from the player itself, including the first 0.9 m of travel.
+            arrowGroup.position.copy(origin);
             arrowGroup.quaternion.copy(camera.quaternion);
             scene.add(arrowGroup);
 
@@ -15007,7 +15025,7 @@ const KTKCalmUIV25=(()=>{
             // Trace the animated sword arc or spear thrust on each frame.
             if (activeWeaponSwing && isGameActive && player.classIdx === activeWeaponSwing.classIdx) {
                 const swing = activeWeaponSwing;
-                const origin = (player.isThirdPerson ? player.pos : camera.position).clone();
+                const origin = playerAttackOrigin();
                 const orientation = camera.quaternion.clone();
                 // Keep one candidate buffer per swing and ignore distant
                 // dynamic combatants; static castle geometry always stays in.
