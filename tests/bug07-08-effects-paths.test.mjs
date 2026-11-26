@@ -41,7 +41,7 @@ test('BUG07 64 slots remain reserved after normal admission reaches 256',()=>{
 test('BUG07 effect saturation never skips arrow swept collision or barrel damage',()=>{
  const trail=part('// Spawn wind trail cube behind arrow','// Swept collision:');
  assert.match(trail,/if\(admitParticle\(\)\)/);assert.doesNotMatch(trail,/\bcontinue\b/);
- const explosion=part('function triggerBarrelExplosion(','// Area damage to nearby bots');
+ const explosion=part('function triggerBarrelExplosion(','// Use the actual active mode');
  assert.match(explosion,/if\(!admitParticle\(i<8\)\)continue/);
  assert.equal((main.match(/particles\.push\(/g)||[]).length,6);
 });

@@ -283,7 +283,7 @@ window.addEventListener('error', function(event) {
           <div class="mt-1 text-sky-300">Dizilişler</div>
           <div class="army-commands">
            <button data-army-formation="line">Z · Saf</button><button data-army-formation="column">X · Kol</button>
-           <button data-army-formation="square">C · Kare</button><button data-army-formation="wedge">B · Kama</button>
+           <button data-army-formation="square">O · Kare</button><button data-army-formation="wedge">B · Kama</button>
            <button data-army-formation="loose">M · Dağınık</button><button data-army-formation="shield">I · Kalkan duvarı</button>
           </div>
           <div class="mt-1 text-sky-300">Saf aralığı (sadece senin birliğin)</div>
@@ -520,12 +520,12 @@ window.addEventListener('error', function(event) {
 
     <!-- Hold TAB during play: uses the exact same FFA standings as match results. -->
     <div id="match-live-scoreboard" class="hidden" aria-hidden="true">
-        <section class="match-live-panel" aria-label="Canlı FFA skor tablosu">
+        <section class="match-live-panel" aria-label="Canlı maç skor tablosu">
             <div class="match-live-heading"><strong id="match-live-mode">SERBEST ARENA</strong><span>CANLI SIRALAMA • TAB</span></div>
             <p id="match-live-team-score" class="hidden text-center font-bold text-xs text-sky-200 mb-2"></p>
-            <div class="match-live-head"><span>#</span><span>OYUNCU</span><span>ÖLD.</span><span>ÖLÜM</span><span>K/D</span></div>
+            <div class="match-live-head"><span>#</span><span id="match-live-actor-label">OYUNCU</span><span>ÖLD.</span><span>ÖLÜM</span><span>K/D</span></div>
             <div id="match-live-table" class="match-live-table"></div>
-            <p class="match-live-hint">En çok öldürme kazanır • Eşitlikte az ölüm öne geçer</p>
+            <p class="match-live-hint" id="match-live-hint">En çok öldürme kazanır • Eşitlikte az ölüm öne geçer</p>
         </section>
     </div>
 
@@ -10163,8 +10163,10 @@ const KTKCalmUIV25=(()=>{
         function nativeSiegeAabb(x,y,z,w,h,d){return {
           minX:x-w/2,maxX:x+w/2,minY:y-h/2,maxY:y+h/2,
           minZ:z-d/2,maxZ:z+d/2};}
-        nativeSiegeMesh(nativeSiegeParts,-26,3.5,-42,36,7,5,nativeSiegeStone);
-        nativeSiegeMesh(nativeSiegeParts,26,3.5,-42,36,7,5,nativeSiegeStone);
+        const nativeSiegeSouthWallMeshes=[
+          nativeSiegeMesh(nativeSiegeParts,-26,3.5,-42,36,7,5,nativeSiegeStone),
+          nativeSiegeMesh(nativeSiegeParts,26,3.5,-42,36,7,5,nativeSiegeStone)
+        ];
         const nativeSiegeGateMesh=nativeSiegeMesh(nativeSiegeParts,
           0,3.5,-42,16,7,5,nativeSiegeGateMat);
         const v19SiegeDressing=KTKBattlefieldVisualV19.dressSiegeGate(THREE,nativeSiegeParts,nativeSiegeGateMesh);
@@ -10367,11 +10369,18 @@ const KTKCalmUIV25=(()=>{
           const originalIdx=source.indexOf(nativeSiegeOriginalSouthCollider);
           const northIdx=source.indexOf(nativeSiegeOriginalNorthCollider);
           const siegeWorld=castleMapData.worldMeshes;
-          const oldNorthMeshIdx=siegeWorld.indexOf(nativeSiegeOriginalNorthVisual);
+          const removeSiegeMesh=m=>{const i=siegeWorld.indexOf(m);if(i>=0)siegeWorld.splice(i,1);};
+          const syncSiegeGateRaycast=()=>{
+            removeSiegeMesh(nativeSiegeGateMesh);
+            if(enabled&&!nativeSiegeGateOpen)siegeWorld.push(nativeSiegeGateMesh);
+          };
           if(enabled){
             if(originalIdx>=0)source.splice(originalIdx,1);
-            if(northIdx>=0)source.splice(northIdx,1);
-            if(oldNorthMeshIdx>=0)siegeWorld.splice(oldNorthMeshIdx,1);
+            const currentNorthIdx=source.indexOf(nativeSiegeOriginalNorthCollider);
+            if(currentNorthIdx>=0)source.splice(currentNorthIdx,1);
+            removeSiegeMesh(nativeSiegeOriginalSouthVisual);
+            removeSiegeMesh(nativeSiegeOriginalNorthVisual);
+            for(const m of nativeSiegeSouthWallMeshes)if(!siegeWorld.includes(m))siegeWorld.push(m);
             for(const m of [...nativeSiegeExpansionV25.solidMeshes,
                             ...nativeSiegeDefenseV26.solidMeshes,
                             ...nativeSiegeInteriorV31.solidMeshes])
@@ -10386,6 +10395,9 @@ const KTKCalmUIV25=(()=>{
                             ...nativeSiegeInteriorV31.solidMeshes]){
               const j=siegeWorld.indexOf(m);if(j>=0)siegeWorld.splice(j,1);
             }
+            for(const m of nativeSiegeSouthWallMeshes)removeSiegeMesh(m);
+            if(!siegeWorld.includes(nativeSiegeOriginalSouthVisual))
+              siegeWorld.push(nativeSiegeOriginalSouthVisual);
             if(!siegeWorld.includes(nativeSiegeOriginalNorthVisual))
               siegeWorld.push(nativeSiegeOriginalNorthVisual);
             for(const b of [...nativeSiegeWallBoxes,nativeSiegeGateBox,
@@ -10403,6 +10415,7 @@ const KTKCalmUIV25=(()=>{
             if(!source.includes(nativeSiegeOriginalNorthCollider))
               source.push(nativeSiegeOriginalNorthCollider);
           }
+          syncSiegeGateRaycast();
           // Both player movement and AI routes use the SAME active collision set.
           if(arenaMap==='castle'){
             colliders.length=0;colliders.push(...source);
@@ -10470,6 +10483,8 @@ const KTKCalmUIV25=(()=>{
         function nativeSiegeResetEquipment(){
           nativeSiegeGateOpen=false;
           nativeSiegeGateMesh.visible=true;
+          if(!castleMapData.worldMeshes.includes(nativeSiegeGateMesh))castleMapData.worldMeshes.push(nativeSiegeGateMesh);
+          if(!worldMeshes.includes(nativeSiegeGateMesh))worldMeshes.push(nativeSiegeGateMesh);
           if(!castleMapData.colliders.includes(nativeSiegeGateBox))
             castleMapData.colliders.push(nativeSiegeGateBox);
           colliders.length=0;colliders.push(...castleMapData.colliders);
@@ -11132,6 +11147,9 @@ const KTKCalmUIV25=(()=>{
           if(st.gateHp===0){
             nativeSiegeGateOpen=true;
             nativeSiegeGateMesh.visible=false;
+            for(const list of [castleMapData.worldMeshes,worldMeshes]){
+              const i=list.indexOf(nativeSiegeGateMesh);if(i>=0)list.splice(i,1);
+            }
             const j=castleMapData.colliders.indexOf(nativeSiegeGateBox);
             if(j>=0)castleMapData.colliders.splice(j,1);
             colliders.length=0;colliders.push(...castleMapData.colliders);
@@ -11219,7 +11237,7 @@ const KTKCalmUIV25=(()=>{
               const a=new THREE.Vector3(p.x,p.y,p.z);
               const n=new THREE.Vector3(p.x+p.vx*h,p.y+p.vy*h-9.5*h*h,p.z+p.vz*h);
               const ray=new THREE.Raycaster(a,n.clone().sub(a).normalize(),0,a.distanceTo(n));
-              const impact=ray.intersectObjects([nativeSiegeGateMesh,...worldMeshes]
+              const impact=ray.intersectObjects(worldMeshes
                 .filter(m=>m.visible&&m!==nativeSiegeOriginalSouthVisual),false)[0];
               const delta=n.clone().sub(a),len=delta.length();
               const body=ArenaArmyBattle.raycastSoldier(meadowBattleState,
@@ -12380,6 +12398,12 @@ const KTKCalmUIV25=(()=>{
             for(const [name,data] of [['castle',castle],['meadow',meadow]])
                 for(const barrel of data.barrels)restoreBarrel(barrel,name===map);
         }
+        // BUG27/28: the same blast falloff and physical cover apply in every mode.
+        function barrelBlastDamage(center,target,blocked){
+            const dist=Math.hypot(target.x-center.x,target.y-center.y,target.z-center.z);
+            if(dist>=11.5||blocked(center,target))return 0;
+            return Math.round(160*(1-dist/12.5));
+        }
         function triggerBarrelExplosion(barrel) {
             if (!barrel.active) return;
             barrel.active = false;
@@ -12413,17 +12437,27 @@ const KTKCalmUIV25=(()=>{
                 });
             }
 
-            // Area damage to nearby bots
+            // Use the actual active mode's actors, never the hidden legacy bots.
             let killedByBarrel = 0;
-            bots.forEach(bot => {
-                if (bot.dead) return;
-                const dist = bot.mesh.position.distanceTo(barrel.pos);
-                if (dist < 11.5) {
-                    const dmg = Math.round(160 * (1 - dist / 12.5));
-                    damageBot(bot, dmg, false, 'Barut Fıçısı', '💥 ');
-                    if (bot.hp <= 0) killedByBarrel++;
+            if(meadowBattleMode&&meadowBattleState){
+                for(const soldier of meadowBattleState.soldiers){
+                    if(!soldier.alive||soldier.team===meadowBattleState.playerTeam)continue;
+                    const point=new THREE.Vector3(soldier.x,(soldier.siegeY||0)+1.2,soldier.z);
+                    const dmg=barrelBlastDamage(center,point,arenaWorldBlockBetween);
+                    if(!dmg)continue;
+                    const result=playerHitArmySoldier({targetId:soldier.id,soldier,point,zone:'body'},dmg,'Barut Fıçısı');
+                    if(result?.killed)killedByBarrel++;
                 }
-            });
+            }else{
+                for(const bot of bots){
+                    if(bot.dead||!ArenaTeams.canDamage(arenaMode,ArenaTeams.PLAYER_TEAM,botTeam(bot)))continue;
+                    const point=bot.mesh.position.clone().add(new THREE.Vector3(0,1.2,0));
+                    const dmg=barrelBlastDamage(center,point,arenaWorldBlockBetween);
+                    if(!dmg)continue;
+                    damageBot(bot,dmg,false,'Barut Fıçısı','💥 ',point);
+                    if(bot.hp<=0)killedByBarrel++;
+                }
+            }
 
             if (killedByBarrel > 0) {
                 showMedal('💥 BARUT İMHA!', '+100 KUŞATMA PATLAMASI', 'bg-orange-600 border-amber-300');
@@ -13134,14 +13168,14 @@ const KTKCalmUIV25=(()=>{
 
         // Physical weapon hits against instanced field soldiers are resolved by
         // battle collision volumes (the 140 models are drawn in InstancedMeshes).
-        function playerHitArmySoldier(hit,damage,weaponName){
+        function playerHitArmySoldier(hit,damage,weaponName,attackContext=null){
             if(!meadowBattleMode||!meadowBattleState||!hit)return null;
-            const playerWeapon=weaponName==='Kalkan Çarpması'?'bash':
+            const playerWeapon=attackContext?.weapon??(weaponName==='Barut Fıçısı'?null:weaponName==='Kalkan Çarpması'?'bash':
                 weaponName==='Süngü / Hançer'?'dagger':
-                ArenaWeaponBalance.weaponForRole(['knight','pikeman','archer','musket'][player.classIdx]);
+                ArenaWeaponBalance.weaponForRole(['knight','pikeman','archer','musket'][player.classIdx]));
             const result=ArenaArmyBattle.damageSoldier(meadowBattleState,hit.targetId,damage,
                 {source:'player',zone:hit.zone||'body',weapon:playerWeapon,
-                 attackerPosition:{x:player.pos.x,z:player.pos.z}});
+                 attackerPosition:attackContext?.origin??{x:player.pos.x,z:player.pos.z}});
             if(!result)return null;
             if(result.blocked){
                 sfx.playMetalClang();
@@ -13333,7 +13367,7 @@ const KTKCalmUIV25=(()=>{
 
         function releaseChargedBow() {
             if (!player.isDrawingBow) return;
-            if (!isGameActive || arenaMatch.phase !== 'playing') {
+            if (!isGameActive || armyTacticalOpen || document.pointerLockElement !== canvas || arenaMatch.phase !== 'playing') {
                 player.isDrawingBow = false;
                 player.bowCharge = 0;
                 player.bowDrawSeconds = 0;
@@ -13381,6 +13415,7 @@ const KTKCalmUIV25=(()=>{
             const speed = 38 + charge * 46; // Up to 84 speed at full draw!
             arrows.push({
                 mesh: arrowGroup,
+                attackContext:Object.freeze({weapon:'bow',name:CLASSES[2].weaponName,origin:Object.freeze({x:origin.x,z:origin.z})}),
                 vel: dir.clone().multiplyScalar(speed),
                 charge,
                 gravityFactor: 18 * (1.25 - charge * 0.75), // Flatter trajectory at full draw
@@ -13615,8 +13650,8 @@ const KTKCalmUIV25=(()=>{
         function openArmyTacticalMap(){
             if(!meadowBattleMode||!meadowBattleState||arenaMatch.phase!=='playing')return;
             armyTacticalOpen=true;armyTacticalOverlay.classList.remove('hidden');
+            clearPlayerCombatInput();
             armyMapMessage.textContent='Hedef noktası, bakış yönü veya düşman bölüğü seç.';
-            for(const code in keys)keys[code]=false;
             if(document.pointerLockElement===canvas&&document.exitPointerLock)
                 document.exitPointerLock();
             drawArmyTacticalMap();
@@ -13908,8 +13943,43 @@ const KTKCalmUIV25=(()=>{
             }
         }
 
+        // BUG30: derive live standings from the active army, not dormant arena bots.
+        function armyLiveScoreRows(state,playerDeaths){
+            const rows=state.squads.map(s=>({
+                name:(s.team==='blue'?'🔵 ':'🔴 ')+s.name,
+                kills:s.kills,deaths:s.startCount-s.alive,isPlayer:false
+            }));
+            rows.push({name:'★ Sen (bireysel)',kills:state.playerKills,deaths:playerDeaths,isPlayer:true});
+            rows.sort((a,b)=>b.kills-a.kills||a.deaths-b.deaths);
+            return rows;
+        }
         function renderLiveScoreboard() {
             if (!tabScoreboardHeld || arenaMatch.phase !== 'playing') return;
+            const army=meadowBattleMode&&meadowBattleState;
+            document.getElementById('match-live-actor-label').textContent=army?'BİRLİK / OYUNCU':'OYUNCU';
+            document.getElementById('match-live-hint').textContent=army?
+                'Bölükler ve bireysel oyuncu verisi • Savaş sonucu aktif hedef kurallarına bağlıdır':
+                'En çok öldürme kazanır • Eşitlikte az ölüm öne geçer';
+            if(army){
+                const alive=team=>army.squads.reduce((n,s)=>n+(s.team===team?s.alive:0),0);
+                document.getElementById('match-live-mode').textContent=nativeSiegeMode?'KALE KUŞATMASI':'MEYDAN SAVAŞI';
+                const summary=document.getElementById('match-live-team-score');
+                summary.classList.remove('hidden');
+                summary.textContent='MAVİ '+alive('blue')+' — '+alive('red')+' KIRMIZI • Hayatta kalan asker';
+                liveScoreboardTable.replaceChildren();
+                armyLiveScoreRows(army,player.deaths).forEach((entry,i)=>{
+                    const row=document.createElement('div');
+                    row.className='match-live-row'+(entry.isPlayer?' is-player':'');
+                    for(const value of [i+1,entry.name,entry.kills,entry.deaths,(entry.kills/Math.max(1,entry.deaths)).toFixed(2)]){
+                        const cell=document.createElement('span');
+                        cell.className='match-live-cell';cell.textContent=String(value);row.appendChild(cell);
+                    }
+                    liveScoreboardTable.appendChild(row);
+                });
+                liveScoreboardOverlay.classList.remove('hidden');
+                liveScoreboardOverlay.setAttribute('aria-hidden','false');
+                return;
+            }
             const standings = ArenaMatch.leaderboard(player, bots);
             document.getElementById('match-live-mode').textContent =
                 arenaMode === 'tdm' ? 'TAKIM SAVAŞI • 4v3' : 'SERBEST ARENA';
@@ -14334,22 +14404,34 @@ const KTKCalmUIV25=(()=>{
             playBtn.textContent = 'YENİ MAÇ BAŞLAT';
         });
 
+        // BUG24: input state is owned by the active, focused game view.
+        function clearPlayerCombatInput(){
+            for(const code in keys)keys[code]=false;
+            player.isDrawingBow=false;
+            player.bowCharge=0;
+            player.bowDrawSeconds=0;
+            player.isRMBDown=false;
+            player.isShielding=false;
+            player.shieldParryTime=0;
+            document.getElementById('bow-charge-ui').classList.add('hidden');
+            document.getElementById('shield-overlay').style.opacity='0';
+            document.getElementById('ads-overlay').style.opacity='0';
+            document.getElementById('crosshair').style.transform='scale(1)';
+            document.getElementById('hud-status-badge').textContent='HAZIR';
+            hideLiveScoreboard();
+        }
         document.addEventListener('pointerlockchange', () => {
             if (document.pointerLockElement === canvas) {
                 if (arenaMatch.phase === 'paused') {ArenaMatch.resume(arenaMatch);lastTime=performance.now();}
                 isGameActive = arenaMatch.phase === 'playing';
                 if (isGameActive) menuOverlay.classList.add('hidden');
             } else {
+                clearPlayerCombatInput();
                 if(armyTacticalOpen&&meadowBattleMode&&arenaMatch.phase==='playing'){
                     isGameActive=true;
                     menuOverlay.classList.add('hidden');
                     return;
                 }
-                hideLiveScoreboard();
-                player.isDrawingBow = false;
-                player.bowCharge = 0;
-                player.bowDrawSeconds = 0;
-                document.getElementById('bow-charge-ui').classList.add('hidden');
                 if (arenaMatch.phase === 'playing') ArenaMatch.pause(arenaMatch);
                 isGameActive = false;
                 activeWeaponSwing = null;
@@ -14377,7 +14459,7 @@ const KTKCalmUIV25=(()=>{
         });
 
         window.addEventListener('mousedown', (e) => {
-            if (!isGameActive) return;
+            if (!isGameActive || armyTacticalOpen || document.pointerLockElement !== canvas) return;
             if (e.button === 0) {
                 if (player.classIdx === 2) {
                     // The old four-second cooldown is now incorporated into
@@ -14437,7 +14519,7 @@ const KTKCalmUIV25=(()=>{
                 }
                 return;
             }
-            if(meadowBattleMode&&isGameActive&&arenaMatch.phase==='playing'&&!e.repeat){
+            if(meadowBattleMode&&isGameActive&&document.pointerLockElement===canvas&&arenaMatch.phase==='playing'&&!e.repeat){
                 if(e.code==='F10'){e.preventDefault();KTKNativeSiegeHud.flip();return;}
                 if(nativeSiegeMode){
                     const siegeHotkeys={F6:'native-siege-tower-order',
@@ -14456,7 +14538,7 @@ const KTKCalmUIV25=(()=>{
                 if(e.code==='BracketRight'){e.preventDefault();setArmySpacing(Math.min(1.65,currentSquad().spacingScale+.1));return;}
                 const orderHotkeys={KeyG:'follow',KeyJ:'hold',KeyK:'advance',KeyL:'charge',
                     KeyU:'retreat',KeyY:'flank',KeyN:'skirmish'};
-                const formationHotkeys={KeyZ:'line',KeyX:'column',KeyC:'square',
+                const formationHotkeys={KeyZ:'line',KeyX:'column',KeyO:'square',
                     KeyB:'wedge',KeyM:'loose',KeyI:'shield'};
                 const fireHotkeys={Digit7:'free',Digit8:'volley',Digit9:'hold'};
                 if(orderHotkeys[e.code]){e.preventDefault();issuePlayerOrder(orderHotkeys[e.code]);return;}
@@ -14475,6 +14557,7 @@ const KTKCalmUIV25=(()=>{
                 }
                 return;
             }
+            if (!isGameActive || document.pointerLockElement !== canvas || !document.hasFocus()) return;
             keys[e.code] = true;
             if (e.code === 'Digit1') selectClass(0);
             if (e.code === 'Digit2') selectClass(1);
@@ -14494,19 +14577,23 @@ const KTKCalmUIV25=(()=>{
             }
             keys[e.code] = false;
         });
-        window.addEventListener('blur', () => {
-            hideLiveScoreboard();
-            player.isDrawingBow = false;
-            player.bowCharge = 0;
-            player.bowDrawSeconds = 0;
-            document.getElementById('bow-charge-ui').classList.add('hidden');
-            Object.keys(keys).forEach(key => { keys[key] = false; });
-            if (arenaMatch.phase === 'playing') {
-                ArenaMatch.pause(arenaMatch);
-                isGameActive = false;
-                if (document.pointerLockElement === canvas && document.exitPointerLock)
-                    document.exitPointerLock();
-            }
+        function suspendUnfocusedGame(){
+            clearPlayerCombatInput();
+            if (arenaMatch.phase !== 'playing') return;
+            armyTacticalOpen=false;
+            armyTacticalOverlay.classList.add('hidden');
+            ArenaMatch.pause(arenaMatch);
+            isGameActive=false;
+            activeWeaponSwing=null;
+            syncMatchDurationControls();
+            menuOverlay.classList.remove('hidden');
+            playBtn.textContent='MAÇA DEVAM ET';
+            if(document.pointerLockElement===canvas&&document.exitPointerLock)
+                document.exitPointerLock();
+        }
+        window.addEventListener('blur',suspendUnfocusedGame);
+        document.addEventListener('visibilitychange',()=>{
+            if(document.hidden)suspendUnfocusedGame();
         });
 
         const speedLinesCanvas = document.getElementById('speed-lines-canvas');
@@ -14563,6 +14650,31 @@ const KTKCalmUIV25=(()=>{
             player.pos.y=feet+nextHeight;
         }
 
+        // BUG26: sweep a small camera volume from the player eye to its
+        // desired shoulder position. Shorten the arm before any solid AABB.
+        function thirdPersonCameraFraction(origin,offset,solids,padding=.24){
+            let nearest=1;
+            for(const b of solids){
+                let enter=0,exit=nearest;
+                for(const axis of ['X','Y','Z']){
+                    const k=axis.toLowerCase();
+                    const start=origin[k],delta=offset[k];
+                    const lo=b['min'+axis]-padding,hi=b['max'+axis]+padding;
+                    if(Math.abs(delta)<1e-8){
+                        if(start<lo||start>hi){enter=Infinity;break;}
+                    }else{
+                        const a=(lo-start)/delta,c=(hi-start)/delta;
+                        enter=Math.max(enter,Math.min(a,c));
+                        exit=Math.min(exit,Math.max(a,c));
+                        if(enter>exit)break;
+                    }
+                }
+                if(enter<=exit&&enter<nearest)
+                    nearest=Math.max(0,enter-.02);
+            }
+            return nearest;
+        }
+
         function resolvePlayerCollisions(dt) {
             const rad = player.radius;
             const h = player.currentHeight;
@@ -14580,6 +14692,16 @@ const KTKCalmUIV25=(()=>{
             });
             player.pos.x = terrain.x;
             player.pos.z = terrain.z;
+            // BUG23: the visible meadow fence is low by design, but its playable
+            // boundary must hold even during a jump or high-speed slide-hop.
+            if(arenaMap==='meadow'){
+                const limit=Math.max(0,meadowSpec.half-.75-rad);
+                const x=Math.max(-limit,Math.min(limit,player.pos.x));
+                const z=Math.max(-limit,Math.min(limit,player.pos.z));
+                if(x!==player.pos.x&&Math.sign(player.vel.x)===Math.sign(player.pos.x))player.vel.x=0;
+                if(z!==player.pos.z&&Math.sign(player.vel.z)===Math.sign(player.pos.z))player.vel.z=0;
+                player.pos.x=x;player.pos.z=z;
+            }
             // Keep tangential slide-hop movement; stop only blocked axes.
             if (swept.hitX || terrain.hitX) player.vel.x = 0;
             if (swept.hitZ || terrain.hitZ) player.vel.z = 0;
@@ -15009,7 +15131,8 @@ const KTKCalmUIV25=(()=>{
 
                 if (player.isThirdPerson && playerCharGroup) {
                     const camBack = frameCamBack.set(.65,.65,4.2).applyAxisAngle(frameUp,player.yaw);
-                    camera.position.copy(player.pos).add(camBack);
+                    const cameraFraction=thirdPersonCameraFraction(player.pos,camBack,colliders);
+                    camera.position.copy(player.pos).addScaledVector(camBack,cameraFraction);
 
                     // Update player's own 3D character mesh pose & animations
                     playerCharGroup.position.set(player.pos.x, player.pos.y - player.currentHeight, player.pos.z);
@@ -15241,7 +15364,7 @@ const KTKCalmUIV25=(()=>{
                 // Swept collision: find the FIRST obstruction along the complete frame segment.
                 // Earlier frame-end overlap checks could hit a bot behind a wall.
                 let impact = ArenaArrowCollision.sweep(prevPos, arr.mesh.position, {
-                    barrels:meadowBattleMode?[]:barrels,
+                    barrels:barrels,
                     bots:meadowBattleMode?[]:bots,
                     groundY: 0.15,
                     worldHit(from, to) {
@@ -15280,15 +15403,14 @@ const KTKCalmUIV25=(()=>{
                     } else if(impact.type==='army'){
                         playerHitArmySoldier(impact.battleHit,
                             ArenaWeaponBalance.damage('bow',impact.battleHit.zone,arr.charge),
-                            CLASSES[2].weaponName);
+                            arr.attackContext.name,arr.attackContext);
                         releaseArrow(arr.mesh);
                     } else if (impact.type === 'bot') {
                         const bot = impact.target;
                         const zone = ArenaWeaponBalance.zoneFromAim(
                             impact.point.y, bot.mesh.position.y);
-                        const bowCls = CLASSES[2];
                         const baseDmg = ArenaWeaponBalance.damage('bow',zone,arr.charge);
-                        damageBot(bot, baseDmg, zone === 'head', bowCls.weaponName, '', arr.mesh.position);
+                        damageBot(bot, baseDmg, zone === 'head', arr.attackContext.name, '', arr.mesh.position);
                         releaseArrow(arr.mesh);
                     } else {
                         if (isGameActive && arr.mesh.position.distanceTo(player.pos) < 35) sfx.playArrowThud();

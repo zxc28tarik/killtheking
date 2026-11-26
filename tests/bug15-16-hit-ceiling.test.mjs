@@ -46,7 +46,7 @@ const physics=runInNewContext(get('function playerCeilingLimit(','// ===========
 const slab=(minY,maxY,minX=-3,maxX=3)=>({minX,maxX,minZ:-3,maxZ:3,minY,maxY});
 function phys(y,h,vy,solids,x=0){
  ctx.player={pos:{x,y,z:0},vel:{x:0,y:vy,z:0},radius:.75,currentHeight:h,onGround:false};
- ctx.colliders=solids;ctx.jumpPads=[];ctx.getRampHeightAt=()=>0;return ctx.player;
+ ctx.arenaMap='castle';ctx.colliders=solids;ctx.jumpPads=[];ctx.getRampHeightAt=()=>0;return ctx.player;
 }
 test('BUG16 jumping hits underside and cancels upward velocity without teleport',()=>{
  const p=phys(2.35,2.35,10,[slab(2.6,2.8)]);
@@ -75,4 +75,10 @@ test('BUG15/16 live wiring and release parity',()=>{
  assert.match(html,/const impact=nearestMusketImpact\(cls.range,origin,dir\)/);
  assert.match(html,/adjustPlayerHeight\(THREE.MathUtils.lerp/);
  assert.equal(html,readFileSync(new URL('../playables/KillTheKing_AK30_Amblemler_Korundu_Tam_Ekran_Arka_Plan.html',import.meta.url),'utf8'));
+});
+
+test('BUG23 meadow boundary clamps airborne player without stopping tangential motion',()=>{
+ const p=phys(8,2.35,0,[],98);ctx.arenaMap='meadow';ctx.meadowSpec={half:100};
+ p.vel.x=40;p.vel.z=10;physics.resolvePlayerCollisions(.1);
+ assert.equal(p.pos.x,98.5);assert.equal(p.vel.x,0);assert.equal(p.vel.z,10);
 });
