@@ -92,6 +92,11 @@
             25% { transform: translate(-50%, -90%) scale(1.25); opacity: 1; }
             100% { transform: translate(-50%, -180%) scale(0.9); opacity: 0; }
         }
+        @keyframes floatDmgReuse {
+            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 1; }
+            25% { transform: translate(-50%, -90%) scale(1.25); opacity: 1; }
+            100% { transform: translate(-50%, -180%) scale(0.9); opacity: 0; }
+        }
         .dmg-number {
             position: absolute;
             pointer-events: none;
@@ -6746,11 +6751,23 @@ window.addEventListener('error', function(event) {
         // ============================================================================
         // 4. THREE.JS HD RENDERER, SKY DOME, CLOUDS, TORCHES & CASTLE ARENA
         // ============================================================================
+        const idleSceneState={dirty:true,rendered:0,skipped:0,wasPlaying:false};
+        function invalidateIdleScene(){idleSceneState.dirty=true;}
+        function shouldRenderScene(state,playing,hidden){
+            if(hidden){state.dirty=true;state.wasPlaying=false;state.skipped++;return false;}
+            const needed=playing||state.dirty||state.wasPlaying;
+            state.wasPlaying=playing;
+            if(!needed)state.skipped++;
+            return needed;
+        }
+        function acknowledgeSceneRender(state){state.dirty=false;state.rendered++;}
+        window.ktkIdleRenderStatus=()=>({...idleSceneState});
         const canvas = document.getElementById('game-canvas');
         const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(
             ArenaSettings.pixelRatio(gameSettings.quality,window.devicePixelRatio));
+        canvas.addEventListener('webglcontextrestored',invalidateIdleScene);
         renderer.shadowMap.enabled = true;
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         renderer.outputEncoding = THREE.sRGBEncoding;
@@ -6912,6 +6929,7 @@ window.addEventListener('error', function(event) {
         }
 
         window.setAtmosphere = function(idx) {
+            invalidateIdleScene();
             currentAtmosphereIdx = idx % ATMOSPHERES.length;
             const atmo = ATMOSPHERES[currentAtmosphereIdx];
 
@@ -9908,6 +9926,7 @@ const KTKCalmUIV25=(()=>{
         const playerClassModels = [];
 
         window.toggleThirdPerson = function() {
+            invalidateIdleScene();
             player.isThirdPerson = !player.isThirdPerson;
             player.tpsMotionState = ArenaCharacterMotion.createState();
             weaponHolder.visible = !player.isThirdPerson;
@@ -9923,6 +9942,7 @@ const KTKCalmUIV25=(()=>{
         window.selectClass = function(idx) {
             // Switching class mid battle would illegally grant a second squad.
             if(meadowBattleMode && arenaMatch.phase==='playing')return;
+            invalidateIdleScene();
             activeWeaponSwing = null;
             player.tpsMotionState = ArenaCharacterMotion.createState();
             player.classIdx = idx;
@@ -10061,6 +10081,7 @@ const KTKCalmUIV25=(()=>{
         function switchArenaMap(map) {
             if(!['castle','meadow'].includes(map))throw Error('Invalid arena map');
             if(map===arenaMap)return;
+            invalidateIdleScene();
             const selected=map==='castle'?castleMapData:meadowMapData;
             for(const [active,items] of [
                 [colliders,selected.colliders],[ramps,selected.ramps],
@@ -10325,6 +10346,7 @@ const KTKCalmUIV25=(()=>{
         let nativeSiegeGateOpen=false;
         function nativeSiegeCastleGeometry(enabled){
           if(!enabled&&nativeSiegeCastleEnabled===false)return;
+          invalidateIdleScene();
           nativeSiegeCastleEnabled=enabled;
           nativeSiegeParts.visible=enabled;
           nativeSiegeOriginalSouthVisual.visible=!enabled;
@@ -12216,23 +12238,57 @@ const KTKCalmUIV25=(()=>{
             for(const h of flyingHelmets)scene.remove(h.mesh);
             particles.length=arrows.length=stuckArrows.length=flyingHelmets.length=0;
             skippedNormalEffects=skippedPriorityEffects=0;
+            clearDamageNumbers();
         }
 
+        // BUG09: bounded DOM pool; no per-hit timeout or layout-forcing reset.
+        const DAMAGE_NUMBER_LIMIT=48,DAMAGE_NUMBER_NORMAL_LIMIT=40,DAMAGE_NUMBER_LIFETIME=850;
+        const damageNumberFree=[],damageNumberActive=[];
+        const damageNumberProjection=new THREE.Vector3();
+        let damageNumberCreated=0,damageNumberDropped=0,damageNumberClipped=0;
+        function releaseDamageNumber(index){
+            const item=damageNumberActive[index];
+            item.el.remove();
+            damageNumberFree.push(item.el);
+            const last=damageNumberActive.pop();
+            if(index<damageNumberActive.length)damageNumberActive[index]=last;
+        }
+        function expireDamageNumbers(now){
+            for(let i=damageNumberActive.length-1;i>=0;i--)
+                if(damageNumberActive[i].expires<=now)releaseDamageNumber(i);
+        }
+        function clearDamageNumbers(){
+            while(damageNumberActive.length)releaseDamageNumber(damageNumberActive.length-1);
+        }
+        function damageProjectionVisible(p){
+            return Number.isFinite(p.x)&&Number.isFinite(p.y)&&Number.isFinite(p.z)&&
+                p.x>=-1&&p.x<=1&&p.y>=-1&&p.y<=1&&p.z>=-1&&p.z<1;
+        }
+        window.ktkDamageNumberStatus=()=>({active:damageNumberActive.length,free:damageNumberFree.length,
+            created:damageNumberCreated,dropped:damageNumberDropped,clipped:damageNumberClipped,limit:DAMAGE_NUMBER_LIMIT});
         function spawnFloatingDamage(worldPos, dmg, isHeadshot = false, extraTag = '') {
-            const container = document.getElementById('damage-numbers-container');
-            const proj = worldPos.clone().project(camera);
-            if (proj.z >= 1.0) return;
-
-            const sx = (proj.x * 0.5 + 0.5) * window.innerWidth + (Math.random() - 0.5) * 24;
-            const sy = (-proj.y * 0.5 + 0.5) * window.innerHeight;
-
-            const el = document.createElement('div');
-            el.className = `dmg-number krunker-text ${isHeadshot ? 'text-2xl sm:text-3xl text-rose-500' : 'text-lg sm:text-xl text-amber-300'}`;
-            el.style.left = `${sx}px`;
-            el.style.top = `${sy}px`;
-            el.textContent = isHeadshot ? `🎯 KRİTİK ${Math.round(dmg)}!` : `${extraTag}+${Math.round(dmg)}`;
+            camera.updateMatrixWorld();
+            const proj=damageNumberProjection.copy(worldPos).project(camera);
+            if(!damageProjectionVisible(proj)){damageNumberClipped++;return;}
+            const now=performance.now();
+            expireDamageNumbers(now);
+            const limit=isHeadshot?DAMAGE_NUMBER_LIMIT:DAMAGE_NUMBER_NORMAL_LIMIT;
+            if(damageNumberActive.length>=limit){damageNumberDropped++;return;}
+            const container=document.getElementById('damage-numbers-container');
+            if(!container)return;
+            const sx=Math.max(0,Math.min(window.innerWidth,
+                (proj.x*.5+.5)*window.innerWidth+(Math.random()-.5)*24));
+            const sy=(-proj.y*.5+.5)*window.innerHeight;
+            let el=damageNumberFree.pop();
+            if(!el){el=document.createElement('div');damageNumberCreated++;}
+            el._ktkDamageAlternate=!el._ktkDamageAlternate;
+            el.className=`dmg-number krunker-text ${isHeadshot ? 'text-2xl sm:text-3xl text-rose-500' : 'text-lg sm:text-xl text-amber-300'}`;
+            el.style.animationName=el._ktkDamageAlternate?'floatDmg':'floatDmgReuse';
+            el.style.left=`${sx}px`;
+            el.style.top=`${sy}px`;
+            el.textContent=isHeadshot?`🎯 KRİTİK ${Math.round(dmg)}!`:`${extraTag}+${Math.round(dmg)}`;
             container.appendChild(el);
-            setTimeout(() => el.remove(), 850);
+            damageNumberActive.push({el,expires:now+DAMAGE_NUMBER_LIFETIME});
         }
 
         function spawnSmokeCloud(origin, dir, count = 20, lingering = 2.8) {
@@ -14121,8 +14177,10 @@ const KTKCalmUIV25=(()=>{
             sfx.setVolume(gameSettings.volume);
             const targetRatio = ArenaSettings.pixelRatio(
                 gameSettings.quality,window.devicePixelRatio);
-            if (Math.abs(renderer.getPixelRatio() - targetRatio) > .001)
+            if (Math.abs(renderer.getPixelRatio() - targetRatio) > .001){
                 renderer.setPixelRatio(targetRatio);
+                invalidateIdleScene();
+            }
         }
         function changeSetting(patch) {
             gameSettings = ArenaSettings.normalize({...gameSettings,...patch});
@@ -14378,6 +14436,7 @@ const KTKCalmUIV25=(()=>{
         const speedLinesCtx = speedLinesCanvas.getContext('2d');
 
         function resizeCanvases() {
+            invalidateIdleScene();
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
@@ -15898,12 +15957,13 @@ const KTKCalmUIV25=(()=>{
             const now = performance.now();
             const rawDt = (now - lastTime) / 1000;
             lastTime = now;
-            // Fullscreen bitmap menu never displays the live 3D scene.
-            // Keep the clock current, but skip simulation/render work until play resumes.
-            if(menuOverlay.dataset.ui32Ready==='true'&&!menuOverlay.classList.contains('hidden')) return;
-            ArenaPerformance.record(performanceSamples,rawDt);
-
-            if(isGameActive&&arenaMatch.phase==='playing'){
+            // BUG09/10: cleanup continues even under the opaque menu; GPU work does not.
+            if(damageNumberActive.length)expireDamageNumbers(now);
+            const hidden=menuOverlay.dataset.ui32Ready==='true'&&!menuOverlay.classList.contains('hidden');
+            const playing=isGameActive&&arenaMatch.phase==='playing';
+            if(!shouldRenderScene(idleSceneState,playing,hidden))return;
+            if(playing){
+                ArenaPerformance.record(performanceSamples,rawDt);
                 fpsFrames++;fpsTimer+=Math.max(0,rawDt);
                 if(fpsTimer>=.5){
                     document.getElementById('hud-fps').textContent=Math.round(fpsFrames/fpsTimer);
@@ -15920,6 +15980,7 @@ const KTKCalmUIV25=(()=>{
             }
             updateActiveMeadowGrass();
             renderer.render(scene, camera);
+            acknowledgeSceneRender(idleSceneState);
         }
 
         // Perf report is computed only when inspected; no network logging.

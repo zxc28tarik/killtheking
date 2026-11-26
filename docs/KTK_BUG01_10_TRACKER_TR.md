@@ -10,8 +10,8 @@ Kaynak: main HTML blob ad24dbde04012cc8d90b0cca0b4bb8fb560d71ab. Kullanıcı tal
 | BUG06 | Çim değişiminde tüm instance tamponları dirty | Yüksek | Main'e işlendi; değişen aralık aktarımı, aynı görünüm |
 | BUG07 | Efekt havuzu yalnız boş nesneleri sınırlıyor | Yüksek | Kod adayı; aktif efekt yükü sınırlı, kritik efekt korunur |
 | BUG08 | Kale pathClear yalnız örnek noktaları kontrol ediyor | Yüksek | Kod adayı; sürekli segment/süpürme testi |
-| BUG09 | Hasar göstergeleri DOM/timer churn ve ekran dışı üretim | Orta | Açık; ekran sınırları ve sınırlı yeniden kullanım |
-| BUG10 | Duraklamada gereksiz WebGL çizimi | Orta | Açık; duraklama/sonuç ekranı, resize/resume doğrulaması |
+| BUG09 | Hasar göstergeleri DOM/timer churn ve ekran dışı üretim | Orta | Kod adayı; ekran sınırları ve sınırlı yeniden kullanım |
+| BUG10 | Duraklamada gereksiz WebGL çizimi | Orta | Kod adayı; duraklama/sonuç ekranı, resize/resume doğrulaması |
 İlk paket BUG01–02: yalnız fiziksel Y tutarlılığı, AK33/35/36 AI davranışları aktarılmayacak. BUG03 ayrı tutulur. #89 adayındaki ilgili fizik kodu referans olabilir; körlemesine dal birleştirilmez.
 
 ## BUG01–02 kod adayı
@@ -31,3 +31,6 @@ BUG05–06: PR #96 merged 46b91cc3cd1c3155c086a87f42add079510a139e; 222/222 test
 
 ## BUG07–08 kod adayı
 BUG07: 256 normal / 320 toplam aktif dekoratif parçacık; öncelikli kıvılcım, patlama ve atış izi için 64 rezerv; tüm 6 üretici girişinde kontrol. Okların fiziksel çarpışması, hasar ve diğer savaş kuralları aynı. Aşırı yükte öncelikli efekt de sınırda atlanabilir; gerçek FPS ölçümü yok. BUG08: AK26 ve AK31 sürekli segment/şişirilmiş AABB (konservatif kare ayak izi) testi, temas dahil; bozuk veri reddedilir, mevcut geometri değiştirilmedi. İki kaynak modül ve iki HTML eşlendi. Altı regresyon testi; CI/Chromium bekleniyor.
+
+## BUG09–10 kod adayı
+BUG09: tüm NDC düzlemleri ve geçersiz projeksiyon reddedilir; 40 normal / 48 toplam DOM etiketi, kritik için 8 rezerv. 850 ms ömür ve aynı CSS animasyonu; tek kare süpürmesi, yeniden kullanım, yeni maç temizliği, etiket başına zamanlayıcı yok. BUG10: gerçek render kapısı; aktif oyun her kare, donmuş sahne tek çizim, menü sıfır; yeniden boyutlama/kalite/sınıf/kamera/atmosfer/harita/context restore yeniden çizim ister. 6 yeni regresyon testi ve gerçek Chromium DOM/render kabul kontrolü eklendi. Doğrudan test: 8 ekran dışı reddedildi, 48 üst sınır, 0 temizleme sonrası, node yeniden kullanımı; 100 sabit karede sıfır ek render. Gerçek GPU ölçümü yok. BUG07–08'in PR #97'si ile aynı dalda son paket; ayrı unutulacak dal açılmadı, yeni commit için tüm kabul testleri yeniden koşacak.
