@@ -74,6 +74,17 @@ jobs:
                 assert.equal(skyCheck.replaced,skyCheck.disposed);
                 assert.equal(skyCheck.reused,4);
                 assert.equal(skyCheck.wrong,0);
+                // AK31: check physical third-map collider/raycast registration in REAL Chromium.
+                const siegeInterior=await p.evaluate(()=>window.ktkSiegeInteriorStatus?.());
+                assert.ok(siegeInterior,'AK31 status missing in current native game');
+                assert.equal(siegeInterior.installed,true);
+                assert.equal(siegeInterior.activated,map==='siege');
+                assert.equal(siegeInterior.collisionBlocks,34);
+                assert.equal(siegeInterior.wallPosts,16);
+                assert.equal(siegeInterior.openGuardroomWalls,6);
+                assert.equal(siegeInterior.physicalProjectileCover,map==='siege');
+                if(map==='siege')
+                  assert.ok(Object.values(siegeInterior.corridors).every(Boolean),'AK31 breached a real assault lane');
                 for(const id of [0,1,2,3]){
                   await p.locator('[data-approved-class="'+id+'"]:visible').click();
                   assert.equal(await p.evaluate(()=>window.ktkApprovedArtworkStatus().currentClass),String(id));
