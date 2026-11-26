@@ -19,9 +19,9 @@ test('REC04 #28: playable duration choices and live scoreboard retained',()=>{
 });
 test('REC04 #29/#31: telemetry remains live and counts stalled units even without waypoints',()=>{
  const t=inline('ArenaTelemetry'),s=t.create();
- t.sampleTargets(s,[{id:0,dead:false,arenaTargetType:'player',navigationStuckTime:3,navPath:[]}]);
+ t.sampleTargets(s,[{id:0,dead:false,arenaTargetType:'player',navStuck:3,navPath:[]}]);
  const report=t.snapshot(s);
- assert.equal(report.samples,1);assert.equal(report.targetSlots.player,1);
+ assert.equal(report.samples,1);assert.equal(report.targetSlots.player,1);assert.equal(report.stuckSamples['0'],1);
  assert.equal(typeof t.recordRangedShot,'function');
  assert.match(html,/killtheking-match-qa-v2/);
  assert.match(html,/ArenaTelemetry\.sampleTargets\(/);
