@@ -13637,8 +13637,8 @@ const KTKCalmUIV25=(()=>{
                 const face=q.playerControlled&&q.lockedFacing!=null?q.lockedFacing:q.facing;
                 g.lineTo(pos.x+Math.sin(face)*16,pos.y+Math.cos(face)*16);g.stroke();
             }
-            const player=armyMapCanvas(player.pos.x,player.pos.z);
-            g.fillStyle='#ffffff';g.beginPath();g.arc(player.x,player.y,3,0,Math.PI*2);g.fill();
+            const playerMarker=armyMapCanvas(player.pos.x,player.pos.z);
+            g.fillStyle='#ffffff';g.beginPath();g.arc(playerMarker.x,playerMarker.y,3,0,Math.PI*2);g.fill();
             g.fillStyle='#f8fafc';g.font='12px sans-serif';
             g.fillText('GÖRÜŞ ±'+armyMapZoom+' • Mavi / Kırmızı birlikler',10,17);
         }

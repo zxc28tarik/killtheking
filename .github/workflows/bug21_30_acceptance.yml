@@ -29,7 +29,7 @@ jobs:
           try{
             for(const map of ['arena','meadow','siege']){
               const p=await browser.newPage({viewport:{width:1280,height:720}});
-              const errors=[];p.on('pageerror',e=>errors.push(e.message));
+              const errors=[];p.on('pageerror',e=>errors.push(e.stack||e.message));
               try{
                 await p.goto(pathToFileURL(resolve('index.html')).href);
                 await p.waitForFunction(()=>window.ktkUI32Status?.().ready==='true',null,{timeout:30000});
@@ -110,6 +110,7 @@ jobs:
                         const before=arrows.length;
                         key('keydown','KeyP');
                         must(armyTacticalOpen&&!player.isDrawingBow&&!player.isRMBDown&&!player.isShielding&&!keys.KeyW,'tactical opening did not clear input');
+                        drawArmyTacticalMap(); // direct assertion: drawing must not throw (player marker TDZ regression)
                         mouse('mouseup',0);mouse('mousedown',0);mouse('mousedown',2);
                         must(arrows.length===before&&!player.isDrawingBow&&!player.isRMBDown,'tactical map triggered attack');
                         armyTacticalOpen=false;armyTacticalOverlay.classList.add('hidden');simulatedLock=canvas;

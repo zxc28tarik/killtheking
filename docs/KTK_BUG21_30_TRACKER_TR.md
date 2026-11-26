@@ -34,3 +34,8 @@
 - `50666b5`: `.github/workflows/bug21_30_acceptance.yml` ana dala eklendi; ana HTML değişmedi.
 - Üç modda gerçek maç başlangıcı; BUG21–30 için hedefli çalışma zamanı kontrolleri. Fare kilidi ve odak kontrollü test girdileri; patlama için gerçek Three.js raycast kullanan sentetik duvar/asker konumları; kamera için gerçek kapı AABB üzerinde yardımcı fonksiyon testi. BUG29 atış anı kimliği ve Arena sınıf değişimini kontrol eder, tam uçuş/ordu isabet zinciri ayrıca kabul ister.
 - İlk GitHub Actions sonucu henüz doğrulanmadı. Hedefli kabul açık; tam insan oynanışı ve donanım performansı yerine geçmez.
+
+## QA03 — İlk hedefli test sonucu ve taktik harita düzeltmesi
+- [45840026111](https://github.com/zxc28tarik/killtheking/actions/runs/45840026111): 15/15 hedefli mekanik kontrol PASS; genel sonuç FAIL (meydan ve kuşatmada `Cannot access 'player' before initialization`).
+- Kök neden: `drawArmyTacticalMap` fonksiyonunda `const player=armyMapCanvas(player.pos.x,player.pos.z)` yerel isim gölgelemesi (TDZ). Yerel değişken `playerMarker` olarak yeniden adlandırıldı. İki kanonik HTML aynı blob ile güncellendi. BUG22 testine doğrudan taktik harita çizimi çağrısı eklendi, sayfa hata yığınları korunuyor.
+- Yeni commit üzerinde hedefli Chromium ve genel regresyon sonuçları henüz doğrulanmadı; kabul açık.
