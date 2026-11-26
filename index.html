@@ -13041,25 +13041,33 @@ const KTKCalmUIV25=(()=>{
             return arenaWorldBlockBetween(origin,point)?null:point;
         }
 
-        // Check if player hit an explosive barrel along ray
-        function checkBarrelHit(maxDist, origin=playerAttackOrigin(), dir=playerAttackDirection()) {
-            raycaster.set(origin, dir);
-            raycaster.near = 0.01;
-            raycaster.far = maxDist;
-            const barrelMeshes = [];
+        // BUG15: compare all physical contacts before applying any damage.
+        function nearestMusketImpact(maxDist, origin=playerAttackOrigin(), dir=playerAttackDirection()) {
+            const targets = [...worldMeshes];
+            const worldSet = new Set(worldMeshes);
             barrels.forEach(b => {
-                if (b.active) b.group.traverse(c => { if (c.isMesh) barrelMeshes.push(c); });
+                if (b.active) b.group.traverse(c => { if (c.isMesh) targets.push(c); });
             });
-            const hits = raycaster.intersectObjects(barrelMeshes, false);
-            if (hits.length > 0) {
-                const barrel = barrels[hits[0].object.userData.barrelIndex];
-                if (barrel && !arenaWorldBlockBetween(origin, hits[0].point)) {
-                    triggerHitmarker(false);
-                    triggerBarrelExplosion(barrel);
-                    return true;
-                }
-            }
-            return false;
+            if(!meadowBattleMode)bots.filter(b => !b.dead).forEach(b => b.mesh.traverse(c => {
+                if(c.isMesh && c.userData.hitZone !== 'ignore')targets.push(c);
+            }));
+            raycaster.set(origin,dir);
+            raycaster.near=0.01;
+            raycaster.far=maxDist;
+            const hit=raycaster.intersectObjects(targets,false)[0]||null;
+            const armyHit=meadowBattleMode&&meadowBattleState?
+                ArenaArmyBattle.raycastSoldier(meadowBattleState,origin,dir,maxDist,'blue',
+                    {firstBody:true,returnFriendly:true}):null;
+            // World/mesh contact wins ties; a friendly soldier also absorbs a shot.
+            if(armyHit&&(!hit||armyHit.distance<hit.distance))
+                return {kind:armyHit.soldier.team==='blue'?'friendly':'army',hit:armyHit};
+            if(!hit)return null;
+            if(worldSet.has(hit.object))return {kind:'world',hit};
+            const barrel=barrels[hit.object.userData.barrelIndex];
+            if(barrel&&barrel.active)return {kind:'barrel',barrel,hit};
+            const bot=bots[hit.object.userData.botIndex];
+            if(bot&&!bot.dead)return {kind:'bot',bot,hit};
+            return {kind:'world',hit};
         }
 
         // Ordered sampled blade contact: world, active barrels and living bots
@@ -13272,35 +13280,18 @@ const KTKCalmUIV25=(()=>{
                 // Volumetric lingering black-powder smoke cloud
                 spawnSmokeCloud(meadowBattleMode?origin.clone().addScaledVector(dir,5):origin,dir,meadowBattleMode?8:22,meadowBattleMode?1.0:3.0);
 
-                if (!checkBarrelHit(cls.range,origin,dir)) {
-                    if(meadowBattleMode&&meadowBattleState){
-                        const armyImpact=ArenaArmyBattle.raycastSoldier(
-                            meadowBattleState,origin,dir,cls.range,'blue',{firstBody:true});
-                        if(armyImpact&&!arenaWorldBlockBetween(origin,
-                           new THREE.Vector3(armyImpact.point.x,armyImpact.point.y,armyImpact.point.z)))
-                            playerHitArmySoldier(armyImpact,
-                                ArenaWeaponBalance.damage('musket',armyImpact.zone),cls.weaponName);
-                    }else{
-                    raycaster.set(origin,dir);
-                    raycaster.near = 0.01;
-                    raycaster.far = cls.range;
-                    const botMeshes = [];
-                    bots.filter(b => !b.dead).forEach(b => b.mesh.traverse(c => {
-                        if (c.isMesh && c.userData.hitZone !== 'ignore') botMeshes.push(c);
-                    }));
-                    const hits = raycaster.intersectObjects(botMeshes, false);
-
-                    if (hits.length > 0 && !arenaWorldBlockBetween(origin, hits[0].point)) {
-                        const hit = hits[0];
-                        const bot = bots[hit.object.userData.botIndex];
-                        const zone = ArenaWeaponBalance.zoneFromMesh(
-                            hit.object, hit.point.y, bot ? bot.mesh.position.y : 0);
-                        if (bot) {
-                            damageBot(bot, ArenaWeaponBalance.damage('musket',zone),
-                                zone === 'head', cls.weaponName, '', hit.point);
-                        }
-                    }
-                    }
+                const impact=nearestMusketImpact(cls.range,origin,dir);
+                if(impact?.kind==='barrel'){
+                    triggerHitmarker(false);
+                    triggerBarrelExplosion(impact.barrel);
+                }else if(impact?.kind==='army'){
+                    playerHitArmySoldier(impact.hit,
+                        ArenaWeaponBalance.damage('musket',impact.hit.zone),cls.weaponName);
+                }else if(impact?.kind==='bot'){
+                    const {bot,hit}=impact;
+                    const zone=ArenaWeaponBalance.zoneFromMesh(hit.object,hit.point.y,bot.mesh.position.y);
+                    damageBot(bot,ArenaWeaponBalance.damage('musket',zone),
+                        zone==='head',cls.weaponName,'',hit.point);
                 }
 
                 setTimeout(() => {
@@ -14492,6 +14483,29 @@ const KTKCalmUIV25=(()=>{
             return 0;
         }
 
+        // BUG16: overhead contact uses the same physical footprint as XZ motion.
+        function playerCeilingLimit(x,z,head,radius,solids) {
+            let limit=Infinity;
+            for(const c of solids){
+                if(x+radius<=c.minX||x-radius>=c.maxX||z+radius<=c.minZ||z-radius>=c.maxZ)continue;
+                if(c.minY<head-0.001||c.maxY<=head)continue;
+                limit=Math.min(limit,c.minY-0.0001);
+            }
+            return limit;
+        }
+
+        function adjustPlayerHeight(nextHeight) {
+            const current=player.currentHeight;
+            const feet=player.pos.y-current;
+            if(nextHeight>current){
+                const ceiling=playerCeilingLimit(player.pos.x,player.pos.z,player.pos.y,player.radius,colliders);
+                nextHeight=Math.min(nextHeight,Math.max(current,ceiling-feet));
+            }
+            // Keep feet fixed during crouch/stand transitions, including mid-air.
+            player.currentHeight=nextHeight;
+            player.pos.y=feet+nextHeight;
+        }
+
         function resolvePlayerCollisions(dt) {
             const rad = player.radius;
             const h = player.currentHeight;
@@ -14513,24 +14527,34 @@ const KTKCalmUIV25=(()=>{
             if (swept.hitX || terrain.hitX) player.vel.x = 0;
             if (swept.hitZ || terrain.hitZ) player.vel.z = 0;
 
-            player.pos.y += player.vel.y * dt;
-            let floorY = getRampHeightAt(player.pos.x, player.pos.z);
-
-            for (const c of colliders) {
-                if (player.pos.x + rad > c.minX && player.pos.x - rad < c.maxX &&
-                    player.pos.z + rad > c.minZ && player.pos.z - rad < c.maxZ) {
-                    if (player.pos.y - h >= c.maxY - 1.15 && player.vel.y <= 0) {
-                        floorY = Math.max(floorY, c.maxY);
-                    }
+            const previousHead=player.pos.y;
+            const previousFoot=previousHead-h;
+            const verticalVelocity=player.vel.y;
+            let nextHead=previousHead+verticalVelocity*dt;
+            if(verticalVelocity>0){
+                const ceiling=playerCeilingLimit(player.pos.x,player.pos.z,previousHead,rad,colliders);
+                if(nextHead>=ceiling){
+                    nextHead=Math.max(previousHead,ceiling);
+                    player.vel.y=0;
                 }
             }
+            player.pos.y=nextHead;
+            let floorY=getRampHeightAt(player.pos.x,player.pos.z);
 
-            if (player.pos.y - h <= floorY) {
-                player.pos.y = floorY + h;
-                player.vel.y = 0;
-                player.onGround = true;
-            } else {
-                player.onGround = false;
+            // Descending sweep catches thin platforms even if a fast fall crosses them.
+            if(verticalVelocity<=0)for(const c of colliders){
+                if(player.pos.x+rad>c.minX&&player.pos.x-rad<c.maxX&&
+                   player.pos.z+rad>c.minZ&&player.pos.z-rad<c.maxZ&&
+                   previousFoot>=c.maxY-1.15){
+                    floorY=Math.max(floorY,c.maxY);
+                }
+            }
+            if(player.pos.y-h<=floorY){
+                player.pos.y=floorY+h;
+                player.vel.y=0;
+                player.onGround=true;
+            }else{
+                player.onGround=false;
             }
 
             // Check Jump Pads in Courtyard
@@ -14843,7 +14867,7 @@ const KTKCalmUIV25=(()=>{
                 const wantsSlide = keys['ShiftLeft'] || keys['ShiftRight'] || keys['KeyC'];
                 player.isSliding = wantsSlide;
                 const targetHeight = wantsSlide ? player.crouchHeight : player.standHeight;
-                player.currentHeight = THREE.MathUtils.lerp(player.currentHeight, targetHeight, dt * 14);
+                adjustPlayerHeight(THREE.MathUtils.lerp(player.currentHeight, targetHeight, dt * 14));
 
                 const forward = frameForward.set(0,0,-1).applyAxisAngle(frameUp,player.yaw);
                 const right = frameRight.set(1,0,0).applyAxisAngle(frameUp,player.yaw);

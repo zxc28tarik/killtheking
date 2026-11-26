@@ -16,7 +16,7 @@ ctx.player={pos:new V(10,10.35,20),currentHeight:2.35,isThirdPerson:true};
 ctx.camera={position:new V(10.65,11,24.2),quaternion:new ctx.THREE.Quaternion()};
 let blocked=false,los=[];
 ctx.arenaWorldBlockBetween=(a,b)=>{los.push([a.clone(),b.clone()]);return blocked};
-const helpers=html.slice(html.indexOf('function playerAttackOrigin()'),html.indexOf('// Check if player hit an explosive barrel along ray'));
+const helpers=html.slice(html.indexOf('function playerAttackOrigin()'),html.indexOf('// BUG15: compare all physical contacts before applying any damage.'));
 const h=runInNewContext(helpers+'\n({playerAttackOrigin,playerAttackDirection,shieldBashPoint})',ctx);
 const xyz=v=>[v.x,v.y,v.z];
 test('BUG11 origin is physical player in both viewpoints and is a copy',()=>{
@@ -30,12 +30,12 @@ test('BUG11 origin is physical player in both viewpoints and is a copy',()=>{
 });
 test('BUG11 actual dagger and barrel casts use shared origin',()=>{
  const rays=[];
- ctx.worldMeshes=[];ctx.bots=[];ctx.barrels=[];
+ ctx.worldMeshes=[];ctx.bots=[];ctx.barrels=[];ctx.meadowBattleMode=false;ctx.meadowBattleState=null;
  ctx.raycaster={set:(o,d)=>rays.push([o.clone(),d.clone()]),intersectObjects:()=>[]};
  ctx.ArenaMeleeContact={selectContact:({castRay})=>castRay(0,5.2)};
- const start=html.indexOf('function checkBarrelHit('),end=html.indexOf('// Physical weapon hits against instanced',start);
- const actions=runInNewContext(html.slice(start,end)+'\n({checkBarrelHit,arenaPlayerMeleeContact})',ctx);
- assert.equal(actions.checkBarrelHit(90),false);
+ const start=html.indexOf('function nearestMusketImpact('),end=html.indexOf('// Physical weapon hits against instanced',start);
+ const actions=runInNewContext(html.slice(start,end)+'\n({nearestMusketImpact,arenaPlayerMeleeContact})',ctx);
+ assert.equal(actions.nearestMusketImpact(90),null);
  assert.equal(actions.arenaPlayerMeleeContact('dagger',5.2),null);
  assert.equal(rays.length,2);
  for(const [o] of rays)assert.deepEqual(xyz(o),xyz(ctx.player.pos));
@@ -60,9 +60,9 @@ test('BUG11/12 live attack paths route through corrected helpers and canonical H
  const primary=html.slice(html.indexOf('function performPrimaryAttack()'),html.indexOf('function releaseChargedBow()'));
  const bow=html.slice(html.indexOf('function releaseChargedBow()'),html.indexOf('function startReload()'));
  const quick=html.slice(html.indexOf('function performQuickAbilityOrMelee()'),html.indexOf('function performPrimaryAttack()'));
- assert.match(primary,/checkBarrelHit\(cls.range,origin,dir\)/);
- assert.match(primary,/meadowBattleState,origin,dir,cls.range/);
- assert.match(primary,/raycaster.set\(origin,dir\)/);
+ assert.match(primary,/nearestMusketImpact\(cls.range,origin,dir\)/);
+ assert.match(html,/ArenaArmyBattle.raycastSoldier\(meadowBattleState,origin,dir,maxDist/);
+ assert.match(html,/raycaster.set\(origin,dir\)/);
  assert.match(bow,/arrowGroup.position.copy\(origin\)/);
  assert.match(quick,/shieldBashPoint\(\{x:unit.x,y:/);
  assert.match(quick,/shieldBashPoint\(bot.mesh.position/);
