@@ -23,3 +23,9 @@
 
 ## Son durum
 10/10 kod düzeltmesi main dalında. 31 inline klasik JavaScript bloğu sözdizimi kontrolünden geçti (e3fa2da); gerçek WebGL/tarayıcı kabulü henüz yapılmadı. BUG29 için atış anındaki silah ve konum saklanır; BUG30 için gerçek bölük ve bireysel oyuncu verileri ayrı etiketlenir.
+
+## QA01 — Ana dal genel regresyon doğrulaması
+- Doğrulanan oyun commit'i: `f433919c8e0bc0b11ad79315fdea02c047c15cb0`.
+- [Browser game checks #45834008773](https://github.com/zxc28tarik/killtheking/actions/runs/45834008773): 263/263 regresyon testi başarılı, 0 hata, 0 atlanan test. BUG23 sınır testi dahil. Inline HTML sözdizimi ve kanonik HTML eşitliği başarılı; SHA-256 `d3973858106933829928193ca2e6c3fb837c95a3a5e9dead49b2e8f09fd76931`.
+- [UI32 full-screen menu acceptance #45834008901](https://github.com/zxc28tarik/killtheking/actions/runs/45834008901): Chromium/Playwright, 1920/1366/390 genişliklerinde gerçek harita/sınıf seçimleri, Arena/meydan/kuşatma maç başlangıçları ve canlı simülasyon ilerlemesi başarılı; sayfa hatası yok.
+- Bu sonuçlar genel entegrasyon kabulüdür; BUG21–30'un her birinin hedefli gerçek tarayıcı senaryosu değildir. BUG21–30 hedefli kabul maddeleri açık kalır. Yazılım WebGL tanılama FPS değerleri gerçek GPU performans kabulü sayılmaz.
