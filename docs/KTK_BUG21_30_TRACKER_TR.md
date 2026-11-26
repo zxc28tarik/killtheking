@@ -12,11 +12,14 @@
 | BUG26 | Üçüncü şahıs kamerası duvarlardan geçiyor | Kod düzeltildi, 5 geometrik birim kontrolü geçti; tarayıcı kabulü bekliyor | fbf83e8 |
 | BUG27 | Fıçı patlamaları gerçek orduya hasar vermiyor | Kod düzeltildi, tarayıcı kabulü bekliyor | 5051726 |
 | BUG28 | Patlamalar duvar arkasına hasar veriyor | Kod düzeltildi, 5 hasar hesabı kontrolü geçti; tarayıcı kabulü bekliyor | 5051726 |
-| BUG29 | Havadaki okun silah kimliği sınıf değişiminde yanlışlaşıyor | Açık | — |
-| BUG30 | Ordu savaşlarında eski Arena skorları gösteriliyor | Açık | — |
+| BUG29 | Havadaki okun silah kimliği sınıf değişiminde yanlışlaşıyor | Kod düzeltildi, tarayıcı kabulü bekliyor | e3fa2da |
+| BUG30 | Ordu savaşlarında eski Arena skorları gösteriliyor | Kod düzeltildi, sentetik sıralama kontrolü geçti; tarayıcı kabulü bekliyor | e3fa2da |
 
 ## Kabul koşulları
 - BUG21–24: kuşatma kapısı ve harita geçişleri, taktik harita fare girişleri, meydan sınırları, odak kaybı.
 - BUG25–26: C/O bağımsızlığı, kapalı/açık alanda kamera, köşeler ve rampalar.
 - BUG27–30: gerçek ordu hasar yolu, patlama görüş hattı, ok fırlatma anındaki silah kimliği, modlara uygun skor kaynağı.
 - Bot karar mantığına ve görsellere dokunulmaz. Gerçek tarayıcı kabulü yapılmadan tam doğrulandı denmez.
+
+## Son durum
+10/10 kod düzeltmesi main dalında. 31 inline klasik JavaScript bloğu sözdizimi kontrolünden geçti (e3fa2da); gerçek WebGL/tarayıcı kabulü henüz yapılmadı. BUG29 için atış anındaki silah ve konum saklanır; BUG30 için gerçek bölük ve bireysel oyuncu verileri ayrı etiketlenir.
