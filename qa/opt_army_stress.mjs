@@ -158,9 +158,11 @@ for(const scenario of cases){
  for(let i=0;i<5;i++){update(old);update(fresh);}
  sameVisibleTransforms(old,fresh,scenario);
  const oldWrites=countsFor(old),newWrites=countsFor(fresh);
- assert.equal(oldWrites.soldier,old.allMeshes.length*140);
+ // Role batches contain 35 soldiers each, not 140 in every batch.
+ const rigMeshesPerActor=base.PART_NAMES.length*2;
+ assert.equal(oldWrites.soldier,rigMeshesPerActor*140);
  assert.equal(oldWrites.arrow,96);
- assert.equal(newWrites.soldier,fresh.allMeshes.length*(140-scenario.dead));
+ assert.equal(newWrites.soldier,rigMeshesPerActor*(140-scenario.dead));
  assert.equal(newWrites.arrow,scenario.arrows);
  assert.equal(old.monitor.motionUpdates,fresh.monitor.motionUpdates);
  const order=results.length%2===0?[['before',old],['after',fresh]]:[['after',fresh],['before',old]];
