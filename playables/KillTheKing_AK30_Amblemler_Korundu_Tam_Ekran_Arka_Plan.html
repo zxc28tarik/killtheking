@@ -10313,6 +10313,8 @@ const KTKCalmUIV25=(()=>{
         const nativeSiegeGateMesh=nativeSiegeMesh(nativeSiegeParts,
           0,3.5,-42,16,7,5,nativeSiegeGateMat);
         const v19SiegeDressing=KTKBattlefieldVisualV19.dressSiegeGate(THREE,nativeSiegeParts,nativeSiegeGateMesh);
+        // OPT12: capture only the known V19 decorative children, before V20 or any gameplay changes.
+        const siegeV19GateDecor=new Set(nativeSiegeGateMesh.children);
         window.ktkSiegeVisualV19Status=()=>({...v19SiegeDressing,gateVisible:nativeSiegeGateMesh.visible,groupVisible:nativeSiegeParts.visible});
         // A forest and earth outside the original walled courtyard now
         // provide an actual visible attack approach, rather than empty void.
@@ -10512,6 +10514,31 @@ const KTKCalmUIV25=(()=>{
         // original physical meshes, original shading and independent arm animation.
         const siegeRigidBatchStats=batchSiegeStaticVisuals(THREE,nativeSiegeRigidParts,12);
         window.ktkSiegeRigidBatchStatus=()=>({...siegeRigidBatchStats});
+        // OPT12: reuse the tested local-space batcher for explicitly cosmetic
+        // V19/V20 boxes. Every parent retains its own motion/visibility authority.
+        // No original native solid, rotating arm itself, wheel, banner or rut is selected.
+        function batchSiegeCosmeticBoxes(THREE,roots,v19GateDecor){
+            const sections=roots.map(root=>({
+                root,allow:new Set(root.children.filter(m=>
+                    m.name==='KTK_VIS20_COSMETIC_NO_COLLIDER'||v19GateDecor.has(m)))
+            }));
+            const originals=new Set(roots.flatMap(root=>root.children.slice()));
+            const stats=batchSiegeStaticVisuals(THREE,sections,24);
+            for(const root of roots)for(const child of root.children){
+                if(!originals.has(child)&&child.name==='OPT06 static siege regional visual'){
+                    child.name='OPT12 siege cosmetic regional visual';
+                    // No new projectile or recursive raycast target. Source meshes
+                    // retain their exact object identities and original side flags.
+                    child.raycast=()=>{};
+                }
+            }
+            return stats;
+        }
+        const siegeCosmeticBatchStats=batchSiegeCosmeticBoxes(THREE,[
+            nativeSiegeParts,nativeSiegeGateMesh,nativeSiegeRam,
+            nativeSiegeCatapult,nativeSiegeTower,nativeSiegeArm
+        ],siegeV19GateDecor);
+        window.ktkSiegeCosmeticBatchStatus=()=>({...siegeCosmeticBatchStats});
         let nativeSiegeDefenseSpawnIntrusions=null;
         // AK27: this is a siege-specific commander over ORIGINAL red G5.4
         // captains, never a separate battle, soldier pool or combat model.
