@@ -63,8 +63,10 @@ try {
     visual.update(state,1/60);syncArmyArrowDrawCount();
     const counters={...visual.performance()};
     const deadCount=state.soldiers.filter(s=>!s.alive).length;
-    const shouldSkip=c.role?visual.roles[c.role].batches:
-      deadCount===140?visual.drawBatches-1:0;
+    // G5.4 roster order is role-grouped. A prefix casualty may eliminate
+    // entire roles before every soldier is dead; derive from actual survivors.
+    const shouldSkip=Object.entries(visual.roles).reduce((sum,[type,role])=>
+      sum+(state.soldiers.some(u=>u.alive&&u.type===type)?0:role.batches),0);
     if(counters.alive!==140-deadCount||
        counters.hiddenSoldiersSkipped!==deadCount||
        counters.arrowMatricesWritten!==c.arrows||
