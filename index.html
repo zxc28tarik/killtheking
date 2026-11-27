@@ -8,7 +8,7 @@
         /* UI33: parsed before any engine script or legacy markup. A descendant
            cannot undo display:none, unlike inherited visibility:hidden. */
         #menu-overlay:not([data-ui32-ready]),#menu-overlay.hidden,
-        #menu-overlay>#ktk-original-menu{display:none!important}
+        #ktk-engine-menu-bindings{display:none!important}
         #ktk-ui32-loading{position:fixed;inset:0;z-index:999998;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;background:#172125;color:#f6e9cc;font:600 15px system-ui,sans-serif;text-align:center;pointer-events:auto}
         #ktk-ui32-loading strong{font:700 clamp(24px,5vw,42px) Georgia,serif;letter-spacing:.07em}
         body:has(#menu-overlay[data-ui32-ready="true"])>#ktk-ui32-loading,
@@ -565,119 +565,41 @@ window.addEventListener('error', function(event) {
 
     <!-- ==================== START / PAUSE MENU OVERLAY (v3.0 HD) ==================== -->
     <div id="menu-overlay" class="fixed inset-0 z-30 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
-        <div id="ktk-original-menu" style="display:none!important" class="max-w-5xl w-full bg-slate-900/95 border-2 border-amber-500/60 rounded-xl shadow-2xl p-5 sm:p-7 flex flex-col gap-5 my-auto">
-            
-            <!-- Header -->
-            <div class="flex flex-col sm:flex-row justify-between items-center border-b border-white/10 pb-4 gap-3">
-                <div class="text-center sm:text-left">
-                    <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2.5">
-                        <h1 class="text-3xl sm:text-5xl font-black italic tracking-wider text-white krunker-title">
-                            KRUNKER <span class="text-amber-400">1600</span>
-                        </h1>
-                        <span class="bg-amber-500 text-slate-950 text-xs font-black px-2.5 py-1 rounded border border-black uppercase tracking-wider">
-                            HD KARAKTER v3.5 · VURUŞ HİSSİ v1
-                        </span>
-                        <span class="bg-sky-500 text-slate-950 text-xs font-extrabold px-2.5 py-1 rounded border border-black uppercase tracking-wider">
-                            [P] 3. ŞAHIS (TPS) GÖRÜNÜMÜ
-                        </span>
-                    </div>
-                    <p class="text-gray-300 text-xs sm:text-sm mt-1">
-                        Pelerinli Şövalyeler, Tüylü Şapkalı &amp; Barutluk Kuşaklı 1600 Tüfekçileri, Morion Miğferli Piyadeler ve Sadaklı Okçular!
-                    </p>
-                </div>
-
-                <!-- Atmosphere & Sensitivity Controls -->
-                <div class="flex flex-wrap sm:flex-nowrap items-center gap-2.5">
-                    <div class="bg-slate-800/90 border border-white/10 rounded-lg px-3.5 py-2 flex flex-col gap-1">
-                        <span class="text-[11px] font-bold text-amber-400 uppercase">ATMOSFER / IŞIK ([H] TUŞU)</span>
-                        <div class="flex gap-1.5">
-                            <button onclick="setAtmosphere(0)" id="atmo-btn-0" class="px-2.5 py-1 rounded text-xs font-extrabold bg-amber-500 text-slate-950 cursor-pointer">🌅 Gün Batımı</button>
-                            <button onclick="setAtmosphere(1)" id="atmo-btn-1" class="px-2.5 py-1 rounded text-xs font-extrabold bg-slate-700 text-gray-200 cursor-pointer">☀️ Öğle</button>
-                            <button onclick="setAtmosphere(2)" id="atmo-btn-2" class="px-2.5 py-1 rounded text-xs font-extrabold bg-slate-700 text-gray-200 cursor-pointer">🌙 Gece</button>
-                        </div>
-                    </div>
-
-                    <div class="bg-slate-800/90 border border-white/10 rounded-lg px-4 py-2.5 flex flex-col gap-1 min-w-[185px]">
-                        <div class="flex justify-between text-xs font-bold text-gray-300">
-                            <span>HASSASİYET</span>
-                            <span id="sens-value" class="text-amber-400">1.0x</span>
-                        </div>
-                        <input id="sens-slider" type="range" min="0.3" max="2.5" step="0.1" value="1.0" class="accent-amber-500 cursor-pointer w-full">
-                    </div>
-                </div>
-            </div>
-
-            <!-- Offline, persisted game preferences; no extra game dependency. -->
-            <div id="arena-settings-controls" class="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3 rounded-lg bg-slate-950/60 border border-white/10">
-                <label class="flex flex-col gap-1 text-xs font-extrabold text-sky-200 krunker-text">
-                    SES SEVİYESİ: <span id="arena-volume-value" class="text-white">80%</span>
-                    <input id="arena-volume-slider" type="range" min="0" max="100" step="5" value="80" class="accent-amber-500 cursor-pointer">
-                </label>
-                <label class="flex flex-col gap-1 text-xs font-extrabold text-sky-200 krunker-text">
-                    GRAFİK KALİTESİ
-                    <select id="arena-quality-select" class="bg-slate-800 text-white border border-slate-500 rounded px-2 py-2">
-                        <option value="high">YÜKSEK (ÖNERİLEN)</option>
-                        <option value="medium">ORTA</option>
-                        <option value="low">DÜŞÜK</option>
-                    </select>
-                </label>
-                <label class="flex items-center gap-2 text-xs font-extrabold text-sky-200 krunker-text cursor-pointer">
-                    <input id="arena-low-motion" type="checkbox" class="accent-amber-500 w-4 h-4">
-                    KAMERA SARSINTISINI AZALT
-                </label>
-            </div>
-
-            <!-- Independent arena selection; preserve the original castle by default. -->
-            <div id="arena-map-controls" class="match-duration-picker" role="group" aria-label="Harita seçimi">
-                <strong>HARİTA</strong>
-                <button type="button" data-arena-map="castle" aria-pressed="true" class="selected">🏰 KALE (ORİJİNAL)</button>
-                <button type="button" data-arena-map="meadow" aria-pressed="false">🌿 300× ÇİMENLİK MEYDAN</button>
-                <button type="button" id="native-siege-start" aria-pressed="false">🏰 KUŞATMA KALESİ</button>
-                <span id="arena-map-hint" class="match-duration-help">Orijinal kale, surlar ve rampalar</span>
-            </div>
-
-            <!-- Game mode can only change from the main menu, never during a round. -->
-            <div id="match-mode-controls" class="match-duration-picker" role="group" aria-label="Oyun modu">
-                <strong>OYUN MODU</strong>
-                <button type="button" data-arena-mode="ffa" class="selected" aria-pressed="true">SERBEST ARENA (FFA)</button>
-                <button type="button" data-arena-mode="tdm" aria-pressed="false">TAKIM SAVAŞI (4v3)</button>
-                <span id="match-mode-hint" class="match-duration-help">6 bağımsız bot • Herkes herkese karşı</span>
-            </div>
-
-            <!-- Additional battlefield demo, independent of FFA / TDM. -->
-            <div id="meadow-army-controls" class="match-duration-picker" role="group" aria-label="Meydan savaşı denemesi">
-                <strong>BOT KOMUTANLI MEYDAN SAVAŞI</strong>
-                <button type="button" id="meadow-army-demo-btn" aria-pressed="false">⚔️ HER İKİ TARAFTA 70 ASKER — BİRLİĞİNİ YÖNET</button>
-                <span class="match-duration-help">Mavi ve kırmızı orduların HER BİRİNDE 10 tüfekçi + 25 mızrakçı + 15 okçu + 20 kılıçlı bulunur. Sen mavi orduda seçtiğin sınıfın askerlerine komuta edersin; diğer 7 bölüğü bot komutanlar yönetir. Okçu ve tüfekçiler ortak savunma ateşi kurar; mızrakçılar korur, kılıçlılar tehditleri karşılar.</span>
-                <div class="match-duration-help" style="color:#fcd34d">SENİN BİRLİĞİN: <strong id="meadow-army-selected-class">Seçilen sınıf</strong> · Yukarıdaki sınıf kartlarından seç.</div>
-            </div>
-            <!-- Duration applies to the next round; changing it mid-round is disabled. -->
-            <div class="match-duration-picker" id="match-duration-controls" role="group" aria-label="Maç süresi seçimi">
-                <strong>MAÇ SÜRESİ</strong>
-                <button type="button" data-duration-seconds="120" aria-pressed="false">02:00</button>
-                <button type="button" data-duration-seconds="240" aria-pressed="true" class="selected">04:00 • VARSAYILAN</button>
-                <button type="button" data-duration-seconds="480" aria-pressed="false">08:00</button>
-                <span class="match-duration-help">6 bot • Herkes herkese karşı • Maç sırasında kilitli</span>
-            </div>
-
-            <!-- Controls Guide & Play CTA -->
-            <div class="flex flex-col md:flex-row justify-between items-center gap-4 bg-slate-950/80 p-4 rounded-xl border border-white/10">
-                <div class="grid grid-cols-2 sm:grid-cols-3 gap-x-5 gap-y-1.5 text-xs sm:text-sm text-gray-300">
-                    <div><strong class="text-amber-400">WASD + SPACE:</strong> Hareket &amp; Zıpla</div>
-                    <div><strong class="text-sky-400">SHIFT / C:</strong> Kayma (Slide-Hop!)</div>
-                    <div><strong class="text-amber-400">SOL TIK:</strong> Ateş / Yay Ger / Kılıç</div>
-                    <div><strong class="text-emerald-400">SAĞ TIK:</strong> Kalkan / Hücum / Zoom</div>
-                    <div><strong class="text-rose-400">F veya V:</strong> Süngü / Kalkan Çarpması</div>
-                    <div><strong class="text-amber-400">[P] &amp; [H]:</strong> 3. Şahıs Karakter &amp; Atmosfer</div>
-                    <div><strong class="text-sky-400">[TAB]:</strong> Basılı tut: canlı sıralama</div>
-                </div>
-
-                <button id="play-btn" class="w-full md:w-auto px-8 py-4 bg-gradient-to-b from-amber-400 to-amber-600 hover:from-amber-300 hover:to-amber-500 text-slate-950 font-black text-xl rounded-lg shadow-[0_0_25px_rgba(245,158,11,0.55)] border-2 border-amber-200 tracking-wider uppercase transition transform active:scale-95 cursor-pointer">
-                    OYUNA GİR (BAŞLA)
-                </button>
-            </div>
-
+    </div>
+    <!-- UI34: engine bindings only. The obsolete menu markup is removed.
+         These minimal controls retain the native engine's IDs and events for
+         runtime and automated tests; no legacy panel, branding or layout. -->
+    <div id="ktk-engine-menu-bindings" hidden inert aria-hidden="true" style="display:none!important">
+        <button id="atmo-btn-0" type="button" onclick="setAtmosphere(0)">Akşam</button>
+        <button id="atmo-btn-1" type="button" onclick="setAtmosphere(1)">Gündüz</button>
+        <button id="atmo-btn-2" type="button" onclick="setAtmosphere(2)">Gece</button>
+        <input id="sens-slider" type="range" min="0.3" max="2.5" step="0.1" value="1.0"><output id="sens-value">1.0x</output>
+        <div id="arena-settings-controls">
+            <input id="arena-volume-slider" type="range" min="0" max="100" step="5" value="80"><output id="arena-volume-value">80%</output>
+            <select id="arena-quality-select"><option value="high">Yüksek</option><option value="medium">Orta</option><option value="low">Düşük</option></select>
+            <input id="arena-low-motion" type="checkbox">
         </div>
+        <div id="arena-map-controls">
+            <button type="button" data-arena-map="castle" aria-pressed="true" class="selected">Arena</button>
+            <button type="button" data-arena-map="meadow" aria-pressed="false">Meydan</button>
+            <button type="button" id="native-siege-start" aria-pressed="false">Kuşatma</button>
+            <output id="arena-map-hint"></output>
+        </div>
+        <div id="match-mode-controls">
+            <button type="button" data-arena-mode="ffa" aria-pressed="true" class="selected">FFA</button>
+            <button type="button" data-arena-mode="tdm" aria-pressed="false">TDM</button>
+            <output id="match-mode-hint"></output>
+        </div>
+        <div id="meadow-army-controls">
+            <button type="button" id="meadow-army-demo-btn" aria-pressed="false">Meydan Savaşı</button>
+            <output id="meadow-army-selected-class"></output>
+        </div>
+        <div id="match-duration-controls">
+            <button type="button" data-duration-seconds="120" aria-pressed="false">02:00</button>
+            <button type="button" data-duration-seconds="240" aria-pressed="true" class="selected">04:00</button>
+            <button type="button" data-duration-seconds="480" aria-pressed="false">08:00</button>
+        </div>
+        <button id="play-btn" type="button">Savaşa Başla</button>
     </div>
 
     <script>
@@ -16966,7 +16888,6 @@ const KTKCalmUIV25=(()=>{
           const styleSource=`
 /* UX26 – typographic navigation, no stacks of boxed-up descriptions. */
 body.ktk-calm-ui #menu-overlay{background:radial-gradient(ellipse at 50% 0%,rgba(48,70,67,.25),transparent 62%),#0a1115!important;backdrop-filter:blur(8px)!important;color:#edf1ee!important}
-body.ktk-calm-ui #menu-overlay>#ktk-original-menu{display:none!important}
 body.ktk-calm-ui #menu-overlay>#focus-menu{width:min(930px,100%);max-width:930px;max-height:calc(100dvh - 24px);overflow-y:auto;margin:auto;padding:clamp(22px,4.4vw,52px);background:transparent!important;border:0!important;box-shadow:none!important;border-radius:0!important;scrollbar-color:#566864 transparent;font:400 15px/1.5 system-ui,-apple-system,'Segoe UI',sans-serif!important;color:#e7ebe8!important}
 body.ktk-calm-ui #menu-overlay #focus-menu *{box-sizing:border-box;text-shadow:none!important}
 
@@ -17015,9 +16936,8 @@ body.ktk-calm-ui #menu-overlay #focus-menu .fm-hint{font:500 11px/1.5 system-ui,
           function install(){
             const overlay=document.getElementById('menu-overlay');
             if(!overlay||document.getElementById('focus-menu'))return false;
-            const original=overlay.firstElementChild;
+            const original=document.getElementById('ktk-engine-menu-bindings');
             if(!original||!document.getElementById('play-btn'))return false;
-            original.id='ktk-original-menu';
             const panel=document.createElement('section');panel.id='focus-menu';
             panel.setAttribute('aria-label','Kill the King ana menüsü');
             panel.innerHTML=`
@@ -17060,7 +16980,7 @@ body.ktk-calm-ui #menu-overlay #focus-menu .fm-hint{font:500 11px/1.5 system-ui,
             const nativePlay=document.getElementById('play-btn');
             panel.querySelector('#fm-start-wrap').appendChild(nativePlay);
             const style=document.createElement('style');style.id='ktk-focus-menu-style';style.textContent=styleSource;document.head.appendChild(style);
-            const old=(selector)=>document.querySelector('#ktk-original-menu '+selector);
+            const old=(selector)=>original.querySelector(selector);
             const isPressed=(el)=>!!el&&el.getAttribute('aria-pressed')==='true';
             function mapChoice(){
               if(isPressed(old('#native-siege-start')))return 'siege';
@@ -17523,7 +17443,6 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden}
 body #menu-overlay#menu-overlay#menu-overlay.hidden{display:none!important;visibility:hidden!important;pointer-events:none!important}
 body #menu-overlay#menu-overlay#menu-overlay:not(.hidden)[data-ui32-ready]{visibility:visible!important;display:block!important;position:fixed!important;inset:0!important;width:100vw!important;height:100dvh!important;max-width:none!important;max-height:none!important;margin:0!important;padding:0!important;overflow:auto!important;isolation:isolate!important;background:#172125!important;backdrop-filter:none!important}
 body #menu-overlay#menu-overlay#menu-overlay::before,body #menu-overlay#menu-overlay#menu-overlay::after{display:none!important;content:none!important}
-body #menu-overlay #ktk-original-menu{display:none!important}
 body #menu-overlay#menu-overlay#menu-overlay>#focus-menu{position:relative!important;display:flex!important;flex-direction:column!important;align-items:stretch!important;justify-content:flex-start!important;width:100%!important;max-width:none!important;min-height:100dvh!important;max-height:none!important;margin:0!important;padding:0!important;overflow:visible!important;background:none!important;border:0!important;border-radius:0!important;box-shadow:none!important;backdrop-filter:none!important}
 
 body #menu-overlay #focus-menu .ui32-backdrop{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;z-index:-1;pointer-events:none;filter:none;opacity:.45}
@@ -17576,7 +17495,7 @@ new MutationObserver(()=>{const hidden=overlay.classList.contains('hidden');if(w
 stage('map');overlay.dataset.ui32Ready='true';
 // Explicitly retire the static boot cover; the CSS guard also handles error state.
 document.getElementById('ktk-ui32-loading')?.remove();
-window.ktkUI32Status=()=>({ready:overlay.dataset.ui32Ready,stage:panel.dataset.stage,legacyHidden:getComputedStyle(document.getElementById('ktk-original-menu')).display==='none',mapEmblems:panel.querySelectorAll('.ui32-emblem').length,classes:new Set(Array.from(panel.querySelectorAll('[data-approved-class]'),b=>b.dataset.approvedClass)).size,playButton:!!panel.querySelector('#play-btn'),selectedMap:panel.querySelector('[data-focus-map][aria-pressed=true]')?.dataset.focusMap,engineMap:arenaMap,engineSiege:nativeSiegeMode,engineArmy:meadowBattleMode,phase:arenaMatch.phase,menuHidden:overlay.classList.contains('hidden')&&getComputedStyle(overlay).display==='none'});
+window.ktkUI32Status=()=>({ready:overlay.dataset.ui32Ready,stage:panel.dataset.stage,legacyHidden:!document.getElementById('ktk-original-menu'),legacyRemoved:!document.getElementById('ktk-original-menu'),engineBindingsHidden:getComputedStyle(document.getElementById('ktk-engine-menu-bindings')).display==='none',mapEmblems:panel.querySelectorAll('.ui32-emblem').length,classes:new Set(Array.from(panel.querySelectorAll('[data-approved-class]'),b=>b.dataset.approvedClass)).size,playButton:!!panel.querySelector('#play-btn'),selectedMap:panel.querySelector('[data-focus-map][aria-pressed=true]')?.dataset.focusMap,engineMap:arenaMap,engineSiege:nativeSiegeMode,engineArmy:meadowBattleMode,phase:arenaMatch.phase,menuHidden:overlay.classList.contains('hidden')&&getComputedStyle(overlay).display==='none'});
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
 })();

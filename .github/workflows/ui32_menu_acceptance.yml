@@ -33,7 +33,9 @@ jobs:
             try{
               await cold.goto(pathToFileURL(resolve('index.html')).href);
               assert.equal(await cold.locator('#menu-overlay').isVisible(),false,'pre-JS legacy overlay must not paint');
-              assert.equal(await cold.locator('#ktk-original-menu').isVisible(),false,'legacy source controls must be hidden');
+              assert.equal(await cold.locator('#ktk-original-menu').count(),0,'legacy source menu must not exist');
+              assert.equal(await cold.locator('#menu-overlay').locator('*').count(),0,'no old menu children before JS');
+              assert.equal(await cold.locator('#ktk-engine-menu-bindings').isVisible(),false,'engine compatibility controls are not a menu');
               assert.equal(await cold.locator('#ktk-ui32-loading').isVisible(),true,'static boot screen must cover startup');
               const bootBox=await cold.locator('#ktk-ui32-loading').boundingBox();
               assert.equal(bootBox.width,1366);assert.equal(bootBox.height,768);
@@ -53,7 +55,7 @@ jobs:
               const status=await p.evaluate(()=>window.ktkUI32Status());
               assert.equal(await p.locator('#ktk-ui32-loading').count(),0,'boot cover must retire when new menu is ready');
               assert.equal(await p.locator('[data-focus-class]').count(),0,'obsolete duplicate class controls');
-              assert.equal(status.legacyHidden,true);assert.equal(status.stage,'map');assert.equal(status.mapEmblems,3);assert.equal(status.classes,4);
+              assert.equal(status.legacyRemoved,true);assert.equal(status.engineBindingsHidden,true);assert.equal(status.stage,'map');assert.equal(status.mapEmblems,3);assert.equal(status.classes,4);
               const box=await p.locator('#menu-overlay').boundingBox();assert.ok(Math.abs(box.width-viewport.width)<2);
               await p.screenshot({path:'ui32-map-'+viewport.width+'.png',timeout:90000});
               for(const map of ['arena','meadow','siege','meadow','arena']){
@@ -107,7 +109,8 @@ jobs:
                 await p.locator('#ui32-back').click();
               }
               // FIT02c: old class cards are no longer runtime dependencies.
-              assert.equal(await p.locator('#ktk-original-menu .class-card').count(),0);
+              assert.equal(await p.locator('#ktk-original-menu').count(),0);
+              assert.equal(await p.locator('#menu-overlay').locator(':scope > *').count(),1,'one menu panel only');
               for(const id of [0,1,2,3]){
                 await p.evaluate(id=>window.selectClass(id),id);
                 const state=await p.evaluate(()=>{

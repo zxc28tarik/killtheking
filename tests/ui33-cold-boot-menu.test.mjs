@@ -2,12 +2,15 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
-test('UI33 boot guard is in head before first script, with permanent inline legacy display none',()=>{
+test('UI33 boot guard is in head before first script, and the old visual menu is absent from source',()=>{
  const guard=html.indexOf('<style id="ktk-ui32-boot">');
  assert.ok(guard>=0&&guard<html.indexOf('<script')&&guard<html.indexOf('</head>'));
  const css=html.slice(guard,html.indexOf('</style>',guard));
- assert.match(css,/#menu-overlay:not\(\[data-ui32-ready\]\),#menu-overlay\.hidden,\s*#menu-overlay>#ktk-original-menu\{display:none!important\}/);
- assert.match(html,/<div id="ktk-original-menu" style="display:none!important"/);
+ assert.match(css,/#menu-overlay:not\(\[data-ui32-ready\]\),#menu-overlay\.hidden,\s*#ktk-engine-menu-bindings\{display:none!important\}/);
+ assert.doesNotMatch(html,/<div id="ktk-original-menu"/);
+ assert.match(html,/<div id="ktk-engine-menu-bindings" hidden inert aria-hidden="true"/);
+ const sourceMenu=html.slice(html.indexOf('<div id="menu-overlay"'),html.indexOf('<!-- UI34: engine bindings only.'));
+ assert.match(sourceMenu,/<div id="menu-overlay"[^>]*>\s*<\/div>\s*$/);
  assert.ok(html.indexOf('<div id="ktk-ui32-loading"')<html.indexOf('<div id="menu-overlay"'));
 });
 test('UI33 new menu releases boot cover only after readiness and error is not covered',()=>{
