@@ -10395,6 +10395,76 @@ const KTKCalmUIV25=(()=>{
           THREE,nativeSiegeParts,nativeSiegeMesh,nativeSiegeAabb,
           {stone:nativeSiegeStone,wood:nativeSiegeWood});
         nativeSiegeWallBoxes.push(...nativeSiegeInteriorV31.wallBoxes);
+        // OPT-06 KU2: draw-only regional batching of the three IMMOBILE
+        // fortress expansions. Never touch the animated gate, ram, tower,
+        // catapult, actor models or any of their original game colliders.
+        function batchSiegeStaticVisuals(THREE,sections,cellSize=48){
+            const groups=new Map(),proxies=new Map();
+            const stats={sections:sections.length,eligible:0,originals:0,batches:0,
+                avoidedDraws:0,shadowDrawsAvoided:0};
+            for(let k=0;k<sections.length;k++){
+                const root=sections[k];
+                for(const m of root.children){
+                    if(!m.isMesh||m.isInstancedMesh||m.children.length||
+                        !m.visible||!m.material||Array.isArray(m.material)||
+                        !m.material.visible||m.material.transparent||!m.material.depthWrite||
+                        m.material.alphaTest>0||m.customDepthMaterial||m.customDistanceMaterial||
+                        m.geometry?.type!=='BoxGeometry'||
+                        Object.keys(m.geometry.attributes).sort().join(',')!=='normal,position,uv')continue;
+                    stats.eligible++;
+                    const key=[k,m.material.uuid,m.castShadow,m.receiveShadow,m.renderOrder,
+                        m.layers.mask,Math.floor(m.position.x/cellSize),
+                        Math.floor(m.position.z/cellSize)].join('|');
+                    if(!groups.has(key))groups.set(key,{root,meshes:[]});
+                    groups.get(key).meshes.push(m);
+                }
+            }
+            for(const {root,meshes} of groups.values()){
+                if(meshes.length<2)continue;
+                const first=meshes[0],positions=[],normals=[],uvs=[];
+                for(const m of meshes){
+                    m.updateMatrix();
+                    const copy=m.geometry.index?m.geometry.toNonIndexed():m.geometry.clone();
+                    copy.applyMatrix4(m.matrix); // original geometry stays immutable for raycasts
+                    const p=copy.attributes.position,n=copy.attributes.normal,t=copy.attributes.uv;
+                    for(let i=0;i<p.count;i++){
+                        positions.push(p.getX(i),p.getY(i),p.getZ(i));
+                        normals.push(n.getX(i),n.getY(i),n.getZ(i));
+                        uvs.push(t.getX(i),t.getY(i));
+                    }
+                    copy.dispose();
+                }
+                const geometry=new THREE.BufferGeometry();
+                geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
+                geometry.setAttribute('normal',new THREE.Float32BufferAttribute(normals,3));
+                geometry.setAttribute('uv',new THREE.Float32BufferAttribute(uvs,2));
+                geometry.computeBoundingSphere();geometry.computeBoundingBox();
+                const batch=new THREE.Mesh(geometry,first.material);
+                batch.name='OPT06 static siege regional visual';
+                batch.castShadow=first.castShadow;batch.receiveShadow=first.receiveShadow;
+                batch.renderOrder=first.renderOrder;batch.layers.mask=first.layers.mask;
+                batch.matrixAutoUpdate=false;batch.updateMatrix();
+                root.add(batch);
+                for(const m of meshes){
+                    // Keep exact original object and geometry for actor/projectile
+                    // raycast identity and source visibility. Only GPU draw is moved.
+                    const side=m.material.side;
+                    if(!proxies.has(side))
+                        proxies.set(side,new THREE.MeshBasicMaterial({side,visible:false}));
+                    m.material=proxies.get(side);
+                    m.castShadow=false;
+                    m.matrixAutoUpdate=false;
+                }
+                stats.originals+=meshes.length;stats.batches++;
+                stats.avoidedDraws+=meshes.length-1;
+                if(batch.castShadow)stats.shadowDrawsAvoided+=meshes.length-1;
+            }
+            return stats;
+        }
+        const siegeStaticBatchStats=batchSiegeStaticVisuals(THREE,[
+            nativeSiegeExpansionV25.root,nativeSiegeDefenseV26.root,nativeSiegeInteriorV31.root
+        ]);
+        window.ktkSiegeStaticBatchStatus=()=>({...siegeStaticBatchStats});
         let nativeSiegeDefenseSpawnIntrusions=null;
         // AK27: this is a siege-specific commander over ORIGINAL red G5.4
         // captains, never a separate battle, soldier pool or combat model.
