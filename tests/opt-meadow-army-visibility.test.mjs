@@ -43,14 +43,14 @@ test('OPT04 conservative radius keeps a weapon crossing the frustum boundary',()
  const c=create(T,{group,roles}),camera=new T.PerspectiveCamera(60,1,.1,200);camera.lookAt(0,0,-1);
  assert.equal(c.prepare({soldiers:[{alive:true,x:10,z:-10}]},camera).visible,1);c.restore();
 });
-test('OPT04 rendering wraps the original draw and always restores matrices, siege excluded',()=>{
+test('OPT04 rendering wraps the original Meadow draw and always restores matrices; separate Siege route',()=>{
  assert.match(html,/if\(!meadowBattleMode\|\|nativeSiegeMode\|\|!meadowBattleVisual/);
  assert.match(html,/meadowArmyVisibility\.prepare\(meadowBattleState,camera\);\s*renderer.render\(scene,camera\);\s*\}finally\{meadowArmyVisibility\.restore\(\);\}/);
  assert.match(html,/updateActiveMeadowGrass\(\);\s*renderActiveMap\(\);/);
 });
 
 test('OPT05 render wrapper preserves mode routing and restores state on render exceptions',()=>{
- const start=html.indexOf('        let meadowArmyVisibility='),end=html.indexOf('        window.ktkMeadowArmyVisibilityStatus=',start);
+ const start=html.indexOf('        let siegeArmyVisibility='),end=html.indexOf('        window.ktkMeadowArmyVisibilityStatus=',start);
  assert.ok(start>=0&&end>start);
  const events=[],visual={group:{visible:true}},battle={},camera={},scene={};
  const sandbox={THREE:T,meadowBattleMode:false,nativeSiegeMode:false,meadowBattleVisual:visual,meadowBattleState:battle,camera,scene,
@@ -58,12 +58,20 @@ test('OPT05 render wrapper preserves mode routing and restores state on render e
    assert.equal(v,visual);events.push('create');
    return {prepare:(state,cam)=>{assert.equal(state,battle);assert.equal(cam,camera);events.push('prepare');},restore:()=>events.push('restore')};
   },
+  createSiegeArmyVisibility:(three,v)=>{
+   assert.equal(v,visual);events.push('siege-create');
+   return {prepare:(state,cam)=>{assert.equal(state,battle);assert.equal(cam,camera);events.push('siege-prepare');},restore:()=>events.push('siege-restore')};
+  },
   renderer:{render:(s,cam)=>{assert.equal(s,scene);assert.equal(cam,camera);events.push('render');}}
  };
  const render=runInNewContext(html.slice(start,end)+'\nrenderActiveMap;',sandbox);
  render();assert.deepEqual(events.splice(0),['render']);
  sandbox.meadowBattleMode=true;sandbox.nativeSiegeMode=true;
- render();assert.deepEqual(events.splice(0),['render']);
+ render();assert.deepEqual(events.splice(0),['siege-create','siege-prepare','render','siege-restore']);
+ sandbox.renderer.render=()=>{events.push('render');throw Error('siege render failure');};
+ assert.throws(render,/siege render failure/);
+ assert.deepEqual(events.splice(0),['siege-prepare','render','siege-restore']);
+ sandbox.renderer.render=()=>events.push('render');
  sandbox.nativeSiegeMode=false;visual.group.visible=false;
  render();assert.deepEqual(events.splice(0),['render']);
  visual.group.visible=true;sandbox.meadowBattleState=null;

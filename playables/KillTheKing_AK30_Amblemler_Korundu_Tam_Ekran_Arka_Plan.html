@@ -16464,7 +16464,7 @@ const KTKCalmUIV25=(()=>{
         // Stable soldier slots/matrices are restored before the next simulation
         // step; no model, animation, collision, AI or soldier count is changed.
         // Siege is deliberately excluded until elevated actor bounds are audited.
-        function createMeadowArmyVisibility(THREE,visual){
+        function createMeadowArmyVisibility(THREE,visual,matrixPolicy=null){
             const frustum=new THREE.Frustum(),viewProjection=new THREE.Matrix4(),
                 sphere=new THREE.Sphere(),roles=[],records=[];
             const stats={alive:0,visible:0,culledAlive:0,dead:0,fullTriangles:0,submittedTriangles:0,emptyRoleMeshes:0};
@@ -16506,6 +16506,7 @@ const KTKCalmUIV25=(()=>{
                 Object.assign(stats,{alive:0,visible:0,culledAlive:0,dead:0,fullTriangles:0,submittedTriangles:0,emptyRoleMeshes:0});
                 prepared=true;
                 try{
+                    if(matrixPolicy)matrixPolicy.begin();
                     for(const entry of roles){
                         const {role,radius,triangles,meshes,slots}=entry;
                         slots.length=0;
@@ -16514,6 +16515,11 @@ const KTKCalmUIV25=(()=>{
                             const unit=battle.soldiers[id];
                             if(!unit?.alive){stats.dead++;continue;}
                             stats.alive++;
+                            if(matrixPolicy){
+                                if(matrixPolicy.visible(role,slot,frustum))slots.push(slot);
+                                else stats.culledAlive++;
+                                continue;
+                            }
                             sphere.center.set(unit.x,0,unit.z);sphere.radius=radius;
                             sphere.applyMatrix4(visual.group.matrixWorld);
                             // Invalid bounds must never make a living soldier disappear.
@@ -16551,8 +16557,74 @@ const KTKCalmUIV25=(()=>{
             }
             return {prepare,restore,status:()=>({...stats})};
         }
+        // OPT13: unlike the flat Meadow approximation, Siege uses the actual
+        // post-animation joint matrices (including tower climb/fall height).
+        // The pinned ArenaArmyRender writes identical slot matrices to all
+        // material batches of one rig joint; the tower offset does the same.
+        // Bound all geometry for each joint, not just the torso/actor origin.
+        function createSiegeArmyVisibility(THREE,visual){
+            const joints=new Map(),local=new THREE.Matrix4(),world=new THREE.Matrix4(),
+                sphere=new THREE.Sphere();
+            for(const role of Object.values(visual.roles)){
+                const parts=[];
+                for(const part of Object.values(role.parts)){
+                    if(!part.meshes.length)continue;
+                    let radius=0;
+                    for(const mesh of part.meshes){
+                        if(!mesh.geometry.boundingSphere)mesh.geometry.computeBoundingSphere();
+                        const bound=mesh.geometry.boundingSphere;
+                        radius=Math.max(radius,bound.center.length()+bound.radius);
+                    }
+                    parts.push({meshes:part.meshes,first:part.meshes[0],radius:radius+.02,safe:true});
+                }
+                joints.set(role,parts);
+            }
+            const policy={
+                begin(){
+                    for(const parts of joints.values())for(const p of parts){
+                        p.first.updateWorldMatrix(true,false);
+                        p.safe=Number.isFinite(p.radius)&&p.meshes.every(m=>{
+                            m.updateWorldMatrix(true,false);
+                            return !m.castShadow&&m.matrixWorld.equals(p.first.matrixWorld);
+                        });
+                    }
+                },
+                visible(role,slot,frustum){
+                    const parts=joints.get(role);
+                    if(!parts?.length)return true;
+                    for(const p of parts){
+                        // Fail open if a future model has shadow casters,
+                        // different object transforms, or invalid matrices.
+                        if(!p.safe||slot>=p.first.instanceMatrix.count)return true;
+                        p.first.getMatrixAt(slot,local);
+                        world.multiplyMatrices(p.first.matrixWorld,local);
+                        const e=world.elements;
+                        if(!e.every(Number.isFinite))return true;
+                        sphere.center.setFromMatrixPosition(world);
+                        // Frobenius norm bounds all stretches, including shear.
+                        // Deliberately conservative; no near-frustum clipping.
+                        sphere.radius=p.radius*Math.hypot(e[0],e[1],e[2],e[4],e[5],e[6],e[8],e[9],e[10]);
+                        if(!Number.isFinite(sphere.radius)||frustum.intersectsSphere(sphere))return true;
+                    }
+                    return false;
+                }
+            };
+            return createMeadowArmyVisibility(THREE,visual,policy);
+        }
+        let siegeArmyVisibility=null,siegeArmyVisibilityOwner=null;
         let meadowArmyVisibility=null,meadowArmyVisibilityOwner=null;
         function renderActiveMap(){
+            if(nativeSiegeMode&&meadowBattleVisual?.group.visible&&meadowBattleState){
+                if(siegeArmyVisibilityOwner!==meadowBattleVisual){
+                    siegeArmyVisibility=createSiegeArmyVisibility(THREE,meadowBattleVisual);
+                    siegeArmyVisibilityOwner=meadowBattleVisual;
+                }
+                try{
+                    siegeArmyVisibility.prepare(meadowBattleState,camera);
+                    renderer.render(scene,camera);
+                }finally{siegeArmyVisibility.restore();}
+                return;
+            }
             if(!meadowBattleMode||nativeSiegeMode||!meadowBattleVisual?.group.visible||!meadowBattleState){
                 renderer.render(scene,camera);return;
             }
@@ -16566,6 +16638,7 @@ const KTKCalmUIV25=(()=>{
             }finally{meadowArmyVisibility.restore();}
         }
         window.ktkMeadowArmyVisibilityStatus=()=>meadowArmyVisibility?.status()??null;
+        window.ktkSiegeArmyVisibilityStatus=()=>siegeArmyVisibility?.status()??null;
         function animate() {
             requestAnimationFrame(animate);
             const now = performance.now();

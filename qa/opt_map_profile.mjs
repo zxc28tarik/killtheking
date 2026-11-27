@@ -60,6 +60,43 @@ try{
     assert.ok(report.armySightline.forcedLook.visible>0,
       'OPT07: nearby living soldier was wrongly culled even when camera faces it');
   }
+  // OPT13: use the actual live rig, lift one real soldier's complete draw
+  // matrices in the disposable QA page and prove the exact target survives.
+  report.siegeSightline=await p.evaluate(()=>{
+    if(!nativeSiegeMode||!meadowBattleVisual)return null;
+    const visual=meadowBattleVisual,battle=meadowBattleState;
+    const soldier=battle.soldiers.find(s=>s.alive);
+    if(!soldier)throw Error('OPT13 missing live soldier');
+    const role=visual.roles[soldier.type],slot=role.slots.get(soldier.id);
+    const all=Object.values(role.parts).flatMap(part=>part.meshes);
+    const before=all.map(mesh=>{const m=new THREE.Matrix4();mesh.getMatrixAt(slot,m);return m;});
+    const originalPosition=camera.position.clone(),originalQuaternion=camera.quaternion.clone();
+    const probe=createSiegeArmyVisibility(THREE,visual);
+    let stats,found=false;
+    try{
+      for(let i=0;i<all.length;i++){
+        const m=before[i].clone();m.elements[13]+=60;all[i].setMatrixAt(slot,m);
+      }
+      const expected=new THREE.Matrix4();all[0].getMatrixAt(slot,expected);
+      camera.position.set(soldier.x-12,62,soldier.z);
+      camera.lookAt(soldier.x,62,soldier.z);camera.updateMatrixWorld(true);
+      stats={...probe.prepare(battle,camera)};
+      const actual=new THREE.Matrix4();
+      for(let i=0;i<all[0].count;i++){
+        all[0].getMatrixAt(i,actual);
+        if(actual.equals(expected)){found=true;break;}
+      }
+    }finally{
+      probe.restore();
+      for(let i=0;i<all.length;i++){
+        all[i].setMatrixAt(slot,before[i]);all[i].instanceMatrix.needsUpdate=true;
+      }
+      camera.position.copy(originalPosition);camera.quaternion.copy(originalQuaternion);
+      camera.updateMatrixWorld(true);
+    }
+    return {id:soldier.id,found,stats};
+  });
+  if(map==='siege')assert.ok(report.siegeSightline?.found,'OPT13 elevated actual model wrongly culled');
   await p.evaluate(()=>{
     const q={start:performance.now(),frame:[],frameWork:[],frameTimeline:[],longtasks:[],heapDrops:[],renderRoute:[],physics:[],armySim:[],armyVisual:[],siegeEquipment:[],siegeTowerRender:[],grass:[],render:[],draws:{},samples:[],phase:'warmup',active:true,gpu:[],gpuSupported:false};
     window.__optProfile=q;
@@ -173,7 +210,7 @@ try{
         if(previousHeap!==null&&heap!==null&&previousHeap-heap>2*1024*1024)
           q.heapDrops.push({phase:q.phase,t:t-q.start,bytes:previousHeap-heap});
         previousHeap=heap;
-        q.samples.push({phase:q.phase,t:t-q.start,geometries:m.geometries,textures:m.textures,programs:r.programs?.length,heap:performance.memory?.usedJSHeapSize??null,calls:r.render.calls,triangles:r.render.triangles,remaining:arenaMatch.remaining,clock:arenaClock,armyElapsed:meadowBattleState?.elapsed??null,particles:particles.length,arrows:arrows.length,staticResources:window.ktkStaticResourceStatus?.(),castleDecor:window.ktkCastleDecorBatchStatus?.(),castleSolids:window.ktkCastleSolidBatchStatus?.(),siegeStatic:window.ktkSiegeStaticBatchStatus?.(),siegeRigid:window.ktkSiegeRigidBatchStatus?.(),siegeCosmetic:window.ktkSiegeCosmeticBatchStatus?.(),armyVisibility:window.ktkMeadowArmyVisibilityStatus?.(),armyVisualCpuPolicy:meadowBattleVisual?.performance?.()??null,armyArrowDrawCount:meadowBattleVisual?.flightArrows?.count??null});
+        q.samples.push({phase:q.phase,t:t-q.start,geometries:m.geometries,textures:m.textures,programs:r.programs?.length,heap:performance.memory?.usedJSHeapSize??null,calls:r.render.calls,triangles:r.render.triangles,remaining:arenaMatch.remaining,clock:arenaClock,armyElapsed:meadowBattleState?.elapsed??null,particles:particles.length,arrows:arrows.length,staticResources:window.ktkStaticResourceStatus?.(),castleDecor:window.ktkCastleDecorBatchStatus?.(),castleSolids:window.ktkCastleSolidBatchStatus?.(),siegeStatic:window.ktkSiegeStaticBatchStatus?.(),siegeRigid:window.ktkSiegeRigidBatchStatus?.(),siegeCosmetic:window.ktkSiegeCosmeticBatchStatus?.(),siegeArmyVisibility:window.ktkSiegeArmyVisibilityStatus?.(),armyVisibility:window.ktkMeadowArmyVisibilityStatus?.(),armyVisualCpuPolicy:meadowBattleVisual?.performance?.()??null,armyArrowDrawCount:meadowBattleVisual?.flightArrows?.count??null});
       }
       requestAnimationFrame(frame);
     }
@@ -238,7 +275,7 @@ try{
     warning:'rAF gap is NOT GPU time. Callback work and CDP task time do not prove GPU, GC or driver stalls.'
   };
   report.drawCategories=Object.entries(report.measurements.draws).sort((a,b)=>b[1].calls-a[1].calls);
-  console.log('OPT_PROFILE',JSON.stringify({map,width,summary:report.summary,cpuTop:report.cpuTop,drawCategories:report.drawCategories,samples:report.measurements.samples,armySightline:report.armySightline,gpuSupported:report.measurements.gpuSupported,stall:report.stallDiagnostics,chromeTasks:report.chromeTaskMetrics,errors}));
+  console.log('OPT_PROFILE',JSON.stringify({map,width,summary:report.summary,cpuTop:report.cpuTop,drawCategories:report.drawCategories,samples:report.measurements.samples,armySightline:report.armySightline,siegeSightline:report.siegeSightline,gpuSupported:report.measurements.gpuSupported,stall:report.stallDiagnostics,chromeTasks:report.chromeTaskMetrics,errors}));
 }catch(e){report.failure=e.stack||String(e);console.error(report.failure);}
 finally{writeFileSync('opt-profile-report.json',JSON.stringify(report,null,2));await browser.close();}
 assert.ok(!report.failure,report.failure);assert.deepEqual(errors,[]);assert.ok(report.summary?.frame?.n>0,'no measured frames');

@@ -158,3 +158,11 @@ Her paket küçük bağımsız değişiklik, önce/sonra aynı test, kanonik HTM
 
 ## OPT-12 — V19/V20 dekoratif kuşatma kutularının birleştirilmesi
 - Önceki OPT11 ölçümünde kuşatma mimari 434 draw/kare, ~16.778 üçgen/kare; yeni kod yalnız açıkça dekor olan V19 kapı child snapshot'ı ve V20 KTK_VIS20_COSMETIC_NO_COLLIDER etiketli kutuları alır. Kaynak meshler, malzeme/UV/normaller, gölge flag'leri, kapı/kule/koçbaşı ve bağımsız mancınık kolu parent hareketi korunur; yeni batch raycast'i devre dışı, fizik hedefi olmaz. Saydam iz, silindir/teker, banner, gerçek duvarlar ve collider'lar hariç. 24 birim parent-local hücre. Yeni sayaç ve üç test, gerçek runtime profil sonuçları bekleniyor. FPS kazancı henüz yok.
+
+
+### OPT-12 kapanış ölçümleri
+- [302/302 genel](https://github.com/zxc28tarik/killtheking/actions/runs/46000220291), [UI32](https://github.com/zxc28tarik/killtheking/actions/runs/46000220294), [BUG21–30](https://github.com/zxc28tarik/killtheking/actions/runs/46000220376), [6/6 harita/çözünürlük](https://github.com/zxc28tarik/killtheking/actions/runs/46000220350) PASS. Her iki Siege profilinde 173 uygun kutu, 162 kaynak → 30 batch; nominal 132 main ve 106 shadow draw tasarrufu tam görünümde. Ölçülen siege-architecture shadow 135→69/kare. 960 SwiftShader frame gap 4683→3717ms (8/8 örnek), 1920 5525→6226ms (6/5 örnek): gerçek GPU FPS kazanımı kanıtlanmadı.
+
+## OPT-13 — Kuşatma gerçek 3B asker görünürlük kompaksiyonu
+- Pinned ArenaArmyRender ve bot simülasyonu değişmez. Kamera dışındaki askerler sadece çizim geçişinde geçici prefix'e sıkıştırılır. Kuşatma yüksekliği için tüm rig jointlerinin gerçek animasyon sonrası matrisleri ve muhafazakar geometri küreleri kullanılır; kule çıkma/düşme offset'i doğal olarak dahil. Her joint'in tüm material batch geometrisi sınır hesabına katılır. Bir parça görünüyorsa asker korunur. Farklı object matrix, shadow caster veya nonfinite durumda fail-open. Restore finally ile yapılır; oynanış, asker slotu, ok, banner ve gölge politikası değişmez. 
+- 4 yeni Node testi, önceki Meadow/Siege route testi genişletildi. Profilde ayrı siegeArmyVisibility sayacı ve gerçek G5.4 rig üstünde +60m geçici QA yüksekliği/gerçek slot retained testi var. Altı profil, targeted Chromium, UI32 ve genel regresyon sonuçları bekleniyor. Gerçek donanım FPS kazanımı veya piksel eşliği henüz doğrulanmadı.
