@@ -5864,9 +5864,13 @@ window.addEventListener('error', function(event) {
   const rootTransform=new THREE.Matrix4(),jointTransform=new THREE.Matrix4();
   const worldJoint=new THREE.Matrix4(),rootRotation=new THREE.Quaternion(),jointRotation=new THREE.Quaternion();
   const rootPosition=new THREE.Vector3(),rootScale=new THREE.Vector3(),jointEuler=new THREE.Euler();
+  // OPT07: fixed axis reused for every soldier turn (no per-soldier Vector3 GC).
+  const turnAxis=new THREE.Vector3(0,1,0);
   const hidden=new THREE.Vector3(0,0,0),normalScale=new THREE.Vector3(1,1,1);
   const motionStates=state.soldiers.map((_,i)=>characterMotion.createState(i*.35));
   const lastPos=state.soldiers.map(s=>({x:s.x,z:s.z}));
+  const hiddenLastFrame=new Uint8Array(state.soldiers.length);
+  const updatePerf={hiddenSoldiersSkipped:0,arrowMatricesWritten:0,alive:0};
   let previousBattle=state;
   function update(battle,dt=1/60){
    if(previousBattle!==battle){
@@ -5876,8 +5880,10 @@ window.addEventListener('error', function(event) {
      motionStates[i].phase=reset.phase;motionStates[i].weight=0;
     }
     previousBattle=battle;
+    hiddenLastFrame.fill(0); // new game: all army slots must be painted once
    }
    const delta=Math.min(.05,Math.max(0,Number.isFinite(dt)?dt:0));
+   let skipped=0,alive=0;
    for(const s of battle.soldiers){
     const role=typeData[s.type],slot=role.slots.get(s.id);
     const travel=Math.hypot(s.x-lastPos[s.id].x,s.z-lastPos[s.id].z);
@@ -5889,8 +5895,13 @@ window.addEventListener('error', function(event) {
      stagger:0,hit:s.hitPose||0
     });
     lastPos[s.id].x=s.x;lastPos[s.id].z=s.z;
+    // Pose state advances exactly as before. Only the invisible zero-scale
+    // matrices need no repeat writes after the soldier's first death frame.
+    if(!s.alive&&hiddenLastFrame[s.id]){skipped++;continue;}
+    hiddenLastFrame[s.id]=s.alive?0:1;
+    if(s.alive)alive++;
     rootPosition.set(s.x,0,s.z);
-    rootRotation.setFromAxisAngle(new THREE.Vector3(0,1,0),s.facing);
+    rootRotation.setFromAxisAngle(turnAxis,s.facing);
     rootScale.copy(s.alive?normalScale:hidden);
     rootTransform.compose(rootPosition,rootRotation,rootScale);
     for(const name of PART_NAMES){
@@ -5908,6 +5919,9 @@ window.addEventListener('error', function(event) {
      for(const mesh of part.meshes)mesh.setMatrixAt(slot,worldJoint);
     }
    }
+   // OPT07: unchanged batches and soldier slots; only CPU transform work is skipped.
+   updatePerf.hiddenSoldiersSkipped=skipped;
+   updatePerf.alive=alive;
    for(const role of Object.values(typeData))
     for(const part of Object.values(role.parts))
      for(const mesh of part.meshes)mesh.instanceMatrix.needsUpdate=true;
@@ -5916,7 +5930,12 @@ window.addEventListener('error', function(event) {
     banner.visible=squad.alive>0;banner.position.set(squad.x,0,squad.z);
    }
    const arrows=battle.projectiles||[];
-   for(let index=0;index<arrowCapacity;index++){
+   // The original synchronizer also sets count. Avoid writing 96 invisible
+   // matrices on every update when few/no projectiles are actually present.
+   const arrowCount=Math.min(arrowCapacity,arrows.length);
+   flightArrows.count=arrowCount;
+   updatePerf.arrowMatricesWritten=arrowCount;
+   for(let index=0;index<arrowCount;index++){
     const a=arrows[index];
     if(a){
      // Simulation steps at 12.5 Hz; render between fixed steps smoothly.
@@ -5929,7 +5948,7 @@ window.addEventListener('error', function(event) {
     }else flightMatrix.compose(flightPosition,flightRotation,invisibleScale);
     flightArrows.setMatrixAt(index,flightMatrix);
    }
-   flightArrows.instanceMatrix.needsUpdate=true;
+   if(arrowCount)flightArrows.instanceMatrix.needsUpdate=true;
   }
   update(state,0);
   function dispose(){
@@ -5938,6 +5957,7 @@ window.addEventListener('error', function(event) {
    for(const banner of banners)banner.traverse(o=>{if(o.material)o.material.dispose();});
   }
   return {group,update,dispose,roles:typeData,banners,flightArrows,
+   performance:()=>({...updatePerf}),
    drawBatches:1+Object.values(typeData).reduce((sum,x)=>sum+x.batches,0)};
  }
  return {create,ORIGINAL_ROLES,PART_NAMES};

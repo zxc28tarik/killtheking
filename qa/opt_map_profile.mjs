@@ -30,7 +30,7 @@ try{
   if(map==='siege')for(const key of ['F6','F7','F8'])await p.keyboard.press(key);
   if(map==='meadow')await p.keyboard.press('k');
   await p.evaluate(()=>{
-    const q={start:performance.now(),frame:[],physics:[],grass:[],render:[],draws:{},samples:[],phase:'warmup',active:true,gpu:[],gpuSupported:false};
+    const q={start:performance.now(),frame:[],physics:[],armySim:[],armyVisual:[],siegeEquipment:[],siegeTowerRender:[],grass:[],render:[],draws:{},samples:[],phase:'warmup',active:true,gpu:[],gpuSupported:false};
     window.__optProfile=q;
     const gl=renderer.getContext();
     const ext=renderer.capabilities.isWebGL2?gl.getExtension('EXT_disjoint_timer_query_webgl2'):null;
@@ -55,6 +55,14 @@ try{
     const wrap=(name,fn)=>function(...args){const t=performance.now();try{return fn.apply(this,args);}finally{if(q.active)q[name].push({phase:q.phase,ms:performance.now()-t});}};
     updateGame=wrap('physics',updateGame);
     updateActiveMeadowGrass=wrap('grass',updateActiveMeadowGrass);
+    if(meadowBattleMode&&meadowBattleVisual){
+      ArenaArmyBattle.step=wrap('armySim',ArenaArmyBattle.step);
+      meadowBattleVisual.update=wrap('armyVisual',meadowBattleVisual.update);
+    }
+    if(nativeSiegeMode){
+      nativeSiegeUpdate=wrap('siegeEquipment',nativeSiegeUpdate);
+      nativeSiegeTowerRenderSoldiers=wrap('siegeTowerRender',nativeSiegeTowerRenderSoldiers);
+    }
     const origDraw=renderer.renderBufferDirect;
     renderer.renderBufferDirect=function(cam,sc,geo,mat,obj,group){
       if(q.active){
@@ -95,7 +103,7 @@ try{
       if(t-last>=3000){
         last=t;
         const r=renderer.info,m=r.memory;
-        q.samples.push({phase:q.phase,t:t-q.start,geometries:m.geometries,textures:m.textures,programs:r.programs?.length,heap:performance.memory?.usedJSHeapSize??null,calls:r.render.calls,triangles:r.render.triangles,remaining:arenaMatch.remaining,clock:arenaClock,armyElapsed:meadowBattleState?.elapsed??null,particles:particles.length,arrows:arrows.length,staticResources:window.ktkStaticResourceStatus?.(),castleDecor:window.ktkCastleDecorBatchStatus?.(),castleSolids:window.ktkCastleSolidBatchStatus?.(),siegeStatic:window.ktkSiegeStaticBatchStatus?.(),armyVisibility:window.ktkMeadowArmyVisibilityStatus?.(),armyArrowDrawCount:meadowBattleVisual?.flightArrows?.count??null});
+        q.samples.push({phase:q.phase,t:t-q.start,geometries:m.geometries,textures:m.textures,programs:r.programs?.length,heap:performance.memory?.usedJSHeapSize??null,calls:r.render.calls,triangles:r.render.triangles,remaining:arenaMatch.remaining,clock:arenaClock,armyElapsed:meadowBattleState?.elapsed??null,particles:particles.length,arrows:arrows.length,staticResources:window.ktkStaticResourceStatus?.(),castleDecor:window.ktkCastleDecorBatchStatus?.(),castleSolids:window.ktkCastleSolidBatchStatus?.(),siegeStatic:window.ktkSiegeStaticBatchStatus?.(),armyVisibility:window.ktkMeadowArmyVisibilityStatus?.(),armyVisualCpuPolicy:meadowBattleVisual?.performance?.()??null,armyArrowDrawCount:meadowBattleVisual?.flightArrows?.count??null});
       }
       requestAnimationFrame(frame);
     }
@@ -129,7 +137,7 @@ try{
   const counts={};for(const id of prof.samples||[]){const name=nodes.get(id)||'(unknown)';counts[name]=(counts[name]||0)+1;}
   report.cpuTop=Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,30);
   function summarize(rows){const a=rows.filter(x=>x.phase!=='warmup').map(x=>x.ms).sort((a,b)=>a-b);return a.length?{n:a.length,totalMs:a.reduce((x,y)=>x+y,0),meanMs:a.reduce((x,y)=>x+y,0)/a.length,p95Ms:a[Math.ceil(a.length*.95)-1],maxMs:a.at(-1)}:null;}
-  report.summary=Object.fromEntries(['frame','physics','grass','render','gpu'].map(k=>[k,summarize(report.measurements[k])]));
+  report.summary=Object.fromEntries(['frame','physics','armySim','armyVisual','siegeEquipment','siegeTowerRender','grass','render','gpu'].map(k=>[k,summarize(report.measurements[k])]));
   report.drawCategories=Object.entries(report.measurements.draws).sort((a,b)=>b[1].calls-a[1].calls);
   console.log('OPT_PROFILE',JSON.stringify({map,width,summary:report.summary,cpuTop:report.cpuTop,drawCategories:report.drawCategories,samples:report.measurements.samples,gpuSupported:report.measurements.gpuSupported,errors}));
 }catch(e){report.failure=e.stack||String(e);console.error(report.failure);}
