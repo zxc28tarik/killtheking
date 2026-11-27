@@ -18,7 +18,7 @@ test('OPT08 live original 140 soldier stress only mutates disposable QA browser 
 test('OPT10 live 140-soldier benchmark isolates real role-specific buffer uploads',()=>{
  for(const marker of ["entire-musket-role-dead","entire-sword-role-dead",
  "s.alive=c.role?s.type!==c.role:i<140-c.dead",
- "const shouldSkip=c.role?visual.roles[c.role].batches",
+ "const shouldSkip=Object.entries(visual.roles).reduce",
  "counters.skippedBatchUploads!==shouldSkip",
  "counters.uploadedBatches!==visual.drawBatches-1-shouldSkip"])
   assert.ok(qa.includes(marker),marker);
