@@ -318,6 +318,7 @@ jobs:
               await p.evaluate(()=>document.body.classList.add('ktk-kiss-debug'));
               assert.equal(await p.locator('#kiss-debug-telemetry').isVisible(),true);
               await p.evaluate(()=>document.body.classList.remove('ktk-kiss-debug'));
+              assert.equal(await p.locator('#kiss-class-notice').isVisible(),false);
               console.log('PASS KISS-A shared HUD',viewport.width,startMap);
               // FIT09: verify actual running simulation, not only the menu transition.
               // Software WebGL sample is diagnostic, never a hardware FPS gate.
@@ -368,7 +369,22 @@ jobs:
               });
               assert.deepEqual(idle,{stable:true,resized:1,clipped:true,normal:40,full:48,created:48,cleaned:true,reused:true,resumed:true});
               console.log('PASS BUG09/10 real DOM and frozen renderer',viewport.width);
+              // KISS-A: pause cancellation/confirmation and map stage restoration.
+              await p.evaluate(()=>{
+                if(document.pointerLockElement===canvas)document.exitPointerLock();
+                ArenaMatch.pause(arenaMatch);isGameActive=false;menuOverlay.classList.remove('hidden');
+              });
+              await p.waitForFunction(()=>window.ktkUI32Status().stage==='pause');
+              p.once('dialog',d=>d.dismiss());
+              await p.locator('#kiss-return-menu').click();
+              assert.equal(await p.evaluate(()=>arenaMatch.phase),'paused');
+              p.once('dialog',d=>d.accept());
+              await p.locator('#kiss-return-menu').click();
+              assert.equal(await p.evaluate(()=>arenaMatch.phase),'menu');
+              assert.equal(await p.evaluate(()=>window.ktkUI32Status().stage),'map');
+              assert.equal(await p.locator('#kiss-return-menu').isVisible(),false);
               assert.deepEqual(errors,[]);
+              console.log('PASS KISS-A pause return',viewport.width,startMap);
               console.log('PASS start and menu visibility',viewport.width);
               await p.close();
             }

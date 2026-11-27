@@ -227,6 +227,10 @@ body.ktk-kiss-debug #kiss-motion-row{display:flex}
 #kiss-weapon-panel #hud-ability-badge{white-space:normal}
 #focus-menu [data-kiss-help][hidden]{display:none!important}
 #kiss-debug-toggle{accent-color:#97b3a7}
+#kiss-class-notice[hidden],#focus-menu:not([data-stage=pause]) #kiss-return-menu{display:none!important}
+#kiss-class-notice{font:600 12px system-ui;padding:6px 10px;text-align:center}
+#medal-container .medal-anim,#kill-feed>div{border-width:1px!important;box-shadow:none!important;font-size:11px!important}
+#score-popup-container>div{font-size:14px!important;font-style:normal!important}
 </style>
 </head>
 <body class="relative w-full h-full overflow-hidden text-white">
@@ -304,7 +308,7 @@ window.addEventListener('error', function(event) {
            <button data-army-order="follow">G · Takip</button><button data-army-order="hold">J · Mevzi tut</button>
            <button data-army-order="advance">K · İlerle</button><button data-army-order="charge">L · Hücum</button>
            <button data-army-order="retreat">U · Çekil</button><button data-army-order="flank">Y · Kanat</button>
-           <button data-army-order="skirmish">N · Taciz</button><button data-army-order="position">P · Haritadan hedef</button>
+           <button data-army-order="skirmish">N · Taciz</button><button data-army-order="position">T · Haritadan hedef</button>
           </div>
           <div class="mt-1 text-sky-300">Dizilişler</div>
           <div class="army-commands">
@@ -316,7 +320,7 @@ window.addEventListener('error', function(event) {
           <div class="army-commands">
            <button data-army-spacing="0.7">Sık</button><button data-army-spacing="1">Normal</button>
            <button data-army-spacing="1.4">Geniş</button>
-           <button id="army-open-map">P · Taktik harita</button>
+           <button id="army-open-map">T · Taktik harita</button>
           </div>
           <div id="army-command-progress" class="mt-1 text-lime-300" role="status">Emir durumu: hazır</div>
           <div class="mt-1 text-sky-300">Tüfekçi / Okçu ateşi</div>
@@ -324,7 +328,7 @@ window.addEventListener('error', function(event) {
            <button data-army-fire="free">7 · Serbest</button><button data-army-fire="volley">8 · Toplu ateş</button>
            <button data-army-fire="hold">9 · Ateşi kes</button>
           </div>
-          <div class="mt-1 text-gray-400">Oyunda P ile taktik haritayı aç. Haritada hedef veya yön seç; Esc ile oyuna dön. Saf aralığı için [ ve ] tuşlarını kullan.</div>
+          <div class="mt-1 text-gray-400">Oyunda T ile taktik haritayı aç. Haritada hedef veya yön seç; Esc ile oyuna dön. Saf aralığı için [ ve ] tuşlarını kullan.</div>
         </details>
         <details class="mt-2"><summary class="cursor-pointer font-bold text-amber-300">8 bölük durumu</summary>
           <div id="meadow-army-hud-rows" class="mt-1 grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-1"></div>
@@ -391,7 +395,7 @@ window.addEventListener('error', function(event) {
                             <div id="hud-lighting-badge" class="text-amber-300">🌅 GÜN BATIMI [H]</div>
                         </div>
                     </div>
-                    <div class="hud-box px-3 py-1.5 rounded text-xs sm:text-sm font-bold tracking-wide krunker-text text-gray-200 leading-tight">
+                    <div id="kiss-personal-score" class="hud-box px-3 py-1.5 rounded text-xs sm:text-sm font-bold tracking-wide krunker-text text-gray-200 leading-tight">
                         <div class="flex gap-3 mt-1 text-xs sm:text-sm">
                             <span class="text-emerald-400">LEŞ: <strong id="hud-kills">0</strong></span>
                             <span class="text-rose-400">ÖLÜM: <strong id="hud-deaths">0</strong></span>
@@ -476,6 +480,7 @@ window.addEventListener('error', function(event) {
 
             <!-- Bottom-Right: Class Quick-Switch + Ability Box + Main Weapon Box -->
             <div class="flex flex-col items-end gap-2">
+                <div id="kiss-class-notice" class="hud-box" hidden role="status"></div>
                 <!-- Main Weapon, Right-Click Ability & Secondary Info Box -->
                 <div id="kiss-weapon-panel" class="hud-box rounded p-3 min-w-[250px] sm:min-w-[290px] flex flex-col items-end">
                     <div class="flex items-center justify-between w-full mb-1">
@@ -7733,9 +7738,8 @@ const KTKBattlefieldVisualV19=(()=>{
  'use strict';
  const STYLE_ID='ktk-v19-native-battlefield-hud';
  const CSS=[
- 'body.ktk-native-battle-ui #hud > div:first-child > div:nth-child(2){display:none!important}',
- 'body.ktk-native-battle-ui #hud > div:first-child > div:first-child > div:last-child > div:last-child{display:none!important}',
- 'body.ktk-native-battle-ui #hud > div:last-child > div:first-child > div:first-child{display:none!important}',
+ 'body.ktk-native-battle-ui #medal-container{display:none!important}',
+ 'body.ktk-native-battle-ui #kiss-personal-score{display:none!important}',
  'body.ktk-native-battle-ui #hud > div:first-child > div:first-child{gap:7px!important}',
  'body.ktk-native-battle-ui #hud > div:first-child > div:first-child .hud-box{background:rgba(8,17,24,.89)!important;border-color:rgba(194,171,117,.43)!important;box-shadow:0 5px 16px rgba(0,0,0,.33)!important}',
  'body.ktk-native-battle-ui #hud #radar-canvas{width:84px!important;height:84px!important}',
@@ -12724,7 +12728,7 @@ const KTKCalmUIV25=(()=>{
                 <div class="text-xs sm:text-sm font-black tracking-wider text-white">${title}</div>
                 <div class="text-[10px] font-bold text-amber-200">${subtitle}</div>
             `;
-            container.appendChild(medal);
+            container.replaceChildren(medal);
             setTimeout(() => medal.remove(), 1800);
         }
 
@@ -12733,7 +12737,7 @@ const KTKCalmUIV25=(()=>{
             const el = document.createElement('div');
             el.className = `score-popup-anim text-base sm:text-lg font-black italic tracking-wider krunker-text ${colorClass}`;
             el.textContent = text;
-            container.appendChild(el);
+            container.replaceChildren(el);
             setTimeout(() => el.remove(), 1150);
         }
 
@@ -12749,8 +12753,8 @@ const KTKCalmUIV25=(()=>{
                 <span class="${victimColor}">${victim}</span>
             `;
             feed.prepend(item);
-            while (feed.children.length > 5) feed.lastChild.remove();
-            setTimeout(() => { if (item.parentNode) item.remove(); }, 6500);
+            while (feed.children.length > 3) feed.lastChild.remove();
+            setTimeout(() => { if (item.parentNode) item.remove(); }, 4500);
         }
 
         // Combat impulses must obey the same castle colliders as navigation.
@@ -14582,7 +14586,12 @@ const KTKCalmUIV25=(()=>{
             link.remove();
             setTimeout(() => URL.revokeObjectURL(url), 1000);
         });
-        document.getElementById('match-menu-btn').addEventListener('click', () => {
+        function returnToMainMenu(){
+            if(arenaMatch.phase!=='paused'&&arenaMatch.phase!=='results')return false;
+            if(arenaMatch.phase==='paused'){
+                clearPlayerCombatInput();activeWeaponSwing=null;clearRoundTransients();
+                nativeSiegePanel.classList.add('hidden');
+            }
             KTKNativeArmyMatchFinish.restoreHud(document);
             KTKBattlefieldVisualV19.setBattleUi(document,false);
             arenaMatch.phase = 'menu';
@@ -14599,10 +14608,14 @@ const KTKCalmUIV25=(()=>{
             matchResultsOverlay.classList.add('hidden');
             menuOverlay.classList.remove('hidden');
             playBtn.textContent = 'YENİ MAÇ BAŞLAT';
-        });
+            if(document.pointerLockElement===canvas&&document.exitPointerLock)document.exitPointerLock();
+            return true;
+        }
+        document.getElementById('match-menu-btn').addEventListener('click',returnToMainMenu);
 
         // BUG24: input state is owned by the active, focused game view.
         function clearPlayerCombatInput(){
+            clearKissClassNotice();
             for(const code in keys)keys[code]=false;
             player.isDrawingBow=false;
             player.bowCharge=0;
@@ -14709,9 +14722,21 @@ const KTKCalmUIV25=(()=>{
 
         window.addEventListener('contextmenu', e => e.preventDefault());
 
+        let kissClassNoticeTimeout=0;
+        function clearKissClassNotice(){
+            clearTimeout(kissClassNoticeTimeout);
+            document.getElementById('kiss-class-notice').hidden=true;
+        }
+        function showKissClassNotice(){
+            const notice=document.getElementById('kiss-class-notice');
+            clearTimeout(kissClassNoticeTimeout);
+            notice.textContent=(player.classIdx+1)+' · '+['Şövalye','Mızrakçı','Okçu','Tüfekçi'][player.classIdx];
+            notice.hidden=false;
+            kissClassNoticeTimeout=setTimeout(clearKissClassNotice,1800);
+        }
         window.addEventListener('keydown', (e) => {
             if(armyTacticalOpen){
-                if(e.code==='Escape'||e.code==='KeyP'){
+                if(e.code==='Escape'||(e.code==='KeyT'&&!e.repeat)){
                     e.preventDefault();closeArmyTacticalMap();
                 }
                 return;
@@ -14730,7 +14755,7 @@ const KTKCalmUIV25=(()=>{
                         return;
                     }
                 }
-                if(e.code==='KeyP'){e.preventDefault();openArmyTacticalMap();return;}
+                if(e.code==='KeyT'){e.preventDefault();openArmyTacticalMap();return;}
                 if(e.code==='BracketLeft'){e.preventDefault();setArmySpacing(Math.max(.65,currentSquad().spacingScale-.1));return;}
                 if(e.code==='BracketRight'){e.preventDefault();setArmySpacing(Math.min(1.65,currentSquad().spacingScale+.1));return;}
                 const orderHotkeys={KeyG:'follow',KeyJ:'hold',KeyK:'advance',KeyL:'charge',
@@ -14756,14 +14781,15 @@ const KTKCalmUIV25=(()=>{
             }
             if (!isGameActive || document.pointerLockElement !== canvas || !document.hasFocus()) return;
             keys[e.code] = true;
-            if (e.code === 'Digit1') selectClass(0);
-            if (e.code === 'Digit2') selectClass(1);
-            if (e.code === 'Digit3') selectClass(2);
-            if (e.code === 'Digit4') selectClass(3);
+            if (!e.repeat&&/^Digit[1-4]$/.test(e.code)) {
+                const previous=player.classIdx;
+                selectClass(Number(e.code.slice(-1))-1);
+                if(!meadowBattleMode&&player.classIdx!==previous)showKissClassNotice();
+            }
             if (e.code === 'KeyR') startReload();
             if (e.code === 'KeyF' || e.code === 'KeyV') performQuickAbilityOrMelee();
             if (e.code === 'KeyH') setAtmosphere(currentAtmosphereIdx + 1);
-            if (e.code === 'KeyP') toggleThirdPerson();
+            if (e.code === 'KeyP' && !e.repeat) toggleThirdPerson();
         });
 
         window.addEventListener('keyup', (e) => {
@@ -16924,6 +16950,7 @@ body.ktk-calm-ui #menu-overlay #focus-menu .fm-hint{font:500 11px/1.5 system-ui,
                <div class="fm-more-links">
                 <button id="fm-toggle-settings" class="fm-text-link" type="button" aria-expanded="false" aria-controls="fm-settings-drawer">Ayarlar <span aria-hidden="true">⌄</span></button>
                 <button id="fm-toggle-help" class="fm-text-link" type="button" aria-expanded="false" aria-controls="fm-help-drawer">Kontroller <span aria-hidden="true">⌄</span></button>
+                <button id="kiss-return-menu" class="fm-text-link" type="button">Ana menü</button>
                </div>
                <div id="fm-start-wrap"></div>
               </div>
@@ -16943,7 +16970,7 @@ body.ktk-calm-ui #menu-overlay #focus-menu .fm-hint{font:500 11px/1.5 system-ui,
               </div>
               <div id="fm-help-drawer" class="fm-drawer" hidden>
                <h2 class="fm-drawer-head">KONTROLLER</h2>
-               <ul class="fm-help"><li><strong>WASD</strong> Hareket</li><li><strong>Space</strong> Zıplama</li><li><strong>Shift / C</strong> Kayma</li><li><strong>Sol tık</strong> Saldırı</li><li><strong>Sağ tık</strong> Özel kullanım</li><li><strong>F / V</strong> Yakın saldırı / yetenek</li><li><strong>R</strong> Tüfek doldur</li><li><strong>Tab</strong> Sıralama</li><li><strong>H</strong> Atmosfer</li><li data-kiss-help="arena"><strong>1–4</strong> Sınıf değiştir</li><li data-kiss-help="arena"><strong>P</strong> Kamera değiştir</li><li data-kiss-help="army" hidden><strong>P</strong> Taktik harita</li><li data-kiss-help="army" hidden><strong>F10</strong> Emirler</li><li data-kiss-help="siege" hidden><strong>F6–F9</strong> Kuşatma araçları / hücum</li></ul>
+               <ul class="fm-help"><li><strong>WASD</strong> Hareket</li><li><strong>Space</strong> Zıplama</li><li><strong>Shift / C</strong> Kayma</li><li><strong>Sol tık</strong> Saldırı</li><li><strong>Sağ tık</strong> Özel kullanım</li><li><strong>F / V</strong> Yakın saldırı / yetenek</li><li><strong>R</strong> Tüfek doldur</li><li><strong>Tab</strong> Sıralama</li><li><strong>H</strong> Atmosfer</li><li data-kiss-help="arena"><strong>1–4</strong> Sınıf değiştir</li><li><strong>P</strong> Kamera değiştir</li><li data-kiss-help="army" hidden><strong>T</strong> Taktik harita</li><li data-kiss-help="army" hidden><strong>F10</strong> Emirler</li><li data-kiss-help="siege" hidden><strong>F6–F9</strong> Kuşatma araçları / hücum</li></ul>
                <p id="kiss-class-help" class="fm-hint"></p>
               </div>`;
             overlay.appendChild(panel);
@@ -17015,6 +17042,9 @@ body.ktk-calm-ui #menu-overlay #focus-menu .fm-hint{font:500 11px/1.5 system-ui,
             mirror('arena-volume-slider','fm-volume','input');
             mirror('arena-quality-select','fm-quality','change');
             mirror('arena-low-motion','fm-low-motion','change');
+            panel.querySelector('#kiss-return-menu').addEventListener('click',()=>{
+              if(arenaMatch.phase==='paused'&&window.confirm('Maçtan çıkıp ana menüye dönülsün mü?'))returnToMainMenu();
+            });
             panel.querySelector('#kiss-debug-toggle').addEventListener('change',e=>{
               document.body.classList.toggle('ktk-kiss-debug',e.target.checked);
             });
@@ -17467,6 +17497,7 @@ if(!overlay||!panel||!art){if(overlay){const message=document.createElement('div
 const bg=document.createElement('img');bg.className='ui32-backdrop';bg.src=art.src;bg.alt='';bg.setAttribute('aria-hidden','true');panel.prepend(bg);
 const header=document.createElement('header');header.className='ui32-header';header.innerHTML='<span>KILL THE KING</span><span class="ui32-stage-label" id="ui32-stage-label">Harita seçimi</span>';panel.insertBefore(header,panel.querySelector('.fm-main'));
 const back=document.createElement('button');back.type='button';back.id='ui32-back';back.className='ui32-back';back.textContent='‹ Haritalar';panel.querySelector('.fm-more-links').prepend(back);
+panel.querySelector('#kiss-return-menu').addEventListener('click',()=>{if(arenaMatch.phase==='menu')stage('map');});
 const shapes={arena:'<path d="M24 74V43h12V30h11v13h16V30h11v13h12v31z"/><path d="M48 74V57h14v17"/>',meadow:'<path d="M19 73Q35 48 55 69Q74 46 91 73M27 65l20-38m-10 0 10 0 6 8m25 30L63 27m-6 8 6-8 10 0"/>',siege:'<path d="M19 76V35h13v10h10V35h26v10h10V35h13v41zM46 76V61h18v15M19 48h72"/><path d="M55 21v14m0-14 20 4-20 6"/>'};
 function stage(s){panel.dataset.stage=s;panel.querySelector('#ui32-stage-label').textContent=s==='map'?'Harita seçimi':s==='pause'?'Oyun duraklatıldı':'Sınıf seçimi';for(const d of panel.querySelectorAll('.fm-drawer'))d.hidden=true;for(const b of panel.querySelectorAll('[aria-controls]'))b.setAttribute('aria-expanded','false');overlay.scrollTop=0;}
 for(const b of panel.querySelectorAll('[data-focus-map]')){const name=b.dataset.focusMap;const e=document.createElementNS('http://www.w3.org/2000/svg','svg');e.setAttribute('class','ui32-emblem');e.setAttribute('viewBox','0 0 110 126');e.setAttribute('aria-hidden','true');e.innerHTML='<path d="M55 5 101 23v55Q101 103 55 121Q9 103 9 78V23Z" fill="#222c2d" stroke="#d7bd8a" stroke-width="3"/><path d="M55 13 93 28v49Q93 96 55 112Q17 96 17 77V28Z" fill="none" stroke="#907951" stroke-width="1.5"/><g fill="none" stroke="#e4cc9d" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">'+shapes[name]+'</g>';b.prepend(e);b.addEventListener('click',()=>{if(arenaMatch.phase==='menu'&&b.getAttribute('aria-pressed')==='true')stage('class');});}

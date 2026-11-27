@@ -108,7 +108,11 @@ jobs:
                         player.isDrawingBow=true;player.bowDrawSeconds=5;player.bowCharge=1;
                         player.isRMBDown=true;player.isShielding=true;keys.KeyW=true;
                         const before=arrows.length;
+                        const previousCamera=player.isThirdPerson;
                         key('keydown','KeyP');
+                        must(player.isThirdPerson!==previousCamera&&!armyTacticalOpen,'P must remain camera in army mode');
+                        key('keyup','KeyP');
+                        key('keydown','KeyT');
                         must(armyTacticalOpen&&!player.isDrawingBow&&!player.isRMBDown&&!player.isShielding&&!keys.KeyW,'tactical opening did not clear input');
                         drawArmyTacticalMap(); // direct assertion: drawing must not throw (player marker TDZ regression)
                         mouse('mouseup',0);mouse('mousedown',0);mouse('mousedown',2);
