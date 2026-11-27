@@ -274,7 +274,15 @@ jobs:
               console.log('PASS FIT04 batch geometry, pose reuse and idle canvas',viewport.width);
               // FIT02b: settings must still reach the original engine controls.
               await p.locator('[data-focus-map="arena"]').click();
+              await p.locator('#fm-toggle-help').click();
+              assert.equal(await p.locator('[data-kiss-help="arena"]').first().isVisible(),true);
+              assert.equal(await p.locator('[data-kiss-help="siege"]').isVisible(),false);
               await p.locator('#fm-toggle-settings').click();
+              assert.equal(await p.locator('#kiss-debug-toggle').isChecked(),false);
+              await p.locator('#kiss-debug-toggle').check();
+              assert.equal(await p.evaluate(()=>document.body.classList.contains('ktk-kiss-debug')),true);
+              await p.locator('#kiss-debug-toggle').uncheck();
+              assert.equal(await p.evaluate(()=>document.body.classList.contains('ktk-kiss-debug')),false);
               await p.locator('[data-focus-mode="tdm"]').click();
               assert.equal(await p.locator('[data-arena-mode="tdm"]').getAttribute('aria-pressed'),'true');
               await p.locator('[data-focus-mode="ffa"]').click();
@@ -300,6 +308,17 @@ jobs:
               const started=await p.evaluate(()=>window.ktkUI32Status());
               assert.equal(started.phase,'playing');assert.equal(started.engineSiege,startMap==='siege');assert.equal(started.engineArmy,startMap!=='arena');
               console.log('PASS actual match start',startMap);
+              assert.equal(await p.locator('#chat-messages').count(),0);
+              assert.equal(await p.locator('[id^="pill-"]').count(),0);
+              assert.equal(await p.locator('#kiss-debug-telemetry').isVisible(),false);
+              assert.equal(await p.locator('#kiss-debug-speed').isVisible(),false);
+              assert.equal(await p.locator('#hud-hp-text').isVisible(),true,'health must survive legacy chat selector deletion');
+              assert.equal(await p.locator('#hud-class-name').isVisible(),true);
+              assert.equal(await p.locator('#hud-ammo').isVisible(),true);
+              await p.evaluate(()=>document.body.classList.add('ktk-kiss-debug'));
+              assert.equal(await p.locator('#kiss-debug-telemetry').isVisible(),true);
+              await p.evaluate(()=>document.body.classList.remove('ktk-kiss-debug'));
+              console.log('PASS KISS-A shared HUD',viewport.width,startMap);
               // FIT09: verify actual running simulation, not only the menu transition.
               // Software WebGL sample is diagnostic, never a hardware FPS gate.
               const live=await p.evaluate(async()=>{

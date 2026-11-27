@@ -215,7 +215,20 @@
 #army-tactical-overlay .army-commands button {padding:6px 9px;}
 #army-tactical-overlay .army-commands button.selected {background:#854d0e;border-color:#fbbf24;}
 
-</style></head>
+</style>
+<style id="ktk-kiss-a01">
+/* Shared presentation only. All combat, map and diagnostic values remain live. */
+body:not(.ktk-kiss-debug) :is(#kiss-debug-telemetry,#kiss-debug-speed,#match-qa-export-btn){display:none!important}
+#kiss-motion-row:has(#hud-slide-indicator:empty){display:none}
+body.ktk-kiss-debug #kiss-motion-row{display:flex}
+#hud-slide-indicator:empty{display:none}
+#kiss-health-panel{width:clamp(120px,23vw,270px)}
+#kiss-weapon-panel{min-width:0!important;width:clamp(125px,24vw,260px);max-width:42vw;overflow-wrap:anywhere}
+#kiss-weapon-panel #hud-ability-badge{white-space:normal}
+#focus-menu [data-kiss-help][hidden]{display:none!important}
+#kiss-debug-toggle{accent-color:#97b3a7}
+</style>
+</head>
 <body class="relative w-full h-full overflow-hidden text-white">
     <div id="ktk-ui32-loading" role="status"><strong>KILL THE KING</strong><span>Oyun hazırlanıyor…</span></div>
 <script>
@@ -351,10 +364,10 @@ window.addEventListener('error', function(event) {
     <div id="world-labels-container" class="fixed inset-0 pointer-events-none z-10 overflow-hidden"></div>
     <div id="damage-numbers-container" class="fixed inset-0 pointer-events-none z-20 overflow-hidden"></div>
 
-    <!-- ==================== IN-GAME KRUNKER v3.0 HD HUD ==================== -->
+    <!-- Shared KISS-A battle HUD -->
     <div id="hud" class="fixed inset-0 pointer-events-none z-20 flex flex-col justify-between p-3 sm:p-5">
 
-        <!-- TOP BAR: Radar + Timer/Stats (Left), Logo + Medals (Center), Killfeed (Right) -->
+        <!-- Radar, match timer, combat notifications -->
         <div class="flex justify-between items-start w-full gap-2">
             
             <!-- Top-Left: Live Radar + Timer & Stats -->
@@ -373,13 +386,12 @@ window.addEventListener('error', function(event) {
                             <span class="text-base sm:text-lg font-bold tracking-wider krunker-text text-gray-100">SÜRE</span>
                             <span id="hud-timer" class="text-lg sm:text-2xl font-extrabold text-amber-400 krunker-text">04:00</span>
                         </div>
-                        <div class="hud-box px-2.5 py-1 rounded text-xs font-bold leading-tight krunker-text">
+                        <div id="kiss-debug-telemetry" class="hud-box px-2.5 py-1 rounded text-xs font-bold leading-tight krunker-text">
                             <div class="text-lime-400"><span id="hud-fps">60</span> FPS</div>
                             <div id="hud-lighting-badge" class="text-amber-300">🌅 GÜN BATIMI [H]</div>
                         </div>
                     </div>
                     <div class="hud-box px-3 py-1.5 rounded text-xs sm:text-sm font-bold tracking-wide krunker-text text-gray-200 leading-tight">
-                        <div class="text-amber-400 font-extrabold">KRUNKER 1600 <span class="text-xs text-white bg-amber-600 px-1.5 py-0.2 rounded ml-1">v3.5 HD + SERBEST ARENA</span></div>
                         <div class="flex gap-3 mt-1 text-xs sm:text-sm">
                             <span class="text-emerald-400">LEŞ: <strong id="hud-kills">0</strong></span>
                             <span class="text-rose-400">ÖLÜM: <strong id="hud-deaths">0</strong></span>
@@ -389,14 +401,7 @@ window.addEventListener('error', function(event) {
                 </div>
             </div>
 
-            <!-- Top-Center: Krunker Banner & Medal Popups -->
-            <div class="hidden md:flex flex-col items-center -mt-1 relative">
-                <div class="text-3xl lg:text-4xl font-black italic tracking-wider text-white krunker-title">
-                    KRUNKER <span class="text-amber-400">1600</span>
-                </div>
-                <div class="bg-amber-600/95 border-2 border-black px-3 py-0.5 -mt-1.5 rounded shadow-lg text-[11px] font-extrabold tracking-widest text-amber-100 uppercase krunker-text">
-                    HD KARAKTERLER • [P] KAMERA (FPS/TPS) • [H] ATMOSFER
-                </div>
+            <div class="flex flex-col items-center relative">
                 <!-- Animated Medal Container -->
                 <div id="medal-container" class="mt-2 flex flex-wrap justify-center gap-2 max-w-md"></div>
             </div>
@@ -451,22 +456,8 @@ window.addEventListener('error', function(event) {
         <!-- BOTTOM SECTION: Chat + HP/Speed/Slide (Left) & Weapon/Ability/Classes (Right) -->
         <div class="flex justify-between items-end w-full gap-4">
             
-            <!-- Bottom-Left: Krunker Chat + HP Bar + Speedometer & Momentum Bonus -->
-            <div class="flex flex-col gap-2.5 w-64 sm:w-80">
-                <!-- Krunker-style Chat Box -->
-                <div class="hud-box rounded p-2 text-xs flex flex-col gap-1 max-h-32 overflow-hidden">
-                    <div id="chat-messages" class="flex flex-col gap-1 overflow-y-auto pr-1">
-                        <div><span class="text-rose-400 font-bold">Şövalye_34:</span> <span class="text-gray-100">Yeni pelerinli şövalye zırhları ve tüylü miğferler efsane!</span></div>
-                        <div><span class="text-amber-400 font-bold">Yeniçeri_1600:</span> <span class="text-gray-100">[P] tuşuna basıp kendi karakterinizi 3. şahısta görün!</span></div>
-                        <div><span class="text-sky-400 font-bold">Mızraklı_Kurt:</span> <span class="text-gray-100">Tüfekçilerin göğsündeki barutluk kuşağı ve bıyıklar çok iyi</span></div>
-                        <div><span class="text-emerald-400 font-bold">Okçu_Reis:</span> <span class="text-gray-100">Sırtımda oklu sadak, elimde uzun yay ile surlardayım</span></div>
-                    </div>
-                    <div class="border-t border-white/15 pt-1 mt-0.5 text-[10px] text-gray-400 flex justify-between">
-                        <span>Kuşatma_Sohbet</span>
-                        <span class="text-amber-400 font-bold">[P] 3. Şahıs Kamera | [H] Atmosfer</span>
-                    </div>
-                </div>
-
+            <!-- Health and optional diagnostics -->
+            <div id="kiss-health-panel" class="flex flex-col gap-2.5 w-64 sm:w-80">
                 <!-- Health & Speedometer Box -->
                 <div class="hud-box rounded p-3 flex flex-col gap-2">
                     <div class="flex justify-between items-center text-sm sm:text-base font-extrabold krunker-text">
@@ -476,33 +467,17 @@ window.addEventListener('error', function(event) {
                     <div class="w-full h-3.5 bg-black/80 border border-white/25 rounded overflow-hidden p-0.5">
                         <div id="hud-hp-bar" class="h-full bg-lime-400 transition-all duration-150" style="width: 100%;"></div>
                     </div>
-                    <div class="flex justify-between items-center text-xs sm:text-sm font-extrabold krunker-text pt-0.5">
-                        <span>HIZ: <span id="hud-speed" class="text-white">0</span></span>
-                        <span id="hud-slide-indicator" class="text-[10px] text-sky-300 tracking-wider">SHIFT + SPACE: SLIDE-HOP</span>
+                    <div id="kiss-motion-row" class="flex justify-between items-center text-xs sm:text-sm font-extrabold krunker-text pt-0.5">
+                        <span id="kiss-debug-speed">HIZ: <span id="hud-speed" class="text-white">0</span></span>
+                        <span id="hud-slide-indicator" class="text-[10px] text-sky-300 tracking-wider"></span>
                     </div>
                 </div>
             </div>
 
             <!-- Bottom-Right: Class Quick-Switch + Ability Box + Main Weapon Box -->
             <div class="flex flex-col items-end gap-2">
-                <!-- Quick Class Switch Pills (1 - 4) -->
-                <div class="flex flex-wrap justify-end gap-1.5">
-                    <div id="pill-1" class="hud-box px-2.5 py-1 rounded text-xs sm:text-sm font-bold krunker-text">
-                        <span class="text-amber-400">[1]</span> Şövalye
-                    </div>
-                    <div id="pill-2" class="hud-box px-2.5 py-1 rounded text-xs sm:text-sm font-bold krunker-text">
-                        <span class="text-amber-400">[2]</span> Piyade
-                    </div>
-                    <div id="pill-3" class="hud-box px-2.5 py-1 rounded text-xs sm:text-sm font-bold krunker-text">
-                        <span class="text-amber-400">[3]</span> Okçu
-                    </div>
-                    <div id="pill-4" class="hud-box px-2.5 py-1 rounded text-xs sm:text-sm font-bold krunker-text">
-                        <span class="text-amber-400">[4]</span> Tüfekçi
-                    </div>
-                </div>
-
                 <!-- Main Weapon, Right-Click Ability & Secondary Info Box -->
-                <div class="hud-box rounded p-3 min-w-[250px] sm:min-w-[290px] flex flex-col items-end">
+                <div id="kiss-weapon-panel" class="hud-box rounded p-3 min-w-[250px] sm:min-w-[290px] flex flex-col items-end">
                     <div class="flex items-center justify-between w-full mb-1">
                         <span id="hud-ability-badge" class="text-[11px] font-extrabold bg-amber-500/20 text-amber-300 border border-amber-400/40 px-2 py-0.5 rounded krunker-text">
                             [F] SÜNGÜ DARBESİ: HAZIR
@@ -510,10 +485,10 @@ window.addEventListener('error', function(event) {
                         <div id="hud-weapon-icon" class="opacity-95"></div>
                     </div>
                     <div class="text-base sm:text-xl font-extrabold tracking-wide krunker-text text-amber-300">
-                        MERMİ: <span id="hud-ammo" class="text-white">1 / 1 (BARUT)</span>
+                        <span id="hud-ammo" class="text-white">1 / 1 (BARUT)</span>
                     </div>
                     <div class="text-xs sm:text-sm font-extrabold tracking-wider krunker-text text-gray-200 uppercase">
-                        SINIF: <span id="hud-class-name" class="text-amber-400">TÜFEKÇİ (1600 MUSKET)</span>
+                        <span id="hud-class-name" class="text-amber-400">TÜFEKÇİ</span>
                     </div>
                     <div id="hud-class-tip" class="text-[11px] text-sky-300 font-bold krunker-text mt-0.5">
                         Sağ Tık: Nişan (ADS) | [R]: Barut Doldur | [F]: Hançer
@@ -9291,7 +9266,7 @@ const KTKSiegeRouteWatchV28=(()=>{
 const KTKCalmUIV25=(()=>{
  'use strict';
  const STYLE_ID='ktk-ui-calm-v25-styles';
- const CSS="/* KILL THE KING V25 — CALM HUD AND MENU. Presentation-only, no battle rules. */\nbody.ktk-calm-ui {\n --calm-bg:#182229; --calm-panel:#1d2b31; --calm-panel-soft:#24343a;\n --calm-edge:#46575b; --calm-edge-active:#94ad9f;\n --calm-text:#e6eae6; --calm-muted:#b3c0bf; --calm-accent:#9cb9aa;\n --calm-warning:#c6a486; --calm-danger:#cd9b99;\n font-family:system-ui,-apple-system,\"Segoe UI\",sans-serif;\n}\n/* Five exact body classes outrank V21–V24 and preserve previous style modules. */\nbody.ktk-ui-v21.ktk-ui-v22.ktk-ui-v23.ktk-ui-v24.ktk-calm-ui #menu-overlay {\n background:rgba(11,18,21,.88)!important; backdrop-filter:blur(5px)!important;\n color:var(--calm-text)!important;\n}\nbody.ktk-ui-v21.ktk-ui-v22.ktk-ui-v23.ktk-ui-v24.ktk-calm-ui #menu-overlay>div {\n max-width:980px!important; max-height:calc(100dvh - 20px)!important;\n background:#1b292f!important; background-image:none!important;\n border:1px solid #46585a!important; border-top:1px solid #617b75!important;\n border-radius:12px!important; box-shadow:0 15px 45px rgba(0,0,0,.45)!important;\n padding:clamp(13px,2.2vw,23px)!important; scrollbar-color:#647d7b #1a292d;\n}\nbody.ktk-ui-v21.ktk-ui-v22.ktk-ui-v23.ktk-ui-v24.ktk-calm-ui #menu-overlay>div::before {\n content:\"KILL THE KING  /  SAVAŞA HAZIRLIK\"!important;\n background:none!important; color:#a2bdb1!important;\n border-bottom:1px solid #405155!important; text-align:left!important;\n font:700 10px/1.6 system-ui,sans-serif!important; letter-spacing:.11em!important;\n margin:0 0 8px!important; padding:0 0 9px!important;\n}\nbody.ktk-ui-v21.ktk-ui-v22.ktk-ui-v23.ktk-ui-v24.ktk-calm-ui #menu-overlay h1 {\n font:750 clamp(26px,3.5vw,35px)/1.16 system-ui,sans-serif!important;\n color:#e6eae6!important; letter-spacing:-.04em!important; text-shadow:none!important;\n}\nbody.ktk-ui-v21.ktk-ui-v22.ktk-ui-v23.ktk-ui-v24.ktk-calm-ui #menu-overlay h1 span {color:#d4dfd8!important}\nbody.ktk-calm-ui #menu-overlay :is(h2,h3,h4,strong){text-shadow:none!important}\nbody.ktk-calm-ui #menu-overlay p {color:#b5c1bd!important;line-height:1.4!important}\nbody.ktk-calm-ui #menu-overlay>div>div:first-child {border-color:#3d4d52!important;margin-bottom:10px!important;padding-bottom:10px!important}\n/* Expose only primary choices; advanced audio/video live behind an accessible disclosure. */\nbody.ktk-calm-ui #ktk-calm-settings {margin:10px 0;padding:0;border:1px solid #425359;border-radius:8px;background:#1c292e}\nbody.ktk-calm-ui #ktk-calm-settings>summary {padding:10px 12px;color:#cedbd5!important;cursor:pointer;font:650 12px/1.4 system-ui,sans-serif;list-style-position:inside}\nbody.ktk-calm-ui #ktk-calm-settings>summary:hover {background:#2b3a40}\nbody.ktk-calm-ui #ktk-calm-settings[open]>summary {border-bottom:1px solid #45565b}\nbody.ktk-calm-ui #ktk-calm-settings #arena-settings-controls {margin:0!important;background:#19272d!important;border:0!important;box-shadow:none!important;padding:12px!important}\nbody.ktk-calm-ui #menu-overlay :is(input,select) {accent-color:#97b3a7!important;color:#e6eae6}\nbody.ktk-calm-ui #menu-overlay select {background:#29373d!important;border:1px solid #54666a!important;color:#e6eae6!important;box-shadow:none!important}\n/* Section cards — no illustrations/glow competing with choices. */\n/* Map and modes: equal-size quiet controls with a single persistent selection signal. */\nbody.ktk-ui-v21.ktk-ui-v22.ktk-ui-v23.ktk-ui-v24.ktk-calm-ui #arena-map-controls {\n background:#213036!important; background-image:none!important; border:1px solid #46585b!important;\n box-shadow:none!important; border-radius:9px!important; padding:10px!important;\n gap:8px!important; grid-template-columns:repeat(3,minmax(0,1fr))!important;\n}\nbody.ktk-ui-v21.ktk-ui-v22.ktk-ui-v23.ktk-ui-v24.ktk-calm-ui #arena-map-controls>strong,\nbody.ktk-calm-ui #menu-overlay :is(#match-mode-controls,#meadow-army-controls,#match-duration-controls)>strong {\n font:700 11px/1.5 system-ui,sans-serif!important;letter-spacing:.08em!important;color:#c1d3cc!important;\n}\nbody.ktk-ui-v21.ktk-ui-v22.ktk-ui-v23.ktk-ui-v24.ktk-calm-ui #arena-map-controls>button {\n min-height:49px!important; padding:9px 8px!important;\n font:680 12px/1.3 system-ui,sans-serif!important;letter-spacing:0!important;\n display:flex!important;align-items:center!important;justify-content:center!important;\n flex-direction:row!important;gap:0!important;\n background:#2b3b41!important;background-image:none!important;\n border:1px solid #506168!important;border-radius:7px!important;\n box-shadow:none!important;color:#d9e0de!important;transform:none!important;\n}\nbody.ktk-ui-v21.ktk-ui-v22.ktk-ui-v23.ktk-ui-v24.ktk-calm-ui #arena-map-controls>button::before,\nbody.ktk-ui-v21.ktk-ui-v22.ktk-ui-v23.ktk-ui-v24.ktk-calm-ui #arena-map-controls>button::after {\n display:none!important;content:none!important;\n}\nbody.ktk-ui-v21.ktk-ui-v22.ktk-ui-v23.ktk-ui-v24.ktk-calm-ui #arena-map-controls>button:hover {background:#33464b!important;border-color:#809d91!important;transform:none!important}\nbody.ktk-ui-v21.ktk-ui-v22.ktk-ui-v23.ktk-ui-v24.ktk-calm-ui #arena-map-controls>button.selected,\nbody.ktk-ui-v21.ktk-ui-v22.ktk-ui-v23.ktk-ui-v24.ktk-calm-ui #arena-map-controls>button[aria-pressed=\"true\"] {\n background:#314c47!important;background-image:none!important;\n border:2px solid #9fb9ab!important;color:#f2f4f0!important;\n box-shadow:none!important;\n}\nbody.ktk-ui-v21.ktk-ui-v22.ktk-ui-v23.ktk-ui-v24.ktk-calm-ui #menu-overlay :is(#match-mode-controls,#meadow-army-controls,#match-duration-controls) {\n border:1px solid #43555a!important;background:#1f2e34!important;\n box-shadow:none!important;border-radius:8px!important;padding:8px 10px!important;\n}\nbody.ktk-ui-v21.ktk-ui-v22.ktk-ui-v23.ktk-ui-v24.ktk-calm-ui #menu-overlay :is(#match-mode-controls,#meadow-army-controls,#match-duration-controls) button {\n background:#2a3b42!important; background-image:none!important;border:1px solid #506168!important;\n color:#d8e0dd!important;min-height:34px!important;padding:6px 11px!important;\n border-radius:7px!important;box-shadow:none!important;font:650 11px/1.3 system-ui,sans-serif!important;\n}\nbody.ktk-ui-v21.ktk-ui-v22.ktk-ui-v23.ktk-ui-v24.ktk-calm-ui #menu-overlay :is(#match-mode-controls,#meadow-army-controls,#match-duration-controls) button.selected,\nbody.ktk-ui-v21.ktk-ui-v22.ktk-ui-v23.ktk-ui-v24.ktk-calm-ui #menu-overlay :is(#match-mode-controls,#meadow-army-controls,#match-duration-controls) button[aria-pressed=\"true\"] {\n background:#314a45!important;border:1px solid #9cb5a6!important;color:#f0f5ef!important;\n}\nbody.ktk-calm-ui #menu-overlay .match-duration-help {color:#aebab8!important;font-size:11px!important;line-height:1.35!important}\nbody.ktk-ui-v21.ktk-ui-v22.ktk-ui-v23.ktk-ui-v24.ktk-calm-ui #menu-overlay #play-btn {\n background:#94afa1!important;background-image:none!important;\n color:#142221!important;border:1px solid #adc6b8!important;\n box-shadow:none!important;border-radius:8px!important;\n font:750 15px/1.25 system-ui,sans-serif!important;letter-spacing:.02em!important;\n min-height:48px!important;padding:12px 23px!important;\n transform:none!important;\n}\nbody.ktk-ui-v21.ktk-ui-v22.ktk-ui-v23.ktk-ui-v24.ktk-calm-ui #menu-overlay #play-btn:hover {background:#aac4b6!important;box-shadow:none!important;transform:none!important}\n/* Keep meaningful state but soften all extraneous amber/blue/neon UI paint. */\nbody.ktk-calm-ui :is(#menu-overlay,#hud,#meadow-army-hud,#native-siege-panel,#army-tactical-overlay,#match-results-overlay) .text-amber-300,\nbody.ktk-calm-ui :is(#menu-overlay,#hud,#meadow-army-hud,#native-siege-panel,#army-tactical-overlay,#match-results-overlay) .text-amber-400,\nbody.ktk-calm-ui :is(#menu-overlay,#hud,#meadow-army-hud,#native-siege-panel,#army-tactical-overlay,#match-results-overlay) .text-yellow-200 {color:#c0b29d!important}\nbody.ktk-calm-ui :is(#menu-overlay,#hud,#meadow-army-hud,#native-siege-panel,#army-tactical-overlay,#match-results-overlay) .text-sky-300 {color:#a5bfbe!important}\nbody.ktk-calm-ui :is(#menu-overlay,#hud,#meadow-army-hud,#native-siege-panel,#army-tactical-overlay,#match-results-overlay) .text-emerald-300,\nbody.ktk-calm-ui :is(#menu-overlay,#hud,#meadow-army-hud,#native-siege-panel,#army-tactical-overlay,#match-results-overlay) .text-lime-300 {color:#9ec3a8!important}\nbody.ktk-calm-ui :is(#menu-overlay,#hud,#meadow-army-hud,#native-siege-panel,#army-tactical-overlay,#match-results-overlay) .text-rose-300 {color:#d5a3a2!important}\n/* HUD: retain health/ammo/squad telemetry while eliminating branding, fake chat and heavy panels. */\nbody.ktk-ui-v21.ktk-ui-v22.ktk-ui-v23.ktk-ui-v24.ktk-calm-ui #hud .hud-box {\n background:rgba(23,35,41,.84)!important;background-image:none!important;\n border:1px solid rgba(103,125,124,.55)!important;border-radius:7px!important;\n box-shadow:0 3px 11px rgba(0,0,0,.18)!important;backdrop-filter:blur(4px)!important;\n}\nbody.ktk-calm-ui #hud {font-family:system-ui,sans-serif!important}\nbody.ktk-calm-ui #hud :is(#hud-timer,#hud-ammo){font-variant-numeric:tabular-nums!important;text-shadow:none!important;color:#e8ece7!important}\nbody.ktk-calm-ui #hud #hud-timer{font-size:20px!important;font-weight:760!important}\nbody.ktk-calm-ui #hud #radar-canvas{width:76px!important;height:76px!important;border:1px solid #536766!important;box-shadow:none!important}\nbody.ktk-calm-ui #hud #hud-hp-bar{background:#86b49b!important;box-shadow:none!important;border-radius:4px!important}\nbody.ktk-calm-ui #hud #hud-ability-badge{background:#374a4a!important;color:#c7d9cf!important;border:1px solid #60746e!important;box-shadow:none!important}\nbody.ktk-calm-ui #hud :is(#pill-1,#pill-2,#pill-3,#pill-4){font-size:11px!important;padding:5px 7px!important;box-shadow:none!important}\nbody.ktk-calm-ui #hud #kill-feed>div{background:rgba(22,34,39,.72)!important;border-left:2px solid #92a69c!important;box-shadow:none!important;color:#c6d0ca!important;padding:5px 7px!important;font-size:11px!important}\nbody.ktk-calm-ui #hud>div:last-child>div:first-child>div:first-child {display:none!important} /* sample chat, never battle state */\nbody.ktk-calm-ui #hud #hud-lighting-badge{color:#9faeaf!important;font-size:10px!important}\nbody.ktk-calm-ui #hud #medal-container{opacity:.82}\n/* Real siege & G5.4 command panels remain intact and responsive to F6–F10. */\nbody.ktk-ui-v21.ktk-ui-v22.ktk-ui-v23.ktk-ui-v24.ktk-calm-ui #meadow-army-hud,\nbody.ktk-ui-v21.ktk-ui-v22.ktk-ui-v23.ktk-ui-v24.ktk-calm-ui #native-siege-panel {\n background:rgba(24,37,43,.89)!important;background-image:none!important;\n border:1px solid #526967!important;border-top:1px solid #526967!important;\n box-shadow:0 5px 17px rgba(0,0,0,.22)!important;\n border-radius:8px!important;color:#dce6de!important;scrollbar-color:#617b77 #213037;\n}\nbody.ktk-calm-ui #meadow-army-hud>div:first-child,\nbody.ktk-calm-ui #native-siege-panel .ktk-siege-title {font:700 11px/1.35 system-ui,sans-serif!important;color:#cfddd6!important;letter-spacing:0!important}\nbody.ktk-calm-ui #meadow-army-hud details summary {background:transparent!important;color:#c0d5c7!important;border:0!important;padding:6px 5px!important;font:650 11px/1.3 system-ui,sans-serif!important}\nbody.ktk-calm-ui #meadow-army-hud details {border-color:#4d625f!important}\nbody.ktk-ui-v21.ktk-ui-v22.ktk-ui-v23.ktk-ui-v24.ktk-calm-ui :is(#meadow-army-hud,#army-tactical-overlay) .army-commands button,\nbody.ktk-ui-v21.ktk-ui-v22.ktk-ui-v23.ktk-ui-v24.ktk-calm-ui #native-siege-panel button {\n background:#293b40!important;background-image:none!important;border:1px solid #546c6c!important;\n color:#d7e2db!important;border-radius:6px!important;\n box-shadow:none!important;font:650 11px/1.3 system-ui,sans-serif!important;\n padding:6px 8px!important;min-height:29px!important;text-shadow:none!important;\n}\nbody.ktk-ui-v21.ktk-ui-v22.ktk-ui-v23.ktk-ui-v24.ktk-calm-ui :is(#meadow-army-hud,#army-tactical-overlay) .army-commands button.selected,\nbody.ktk-ui-v21.ktk-ui-v22.ktk-ui-v23.ktk-ui-v24.ktk-calm-ui #native-siege-panel button[aria-pressed=\"true\"] {\n background:#354f48!important;border-color:#90ae9b!important;color:#f0f5ef!important;\n}\nbody.ktk-calm-ui #native-siege-panel .ktk-siege-toggle,\nbody.ktk-calm-ui #meadow-army-hud .ktk-siege-toggle{background:#31433e!important;border:1px solid #638176!important;color:#deebe2!important}\nbody.ktk-calm-ui #meadow-army-hud #army-command-progress{border-left:2px solid #7f9c91!important;background:#2a393b!important;color:#c2d7cd!important}\nbody.ktk-calm-ui #native-siege-stats,\nbody.ktk-calm-ui #native-siege-notice{color:#bdceca!important;line-height:1.5!important}\n/* Tactical map, scoreboard, results and pause use the same quiet design language. */\nbody.ktk-ui-v21.ktk-ui-v22.ktk-ui-v23.ktk-ui-v24.ktk-calm-ui #army-tactical-overlay>div,\nbody.ktk-ui-v21.ktk-ui-v22.ktk-ui-v23.ktk-ui-v24.ktk-calm-ui #match-results-overlay>section,\nbody.ktk-ui-v21.ktk-ui-v22.ktk-ui-v23.ktk-ui-v24.ktk-calm-ui #match-live-scoreboard .match-live-panel {\n background:#1d2c32!important;background-image:none!important;border:1px solid #516462!important;\n border-radius:10px!important;box-shadow:0 17px 40px rgba(0,0,0,.38)!important;\n}\nbody.ktk-calm-ui #army-tactical-overlay #army-tactical-canvas{border:1px solid #668078!important;box-shadow:none!important}\nbody.ktk-calm-ui #army-tactical-overlay .army-map-control{background:#2c3f44!important;color:#d6e4dc!important;border:1px solid #627975!important;box-shadow:none!important}\nbody.ktk-calm-ui #match-results-overlay #match-results-table>div{background:#26383d!important;border-left:2px solid #6f9184!important}\nbody.ktk-calm-ui :is(#menu-overlay,#army-tactical-overlay,#meadow-army-hud,#native-siege-panel,#match-results-overlay) :is(button,select,input,.class-card):focus-visible{\n outline:2px solid #b2d1bd!important;outline-offset:2px!important;box-shadow:0 0 0 3px rgba(129,165,145,.16)!important;\n}\n@media(max-width:700px){\n body.ktk-ui-v21.ktk-ui-v22.ktk-ui-v23.ktk-ui-v24.ktk-calm-ui #arena-map-controls{grid-template-columns:1fr!important}\n body.ktk-calm-ui #hud #radar-canvas{width:64px!important;height:64px!important}\n body.ktk-calm-ui #native-siege-panel.ktk-siege-slim{max-width:48vw!important}\n}\n@media(prefers-reduced-motion:reduce){body.ktk-calm-ui #menu-overlay :is(button,.class-card){transition:none!important;animation:none!important}}\n/* Remove redundant promo chips, make the active environment quiet, keep switch state. */\nbody.ktk-calm-ui #menu-overlay h1~span {display:none!important}\nbody.ktk-ui-v21.ktk-ui-v22.ktk-ui-v23.ktk-ui-v24.ktk-calm-ui #menu-overlay :is(#atmo-btn-0,#atmo-btn-1,#atmo-btn-2){\n background:#2a3b42!important;color:#d9e3dc!important;border:1px solid #536864!important;\n box-shadow:none!important;text-shadow:none!important;font:650 11px/1.25 system-ui,sans-serif!important;\n}\nbody.ktk-ui-v21.ktk-ui-v22.ktk-ui-v23.ktk-ui-v24.ktk-calm-ui #menu-overlay :is(#atmo-btn-0,#atmo-btn-1,#atmo-btn-2).bg-amber-500{\n background:#3c574d!important;color:#f1f4f0!important;border:1px solid #92b0a0!important;\n}\n";
+ const CSS="/* KILL THE KING V25 — CALM HUD AND MENU. Presentation-only, no battle rules. */\nbody.ktk-calm-ui {\n --calm-bg:#182229; --calm-panel:#1d2b31; --calm-panel-soft:#24343a;\n --calm-edge:#46575b; --calm-edge-active:#94ad9f;\n --calm-text:#e6eae6; --calm-muted:#b3c0bf; --calm-accent:#9cb9aa;\n --calm-warning:#c6a486; --calm-danger:#cd9b99;\n font-family:system-ui,-apple-system,\"Segoe UI\",sans-serif;\n}\n/* Five exact body classes outrank V21–V24 and preserve previous style modules. */\nbody.ktk-ui-v21.ktk-ui-v22.ktk-ui-v23.ktk-ui-v24.ktk-calm-ui #menu-overlay {\n background:rgba(11,18,21,.88)!important; backdrop-filter:blur(5px)!important;\n color:var(--calm-text)!important;\n}\nbody.ktk-ui-v21.ktk-ui-v22.ktk-ui-v23.ktk-ui-v24.ktk-calm-ui #menu-overlay>div {\n max-width:980px!important; max-height:calc(100dvh - 20px)!important;\n background:#1b292f!important; background-image:none!important;\n border:1px solid #46585a!important; border-top:1px solid #617b75!important;\n border-radius:12px!important; box-shadow:0 15px 45px rgba(0,0,0,.45)!important;\n padding:clamp(13px,2.2vw,23px)!important; scrollbar-color:#647d7b #1a292d;\n}\nbody.ktk-ui-v21.ktk-ui-v22.ktk-ui-v23.ktk-ui-v24.ktk-calm-ui #menu-overlay>div::before {\n content:\"KILL THE KING  /  SAVAŞA HAZIRLIK\"!important;\n background:none!important; color:#a2bdb1!important;\n border-bottom:1px solid #405155!important; text-align:left!important;\n font:700 10px/1.6 system-ui,sans-serif!important; letter-spacing:.11em!important;\n margin:0 0 8px!important; padding:0 0 9px!important;\n}\nbody.ktk-ui-v21.ktk-ui-v22.ktk-ui-v23.ktk-ui-v24.ktk-calm-ui #menu-overlay h1 {\n font:750 clamp(26px,3.5vw,35px)/1.16 system-ui,sans-serif!important;\n color:#e6eae6!important; letter-spacing:-.04em!important; text-shadow:none!important;\n}\nbody.ktk-ui-v21.ktk-ui-v22.ktk-ui-v23.ktk-ui-v24.ktk-calm-ui #menu-overlay h1 span {color:#d4dfd8!important}\nbody.ktk-calm-ui #menu-overlay :is(h2,h3,h4,strong){text-shadow:none!important}\nbody.ktk-calm-ui #menu-overlay p {color:#b5c1bd!important;line-height:1.4!important}\nbody.ktk-calm-ui #menu-overlay>div>div:first-child {border-color:#3d4d52!important;margin-bottom:10px!important;padding-bottom:10px!important}\n/* Expose only primary choices; advanced audio/video live behind an accessible disclosure. */\nbody.ktk-calm-ui #ktk-calm-settings {margin:10px 0;padding:0;border:1px solid #425359;border-radius:8px;background:#1c292e}\nbody.ktk-calm-ui #ktk-calm-settings>summary {padding:10px 12px;color:#cedbd5!important;cursor:pointer;font:650 12px/1.4 system-ui,sans-serif;list-style-position:inside}\nbody.ktk-calm-ui #ktk-calm-settings>summary:hover {background:#2b3a40}\nbody.ktk-calm-ui #ktk-calm-settings[open]>summary {border-bottom:1px solid #45565b}\nbody.ktk-calm-ui #ktk-calm-settings #arena-settings-controls {margin:0!important;background:#19272d!important;border:0!important;box-shadow:none!important;padding:12px!important}\nbody.ktk-calm-ui #menu-overlay :is(input,select) {accent-color:#97b3a7!important;color:#e6eae6}\nbody.ktk-calm-ui #menu-overlay select {background:#29373d!important;border:1px solid #54666a!important;color:#e6eae6!important;box-shadow:none!important}\n/* Section cards — no illustrations/glow competing with choices. */\n/* Map and modes: equal-size quiet controls with a single persistent selection signal. */\nbody.ktk-ui-v21.ktk-ui-v22.ktk-ui-v23.ktk-ui-v24.ktk-calm-ui #arena-map-controls {\n background:#213036!important; background-image:none!important; border:1px solid #46585b!important;\n box-shadow:none!important; border-radius:9px!important; padding:10px!important;\n gap:8px!important; grid-template-columns:repeat(3,minmax(0,1fr))!important;\n}\nbody.ktk-ui-v21.ktk-ui-v22.ktk-ui-v23.ktk-ui-v24.ktk-calm-ui #arena-map-controls>strong,\nbody.ktk-calm-ui #menu-overlay :is(#match-mode-controls,#meadow-army-controls,#match-duration-controls)>strong {\n font:700 11px/1.5 system-ui,sans-serif!important;letter-spacing:.08em!important;color:#c1d3cc!important;\n}\nbody.ktk-ui-v21.ktk-ui-v22.ktk-ui-v23.ktk-ui-v24.ktk-calm-ui #arena-map-controls>button {\n min-height:49px!important; padding:9px 8px!important;\n font:680 12px/1.3 system-ui,sans-serif!important;letter-spacing:0!important;\n display:flex!important;align-items:center!important;justify-content:center!important;\n flex-direction:row!important;gap:0!important;\n background:#2b3b41!important;background-image:none!important;\n border:1px solid #506168!important;border-radius:7px!important;\n box-shadow:none!important;color:#d9e0de!important;transform:none!important;\n}\nbody.ktk-ui-v21.ktk-ui-v22.ktk-ui-v23.ktk-ui-v24.ktk-calm-ui #arena-map-controls>button::before,\nbody.ktk-ui-v21.ktk-ui-v22.ktk-ui-v23.ktk-ui-v24.ktk-calm-ui #arena-map-controls>button::after {\n display:none!important;content:none!important;\n}\nbody.ktk-ui-v21.ktk-ui-v22.ktk-ui-v23.ktk-ui-v24.ktk-calm-ui #arena-map-controls>button:hover {background:#33464b!important;border-color:#809d91!important;transform:none!important}\nbody.ktk-ui-v21.ktk-ui-v22.ktk-ui-v23.ktk-ui-v24.ktk-calm-ui #arena-map-controls>button.selected,\nbody.ktk-ui-v21.ktk-ui-v22.ktk-ui-v23.ktk-ui-v24.ktk-calm-ui #arena-map-controls>button[aria-pressed=\"true\"] {\n background:#314c47!important;background-image:none!important;\n border:2px solid #9fb9ab!important;color:#f2f4f0!important;\n box-shadow:none!important;\n}\nbody.ktk-ui-v21.ktk-ui-v22.ktk-ui-v23.ktk-ui-v24.ktk-calm-ui #menu-overlay :is(#match-mode-controls,#meadow-army-controls,#match-duration-controls) {\n border:1px solid #43555a!important;background:#1f2e34!important;\n box-shadow:none!important;border-radius:8px!important;padding:8px 10px!important;\n}\nbody.ktk-ui-v21.ktk-ui-v22.ktk-ui-v23.ktk-ui-v24.ktk-calm-ui #menu-overlay :is(#match-mode-controls,#meadow-army-controls,#match-duration-controls) button {\n background:#2a3b42!important; background-image:none!important;border:1px solid #506168!important;\n color:#d8e0dd!important;min-height:34px!important;padding:6px 11px!important;\n border-radius:7px!important;box-shadow:none!important;font:650 11px/1.3 system-ui,sans-serif!important;\n}\nbody.ktk-ui-v21.ktk-ui-v22.ktk-ui-v23.ktk-ui-v24.ktk-calm-ui #menu-overlay :is(#match-mode-controls,#meadow-army-controls,#match-duration-controls) button.selected,\nbody.ktk-ui-v21.ktk-ui-v22.ktk-ui-v23.ktk-ui-v24.ktk-calm-ui #menu-overlay :is(#match-mode-controls,#meadow-army-controls,#match-duration-controls) button[aria-pressed=\"true\"] {\n background:#314a45!important;border:1px solid #9cb5a6!important;color:#f0f5ef!important;\n}\nbody.ktk-calm-ui #menu-overlay .match-duration-help {color:#aebab8!important;font-size:11px!important;line-height:1.35!important}\nbody.ktk-ui-v21.ktk-ui-v22.ktk-ui-v23.ktk-ui-v24.ktk-calm-ui #menu-overlay #play-btn {\n background:#94afa1!important;background-image:none!important;\n color:#142221!important;border:1px solid #adc6b8!important;\n box-shadow:none!important;border-radius:8px!important;\n font:750 15px/1.25 system-ui,sans-serif!important;letter-spacing:.02em!important;\n min-height:48px!important;padding:12px 23px!important;\n transform:none!important;\n}\nbody.ktk-ui-v21.ktk-ui-v22.ktk-ui-v23.ktk-ui-v24.ktk-calm-ui #menu-overlay #play-btn:hover {background:#aac4b6!important;box-shadow:none!important;transform:none!important}\n/* Keep meaningful state but soften all extraneous amber/blue/neon UI paint. */\nbody.ktk-calm-ui :is(#menu-overlay,#hud,#meadow-army-hud,#native-siege-panel,#army-tactical-overlay,#match-results-overlay) .text-amber-300,\nbody.ktk-calm-ui :is(#menu-overlay,#hud,#meadow-army-hud,#native-siege-panel,#army-tactical-overlay,#match-results-overlay) .text-amber-400,\nbody.ktk-calm-ui :is(#menu-overlay,#hud,#meadow-army-hud,#native-siege-panel,#army-tactical-overlay,#match-results-overlay) .text-yellow-200 {color:#c0b29d!important}\nbody.ktk-calm-ui :is(#menu-overlay,#hud,#meadow-army-hud,#native-siege-panel,#army-tactical-overlay,#match-results-overlay) .text-sky-300 {color:#a5bfbe!important}\nbody.ktk-calm-ui :is(#menu-overlay,#hud,#meadow-army-hud,#native-siege-panel,#army-tactical-overlay,#match-results-overlay) .text-emerald-300,\nbody.ktk-calm-ui :is(#menu-overlay,#hud,#meadow-army-hud,#native-siege-panel,#army-tactical-overlay,#match-results-overlay) .text-lime-300 {color:#9ec3a8!important}\nbody.ktk-calm-ui :is(#menu-overlay,#hud,#meadow-army-hud,#native-siege-panel,#army-tactical-overlay,#match-results-overlay) .text-rose-300 {color:#d5a3a2!important}\n/* HUD: retain health/ammo/squad telemetry while eliminating branding, fake chat and heavy panels. */\nbody.ktk-ui-v21.ktk-ui-v22.ktk-ui-v23.ktk-ui-v24.ktk-calm-ui #hud .hud-box {\n background:rgba(23,35,41,.84)!important;background-image:none!important;\n border:1px solid rgba(103,125,124,.55)!important;border-radius:7px!important;\n box-shadow:0 3px 11px rgba(0,0,0,.18)!important;backdrop-filter:blur(4px)!important;\n}\nbody.ktk-calm-ui #hud {font-family:system-ui,sans-serif!important}\nbody.ktk-calm-ui #hud :is(#hud-timer,#hud-ammo){font-variant-numeric:tabular-nums!important;text-shadow:none!important;color:#e8ece7!important}\nbody.ktk-calm-ui #hud #hud-timer{font-size:20px!important;font-weight:760!important}\nbody.ktk-calm-ui #hud #radar-canvas{width:76px!important;height:76px!important;border:1px solid #536766!important;box-shadow:none!important}\nbody.ktk-calm-ui #hud #hud-hp-bar{background:#86b49b!important;box-shadow:none!important;border-radius:4px!important}\nbody.ktk-calm-ui #hud #hud-ability-badge{background:#374a4a!important;color:#c7d9cf!important;border:1px solid #60746e!important;box-shadow:none!important}\nbody.ktk-calm-ui #hud :is(#pill-1,#pill-2,#pill-3,#pill-4){font-size:11px!important;padding:5px 7px!important;box-shadow:none!important}\nbody.ktk-calm-ui #hud #kill-feed>div{background:rgba(22,34,39,.72)!important;border-left:2px solid #92a69c!important;box-shadow:none!important;color:#c6d0ca!important;padding:5px 7px!important;font-size:11px!important}\nbody.ktk-calm-ui #hud #hud-lighting-badge{color:#9faeaf!important;font-size:10px!important}\nbody.ktk-calm-ui #hud #medal-container{opacity:.82}\n/* Real siege & G5.4 command panels remain intact and responsive to F6–F10. */\nbody.ktk-ui-v21.ktk-ui-v22.ktk-ui-v23.ktk-ui-v24.ktk-calm-ui #meadow-army-hud,\nbody.ktk-ui-v21.ktk-ui-v22.ktk-ui-v23.ktk-ui-v24.ktk-calm-ui #native-siege-panel {\n background:rgba(24,37,43,.89)!important;background-image:none!important;\n border:1px solid #526967!important;border-top:1px solid #526967!important;\n box-shadow:0 5px 17px rgba(0,0,0,.22)!important;\n border-radius:8px!important;color:#dce6de!important;scrollbar-color:#617b77 #213037;\n}\nbody.ktk-calm-ui #meadow-army-hud>div:first-child,\nbody.ktk-calm-ui #native-siege-panel .ktk-siege-title {font:700 11px/1.35 system-ui,sans-serif!important;color:#cfddd6!important;letter-spacing:0!important}\nbody.ktk-calm-ui #meadow-army-hud details summary {background:transparent!important;color:#c0d5c7!important;border:0!important;padding:6px 5px!important;font:650 11px/1.3 system-ui,sans-serif!important}\nbody.ktk-calm-ui #meadow-army-hud details {border-color:#4d625f!important}\nbody.ktk-ui-v21.ktk-ui-v22.ktk-ui-v23.ktk-ui-v24.ktk-calm-ui :is(#meadow-army-hud,#army-tactical-overlay) .army-commands button,\nbody.ktk-ui-v21.ktk-ui-v22.ktk-ui-v23.ktk-ui-v24.ktk-calm-ui #native-siege-panel button {\n background:#293b40!important;background-image:none!important;border:1px solid #546c6c!important;\n color:#d7e2db!important;border-radius:6px!important;\n box-shadow:none!important;font:650 11px/1.3 system-ui,sans-serif!important;\n padding:6px 8px!important;min-height:29px!important;text-shadow:none!important;\n}\nbody.ktk-ui-v21.ktk-ui-v22.ktk-ui-v23.ktk-ui-v24.ktk-calm-ui :is(#meadow-army-hud,#army-tactical-overlay) .army-commands button.selected,\nbody.ktk-ui-v21.ktk-ui-v22.ktk-ui-v23.ktk-ui-v24.ktk-calm-ui #native-siege-panel button[aria-pressed=\"true\"] {\n background:#354f48!important;border-color:#90ae9b!important;color:#f0f5ef!important;\n}\nbody.ktk-calm-ui #native-siege-panel .ktk-siege-toggle,\nbody.ktk-calm-ui #meadow-army-hud .ktk-siege-toggle{background:#31433e!important;border:1px solid #638176!important;color:#deebe2!important}\nbody.ktk-calm-ui #meadow-army-hud #army-command-progress{border-left:2px solid #7f9c91!important;background:#2a393b!important;color:#c2d7cd!important}\nbody.ktk-calm-ui #native-siege-stats,\nbody.ktk-calm-ui #native-siege-notice{color:#bdceca!important;line-height:1.5!important}\n/* Tactical map, scoreboard, results and pause use the same quiet design language. */\nbody.ktk-ui-v21.ktk-ui-v22.ktk-ui-v23.ktk-ui-v24.ktk-calm-ui #army-tactical-overlay>div,\nbody.ktk-ui-v21.ktk-ui-v22.ktk-ui-v23.ktk-ui-v24.ktk-calm-ui #match-results-overlay>section,\nbody.ktk-ui-v21.ktk-ui-v22.ktk-ui-v23.ktk-ui-v24.ktk-calm-ui #match-live-scoreboard .match-live-panel {\n background:#1d2c32!important;background-image:none!important;border:1px solid #516462!important;\n border-radius:10px!important;box-shadow:0 17px 40px rgba(0,0,0,.38)!important;\n}\nbody.ktk-calm-ui #army-tactical-overlay #army-tactical-canvas{border:1px solid #668078!important;box-shadow:none!important}\nbody.ktk-calm-ui #army-tactical-overlay .army-map-control{background:#2c3f44!important;color:#d6e4dc!important;border:1px solid #627975!important;box-shadow:none!important}\nbody.ktk-calm-ui #match-results-overlay #match-results-table>div{background:#26383d!important;border-left:2px solid #6f9184!important}\nbody.ktk-calm-ui :is(#menu-overlay,#army-tactical-overlay,#meadow-army-hud,#native-siege-panel,#match-results-overlay) :is(button,select,input,.class-card):focus-visible{\n outline:2px solid #b2d1bd!important;outline-offset:2px!important;box-shadow:0 0 0 3px rgba(129,165,145,.16)!important;\n}\n@media(max-width:700px){\n body.ktk-ui-v21.ktk-ui-v22.ktk-ui-v23.ktk-ui-v24.ktk-calm-ui #arena-map-controls{grid-template-columns:1fr!important}\n body.ktk-calm-ui #hud #radar-canvas{width:64px!important;height:64px!important}\n body.ktk-calm-ui #native-siege-panel.ktk-siege-slim{max-width:48vw!important}\n}\n@media(prefers-reduced-motion:reduce){body.ktk-calm-ui #menu-overlay :is(button,.class-card){transition:none!important;animation:none!important}}\n/* Remove redundant promo chips, make the active environment quiet, keep switch state. */\nbody.ktk-calm-ui #menu-overlay h1~span {display:none!important}\nbody.ktk-ui-v21.ktk-ui-v22.ktk-ui-v23.ktk-ui-v24.ktk-calm-ui #menu-overlay :is(#atmo-btn-0,#atmo-btn-1,#atmo-btn-2){\n background:#2a3b42!important;color:#d9e3dc!important;border:1px solid #536864!important;\n box-shadow:none!important;text-shadow:none!important;font:650 11px/1.25 system-ui,sans-serif!important;\n}\nbody.ktk-ui-v21.ktk-ui-v22.ktk-ui-v23.ktk-ui-v24.ktk-calm-ui #menu-overlay :is(#atmo-btn-0,#atmo-btn-1,#atmo-btn-2).bg-amber-500{\n background:#3c574d!important;color:#f1f4f0!important;border:1px solid #92b0a0!important;\n}\n";
  function install(doc){
   if(!doc?.body||!doc.head)throw Error('AK30 calmer interface requires native game document');
   if(doc.getElementById(STYLE_ID))return false;
@@ -10067,12 +10042,6 @@ const KTKCalmUIV25=(()=>{
             document.getElementById('ads-overlay').style.opacity = '0';
 
             for (let i = 0; i < 4; i++) {
-                const pill = document.getElementById(`pill-${i + 1}`);
-                if (pill) {
-                    pill.className = i === idx
-                        ? 'hud-box px-2.5 py-1 rounded text-xs sm:text-sm font-bold krunker-text border-amber-400 bg-amber-500/25'
-                        : 'hud-box px-2.5 py-1 rounded text-xs sm:text-sm font-bold krunker-text opacity-70';
-                }
                 if (viewmodels[i]) viewmodels[i].visible = (i === idx);
                 if (playerClassModels[i]) playerClassModels[i].visible = (i === idx);
             }
@@ -10100,7 +10069,8 @@ const KTKCalmUIV25=(()=>{
             setHudClass(hpBar,`h-full transition-all duration-150 ${hpPct > 55 ? 'bg-lime-400' : hpPct > 25 ? 'bg-amber-400' : 'bg-rose-500'}`);
 
             setHudText(document.getElementById('hud-class-name'),cls.name);
-            setHudText(document.getElementById('hud-class-tip'),cls.tipText);
+            const shortTips=['Sağ tık: Kalkan','Sağ tık: Hücum · Hız hasarı','Sol tık basılı: Yayı ger','Sağ tık: Nişan · R: Doldur'];
+            setHudText(document.getElementById('hud-class-tip'),shortTips[player.classIdx]);
             if(lastHudWeaponIcon!==cls.svgIcon){
                 document.getElementById('hud-weapon-icon').innerHTML=cls.svgIcon;
                 lastHudWeaponIcon=cls.svgIcon;
@@ -10108,23 +10078,23 @@ const KTKCalmUIV25=(()=>{
 
             if (cls.id === 3) {
                 setHudText(document.getElementById('hud-ammo'),player.isReloading
-                    ? 'BARUT DOLDURULUYOR...'
-                    : `${player.ammo} / 1 (BARUT)`);
+                    ? 'Dolduruluyor…'
+                    : `${player.ammo} / 1`);
             } else {
-                setHudText(document.getElementById('hud-ammo'),cls.ammoText);
+                setHudText(document.getElementById('hud-ammo'),['Kılıç','Kargı','Yay'][player.classIdx]);
             }
 
             // Ability status badge
             const abilBadge = document.getElementById('hud-ability-badge');
             if (player.abilityCooldown > 0) {
-                setHudText(abilBadge,`YETENEK DOLUYOR: ${player.abilityCooldown.toFixed(1)}s`);
+                setHudText(abilBadge,`Yetenek · ${player.abilityCooldown.toFixed(1)} sn`);
                 setHudClass(abilBadge,'text-[11px] font-extrabold bg-slate-800 text-gray-400 border border-white/10 px-2 py-0.5 rounded krunker-text');
             } else {
                 const labels = [
-                    '[SAĞ TIK] KALKAN / [F] ÇARPMA',
-                    '[SAĞ TIK / F] KARGI HÜCUMU: HAZIR',
-                    '[SOL TIK BASILI] YAY GERME / [F] HANÇER',
-                    '[F] SÜNGÜ / HANÇER DARBESİ: HAZIR'
+                    'F · Kalkan çarpması',
+                    'F · Kargı hücumu',
+                    'F · Hançer',
+                    'F · Süngü / hançer'
                 ];
                 setHudText(abilBadge,labels[player.classIdx]);
                 setHudClass(abilBadge,'text-[11px] font-extrabold bg-amber-500/20 text-amber-300 border border-amber-400/40 px-2 py-0.5 rounded krunker-text');
@@ -14275,7 +14245,7 @@ const KTKCalmUIV25=(()=>{
                 document.getElementById(id).style.opacity='0';
             document.getElementById('crosshair').style.transform='scale(1)';
             document.getElementById('hud-status-badge').textContent='HAZIR';
-            document.getElementById('hud-slide-indicator').textContent='SHIFT + SPACE: SLIDE-HOP';
+            document.getElementById('hud-slide-indicator').textContent='';
             document.getElementById('bow-charge-fill').style.width='0%';
             clearTimeout(damageOverlayTimeout);damageOverlayTimeout=null;
             clearTimeout(hitmarkerTimeout);hitmarkerTimeout=null;
@@ -15325,7 +15295,7 @@ const KTKCalmUIV25=(()=>{
                     const decayRate = wantsSlide ? 1.8 : 6.5;
                     player.bhopChain = Math.max(0, player.bhopChain - dt * decayRate);
                     if (player.bhopChain < 0.5) {
-                        document.getElementById('hud-slide-indicator').textContent = 'SHIFT + SPACE: SLIDE-HOP';
+                        document.getElementById('hud-slide-indicator').textContent = '';
                     }
                 }
 
@@ -16968,11 +16938,13 @@ body.ktk-calm-ui #menu-overlay #focus-menu .fm-hint{font:500 11px/1.5 system-ui,
                 <div class="fm-opt"><label class="fm-opt-label" for="fm-quality">Grafik kalitesi</label><select class="fm-select" id="fm-quality"><option value="high">Yüksek</option><option value="medium">Orta</option><option value="low">Düşük</option></select></div>
                 <div class="fm-opt"><label class="fm-checkbox"><input id="fm-low-motion" type="checkbox"> Kamera sarsıntısını azalt</label></div>
                </div>
+               <label class="fm-checkbox"><input id="kiss-debug-toggle" type="checkbox"> Teknik göstergeler (FPS, hız, test raporu)</label>
                <p class="fm-hint">Bütün ayarlar mevcut oyun sistemine uygulanır.</p>
               </div>
               <div id="fm-help-drawer" class="fm-drawer" hidden>
                <h2 class="fm-drawer-head">KONTROLLER</h2>
-               <ul class="fm-help"><li><strong>WASD</strong> Hareket</li><li><strong>Space</strong> Zıplama</li><li><strong>Sol tık</strong> Saldırı</li><li><strong>Sağ tık</strong> Özel kullanım</li><li><strong>1–4</strong> Sınıf seçimi</li><li><strong>F6–F10</strong> Kuşatma ve emirler</li><li><strong>Tab</strong> Sıralama</li><li><strong>P</strong> Üçüncü şahıs</li></ul>
+               <ul class="fm-help"><li><strong>WASD</strong> Hareket</li><li><strong>Space</strong> Zıplama</li><li><strong>Shift / C</strong> Kayma</li><li><strong>Sol tık</strong> Saldırı</li><li><strong>Sağ tık</strong> Özel kullanım</li><li><strong>F / V</strong> Yakın saldırı / yetenek</li><li><strong>R</strong> Tüfek doldur</li><li><strong>Tab</strong> Sıralama</li><li><strong>H</strong> Atmosfer</li><li data-kiss-help="arena"><strong>1–4</strong> Sınıf değiştir</li><li data-kiss-help="arena"><strong>P</strong> Kamera değiştir</li><li data-kiss-help="army" hidden><strong>P</strong> Taktik harita</li><li data-kiss-help="army" hidden><strong>F10</strong> Emirler</li><li data-kiss-help="siege" hidden><strong>F6–F9</strong> Kuşatma araçları / hücum</li></ul>
+               <p id="kiss-class-help" class="fm-hint"></p>
               </div>`;
             overlay.appendChild(panel);
             // Retain the actual original start button and its existing listeners:
@@ -16990,6 +16962,12 @@ body.ktk-calm-ui #menu-overlay #focus-menu .fm-hint{font:500 11px/1.5 system-ui,
             const setPressed=(button,pressed)=>{const value=String(pressed);if(button.getAttribute('aria-pressed')!==value)button.setAttribute('aria-pressed',value);};
             function sync(){
               const chosen=mapChoice();
+              for(const item of panel.querySelectorAll('[data-kiss-help]')){
+                const kind=item.dataset.kissHelp;
+                const hidden=kind==='arena'?chosen!=='arena':kind==='army'?chosen==='arena':chosen!=='siege';
+                if(item.hidden!==hidden)item.hidden=hidden;
+              }
+              setHudText(panel.querySelector('#kiss-class-help'),CLASSES[player.classIdx].tipText);
               for(const button of panel.querySelectorAll('[data-focus-map]'))setPressed(button,button.dataset.focusMap===chosen);
               for(const button of panel.querySelectorAll('[data-approved-class]'))setPressed(button,Number(button.dataset.approvedClass)===player.classIdx);
               const modeOption=panel.querySelector('#fm-mode-opt');
@@ -17037,6 +17015,9 @@ body.ktk-calm-ui #menu-overlay #focus-menu .fm-hint{font:500 11px/1.5 system-ui,
             mirror('arena-volume-slider','fm-volume','input');
             mirror('arena-quality-select','fm-quality','change');
             mirror('arena-low-motion','fm-low-motion','change');
+            panel.querySelector('#kiss-debug-toggle').addEventListener('change',e=>{
+              document.body.classList.toggle('ktk-kiss-debug',e.target.checked);
+            });
             for(const [buttonId,drawerId] of [['fm-toggle-settings','fm-settings-drawer'],['fm-toggle-help','fm-help-drawer']]){
               panel.querySelector('#'+buttonId).addEventListener('click',()=>{
                 const drawer=panel.querySelector('#'+drawerId),open=drawer.hidden;
