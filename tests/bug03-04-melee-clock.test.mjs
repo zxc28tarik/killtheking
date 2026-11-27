@@ -36,7 +36,7 @@ test('BUG03 native melee strike paths use physical guard before damage',()=>{
  assert.match(html.slice(p,q),/!meleeElevationReach\(attacker,state.playerPosition,role.range\)/);
  assert.match(html,/soldierInCone\(meadowBattleState,feet,facing/);
 });
-const start=html.indexOf('function runActiveFrame('),end=html.indexOf('function animate()',start);
+const start=html.indexOf('function runActiveFrame('),end=html.indexOf('        // OPT-04 ME3:',start);
 assert.ok(start>=0&&end>start);
 const clock=runInNewContext(html.slice(start,end)+'\nrunActiveFrame;',{}); 
 function simulate(fps,seconds){

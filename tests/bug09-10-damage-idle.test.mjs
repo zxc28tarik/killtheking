@@ -75,7 +75,10 @@ test('BUG10 resize, quality, camera, atmosphere and scene changes invalidate fro
  assert.match(main,/renderer.setPixelRatio\(targetRatio\);\s*invalidateIdleScene\(\)/);
  assert.match(main,/webglcontextrestored',invalidateIdleScene/);
  assert.match(main,/if\(!shouldRenderScene\(idleSceneState,playing,hidden\)\)return/);
- assert.match(main,/renderer.render\(scene, camera\);\s*acknowledgeSceneRender/);
+ assert.match(main,/renderActiveMap\(\);\s*acknowledgeSceneRender\(idleSceneState\)/);
+ const wrapper=part('        function renderActiveMap(){','        window.ktkMeadowArmyVisibilityStatus=');
+ assert.match(wrapper,/renderer\.render\(scene,camera\);return;/);
+ assert.match(wrapper,/try\{\s*meadowArmyVisibility\.prepare\(meadowBattleState,camera\);\s*renderer\.render\(scene,camera\);\s*\}finally\{meadowArmyVisibility\.restore\(\);\}/);
 });
 test('BUG09/10 canonical HTML identical, all original 31 script boundaries retained',()=>{
  assert.equal(html,readFileSync(new URL('../playables/KillTheKing_AK30_Amblemler_Korundu_Tam_Ekran_Arka_Plan.html',import.meta.url),'utf8'));
