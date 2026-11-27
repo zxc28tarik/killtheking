@@ -10,7 +10,7 @@ const p=await browser.newPage({viewport:{width,height},deviceScaleFactor:1});
 const errors=[],warnings=[];
 p.on('pageerror',e=>errors.push(e.stack||e.message));
 p.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
-const report={schema:'ktk-opt-a-v1',source:process.env.GITHUB_SHA,map,width,height,quality:'medium',backend:'SwiftShader',errors,warnings};
+const report={schema:'ktk-opt09-spike-v2',source:process.env.GITHUB_SHA,map,width,height,quality:'medium',backend:'SwiftShader',errors,warnings};
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 const cdp=await p.context().newCDPSession(p);
 let prof;
@@ -61,7 +61,7 @@ try{
       'OPT07: nearby living soldier was wrongly culled even when camera faces it');
   }
   await p.evaluate(()=>{
-    const q={start:performance.now(),frame:[],physics:[],armySim:[],armyVisual:[],siegeEquipment:[],siegeTowerRender:[],grass:[],render:[],draws:{},samples:[],phase:'warmup',active:true,gpu:[],gpuSupported:false};
+    const q={start:performance.now(),frame:[],frameWork:[],frameTimeline:[],longtasks:[],heapDrops:[],renderRoute:[],physics:[],armySim:[],armyVisual:[],siegeEquipment:[],siegeTowerRender:[],grass:[],render:[],draws:{},samples:[],phase:'warmup',active:true,gpu:[],gpuSupported:false};
     window.__optProfile=q;
     const gl=renderer.getContext();
     const ext=renderer.capabilities.isWebGL2?gl.getExtension('EXT_disjoint_timer_query_webgl2'):null;
@@ -83,9 +83,43 @@ try{
       if(o?.isInstancedMesh&&meadowBattleMode)return 'other-instanced-army-or-decor';
       return 'other';
     }
+    // OPT09: isolated instrumentation is installed ONLY on this QA page.
+    // rAF arrival gap vs callback work reveals browser scheduling stalls
+    // that cannot be attributed to simulation or renderer JS alone.
     const wrap=(name,fn)=>function(...args){const t=performance.now();try{return fn.apply(this,args);}finally{if(q.active)q[name].push({phase:q.phase,ms:performance.now()-t});}};
+    let previousAnimateStart=null,previousAnimateWork=0;
+    const liveAnimate=animate;
+    animate=function(...args){
+      const start=performance.now(),arrivalGap=previousAnimateStart===null?null:start-previousAnimateStart;
+      previousAnimateStart=start;
+      const phase=q.phase;
+      try{return liveAnimate.apply(this,args);}
+      finally{
+        if(q.active&&isGameActive&&arenaMatch.phase==='playing'){
+          const callbackMs=performance.now()-start;
+          q.frameWork.push({phase,ms:callbackMs});
+          q.frameTimeline.push({phase,t:start-q.start,gapMs:arrivalGap,
+            callbackMs,previousCallbackMs:previousAnimateWork,
+            // This includes normal rAF/vsync delay, OS scheduling and browser work.
+            // It cannot, by itself, prove that the GPU blocked.
+            unaccountedGapMs:arrivalGap===null?null:Math.max(0,arrivalGap-previousAnimateWork)});
+          previousAnimateWork=callbackMs;
+        }
+      }
+    };
+    let longTaskObserver=null;
+    if(typeof PerformanceObserver!=='undefined'&&
+       PerformanceObserver.supportedEntryTypes?.includes('longtask')){
+      longTaskObserver=new PerformanceObserver(list=>{
+        for(const entry of list.getEntries())if(q.active)
+          q.longtasks.push({phase:q.phase,t:entry.startTime-q.start,ms:entry.duration,
+            name:entry.name,attribution:entry.attribution?.map(x=>x.name).slice(0,3)??[]});
+      });
+      longTaskObserver.observe({entryTypes:['longtask']});
+    }
     updateGame=wrap('physics',updateGame);
     updateActiveMeadowGrass=wrap('grass',updateActiveMeadowGrass);
+    renderActiveMap=wrap('renderRoute',renderActiveMap);
     if(meadowBattleMode&&meadowBattleVisual){
       ArenaArmyBattle.step=wrap('armySim',ArenaArmyBattle.step);
       meadowBattleVisual.update=wrap('armyVisual',meadowBattleVisual.update);
@@ -126,7 +160,7 @@ try{
         q.render.push({phase:q.phase,ms:performance.now()-t,calls:renderer.info.render.calls,triangles:renderer.info.render.triangles});
       }
     };
-    let prev=null,last=0;
+    let prev=null,last=0,previousHeap=null;
     function frame(t){
       if(!q.active)return;
       if(prev!==null&&isGameActive&&arenaMatch.phase==='playing')q.frame.push({phase:q.phase,ms:t-prev});
@@ -134,13 +168,19 @@ try{
       if(t-last>=3000){
         last=t;
         const r=renderer.info,m=r.memory;
+        const heap=performance.memory?.usedJSHeapSize??null;
+        if(previousHeap!==null&&heap!==null&&previousHeap-heap>2*1024*1024)
+          q.heapDrops.push({phase:q.phase,t:t-q.start,bytes:previousHeap-heap});
+        previousHeap=heap;
         q.samples.push({phase:q.phase,t:t-q.start,geometries:m.geometries,textures:m.textures,programs:r.programs?.length,heap:performance.memory?.usedJSHeapSize??null,calls:r.render.calls,triangles:r.render.triangles,remaining:arenaMatch.remaining,clock:arenaClock,armyElapsed:meadowBattleState?.elapsed??null,particles:particles.length,arrows:arrows.length,staticResources:window.ktkStaticResourceStatus?.(),castleDecor:window.ktkCastleDecorBatchStatus?.(),castleSolids:window.ktkCastleSolidBatchStatus?.(),siegeStatic:window.ktkSiegeStaticBatchStatus?.(),armyVisibility:window.ktkMeadowArmyVisibilityStatus?.(),armyVisualCpuPolicy:meadowBattleVisual?.performance?.()??null,armyArrowDrawCount:meadowBattleVisual?.flightArrows?.count??null});
       }
       requestAnimationFrame(frame);
     }
     requestAnimationFrame(frame);
-    q.stop=()=>{q.active=false;for(const item of pending)gl.deleteQuery(item.query);};
+    q.stop=()=>{q.active=false;longTaskObserver?.disconnect();for(const item of pending)gl.deleteQuery(item.query);};
   });
+  await cdp.send('Performance.enable');
+  const chromePerfStart=await cdp.send('Performance.getMetrics');
   await cdp.send('Profiler.enable');await cdp.send('Profiler.setSamplingInterval',{interval:1000});await cdp.send('Profiler.start');
   const started=Date.now();
   for(let step=0;Date.now()-started<45000;step++){
@@ -159,6 +199,7 @@ try{
     }else await wait(500);
   }
   prof=(await cdp.send('Profiler.stop')).profile;
+  const chromePerfEnd=await cdp.send('Performance.getMetrics');
   writeFileSync('opt-profile-cpu.json',JSON.stringify(prof));
   report.measurements=await p.evaluate(()=>{
     const q=window.__optProfile;q.stop();
@@ -167,10 +208,36 @@ try{
   const nodes=new Map(prof.nodes.map(n=>[n.id,n.callFrame.functionName||'(anonymous)']));
   const counts={};for(const id of prof.samples||[]){const name=nodes.get(id)||'(unknown)';counts[name]=(counts[name]||0)+1;}
   report.cpuTop=Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,30);
+  const metricsOf=raw=>Object.fromEntries(raw.metrics.map(x=>[x.name,x.value]));
+  const before=metricsOf(chromePerfStart),after=metricsOf(chromePerfEnd);
+  report.chromeTaskMetrics={
+    taskDurationSeconds:Math.max(0,(after.TaskDuration??0)-(before.TaskDuration??0)),
+    scriptDurationSeconds:Math.max(0,(after.ScriptDuration??0)-(before.ScriptDuration??0)),
+    layoutDurationSeconds:Math.max(0,(after.LayoutDuration??0)-(before.LayoutDuration??0)),
+    recalcStyleDurationSeconds:Math.max(0,(after.RecalcStyleDuration??0)-(before.RecalcStyleDuration??0)),
+    endHeapBytes:after.JSHeapUsedSize??null,
+    startHeapBytes:before.JSHeapUsedSize??null
+  };
   function summarize(rows){const a=rows.filter(x=>x.phase!=='warmup').map(x=>x.ms).sort((a,b)=>a-b);return a.length?{n:a.length,totalMs:a.reduce((x,y)=>x+y,0),meanMs:a.reduce((x,y)=>x+y,0)/a.length,p95Ms:a[Math.ceil(a.length*.95)-1],maxMs:a.at(-1)}:null;}
-  report.summary=Object.fromEntries(['frame','physics','armySim','armyVisual','siegeEquipment','siegeTowerRender','grass','render','gpu'].map(k=>[k,summarize(report.measurements[k])]));
+  report.summary=Object.fromEntries(['frame','frameWork','renderRoute','physics','armySim','armyVisual','siegeEquipment','siegeTowerRender','grass','render','gpu'].map(k=>[k,summarize(report.measurements[k])]));
+  const timeline=report.measurements.frameTimeline.filter(x=>x.phase!=='warmup'&&x.gapMs!==null);
+  const spikes=timeline.filter(x=>x.gapMs>=100).sort((a,b)=>b.gapMs-a.gapMs);
+  const workHeavy=spikes.filter(x=>x.previousCallbackMs>=Math.min(50,x.gapMs*.5));
+  const delayed=spikes.filter(x=>x.previousCallbackMs<Math.min(50,x.gapMs*.5));
+  report.stallDiagnostics={
+    framesObserved:timeline.length,spikes100ms:spikes.length,
+    spikes500ms:spikes.filter(x=>x.gapMs>=500).length,
+    callbackHeavyCandidates:workHeavy.length,schedulingOrBrowserCandidates:delayed.length,
+    topSpikes:spikes.slice(0,10),
+    longTaskCount:report.measurements.longtasks.length,
+    longTaskMaxMs:Math.max(0,...report.measurements.longtasks.map(x=>x.ms)),
+    heapDropCount:report.measurements.heapDrops.length,
+    maxObservedHeapDropBytes:Math.max(0,...report.measurements.heapDrops.map(x=>x.bytes)),
+    measuredGpuSamples:report.measurements.gpu.length,
+    warning:'rAF gap is NOT GPU time. Callback work and CDP task time do not prove GPU, GC or driver stalls.'
+  };
   report.drawCategories=Object.entries(report.measurements.draws).sort((a,b)=>b[1].calls-a[1].calls);
-  console.log('OPT_PROFILE',JSON.stringify({map,width,summary:report.summary,cpuTop:report.cpuTop,drawCategories:report.drawCategories,samples:report.measurements.samples,armySightline:report.armySightline,gpuSupported:report.measurements.gpuSupported,errors}));
+  console.log('OPT_PROFILE',JSON.stringify({map,width,summary:report.summary,cpuTop:report.cpuTop,drawCategories:report.drawCategories,samples:report.measurements.samples,armySightline:report.armySightline,gpuSupported:report.measurements.gpuSupported,stall:report.stallDiagnostics,chromeTasks:report.chromeTaskMetrics,errors}));
 }catch(e){report.failure=e.stack||String(e);console.error(report.failure);}
 finally{writeFileSync('opt-profile-report.json',JSON.stringify(report,null,2));await browser.close();}
 assert.ok(!report.failure,report.failure);assert.deepEqual(errors,[]);assert.ok(report.summary?.frame?.n>0,'no measured frames');
