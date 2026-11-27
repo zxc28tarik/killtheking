@@ -44,6 +44,7 @@ try{
     mark(nativeSiegeRam,'siege-ram');mark(nativeSiegeCatapult,'siege-catapult');mark(nativeSiegeTower,'siege-tower');
     mark(meadowDenseGrass,'near-grass-simple');mark(ktkMeshyGrassHero,'near-grass-meshy');mark(meadowNearGrass,'far-grass');
     mark(weaponHolder,'viewmodel');
+    if(meadowBattleVisual){mark(meadowBattleVisual.group,'army-soldiers-and-banners');mark(meadowBattleVisual.flightArrows,'army-flight-arrows');}
     for(const b of bots)mark(b.mesh,'arena-bots');
     function classify(o){
       let n=o;
@@ -94,7 +95,7 @@ try{
       if(t-last>=3000){
         last=t;
         const r=renderer.info,m=r.memory;
-        q.samples.push({phase:q.phase,t:t-q.start,geometries:m.geometries,textures:m.textures,programs:r.programs?.length,heap:performance.memory?.usedJSHeapSize??null,calls:r.render.calls,triangles:r.render.triangles,remaining:arenaMatch.remaining,clock:arenaClock,armyElapsed:meadowBattleState?.elapsed??null,particles:particles.length,arrows:arrows.length});
+        q.samples.push({phase:q.phase,t:t-q.start,geometries:m.geometries,textures:m.textures,programs:r.programs?.length,heap:performance.memory?.usedJSHeapSize??null,calls:r.render.calls,triangles:r.render.triangles,remaining:arenaMatch.remaining,clock:arenaClock,armyElapsed:meadowBattleState?.elapsed??null,particles:particles.length,arrows:arrows.length,staticResources:window.ktkStaticResourceStatus?.(),castleDecor:window.ktkCastleDecorBatchStatus?.(),armyArrowDrawCount:meadowBattleVisual?.flightArrows?.count??null});
       }
       requestAnimationFrame(frame);
     }

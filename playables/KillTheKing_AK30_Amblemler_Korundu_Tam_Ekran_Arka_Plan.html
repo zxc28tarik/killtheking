@@ -7061,6 +7061,7 @@ window.addEventListener('error', function(event) {
         function addBox(x, y, z, w, h, d, mat, isSolid = true, castShadow = true) {
             const useMat=mat===stoneMat?sharedStaticStoneMaterial(w,h,d):mat;
             const mesh = new THREE.Mesh(sharedStaticBoxGeometry(w,h,d), useMat);
+            mesh.userData.ktkStaticDecoration=!isSolid;
             mesh.position.set(x, y, z);
             mesh.castShadow = castShadow;
             mesh.receiveShadow = true;
@@ -7374,7 +7375,44 @@ window.addEventListener('error', function(event) {
         // Keep both arenas as independent, toggleable scene/object batches.
         // Swapping a map changes *real* collision, raycast and AI navigation arrays;
         // merely hiding castle meshes would leave invisible walls behind.
+        // OPT-AR2/KU2: only original, non-colliding static decoration.
+        // Retain exact geometry, UV, material, matrix and shadow flags. Never
+        // batch physical walls, barrels, lights or any dynamic siege object.
+        function batchStaticDecorations(THREE,root,objects,cellSize=48){
+            const groups=new Map(),stats={originals:0,batches:0,avoidedDraws:0};
+            for(const mesh of objects){
+                if(mesh.parent!==root||!mesh.isMesh||mesh.isInstancedMesh||
+                   !mesh.userData.ktkStaticDecoration||mesh.children.length||
+                   Array.isArray(mesh.material)||mesh.material.transparent||
+                   !mesh.visible||!mesh.geometry||!mesh.material)continue;
+                const key=[mesh.geometry.uuid,mesh.material.uuid,mesh.castShadow,
+                    mesh.receiveShadow,mesh.renderOrder,mesh.layers.mask,
+                    Math.floor(mesh.position.x/cellSize),Math.floor(mesh.position.z/cellSize)].join('|');
+                if(!groups.has(key))groups.set(key,[]);
+                groups.get(key).push(mesh);
+            }
+            for(const list of groups.values()){
+                if(list.length<2)continue;
+                const first=list[0],batch=new THREE.InstancedMesh(first.geometry,first.material,list.length);
+                batch.name='OPT static decorative batch';
+                batch.castShadow=first.castShadow;batch.receiveShadow=first.receiveShadow;
+                batch.renderOrder=first.renderOrder;batch.layers.mask=first.layers.mask;
+                // r128 culls using the source geometry, not the instance extent.
+                // Regional groups keep bounds limited; do not incorrectly hide any instance.
+                batch.frustumCulled=false;
+                for(let i=0;i<list.length;i++){
+                    list[i].updateMatrix();batch.setMatrixAt(i,list[i].matrix);
+                }
+                batch.instanceMatrix.needsUpdate=true;
+                for(const mesh of list)root.remove(mesh);
+                root.add(batch);
+                stats.originals+=list.length;stats.batches++;stats.avoidedDraws+=list.length-1;
+            }
+            return stats;
+        }
         buildCastleArena();
+        const castleDecorBatchStats=batchStaticDecorations(THREE,scene,scene.children.slice(castleBegin));
+        window.ktkCastleDecorBatchStatus=()=>({...castleDecorBatchStats});
         const castleVisuals = scene.children.slice(castleBegin);
         const castleMapData = {
             colliders:colliders.slice(),ramps:ramps.slice(),
@@ -10830,6 +10868,13 @@ const KTKCalmUIV25=(()=>{
         // matrix height of the 0..8 real soldiers on the tower is offset so
         // their original helmets/arms/legs actually render ON the walkway.
         const nativeSiegeTowerMatrix=new THREE.Matrix4();
+        // OPT-ME3/KU3: the existing arrow renderer updates every fixed slot,
+        // but only live prefix slots need a draw. No projectile physics change.
+        function syncArmyArrowDrawCount(){
+            if(!meadowBattleVisual||!meadowBattleState)return;
+            const arrows=meadowBattleVisual.flightArrows;
+            arrows.count=Math.min(arrows.instanceMatrix.count,meadowBattleState.projectiles.length);
+        }
         function nativeSiegeTowerRenderSoldiers(){
           const st=nativeSiegeEquipment;
           if(!nativeSiegeMode||!st||!meadowBattleVisual)return;
@@ -12289,7 +12334,7 @@ const KTKCalmUIV25=(()=>{
             const arrowGroup=new THREE.Group();
             const shaft=new THREE.Mesh(sharedArrowShaft,goldMat);
             const head=new THREE.Mesh(sharedArrowHead,steelMat);
-            head.rotation.x=-Math.PI/2;head.position.z=-.68;
+            head.rotation.x = -Math.PI / 2; head.position.z = -0.68;
             arrowGroup.add(shaft,head);
             return arrowGroup;
         }
@@ -14193,6 +14238,7 @@ const KTKCalmUIV25=(()=>{
                     meadowBattleState,ArenaArmyBattle,nativeSiegeDoctrineV27):null;
                 meadowBattleVisual.group.visible=true;
                 meadowBattleVisual.update(meadowBattleState);
+                syncArmyArrowDrawCount();
                 for(const bot of bots){
                     bot.dead=true;
                     bot.respawnTimer=Infinity;
@@ -16002,6 +16048,7 @@ const KTKCalmUIV25=(()=>{
                     updateHUD();
                 }
                 meadowBattleVisual.update(meadowBattleState,dt);
+                syncArmyArrowDrawCount();
                 if(nativeSiegeMode){
                     nativeSiegeUpdate(dt);
                     nativeSiegeTowerRenderSoldiers();
