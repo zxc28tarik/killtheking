@@ -101,7 +101,7 @@ test('OPT06 excludes transparent, dynamic, child-bearing and non-box meshes',()=
  assert.equal(moving.children[0].material,m);
 });
 test('OPT06 only the three fixed AK25/26/31 sections are batched; controls and both canonical files remain unchanged',()=>{
- const section=html.slice(end,end+500);
+ const section=html.slice(end,html.indexOf('window.ktkSiegeStaticBatchStatus',end));
  assert.match(section,/nativeSiegeExpansionV25\.root,nativeSiegeDefenseV26\.root,nativeSiegeInteriorV31\.root/);
  assert.doesNotMatch(section,/nativeSiegeRam|nativeSiegeCatapult|nativeSiegeTower|nativeSiegeGateMesh/);
  assert.match(html,/window\.ktkSiegeStaticBatchStatus=\(\)=>/);

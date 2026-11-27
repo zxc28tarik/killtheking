@@ -26,7 +26,7 @@ const oldScripts=scripts(baseline.html),candidateScripts=scripts(html);
 const approvedArmyBlob='7936fa83981fb4ed0beb1900e5224da816c653d7';
 // OPT07: isolated render-only module review (real r128 matrix, death/revive,
 // active arrow and canonical tests). The live battle/AI script 26 stays pinned.
-const approvedArmyRenderBlob='fda57a8b35197de0a6c70437e9ee7a5e6a9f5e89';
+const approvedArmyRenderBlob='f891decb0f29d966675a3719f1776b2e2b384557'; // OPT10 role GPU buffer dirty flag; battle source unchanged
 const blobIdentity=s=>createHash('sha1').update('blob '+Buffer.byteLength(s)+'\0').update(s).digest('hex');
 if(oldScripts.length!==29||candidateScripts.length!==31)
  throw Error('Unexpected native script count');
