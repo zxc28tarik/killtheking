@@ -166,3 +166,9 @@ Her paket küçük bağımsız değişiklik, önce/sonra aynı test, kanonik HTM
 ## OPT-13 — Kuşatma gerçek 3B asker görünürlük kompaksiyonu
 - Pinned ArenaArmyRender ve bot simülasyonu değişmez. Kamera dışındaki askerler sadece çizim geçişinde geçici prefix'e sıkıştırılır. Kuşatma yüksekliği için tüm rig jointlerinin gerçek animasyon sonrası matrisleri ve muhafazakar geometri küreleri kullanılır; kule çıkma/düşme offset'i doğal olarak dahil. Her joint'in tüm material batch geometrisi sınır hesabına katılır. Bir parça görünüyorsa asker korunur. Farklı object matrix, shadow caster veya nonfinite durumda fail-open. Restore finally ile yapılır; oynanış, asker slotu, ok, banner ve gölge politikası değişmez. 
 - 4 yeni Node testi, önceki Meadow/Siege route testi genişletildi. Profilde ayrı siegeArmyVisibility sayacı ve gerçek G5.4 rig üstünde +60m geçici QA yüksekliği/gerçek slot retained testi var. Altı profil, targeted Chromium, UI32 ve genel regresyon sonuçları bekleniyor. Gerçek donanım FPS kazanımı veya piksel eşliği henüz doğrulanmadı.
+
+### OPT-13 kapanış
+- 306/306 genel, 6/6 profile (46001541865), UI32 ve BUG21–30 PASS. Her iki Siege gerçek rig +60m QA testi retained=true. 960 doğal frame örnekleri: 140 aktif, 102 görünür → 686556 / 950840 üçgen, 50 → 331460, 14 → 92392; 2 → 12860. 1920 95 → 636170, 16 → 102880. GPU donanım FPS kanıtı yok.
+
+## OPT-14 — kayıpsız asker vertex index + çim seam kutu düzeltmesi
+- Ortak Meadow/Siege modelleri yalnız bir kez, bit düzeyinde aynı position/normal/UV ile indexlenir; triangle sırası, count, winding, material, transform, bounds korunur. Tasarruf yoksa atla. Orijinal pinned renderer ve AI scripti değişmedi. 25 çim batch korunur, mevcut 4 ayrı tile sınırları boş aralık olmadan test edilir. Çim model/renk/yoğunluk/slot ve tile upload davranışı aynı. Yeni profil sayaçları, 4 hedefli test. Donanım FPS ve piksel eşliği henüz doğrulanmadı.

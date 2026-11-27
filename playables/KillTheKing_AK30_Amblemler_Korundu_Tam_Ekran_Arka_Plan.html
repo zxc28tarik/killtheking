@@ -9455,7 +9455,7 @@ const KTKCalmUIV25=(()=>{
                 visible:ktkMeshyGrassHero.visible,
                 lastRegeneratedTiles:meadowDenseGrass.userData.lastRegeneratedTiles,
                 visibleChunks:meadowDenseGrass.userData.visibleChunks||0,
-                totalChunks:25,scheduledComponents:meadowDenseGrass.userData.scheduledComponents||0
+                totalChunks:25,coarseVisibleChunks:meadowDenseGrass.userData.coarseVisibleChunks||0,seamChunksRejected:meadowDenseGrass.userData.seamChunksRejected||0,scheduledComponents:meadowDenseGrass.userData.scheduledComponents||0
             });
             window.ktkMeadowGrassVisualStatus=()=>({count:meadowNearGrass.count,nearbyCount:meadowDenseGrass.count,visible:meadowNearGrass.visible,nearbyVisible:meadowDenseGrass.visible,lastTileX:meadowDenseGrass.userData.lastTileX});
             const meadowHorizon=KTKMeadowHorizon.build(THREE,scene,spec);
@@ -14428,6 +14428,8 @@ const KTKCalmUIV25=(()=>{
                 if(!meadowBattleVisual){
                     meadowBattleState=ArenaArmyBattle.create(1600,armyTypeByClass[player.classIdx]);
                     meadowBattleVisual=ArenaArmyRender.create(THREE,scene,meadowBattleState,createBotMesh,ArenaCharacterMotion);
+                    // OPT14: lossless indexed vertex buffers, shared by Meadow and Siege.
+                    optimizeArmyVertexBuffers(THREE,meadowBattleVisual);
                 }else meadowBattleState=ArenaArmyBattle.create(1600,armyTypeByClass[player.classIdx]);
                 if(nativeSiegeMode){
                     nativeSiegeCastleGeometry(true);
@@ -16332,8 +16334,8 @@ const KTKCalmUIV25=(()=>{
                 tileWorldZ:new Int32Array(100).fill(2147483647),
                 tileObject:new THREE.Object3D(),tileColor:new THREE.Color(),
                 solidSpec:null,solidProps:[],lastRegeneratedTiles:0,
-                frustum:new THREE.Frustum(),viewProjection:new THREE.Matrix4(),
-                visibleChunks:0,scheduledComponents:0
+                frustum:new THREE.Frustum(),viewProjection:new THREE.Matrix4(),tileCullBox:new THREE.Box3(),
+                visibleChunks:0,coarseVisibleChunks:0,seamChunksRejected:0,scheduledComponents:0
             });
             return root;
         }
@@ -16432,12 +16434,23 @@ const KTKCalmUIV25=(()=>{
             viewCamera.updateMatrixWorld();
             data.viewProjection.multiplyMatrices(viewCamera.projectionMatrix,viewCamera.matrixWorldInverse);
             data.frustum.setFromProjectionMatrix(data.viewProjection);
-            let visible=0;
+            let visible=0,coarse=0;
+            const tileSize=ArenaMeadowGrass.NEAR_TILE_SIZE,box=data.tileCullBox;
             for(const c of data.chunks){
-                const show=!c.bounds.isEmpty()&&data.frustum.intersectsBox(c.bounds);
+                const broad=!c.bounds.isEmpty()&&data.frustum.intersectsBox(c.bounds);
+                if(broad)coarse++;
+                // OPT14: toroidal wrapping can put four world tiles far apart.
+                // Test each actual padded tile, not the empty space between them.
+                const show=broad&&c.tiles.some(tile=>{
+                    if(!tile)return false;
+                    box.min.set(tile.x-1,-1,tile.z-1);
+                    box.max.set(tile.x+tileSize+1,2,tile.z+tileSize+1);
+                    return data.frustum.intersectsBox(box);
+                });
                 c.simple.visible=show;c.detail.visible=show;
                 if(show)visible++;
             }
+            data.coarseVisibleChunks=coarse;data.seamChunksRejected=coarse-visible;
             data.visibleChunks=visible;return visible;
         }
         function updateActiveMeadowGrass(){
@@ -16460,6 +16473,64 @@ const KTKCalmUIV25=(()=>{
                 advance(sim,clock);
             }
         }
+        // OPT14: bit-exact vertex indexing, never weld approximate coordinates
+        // or different normals/UV seams. Preserve triangle order and all values.
+        function indexExactArmyGeometry(THREE,geometry){
+            const attrs=geometry.attributes;
+            const keys=['position','normal','uv'];
+            const n=attrs.position?.count??0;
+            if(geometry.index||!n||n%3||geometry.groups.length||
+                Object.keys(attrs).sort().join(',')!=='normal,position,uv'||
+                Object.keys(geometry.morphAttributes).length||
+                keys.some((k,i)=>attrs[k].isInterleavedBufferAttribute||
+                    attrs[k].normalized||!(attrs[k].array instanceof Float32Array)||
+                    attrs[k].count!==n||attrs[k].itemSize!==(i===2?2:3)))return null;
+            const arrays=keys.map(k=>attrs[k].array);
+            const bits=arrays.map(a=>new Uint32Array(a.buffer,a.byteOffset,a.length));
+            const unique=new Map(),sources=[],index=new Uint32Array(n);
+            for(let i=0;i<n;i++){
+                const p=i*3,t=i*2;
+                const key=[bits[0][p],bits[0][p+1],bits[0][p+2],
+                    bits[1][p],bits[1][p+1],bits[1][p+2],bits[2][t],bits[2][t+1]].join(',');
+                let slot=unique.get(key);
+                if(slot===undefined){slot=sources.length;unique.set(key,slot);sources.push(i);}
+                index[i]=slot;
+            }
+            const IndexType=sources.length<=65536?Uint16Array:Uint32Array;
+            const before=arrays.reduce((sum,a)=>sum+a.byteLength,0);
+            const after=sources.length*32+n*IndexType.BYTES_PER_ELEMENT;
+            if(after>=before)return null;
+            for(let k=0;k<keys.length;k++){
+                const size=attrs[keys[k]].itemSize,dest=new Float32Array(sources.length*size);
+                const destBits=new Uint32Array(dest.buffer);
+                for(let i=0;i<sources.length;i++){
+                    const p=sources[i]*size;
+                    for(let j=0;j<size;j++)destBits[i*size+j]=bits[k][p+j];
+                }
+                geometry.setAttribute(keys[k],new THREE.BufferAttribute(dest,size));
+            }
+            geometry.setIndex(new THREE.BufferAttribute(new IndexType(index),1));
+            // Existing bounds remain conservative; no source coordinate changed.
+            return {beforeVertices:n,afterVertices:sources.length,beforeBytes:before,afterBytes:after};
+        }
+        function optimizeArmyVertexBuffers(THREE,visual){
+            const visited=new Set();
+            const stats={geometries:0,indexed:0,beforeVertices:0,afterVertices:0,beforeBytes:0,afterBytes:0};
+            for(const role of Object.values(visual.roles))
+                for(const part of Object.values(role.parts))
+                    for(const mesh of part.meshes){
+                        const g=mesh.geometry;
+                        if(visited.has(g))continue;
+                        visited.add(g);stats.geometries++;
+                        const r=indexExactArmyGeometry(THREE,g);
+                        if(!r)continue;
+                        stats.indexed++;
+                        for(const k of Object.keys(r))stats[k]+=r[k];
+                    }
+            visual.vertexBufferStats=stats;
+            return stats;
+        }
+        window.ktkArmyVertexBufferStatus=()=>meadowBattleVisual?.vertexBufferStats??null;
         // OPT-04 ME3: render-only visibility compaction for the open battlefield.
         // Stable soldier slots/matrices are restored before the next simulation
         // step; no model, animation, collision, AI or soldier count is changed.
