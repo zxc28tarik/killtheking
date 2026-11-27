@@ -16,6 +16,8 @@ const T=ctx.THREE,api=ctx.api;
 function raw(a){return Array.from(new Uint32Array(a.buffer,a.byteOffset,a.length));}
 test('OPT14 exact bitwise attributes and triangle order survive index conversion',()=>{
  const g=new T.BoxGeometry(1,2,3).toNonIndexed();
+ assert.equal(api.indexExactArmyGeometry(T,g),null,'grouped geometry must be skipped');
+ g.clearGroups(); // same single-material structure as the live merged army buffers
  const before=Object.fromEntries(Object.entries(g.attributes).map(([k,a])=>[k,raw(a.array)]));
  const r=api.indexExactArmyGeometry(T,g);assert.ok(r);assert.equal(r.beforeVertices,36);
  assert.equal(r.afterVertices,24);assert.ok(r.afterBytes<r.beforeBytes);

@@ -172,3 +172,5 @@ Her paket küçük bağımsız değişiklik, önce/sonra aynı test, kanonik HTM
 
 ## OPT-14 — kayıpsız asker vertex index + çim seam kutu düzeltmesi
 - Ortak Meadow/Siege modelleri yalnız bir kez, bit düzeyinde aynı position/normal/UV ile indexlenir; triangle sırası, count, winding, material, transform, bounds korunur. Tasarruf yoksa atla. Orijinal pinned renderer ve AI scripti değişmedi. 25 çim batch korunur, mevcut 4 ayrı tile sınırları boş aralık olmadan test edilir. Çim model/renk/yoğunluk/slot ve tile upload davranışı aynı. Yeni profil sayaçları, 4 hedefli test. Donanım FPS ve piksel eşliği henüz doğrulanmadı.
+
+- İlk regression 305 PASS/2 FAIL: BUG04 VM slice helper'ı da almıştı; helper animate öncesine taşındı, gerçek clock kodu değişmedi. BoxGeometry test fixture multi-material group içerdiğinden doğru şekilde reddedilmişti; skip assertion + clearGroups ile gerçek single-material army formatı test edildi. Yeni koşu bekleniyor.

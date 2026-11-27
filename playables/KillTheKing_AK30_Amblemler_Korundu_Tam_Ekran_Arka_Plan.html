@@ -16473,64 +16473,6 @@ const KTKCalmUIV25=(()=>{
                 advance(sim,clock);
             }
         }
-        // OPT14: bit-exact vertex indexing, never weld approximate coordinates
-        // or different normals/UV seams. Preserve triangle order and all values.
-        function indexExactArmyGeometry(THREE,geometry){
-            const attrs=geometry.attributes;
-            const keys=['position','normal','uv'];
-            const n=attrs.position?.count??0;
-            if(geometry.index||!n||n%3||geometry.groups.length||
-                Object.keys(attrs).sort().join(',')!=='normal,position,uv'||
-                Object.keys(geometry.morphAttributes).length||
-                keys.some((k,i)=>attrs[k].isInterleavedBufferAttribute||
-                    attrs[k].normalized||!(attrs[k].array instanceof Float32Array)||
-                    attrs[k].count!==n||attrs[k].itemSize!==(i===2?2:3)))return null;
-            const arrays=keys.map(k=>attrs[k].array);
-            const bits=arrays.map(a=>new Uint32Array(a.buffer,a.byteOffset,a.length));
-            const unique=new Map(),sources=[],index=new Uint32Array(n);
-            for(let i=0;i<n;i++){
-                const p=i*3,t=i*2;
-                const key=[bits[0][p],bits[0][p+1],bits[0][p+2],
-                    bits[1][p],bits[1][p+1],bits[1][p+2],bits[2][t],bits[2][t+1]].join(',');
-                let slot=unique.get(key);
-                if(slot===undefined){slot=sources.length;unique.set(key,slot);sources.push(i);}
-                index[i]=slot;
-            }
-            const IndexType=sources.length<=65536?Uint16Array:Uint32Array;
-            const before=arrays.reduce((sum,a)=>sum+a.byteLength,0);
-            const after=sources.length*32+n*IndexType.BYTES_PER_ELEMENT;
-            if(after>=before)return null;
-            for(let k=0;k<keys.length;k++){
-                const size=attrs[keys[k]].itemSize,dest=new Float32Array(sources.length*size);
-                const destBits=new Uint32Array(dest.buffer);
-                for(let i=0;i<sources.length;i++){
-                    const p=sources[i]*size;
-                    for(let j=0;j<size;j++)destBits[i*size+j]=bits[k][p+j];
-                }
-                geometry.setAttribute(keys[k],new THREE.BufferAttribute(dest,size));
-            }
-            geometry.setIndex(new THREE.BufferAttribute(new IndexType(index),1));
-            // Existing bounds remain conservative; no source coordinate changed.
-            return {beforeVertices:n,afterVertices:sources.length,beforeBytes:before,afterBytes:after};
-        }
-        function optimizeArmyVertexBuffers(THREE,visual){
-            const visited=new Set();
-            const stats={geometries:0,indexed:0,beforeVertices:0,afterVertices:0,beforeBytes:0,afterBytes:0};
-            for(const role of Object.values(visual.roles))
-                for(const part of Object.values(role.parts))
-                    for(const mesh of part.meshes){
-                        const g=mesh.geometry;
-                        if(visited.has(g))continue;
-                        visited.add(g);stats.geometries++;
-                        const r=indexExactArmyGeometry(THREE,g);
-                        if(!r)continue;
-                        stats.indexed++;
-                        for(const k of Object.keys(r))stats[k]+=r[k];
-                    }
-            visual.vertexBufferStats=stats;
-            return stats;
-        }
-        window.ktkArmyVertexBufferStatus=()=>meadowBattleVisual?.vertexBufferStats??null;
         // OPT-04 ME3: render-only visibility compaction for the open battlefield.
         // Stable soldier slots/matrices are restored before the next simulation
         // step; no model, animation, collision, AI or soldier count is changed.
@@ -16710,6 +16652,64 @@ const KTKCalmUIV25=(()=>{
         }
         window.ktkMeadowArmyVisibilityStatus=()=>meadowArmyVisibility?.status()??null;
         window.ktkSiegeArmyVisibilityStatus=()=>siegeArmyVisibility?.status()??null;
+        // OPT14: bit-exact vertex indexing, never weld approximate coordinates
+        // or different normals/UV seams. Preserve triangle order and all values.
+        function indexExactArmyGeometry(THREE,geometry){
+            const attrs=geometry.attributes;
+            const keys=['position','normal','uv'];
+            const n=attrs.position?.count??0;
+            if(geometry.index||!n||n%3||geometry.groups.length||
+                Object.keys(attrs).sort().join(',')!=='normal,position,uv'||
+                Object.keys(geometry.morphAttributes).length||
+                keys.some((k,i)=>attrs[k].isInterleavedBufferAttribute||
+                    attrs[k].normalized||!(attrs[k].array instanceof Float32Array)||
+                    attrs[k].count!==n||attrs[k].itemSize!==(i===2?2:3)))return null;
+            const arrays=keys.map(k=>attrs[k].array);
+            const bits=arrays.map(a=>new Uint32Array(a.buffer,a.byteOffset,a.length));
+            const unique=new Map(),sources=[],index=new Uint32Array(n);
+            for(let i=0;i<n;i++){
+                const p=i*3,t=i*2;
+                const key=[bits[0][p],bits[0][p+1],bits[0][p+2],
+                    bits[1][p],bits[1][p+1],bits[1][p+2],bits[2][t],bits[2][t+1]].join(',');
+                let slot=unique.get(key);
+                if(slot===undefined){slot=sources.length;unique.set(key,slot);sources.push(i);}
+                index[i]=slot;
+            }
+            const IndexType=sources.length<=65536?Uint16Array:Uint32Array;
+            const before=arrays.reduce((sum,a)=>sum+a.byteLength,0);
+            const after=sources.length*32+n*IndexType.BYTES_PER_ELEMENT;
+            if(after>=before)return null;
+            for(let k=0;k<keys.length;k++){
+                const size=attrs[keys[k]].itemSize,dest=new Float32Array(sources.length*size);
+                const destBits=new Uint32Array(dest.buffer);
+                for(let i=0;i<sources.length;i++){
+                    const p=sources[i]*size;
+                    for(let j=0;j<size;j++)destBits[i*size+j]=bits[k][p+j];
+                }
+                geometry.setAttribute(keys[k],new THREE.BufferAttribute(dest,size));
+            }
+            geometry.setIndex(new THREE.BufferAttribute(new IndexType(index),1));
+            // Existing bounds remain conservative; no source coordinate changed.
+            return {beforeVertices:n,afterVertices:sources.length,beforeBytes:before,afterBytes:after};
+        }
+        function optimizeArmyVertexBuffers(THREE,visual){
+            const visited=new Set();
+            const stats={geometries:0,indexed:0,beforeVertices:0,afterVertices:0,beforeBytes:0,afterBytes:0};
+            for(const role of Object.values(visual.roles))
+                for(const part of Object.values(role.parts))
+                    for(const mesh of part.meshes){
+                        const g=mesh.geometry;
+                        if(visited.has(g))continue;
+                        visited.add(g);stats.geometries++;
+                        const r=indexExactArmyGeometry(THREE,g);
+                        if(!r)continue;
+                        stats.indexed++;
+                        for(const k of Object.keys(r))stats[k]+=r[k];
+                    }
+            visual.vertexBufferStats=stats;
+            return stats;
+        }
+        window.ktkArmyVertexBufferStatus=()=>meadowBattleVisual?.vertexBufferStats??null;
         function animate() {
             requestAnimationFrame(animate);
             const now = performance.now();
