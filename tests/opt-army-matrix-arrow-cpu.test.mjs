@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {runInNewContext} from 'node:vm';
+import {createHash} from 'node:crypto';
 const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
 const scripts=[...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)].map(x=>x[1]);
 const ctx={console};
@@ -117,4 +118,15 @@ test('OPT07 keeps canonical HTML equal and profiles army simulation, rendering a
   assert.ok(qa.includes(key),key);
  assert.match(html,/syncArmyArrowDrawCount\(\)/);
  assert.match(html,/nativeSiegeTowerRenderSoldiers\(\)/);
+});
+
+test('OPT07 exact approved render module identity is verified independently; live battle pin remains unchanged',()=>{
+ const sync=readFileSync(new URL('../tools/sync_canonical_entrypoint.mjs',import.meta.url),'utf8');
+ const pin=sync.match(/const approvedArmyRenderBlob='([0-9a-f]{40})'/);
+ assert.ok(pin);
+ const script=scripts[27],id=createHash('sha1').update('blob '+Buffer.byteLength(script)+'\0').update(script).digest('hex');
+ assert.equal(id,pin[1]);
+ assert.match(sync,/approvedArmyBlob='7936fa83981fb4ed0beb1900e5224da816c653d7'/);
+ assert.match(sync,/else if\(i!==26&&i!==27\)throw Error/);
+ assert.match(sync,/manifest\.unchangedOriginalScriptCount!==26/);
 });

@@ -24,22 +24,29 @@ const oldScripts=scripts(baseline.html),candidateScripts=scripts(html);
 // The historical baseline stays immutable and is never exported over UI32.
 // BUG13–14: 245/245 regressions passed in run 45821578969; preserve exact module pin.
 const approvedArmyBlob='7936fa83981fb4ed0beb1900e5224da816c653d7';
+// OPT07: isolated render-only module review (real r128 matrix, death/revive,
+// active arrow and canonical tests). The live battle/AI script 26 stays pinned.
+const approvedArmyRenderBlob='fda57a8b35197de0a6c70437e9ee7a5e6a9f5e89';
 const blobIdentity=s=>createHash('sha1').update('blob '+Buffer.byteLength(s)+'\0').update(s).digest('hex');
 if(oldScripts.length!==29||candidateScripts.length!==31)
  throw Error('Unexpected native script count');
 if(!oldScripts[26].includes('root.ArenaArmyBattle')||!candidateScripts[26].includes('root.ArenaArmyBattle')||
    blobIdentity(candidateScripts[26])!==approvedArmyBlob)
  throw Error('Unreviewed live army module: update the explicit approval only with regression evidence');
+if(!oldScripts[27].includes('root.ArenaArmyRender=api;')||
+   !candidateScripts[27].includes('root.ArenaArmyRender=api;')||
+   blobIdentity(candidateScripts[27])!==approvedArmyRenderBlob)
+ throw Error('Unreviewed live army render module: exact approved OPT07 pin required');
 let preserved=0;
 for(let i=0;i<28;i++){
  if(oldScripts[i]===candidateScripts[i])preserved++;
- else if(i!==26)throw Error('Unapproved original script changed: '+i);
+ else if(i!==26&&i!==27)throw Error('Unapproved original script changed: '+i);
 }
 const manifest={...baseline.manifest,unchangedOriginalScriptCount:preserved,bytes:Buffer.byteLength(html),sha256:createHash('sha256').update(html).digest('hex')};
 if(manifest.kind!=='SINGLE_NATIVE_FPS_THREE_MAPS'||
    manifest.oldIframeOrSeparateS3D1Runtime!==false||
    manifest.oneLiveGameDocument!==true||
-   manifest.unchangedOriginalScriptCount!==27)
+   manifest.unchangedOriginalScriptCount!==26)
  throw Error('Refusing incorrect non-native entrypoint');
 if(mode==='--write'){
  writeFileSync(dest,html,'utf8');
