@@ -212,3 +212,5 @@ Her paket küçük bağımsız değişiklik, önce/sonra aynı test, kanonik HTM
 
 ## OPT-26 — Inactive map scene matrix traversal
 - Requested out of numerical order; OPT20–25 remain open. Three r128 updates world matrices even for invisible children. Only explicitly registered top-level inactive castle/meadow/siege visuals can skip render-time matrix traversal; active map objects (even if hidden/offscreen), physics, raycasts, live units, lighting and known light/target/camera roots retain original update logic. Exact r128 root transform logic, fallback for other revisions/reparented scenes; scope ends in finally. Re-activation explicitly syncs world matrices before simulation. Existing profiler captures registered and skipped root call counts, not GPU bytes or FPS. Five r128 regression tests and three-map × two-resolution profile assertions. Hardware FPS and pixel parity remain open.
+
+- First CI 327/328 PASS, all five OPT26 tests PASS. BUG10 static regex expected renderActiveMap immediately followed by acknowledgeSceneRender; now explicitly checks mandatory finally cleanup before acknowledgement. No production change or weakened assertion. Retest pending.

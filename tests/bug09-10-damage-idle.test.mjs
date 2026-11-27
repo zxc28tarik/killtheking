@@ -75,7 +75,7 @@ test('BUG10 resize, quality, camera, atmosphere and scene changes invalidate fro
  assert.match(main,/renderer.setPixelRatio\(targetRatio\);\s*invalidateIdleScene\(\)/);
  assert.match(main,/webglcontextrestored',invalidateIdleScene/);
  assert.match(main,/if\(!shouldRenderScene\(idleSceneState,playing,hidden\)\)return/);
- assert.match(main,/renderActiveMap\(\);\s*acknowledgeSceneRender\(idleSceneState\)/);
+ assert.match(main,/renderActiveMap\(\);\s*\}finally\{inactiveMapMatrixGate\.end\(\);\}\s*acknowledgeSceneRender\(idleSceneState\)/);
  const wrapper=part('        function renderActiveMap(){','        window.ktkMeadowArmyVisibilityStatus=');
  assert.match(wrapper,/renderer\.render\(scene,camera\);return;/);
  assert.match(wrapper,/try\{\s*meadowArmyVisibility\.prepare\(meadowBattleState,camera\);\s*renderer\.render\(scene,camera\);\s*\}finally\{meadowArmyVisibility\.restore\(\);\}/);
