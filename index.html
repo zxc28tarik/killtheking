@@ -7062,6 +7062,7 @@ window.addEventListener('error', function(event) {
             const useMat=mat===stoneMat?sharedStaticStoneMaterial(w,h,d):mat;
             const mesh = new THREE.Mesh(sharedStaticBoxGeometry(w,h,d), useMat);
             mesh.userData.ktkStaticDecoration=!isSolid;
+            mesh.userData.ktkStaticSolid=isSolid;
             mesh.position.set(x, y, z);
             mesh.castShadow = castShadow;
             mesh.receiveShadow = true;
@@ -7410,7 +7411,68 @@ window.addEventListener('error', function(event) {
             }
             return stats;
         }
+        // OPT-03: group opaque static solid boxes by unchanged material and
+        // region. Keep originals in the scene and raycast list with an invisible
+        // material of the SAME side; their visible flag remains the map authority.
+        // The two variant walls stay independent for native siege gate swaps.
+        function batchCastleSolidVisuals(THREE,root,objects,cellSize=48){
+            const groups=new Map(),proxies=new Map();
+            const stats={originals:0,batches:0,avoidedDraws:0,shadowDrawsAvoided:0};
+            for(const m of objects){
+                if(m.parent!==root||!m.isMesh||m.isInstancedMesh||!m.userData.ktkStaticSolid||
+                   m.children.length||!m.visible||!m.material||Array.isArray(m.material)||
+                   !m.material.visible||m.material.transparent||!m.material.depthWrite||
+                   m.material.alphaTest>0||m.customDepthMaterial||m.customDistanceMaterial)continue;
+                const p=m.geometry?.parameters;
+                if(m.geometry?.type!=='BoxGeometry'||!p||
+                   (p.width===88&&p.height===7&&Math.abs(m.position.x)<.01&&Math.abs(Math.abs(m.position.z)-42)<.01))continue;
+                if(!m.geometry.attributes.position||!m.geometry.attributes.normal||!m.geometry.attributes.uv)continue;
+                const key=[m.material.uuid,m.castShadow,m.receiveShadow,m.renderOrder,m.layers.mask,
+                    Math.floor(m.position.x/cellSize),Math.floor(m.position.z/cellSize)].join('|');
+                if(!groups.has(key))groups.set(key,[]);
+                groups.get(key).push(m);
+            }
+            for(const list of groups.values()){
+                if(list.length<2)continue;
+                const first=list[0],pos=[],norm=[],uv=[];
+                for(const m of list){
+                    m.updateMatrix();m.updateMatrixWorld(true);
+                    const g=m.geometry.index?m.geometry.toNonIndexed():m.geometry.clone();
+                    g.applyMatrix4(m.matrix);
+                    const p=g.attributes.position,n=g.attributes.normal,t=g.attributes.uv;
+                    for(let i=0;i<p.count;i++){
+                        pos.push(p.getX(i),p.getY(i),p.getZ(i));
+                        norm.push(n.getX(i),n.getY(i),n.getZ(i));
+                        uv.push(t.getX(i),t.getY(i));
+                    }
+                    g.dispose();
+                }
+                const g=new THREE.BufferGeometry();
+                g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));
+                g.setAttribute('normal',new THREE.Float32BufferAttribute(norm,3));
+                g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
+                g.computeBoundingSphere();g.computeBoundingBox();
+                const batch=new THREE.Mesh(g,first.material);
+                batch.name='OPT regional castle solid visual';
+                batch.castShadow=first.castShadow;batch.receiveShadow=first.receiveShadow;
+                batch.renderOrder=first.renderOrder;batch.layers.mask=first.layers.mask;
+                batch.matrixAutoUpdate=false;batch.updateMatrix();
+                root.add(batch);
+                for(const m of list){
+                    const side=m.material.side;
+                    if(!proxies.has(side))proxies.set(side,new THREE.MeshBasicMaterial({side,visible:false}));
+                    m.material=proxies.get(side);
+                    m.castShadow=false;
+                    m.matrixAutoUpdate=false;
+                }
+                stats.originals+=list.length;stats.batches++;stats.avoidedDraws+=list.length-1;
+                if(batch.castShadow)stats.shadowDrawsAvoided+=list.length-1;
+            }
+            return stats;
+        }
         buildCastleArena();
+        const castleSolidBatchStats=batchCastleSolidVisuals(THREE,scene,scene.children.slice(castleBegin));
+        window.ktkCastleSolidBatchStatus=()=>({...castleSolidBatchStats});
         const castleDecorBatchStats=batchStaticDecorations(THREE,scene,scene.children.slice(castleBegin));
         window.ktkCastleDecorBatchStatus=()=>({...castleDecorBatchStats});
         const castleVisuals = scene.children.slice(castleBegin);

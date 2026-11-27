@@ -6,8 +6,8 @@
 
 | ID | Alan | İş | Durum |
 |---|---|---|---|
-| A0 | Ortak QA | Arena dakika ofseti ve isteğe bağlı ekran görüntüsü; ordu 600s kabulü | Kodlandı; yeniden CI bekliyor |
-| A1 | Ortak QA | 3 harita x 2 çözünürlük; CPU profiler, fizik, çim, render çağrısı, varsa GPU timer query, kaynak sayaçları | 6/6 profil CI PASS; donanım kabulü açık |
+| A0 | Ortak QA | Arena dakika ofseti ve isteğe bağlı ekran görüntüsü; ordu 600s kabulü | 3/3 uzun test PASS (600s+) |
+| A1 | Ortak QA | 3 harita x 2 çözünürlük; CPU profiler, fizik, çim, render çağrısı, varsa GPU timer query, kaynak sayaçları | 6/6 baseline ve 6/6 OPT02 profil PASS; donanım kabulü açık |
 | A2 | Ortak QA | Gerçek GPU ve aynı kamera/kalite ile tekrarlanabilir baseline | Açık |
 | O1 | Ortak motor | Uzun karede gerçek maç saati/simülasyon farkı; ayrı saat/iş yükü politikası, spiral-of-death engeli | Açık |
 | O2 | Ortak motor | Sahiplik, dispose, pooling, transient ve tekrar maç temizliği | Açık |
@@ -45,3 +45,8 @@ Her paket küçük bağımsız değişiklik, önce/sonra aynı test, kanonik HTM
 - Arena + Kuşatma ortak kale tabanında yalnız addBox non-solid dekorasyonları aynı geometri/materyal/gölge/katman ve bölge bazında instancing. Fiziksel duvar, barrel, kuşatma mekanizması ve raycast listesi etkilenmez. r128 instance sınırı nedeniyle frustumCulled=false, bölgesel gruplama; gerçek draw call kazancı profil ile ölçülmeli. Orijinal dekorlar sahneden çıkar, batch map visibility listesine dahil olur.
 - Meydan + Kuşatma: mevcut 96 kapasiteli görsel ok batch'i yalnız aktif uçuş sayısını çiziyor. Simülasyon, ok slot güncellemeleri ve kapasite korunur. Ölü asker sıkıştırma ve LOD henüz yapılmadı.
 - Profil kategorisinde asker grubu ve oklar artık ayrı işaretleniyor. Gerçek kaynak sayaçları eklendi. 3 yeni regresyon testi, yeni CI ve aynı profil karşılaştırması bekleniyor.
+
+## OPT-03 — Arena / ortak kale sabit fiziksel geometri görsel batching
+- OPT02 exact commit 31366e1: 4/4 workflow PASS ([regresyon](https://github.com/zxc28tarik/killtheking/actions/runs/45977260578), [UI](https://github.com/zxc28tarik/killtheking/actions/runs/45977260315), [hedefli](https://github.com/zxc28tarik/killtheking/actions/runs/45977260481), [6 profil](https://github.com/zxc28tarik/killtheking/actions/runs/45977260467)). Kaynak sayacı 702 kutu isteği / 139 geometri = 563 önlenen allocation, 12 önlenen texture clone; 25 dekor 6 batch, 19 potansiyel çağrı azalması. Arena statik gölge çağrıları 150→149/kare (dekorların çoğu gölge atmaz); asker ana kamera kategori ~950840 üçgen/kare. Yazılımsal FPS iyileşmesi doğrulanmadı.
+- Yeni kod: yalnız addBox kaynaklı opaque static solid kutular için aynı materyal/gölge/layer ve bölge içinde pozisyon/normal/UV birebir birleştirme. Orijinal fizik meshleri sahnede ve worldMeshes listesinde kalır; görünürlük flag'i değişmez, aynı side özellikli invisible proxy material kullanılır. Gölge yalnız batch'te kalır. Orijinal değişken güney/kuzey duvarları hariç, bütün dinamikler hariç. Böylece raycast kimliği ve kuşatma duvar swap korunur. 2 regresyon testi gerçek r128 raycast, attribute, transform ve visibility denetimi. Bu aşamada kuşatma ek mimarisi henüz batch edilmedi.
+- Yeni profil sayaçları ile gerçek batch ve gölge kazancı doğrulanacak. İnsan görsel karşılaştırması ve fiziksel GPU FPS açık. Kaynak optimizasyonları tamamlandı olarak işaretlenmez.
