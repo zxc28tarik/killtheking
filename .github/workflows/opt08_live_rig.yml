@@ -1,0 +1,33 @@
+name: OPT-08 original G5.4 live rig visual stress
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/opt08_live_rig.yml'
+      - 'qa/opt08_army_live_stress.mjs'
+      - 'tests/opt08-live-harness-integrity.test.mjs'
+  workflow_dispatch:
+jobs:
+  live-army:
+    strategy:
+      fail-fast: false
+      matrix:
+        map: [meadow, siege]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      KTK_MAP: ${{ matrix.map }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save --no-package-lock playwright@1.58.2
+      - run: npx playwright install --with-deps chromium
+      - run: node qa/opt08_army_live_stress.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: opt08-live-rig-${{ matrix.map }}
+          path: opt08-live-*.json
+          if-no-files-found: error
