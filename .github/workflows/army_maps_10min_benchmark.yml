@@ -1,0 +1,216 @@
+name: Army maps 10-minute live benchmark
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/army_maps_10min_benchmark.yml']
+  workflow_dispatch:
+jobs:
+  benchmark:
+    strategy:
+      fail-fast: false
+      matrix:
+        map: [meadow, siege]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      KTK_MAP: ${{ matrix.map }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save --no-package-lock playwright@1.58.2
+      - run: npx playwright install --with-deps chromium
+      - name: Collect 600 seconds of real active play
+        run: |
+          node --input-type=module <<'JS'
+          import {chromium} from 'playwright';
+          import {resolve} from 'node:path';
+          import {pathToFileURL} from 'node:url';
+          import {writeFileSync} from 'node:fs';
+          import assert from 'node:assert/strict';
+          const map=process.env.KTK_MAP;
+          assert.ok(['meadow','siege'].includes(map));
+          const browser=await chromium.launch({args:['--use-angle=swiftshader','--enable-unsafe-swiftshader','--disable-dev-shm-usage','--disable-background-timer-throttling','--disable-renderer-backgrounding']});
+          const p=await browser.newPage({viewport:{width:1920,height:1080},deviceScaleFactor:1});
+          const errors=[],consoleErrors=[],failedRequests=[],issues=[],rounds=[],frames=[],samples=[],longTasks=[],invariants=[];
+          let browserInfo=null,activeMs=0;
+          p.on('pageerror',e=>errors.push({at:new Date().toISOString(),error:e.stack||e.message}));
+          p.on('console',m=>{if(m.type()==='error')consoleErrors.push({at:new Date().toISOString(),text:m.text()});});
+          p.on('requestfailed',r=>failedRequests.push({url:r.url().slice(0,300),error:r.failure()?.errorText}));
+          const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+          const quantile=(a,q)=>a[Math.min(a.length-1,Math.max(0,Math.ceil(a.length*q)-1))]??null;
+          function stats(frames){
+            const sorted=frames.map(f=>f.ms).filter(x=>Number.isFinite(x)&&x>0).sort((a,b)=>a-b);
+            const total=sorted.reduce((a,b)=>a+b,0);
+            const low=sorted.slice(-Math.max(1,Math.ceil(sorted.length*.01)));
+            const low01=sorted.slice(-Math.max(1,Math.ceil(sorted.length*.001)));
+            const n=v=>Math.round(v*100)/100;
+            return sorted.length?{frames:sorted.length,measuredSeconds:n(total/1000),averageFPS:n(1000*sorted.length/total),onePercentLowFPS:n(1000*low.length/low.reduce((a,b)=>a+b,0)),pointOnePercentLowFPS:n(1000*low01.length/low01.reduce((a,b)=>a+b,0)),p50Ms:n(quantile(sorted,.5)),p95Ms:n(quantile(sorted,.95)),p99Ms:n(quantile(sorted,.99)),worstMs:n(sorted.at(-1)),over33ms:sorted.filter(x=>x>33.33).length,over50ms:sorted.filter(x=>x>50).length,over100ms:sorted.filter(x=>x>100).length,over250ms:sorted.filter(x=>x>250).length,over1000ms:sorted.filter(x=>x>1000).length}:null;
+          }
+          async function start(round){
+            if(round>0){
+              await p.locator('#match-menu-btn').click();
+              await p.waitForFunction(()=>arenaMatch.phase==='menu');
+            }
+            // Use normal menus, no state or clock mutation.
+            if(round===0){
+              await p.locator('[data-focus-map="arena"]').click();
+              await p.locator('#fm-toggle-settings').click();
+              await p.locator('[data-focus-duration="480"]').click();
+              await p.locator('#fm-quality').selectOption('medium');
+              await p.locator('#ui32-back').click();
+            }
+            if(await p.locator('[data-focus-map="'+map+'"]').isVisible())await p.locator('[data-focus-map="'+map+'"]').click();
+            else {
+              await p.locator('#ui32-back').click();
+              await p.locator('[data-focus-map="'+map+'"]').click();
+            }
+            const classIdx=[0,2,3,1][round%4];
+            await p.locator('[data-approved-class="'+classIdx+'"]:visible').click();
+            await p.locator('#play-btn').click();
+            await p.waitForFunction(()=>arenaMatch.phase==='playing'&&document.pointerLockElement===canvas,undefined,{timeout:30000});
+            assert.equal(await p.evaluate(()=>nativeSiegeMode?'siege':meadowBattleMode?'meadow':'arena'),map);
+            assert.equal(await p.evaluate(()=>arenaMatch.durationSeconds),480);
+            assert.equal(await p.evaluate(()=>player.classIdx),classIdx);
+            assert.equal(await p.evaluate(()=>meadowBattleState.soldiers.length),140);
+          }
+          async function monitor(round,remainingMs){
+            await p.evaluate(({round,remainingMs})=>{
+              const r={active:true,activeMs:0,frames:[],samples:[],longTasks:[],invariants:[],prev:null,lastSample:0,start:performance.now(),actions:0,done:false};
+              window.__armyBench=r;
+              let obs=null;
+              if(PerformanceObserver.supportedEntryTypes.includes('longtask')){
+                obs=new PerformanceObserver(list=>{for(const e of list.getEntries())if(r.active&&e.startTime>=r.start)r.longTasks.push({t:e.startTime-r.start,ms:e.duration,round});});
+                obs.observe({entryTypes:['longtask']});
+              }
+              r.stop=()=>{r.active=false;obs?.disconnect();};
+              function frame(t){
+                if(!r.active)return;
+                const playing=isGameActive&&arenaMatch.phase==='playing';
+                if(playing&&r.prev!==null&&t>r.prev){
+                  const ms=t-r.prev;
+                  r.activeMs+=ms;
+                  r.frames.push({t:r.activeMs,ms,remaining:arenaMatch.remaining,round});
+                }
+                r.prev=playing?t:null;
+                if(playing&&r.activeMs-r.lastSample>=1000){
+                  r.lastSample=r.activeMs;
+                  const m=renderer.info.memory,g=renderer.info.render,army=meadowBattleState;
+                  const row={t:r.activeMs,remaining:arenaMatch.remaining,drawCalls:g.calls,triangles:g.triangles,geometries:m.geometries,textures:m.textures,heapBytes:performance.memory?.usedJSHeapSize??null,particles:particles.length,arrows:arrows.length,health:player.hp,kills:player.kills,deaths:player.deaths,classIdx:player.classIdx,locked:document.pointerLockElement===canvas,armyTick:army.tick,armyElapsed:army.elapsed,blue:army.soldiers.filter(s=>s.alive&&s.team==='blue').length,red:army.soldiers.filter(s=>s.alive&&s.team==='red').length,gateHp:nativeSiegeMode?nativeSiegeEquipment?.gateHp:null,gateOpen:nativeSiegeMode?nativeSiegeGateOpen:null};
+                  r.samples.push(row);
+                  if(![player.pos.x,player.pos.y,player.pos.z,player.hp,arenaMatch.remaining,army.elapsed].every(Number.isFinite))r.invariants.push({t:row.t,issue:'Nonfinite player/army/clock'});
+                  if(army.soldiers.length!==140||army.squads.length!==8)r.invariants.push({t:row.t,issue:'Army roster changed'});
+                  if(!row.locked&&!armyTacticalOpen)r.invariants.push({t:row.t,issue:'Pointer lock lost while playing'});
+                }
+                if(r.activeMs>=remainingMs||arenaMatch.phase==='results'){r.done=true;r.stop();return;}
+                requestAnimationFrame(frame);
+              }
+              requestAnimationFrame(frame);
+            },{round,remainingMs});
+            let step=0,held=false,lastMinute=-1;
+            const deadline=Date.now()+Math.max(remainingMs,480000)+120000;
+            try{
+              while(Date.now()<deadline){
+                const state=await p.evaluate(()=>({phase:arenaMatch.phase,active:isGameActive,locked:document.pointerLockElement===canvas,done:window.__armyBench.done,ms:window.__armyBench.activeMs,cls:player.classIdx,gateOpen:nativeSiegeMode&&nativeSiegeGateOpen}));
+                if(state.done||state.phase==='results')break;
+                if(state.phase!=='playing'||!state.active||!state.locked)throw Error('Unexpected interruption '+JSON.stringify(state));
+                const minute=Math.floor((activeMs+state.ms)/60000);
+                if(minute!==lastMinute){lastMinute=minute;console.log('ARMY_PROGRESS',JSON.stringify({map,round,activeSeconds:(activeMs+state.ms)/1000}));}
+                // Issue real user hotkeys. Do not alter AI, clock, damage or position.
+                if(map==='siege'){
+                  if(step===0){for(const key of ['F6','F7','F8'])await p.keyboard.press(key);}
+                  if(state.gateOpen&&step%40===0)await p.keyboard.press('F9');
+                  // Don't override crew assignments with generic squad commands.
+                }else if(step%18===0){
+                  const orders=['k','l','g','j','y','n','u'];
+                  await p.keyboard.press(orders[Math.floor(step/18)%orders.length]);
+                  await p.keyboard.press(['z','x','o','b','m','i'][Math.floor(step/18)%6]);
+                }
+                const aim=await p.evaluate(()=>{
+                  if(arenaMatch.phase!=='playing')return null;
+                  let closest=null,best=Infinity;
+                  for(const s of meadowBattleState.soldiers){
+                    if(!s.alive||s.team===meadowBattleState.playerTeam)continue;
+                    const d=(s.x-player.pos.x)**2+(s.z-player.pos.z)**2;
+                    if(d<best){best=d;closest=s;}
+                  }
+                  if(!closest)return null;
+                  const dx=closest.x-player.pos.x,dz=closest.z-player.pos.z,dy=(closest.siegeY||0)+1.55-player.pos.y;
+                  const yaw=Math.atan2(-dx,-dz),pitch=Math.atan2(dy,Math.hypot(dx,dz));
+                  const delta=Math.atan2(Math.sin(yaw-player.yaw),Math.cos(yaw-player.yaw));
+                  document.dispatchEvent(new MouseEvent('mousemove',{movementX:Math.round(-delta/(.0022*mouseSensitivity)),movementY:Math.round(-(pitch-player.pitch)/(.0022*mouseSensitivity)),bubbles:true}));
+                  window.__armyBench.actions++;
+                  return {distance:Math.sqrt(best)};
+                });
+                const move=aim&&aim.distance>(state.cls<2?4:18)?'w':step%2?'a':'d';
+                await p.keyboard.down(move);
+                try{
+                  if(state.cls===2){
+                    if(!held){await p.mouse.down();held=true;}
+                    else if(step%4===0){await p.mouse.up();held=false;}
+                  }else{
+                    await p.mouse.click(960,540);
+                    if(step%8===0)await p.keyboard.press('f');
+                    if(state.cls===3&&step%12===0)await p.keyboard.press('r');
+                  }
+                  if(step%11===0)await p.keyboard.press('Space');
+                  if(step%17===0)await p.keyboard.press('c');
+                  if(step%40===0){await p.keyboard.down('Tab');await sleep(150);await p.keyboard.up('Tab');}
+                  await sleep(650);
+                }finally{await p.keyboard.up(move);}
+                step++;
+              }
+            }finally{
+              if(held)await p.mouse.up().catch(()=>{});
+              const raw=await p.evaluate(()=>{
+                const r=window.__armyBench;r.stop();
+                return {activeMs:r.activeMs,frames:r.frames,samples:r.samples,longTasks:r.longTasks,invariants:r.invariants,actions:r.actions,phase:arenaMatch.phase,remaining:arenaMatch.remaining,result:arenaMatch.result,armyTick:meadowBattleState.tick,armyElapsed:meadowBattleState.elapsed,wallMs:performance.now()-r.start};
+              });
+              for(const f of raw.frames)frames.push({...f,activeT:activeMs+f.t});
+              for(const x of raw.samples)samples.push({...x,round,activeT:activeMs+x.t});
+              longTasks.push(...raw.longTasks);invariants.push(...raw.invariants);
+              activeMs+=raw.activeMs;
+              const {frames:unusedF,samples:unusedS,longTasks:unusedL,invariants:unusedI,...metadata}=raw;
+              const result={round,...metadata,summary:stats(raw.frames)};
+              rounds.push(result);
+              console.log('ARMY_ROUND_SUMMARY',JSON.stringify({map,...result,activeSeconds:activeMs/1000}));
+            }
+            if(activeMs<600000&&rounds.at(-1).phase!=='results')throw Error('Round stopped before natural results or target');
+          }
+          try{
+            await p.goto(pathToFileURL(resolve('index.html')).href);
+            await p.waitForFunction(()=>window.ktkUI32Status?.().ready==='true',null,{timeout:30000});
+            browserInfo=await p.evaluate(()=>{
+              const gl=renderer.getContext(),ext=gl.getExtension('WEBGL_debug_renderer_info');
+              return {userAgent:navigator.userAgent,renderer:ext?gl.getParameter(ext.UNMASKED_RENDERER_WEBGL):gl.getParameter(gl.RENDERER),vendor:ext?gl.getParameter(ext.UNMASKED_VENDOR_WEBGL):gl.getParameter(gl.VENDOR),width:innerWidth,height:innerHeight,dpr:devicePixelRatio};
+            });
+            console.log('ARMY_ENVIRONMENT',JSON.stringify(browserInfo));
+            for(let round=0;activeMs<600000&&round<30;round++){
+              await start(round);
+              await monitor(round,600000-activeMs);
+              await p.screenshot({path:map+'-round-'+round+'.png'});
+            }
+          }catch(e){issues.push({error:e.stack||String(e)});}
+          finally{
+            const minutes=[];
+            for(let i=0;i<10;i++)minutes.push({minute:i+1,...stats(frames.filter(f=>f.activeT>=i*60000&&f.activeT<(i+1)*60000))});
+            const topSpikes=frames.slice().sort((a,b)=>b.ms-a.ms).slice(0,20).map(f=>({second:Math.round(f.activeT/100)/10,ms:f.ms,round:f.round}));
+            const report={schema:'ktk-army-10min-v1',source:process.env.GITHUB_SHA,map,environment:browserInfo,quality:'medium',automatedInput:true,activeSeconds:activeMs/1000,summary:stats(frames),minutes,topSpikes,resources:samples,longTasks,rounds,issues,errors,consoleErrors,failedRequests,invariants,frames};
+            writeFileSync(map+'-10min-report.json',JSON.stringify(report,null,2));
+            console.log('ARMY_FINAL',JSON.stringify({map,source:report.source,environment:browserInfo,activeSeconds:report.activeSeconds,summary:report.summary,minutes,topSpikes,resources:{first:samples[0],last:samples.at(-1),peakDrawCalls:Math.max(0,...samples.map(s=>s.drawCalls)),peakTriangles:Math.max(0,...samples.map(s=>s.triangles)),peakHeapBytes:Math.max(0,...samples.map(s=>s.heapBytes||0))},longTasks:longTasks.length,rounds,issues,errors,consoleErrors,failedRequests,invariants}));
+            await browser.close();
+          }
+          assert.ok(activeMs>=600000,'missing 600 seconds of active frame time');
+          assert.deepEqual(issues,[]);
+          assert.deepEqual(errors,[]);
+          assert.deepEqual(invariants,[]);
+          JS
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ${{ matrix.map }}-10min-evidence
+          path: |
+            ${{ matrix.map }}-10min-report.json
+            ${{ matrix.map }}-round-*.png
+          if-no-files-found: warn
