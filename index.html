@@ -16316,6 +16316,103 @@ const KTKCalmUIV25=(()=>{
                 advance(sim,clock);
             }
         }
+        // OPT-04 ME3: render-only visibility compaction for the open battlefield.
+        // Stable soldier slots/matrices are restored before the next simulation
+        // step; no model, animation, collision, AI or soldier count is changed.
+        // Siege is deliberately excluded until elevated actor bounds are audited.
+        function createMeadowArmyVisibility(THREE,visual){
+            const frustum=new THREE.Frustum(),viewProjection=new THREE.Matrix4(),
+                sphere=new THREE.Sphere(),roles=[],records=[];
+            const stats={alive:0,visible:0,culledAlive:0,dead:0,fullTriangles:0,submittedTriangles:0};
+            let prepared=false;
+            for(const [type,role] of Object.entries(visual.roles)){
+                let radius=0,triangles=0;
+                const meshes=[];
+                for(const part of Object.values(role.parts)){
+                    const scale=Math.max(Math.abs(part.scale.x),Math.abs(part.scale.y),Math.abs(part.scale.z));
+                    for(const mesh of part.meshes){
+                        if(!mesh.geometry.boundingSphere)mesh.geometry.computeBoundingSphere();
+                        const b=mesh.geometry.boundingSphere;
+                        radius=Math.max(radius,part.position.length()+scale*(b.center.length()+b.radius));
+                        triangles+=(mesh.geometry.index?.count??mesh.geometry.attributes.position.count)/3;
+                        meshes.push({mesh,backup:new Float32Array(mesh.instanceMatrix.array.length)});
+                    }
+                }
+                roles.push({type,role,radius:radius+.15,triangles,meshes,slots:[]});
+            }
+            function restore(){
+                if(!prepared)return;
+                for(const r of records){
+                    r.mesh.instanceMatrix.array.set(r.backup);
+                    r.mesh.count=r.oldCount;r.mesh.visible=r.oldVisible;
+                    r.mesh.instanceMatrix.needsUpdate=true;
+                }
+                records.length=0;prepared=false;
+            }
+            function prepare(battle,camera){
+                restore();
+                camera.updateMatrixWorld();
+                visual.group.updateWorldMatrix(true,false);
+                viewProjection.multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse);
+                frustum.setFromProjectionMatrix(viewProjection);
+                Object.assign(stats,{alive:0,visible:0,culledAlive:0,dead:0,fullTriangles:0,submittedTriangles:0});
+                prepared=true;
+                try{
+                    for(const entry of roles){
+                        const {role,radius,triangles,meshes,slots}=entry;
+                        slots.length=0;
+                        stats.fullTriangles+=triangles*role.slots.size;
+                        for(const [id,slot] of role.slots){
+                            const unit=battle.soldiers[id];
+                            if(!unit?.alive){stats.dead++;continue;}
+                            stats.alive++;
+                            sphere.center.set(unit.x,0,unit.z);sphere.radius=radius;
+                            sphere.applyMatrix4(visual.group.matrixWorld);
+                            // Invalid bounds must never make a living soldier disappear.
+                            const finite=Number.isFinite(sphere.radius)&&Number.isFinite(sphere.center.x)&&
+                                Number.isFinite(sphere.center.y)&&Number.isFinite(sphere.center.z);
+                            if(!finite||frustum.intersectsSphere(sphere))slots.push(slot);
+                            else stats.culledAlive++;
+                        }
+                        slots.sort((a,b)=>a-b);
+                        stats.visible+=slots.length;
+                        stats.submittedTriangles+=triangles*slots.length;
+                        if(slots.length===role.slots.size)continue;
+                        for(const record of meshes){
+                            const mesh=record.mesh,array=mesh.instanceMatrix.array;
+                            record.backup.set(array);
+                            record.oldCount=mesh.count;record.oldVisible=mesh.visible;
+                            records.push(record);
+                            // Sorted source slots; copy from immutable backup.
+                            for(let i=0;i<slots.length;i++){
+                                const src=slots[i]*16;
+                                array.set(record.backup.subarray(src,src+16),i*16);
+                            }
+                            mesh.count=slots.length;
+                            if(!slots.length)mesh.visible=false;
+                            mesh.instanceMatrix.needsUpdate=true;
+                        }
+                    }
+                }catch(e){restore();throw e;}
+                return stats;
+            }
+            return {prepare,restore,status:()=>({...stats})};
+        }
+        let meadowArmyVisibility=null,meadowArmyVisibilityOwner=null;
+        function renderActiveMap(){
+            if(!meadowBattleMode||nativeSiegeMode||!meadowBattleVisual?.group.visible||!meadowBattleState){
+                renderer.render(scene,camera);return;
+            }
+            if(meadowArmyVisibilityOwner!==meadowBattleVisual){
+                meadowArmyVisibility=createMeadowArmyVisibility(THREE,meadowBattleVisual);
+                meadowArmyVisibilityOwner=meadowBattleVisual;
+            }
+            try{
+                meadowArmyVisibility.prepare(meadowBattleState,camera);
+                renderer.render(scene,camera);
+            }finally{meadowArmyVisibility.restore();}
+        }
+        window.ktkMeadowArmyVisibilityStatus=()=>meadowArmyVisibility?.status()??null;
         function animate() {
             requestAnimationFrame(animate);
             const now = performance.now();
@@ -16343,7 +16440,7 @@ const KTKCalmUIV25=(()=>{
                     });
             }
             updateActiveMeadowGrass();
-            renderer.render(scene, camera);
+            renderActiveMap();
             acknowledgeSceneRender(idleSceneState);
         }
 

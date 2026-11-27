@@ -95,7 +95,7 @@ try{
       if(t-last>=3000){
         last=t;
         const r=renderer.info,m=r.memory;
-        q.samples.push({phase:q.phase,t:t-q.start,geometries:m.geometries,textures:m.textures,programs:r.programs?.length,heap:performance.memory?.usedJSHeapSize??null,calls:r.render.calls,triangles:r.render.triangles,remaining:arenaMatch.remaining,clock:arenaClock,armyElapsed:meadowBattleState?.elapsed??null,particles:particles.length,arrows:arrows.length,staticResources:window.ktkStaticResourceStatus?.(),castleDecor:window.ktkCastleDecorBatchStatus?.(),castleSolids:window.ktkCastleSolidBatchStatus?.(),armyArrowDrawCount:meadowBattleVisual?.flightArrows?.count??null});
+        q.samples.push({phase:q.phase,t:t-q.start,geometries:m.geometries,textures:m.textures,programs:r.programs?.length,heap:performance.memory?.usedJSHeapSize??null,calls:r.render.calls,triangles:r.render.triangles,remaining:arenaMatch.remaining,clock:arenaClock,armyElapsed:meadowBattleState?.elapsed??null,particles:particles.length,arrows:arrows.length,staticResources:window.ktkStaticResourceStatus?.(),castleDecor:window.ktkCastleDecorBatchStatus?.(),castleSolids:window.ktkCastleSolidBatchStatus?.(),armyVisibility:window.ktkMeadowArmyVisibilityStatus?.(),armyArrowDrawCount:meadowBattleVisual?.flightArrows?.count??null});
       }
       requestAnimationFrame(frame);
     }
