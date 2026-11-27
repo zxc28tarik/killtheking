@@ -125,3 +125,6 @@ Her paket küçük bağımsız değişiklik, önce/sonra aynı test, kanonik HTM
 
 ### OPT-10 ME — Tamamen görünmez sınıf için boş frustum-GPU güncellemesi önlendi
 - Meydan visibility compact kopyalayıcı, bir sınıfta kamerada görünür asker sayısı 0 olduğunda tüm matrisi yedekleyip yeniden yazma işlemini yapmıyor; sadece `mesh.count=0`, görünürlük kapama ve restore sayacı. Canlı asker görünür hale geldiğinde orijinal instance dizisinden güncel matrisler yeniden derlenip GPU işaretlenir. Oyun fiziği veya AI etkilenmez. Status `emptyRoleMeshes` ile doğrulanabilir. Hareketli kuşatma kulesi için bu frustum sistemi hâlâ uygulanmaz.
+
+### OPT-10 canlı GPU upload kontrolü
+- Daha önce 8 vaka olan gerçek 140 G5.4 model stress testine iki vaka eklendi: tüm tüfekçi ve tüm kılıççı rolü (ayrı ayrı) sıfır canlı. Gerçek role.drawBatches sayısı kadar GPU dirty markı atlanmalı; 0/35/70/105/140 ölü, 0/1/32/96 ok için eski doğrulama aynen korunur. Disposable tarayıcıda restore sonrası state/proje referansı tekrar kontrol edilir. Toplam 10 vaka × Meydan/Kuşatma 2 harita = 20 profil kontrolü; gameplay AI değiştirilmedi.

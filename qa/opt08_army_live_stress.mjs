@@ -43,13 +43,17 @@ try {
    {name:'140-dead-0-arrow',dead:140,arrows:0},
    {name:'0-dead-1-arrow',dead:0,arrows:1},
    {name:'0-dead-32-arrow',dead:0,arrows:32},
-   {name:'0-dead-96-arrow',dead:0,arrows:96}];
+   {name:'0-dead-96-arrow',dead:0,arrows:96},
+   // OPT10: wipe an actual G5.4 role (not an arbitrary array prefix).
+   {name:'entire-musket-role-dead',role:'musket',arrows:0},
+   {name:'entire-sword-role-dead',role:'sword',arrows:0}];
   const output=[];
   try{
    isGameActive=false;
    for(const c of cases){
     state.soldiers.forEach((s,i)=>{
-     s.alive=i<140-c.dead;s.hp=s.alive?original[i].hp:0;
+     s.alive=c.role?s.type!==c.role:i<140-c.dead;
+     s.hp=s.alive?original[i].hp:0;
     });
     state.projectiles=Array.from({length:c.arrows},(_,i)=>({
      x:i*.5,y:3+(i%4)*.2,z:-40+i*.25,vx:3,vy:1,vz:20
@@ -58,8 +62,14 @@ try {
     visual.update(state,1/60);syncArmyArrowDrawCount();
     visual.update(state,1/60);syncArmyArrowDrawCount();
     const counters={...visual.performance()};
-    if(counters.alive!==140-c.dead||counters.hiddenSoldiersSkipped!==c.dead||
+    const deadCount=state.soldiers.filter(s=>!s.alive).length;
+    const shouldSkip=c.role?visual.roles[c.role].batches:
+      deadCount===140?visual.drawBatches-1:0;
+    if(counters.alive!==140-deadCount||
+       counters.hiddenSoldiersSkipped!==deadCount||
        counters.arrowMatricesWritten!==c.arrows||
+       counters.skippedBatchUploads!==shouldSkip||
+       counters.uploadedBatches!==visual.drawBatches-1-shouldSkip||
        visual.flightArrows.count!==c.arrows)
      throw Error('OPT08 real model counters incorrect '+c.name+' '+JSON.stringify(counters));
     const samples=[];
@@ -68,7 +78,7 @@ try {
      for(let j=0;j<24;j++){visual.update(state,1/60);syncArmyArrowDrawCount();}
      samples.push((performance.now()-start)/24);
     }
-    output.push({...c,medianVisualUpdateMs:median(samples),samples,
+    output.push({...c,deadCount,medianVisualUpdateMs:median(samples),samples,
      drawBatches:visual.drawBatches,counters:{...visual.performance()},
      sceneVisible:visual.group.visible});
    }
@@ -85,7 +95,7 @@ try {
    throw Error('OPT08 army original models not rendered');
   return output;
  });
- assert.equal(report.results.length,8);
+ assert.equal(report.results.length,10);
  assert.deepEqual(errors,[]);
  console.log('OPT08_LIVE',JSON.stringify(report));
 }catch(e){report.failure=e.stack||String(e);console.error(report.failure);}
