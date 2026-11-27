@@ -1,0 +1,40 @@
+name: OPT-11 disposable render A/B/A attribution
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/opt11_render_ab.yml'
+      - 'qa/opt11_render_ab.mjs'
+      - 'tests/opt11-render-ab-integrity.test.mjs'
+  workflow_dispatch:
+jobs:
+  render-ab:
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        include:
+          - {map: meadow, target: grass}
+          - {map: meadow, target: army}
+          - {map: siege, target: architecture}
+          - {map: siege, target: army}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    env:
+      KTK_MAP: ${{ matrix.map }}
+      KTK_TARGET: ${{ matrix.target }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save --no-package-lock playwright@1.58.2
+      - run: npx playwright install --with-deps chromium
+      - run: node --test tests/opt11-render-ab-integrity.test.mjs
+      - run: node qa/opt11_render_ab.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: opt11-render-ab-${{ matrix.map }}-${{ matrix.target }}
+          path: opt11-render-ab-*.json
+          if-no-files-found: warn
