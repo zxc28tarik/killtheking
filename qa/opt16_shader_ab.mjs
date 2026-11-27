@@ -29,7 +29,11 @@ try{
   if(nativeSiegeMode||meadowBattleMode)throw Error('OPT16 requires Arena');
   // Real round initialization, but no natural simulation or input interleaving
   // during this synchronous disposable test. No game clock is benchmarked.
-  resetFreeForAllRound();
+  // Preserve the original transient-only experiment now that OPT18
+  // prewarms the active map in production. This page alone bypasses it.
+  const oldWarmup=prepareArenaShadersForRound;
+  prepareArenaShadersForRound=()=>{};
+  try{resetFreeForAllRound();}finally{prepareArenaShadersForRound=oldWarmup;}
   isGameActive=false;
   const gl=renderer.getContext(),oldDraw=renderer.renderBufferDirect;
   const oldDebug=renderer.debug.checkShaderErrors;
