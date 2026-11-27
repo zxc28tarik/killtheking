@@ -24,8 +24,11 @@ try{
   await p.locator('#ui32-back').click();
   await p.locator('[data-focus-map="'+map+'"]').click();
   await p.locator('[data-approved-class="0"]:visible').click();
+  const beginWall=Date.now();
   await p.locator('#play-btn').click();
   await p.waitForFunction(()=>arenaMatch.phase==='playing'&&document.pointerLockElement===canvas,null,{timeout:30000});
+  report.startup={wallMs:Date.now()-beginWall,shaderWarmup:await p.evaluate(()=>window.ktkArenaShaderWarmupStatus?.()??null)};
+  assert.equal(report.startup.shaderWarmup?.state,map==='arena'?'ready':'other-map');
   assert.equal(await p.evaluate(()=>nativeSiegeMode?'siege':meadowBattleMode?'meadow':'arena'),map);
   if(map==='siege')for(const key of ['F6','F7','F8'])await p.keyboard.press(key);
   if(map==='meadow')await p.keyboard.press('k');
@@ -238,7 +241,7 @@ try{
         if(previousHeap!==null&&heap!==null&&previousHeap-heap>2*1024*1024)
           q.heapDrops.push({phase:q.phase,t:t-q.start,bytes:previousHeap-heap});
         previousHeap=heap;
-        q.samples.push({phase:q.phase,t:t-q.start,geometries:m.geometries,textures:m.textures,programs:r.programs?.length,heap:performance.memory?.usedJSHeapSize??null,calls:r.render.calls,triangles:r.render.triangles,remaining:arenaMatch.remaining,clock:arenaClock,armyElapsed:meadowBattleState?.elapsed??null,particles:particles.length,arrows:arrows.length,staticResources:window.ktkStaticResourceStatus?.(),castleDecor:window.ktkCastleDecorBatchStatus?.(),castleSolids:window.ktkCastleSolidBatchStatus?.(),siegeStatic:window.ktkSiegeStaticBatchStatus?.(),siegeRigid:window.ktkSiegeRigidBatchStatus?.(),siegeCosmetic:window.ktkSiegeCosmeticBatchStatus?.(),siegeArmyVisibility:window.ktkSiegeArmyVisibilityStatus?.(),armyVisibility:window.ktkMeadowArmyVisibilityStatus?.(),frameUi:window.ktkFrameUiStatus?.(),armyVertexBuffers:window.ktkArmyVertexBufferStatus?.(),grassCull:window.ktkMeshyGrassStatus?.(),armyVisualCpuPolicy:meadowBattleVisual?.performance?.()??null,armyArrowDrawCount:meadowBattleVisual?.flightArrows?.count??null});
+        q.samples.push({phase:q.phase,t:t-q.start,geometries:m.geometries,textures:m.textures,programs:r.programs?.length,heap:performance.memory?.usedJSHeapSize??null,calls:r.render.calls,triangles:r.render.triangles,remaining:arenaMatch.remaining,clock:arenaClock,armyElapsed:meadowBattleState?.elapsed??null,particles:particles.length,arrows:arrows.length,staticResources:window.ktkStaticResourceStatus?.(),castleDecor:window.ktkCastleDecorBatchStatus?.(),castleSolids:window.ktkCastleSolidBatchStatus?.(),siegeStatic:window.ktkSiegeStaticBatchStatus?.(),siegeRigid:window.ktkSiegeRigidBatchStatus?.(),siegeCosmetic:window.ktkSiegeCosmeticBatchStatus?.(),siegeArmyVisibility:window.ktkSiegeArmyVisibilityStatus?.(),armyVisibility:window.ktkMeadowArmyVisibilityStatus?.(),shaderWarmup:window.ktkArenaShaderWarmupStatus?.(),frameUi:window.ktkFrameUiStatus?.(),armyVertexBuffers:window.ktkArmyVertexBufferStatus?.(),grassCull:window.ktkMeshyGrassStatus?.(),armyVisualCpuPolicy:meadowBattleVisual?.performance?.()??null,armyArrowDrawCount:meadowBattleVisual?.flightArrows?.count??null});
       }
       requestAnimationFrame(frame);
     }
@@ -303,7 +306,7 @@ try{
     warning:'rAF gap is NOT GPU time. Callback work and CDP task time do not prove GPU, GC or driver stalls.'
   };
   report.drawCategories=Object.entries(report.measurements.draws).sort((a,b)=>b[1].calls-a[1].calls);
-  console.log('OPT_PROFILE',JSON.stringify({map,width,summary:report.summary,cpuTop:report.cpuTop,drawCategories:report.drawCategories,samples:report.measurements.samples,armySightline:report.armySightline,siegeSightline:report.siegeSightline,gpuSupported:report.measurements.gpuSupported,stall:report.stallDiagnostics,shaderCalls:report.measurements.shaderCalls,shaderSlow:report.measurements.shaderSlow,shaderHookErrors:report.measurements.shaderHookErrors,chromeTasks:report.chromeTaskMetrics,errors}));
+  console.log('OPT_PROFILE',JSON.stringify({map,width,startup:report.startup,summary:report.summary,cpuTop:report.cpuTop,drawCategories:report.drawCategories,samples:report.measurements.samples,armySightline:report.armySightline,siegeSightline:report.siegeSightline,gpuSupported:report.measurements.gpuSupported,stall:report.stallDiagnostics,shaderCalls:report.measurements.shaderCalls,shaderSlow:report.measurements.shaderSlow,shaderHookErrors:report.measurements.shaderHookErrors,chromeTasks:report.chromeTaskMetrics,errors}));
 }catch(e){report.failure=e.stack||String(e);console.error(report.failure);}
 finally{writeFileSync('opt-profile-report.json',JSON.stringify(report,null,2));await browser.close();}
 assert.ok(!report.failure,report.failure);assert.deepEqual(errors,[]);assert.ok(report.summary?.frame?.n>0,'no measured frames');

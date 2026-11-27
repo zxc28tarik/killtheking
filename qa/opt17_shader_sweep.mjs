@@ -8,7 +8,7 @@ import {resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
 import assert from 'node:assert/strict';
 const mode=process.env.KTK_SHADER_ARM||'cold';
-assert.ok(['cold','prewarm'].includes(mode));
+assert.ok(['cold','prewarm','production'].includes(mode));
 const report={schema:'ktk-opt17-arena-sweep-v1',mode,source:process.env.GITHUB_SHA,backend:'SwiftShader',errors:[]};
 const browser=await chromium.launch({args:['--use-angle=swiftshader','--enable-unsafe-swiftshader','--disable-dev-shm-usage']});
 const page=await browser.newPage({viewport:{width:960,height:540},deviceScaleFactor:1});
@@ -26,7 +26,12 @@ try{
  await page.locator('[data-approved-class="0"]:visible').click();
  report.measurements=await page.evaluate(mode=>{
   if(nativeSiegeMode||meadowBattleMode)throw Error('OPT17 requires Arena');
-  resetFreeForAllRound();isGameActive=false;
+  // Historical A/B arms bypass the production warmup in this disposable page only.
+  const oldWarm=prepareArenaShadersForRound;
+  if(mode!=='production')prepareArenaShadersForRound=()=>{};
+  try{resetFreeForAllRound();}finally{prepareArenaShadersForRound=oldWarm;}
+  isGameActive=false;
+  const productionWarmup=window.ktkArenaShaderWarmupStatus();
   // Keep shadow/light counts, active camera layer and actual material variants.
   const gl=renderer.getContext(),oldDraw=renderer.renderBufferDirect;
   const oldDebug=renderer.debug.checkShaderErrors,restore=[],events=[],phases=[];
@@ -111,7 +116,7 @@ try{
     take('repeat:'+j,()=>renderer.render(scene,camera));
    }
    const afterScene=visibility();
-   return {phases,candidates,lights,skipped,debugUnchanged:renderer.debug.checkShaderErrors===oldDebug,
+   return {phases,candidates,lights,skipped,productionWarmup,debugUnchanged:renderer.debug.checkShaderErrors===oldDebug,
     sceneUnchanged:JSON.stringify(beforeScene)===JSON.stringify(afterScene),
     sweep:phases.filter(p=>p.name.startsWith('sweep:')).reduce((a,p)=>{
      a.newPrograms+=p.newKeys.length;a.links+=p.links;a.shaderMs+=p.shaderMs;a.renderMs+=p.ms;a.worstMs=Math.max(a.worstMs,p.ms);return a;
@@ -128,8 +133,9 @@ try{
  assert.equal(m.phases.filter(p=>p.name.startsWith('sweep:')).length,12);
  assert.ok(m.phases.filter(p=>p.name.startsWith('sweep:')).every(p=>p.drawCalls>0));
  if(mode==='prewarm'){assert.ok(m.candidates>0);assert.ok(m.lights>0);}
+ if(mode==='production'){assert.equal(m.productionWarmup.state,'ready');assert.equal(m.sweep.links,0,'unexpected shader link during controlled Arena sweep');}
  assert.deepEqual(report.errors,[]);
- console.log('OPT17_SWEEP',JSON.stringify({mode,candidates:m.candidates,lights:m.lights,skipped:m.skipped,sweep:m.sweep,
+ console.log('OPT17_SWEEP',JSON.stringify({mode,candidates:m.candidates,lights:m.lights,skipped:m.skipped,productionWarmup:m.productionWarmup,sweep:m.sweep,
  phases:m.phases.map(p=>({name:p.name,ms:p.ms,drawCalls:p.drawCalls,newPrograms:p.newKeys.length,links:p.links,shaderMs:p.shaderMs,slow:p.slow.slice(0,3)})),sceneUnchanged:m.sceneUnchanged,debugUnchanged:m.debugUnchanged}));
 }catch(e){report.failure=e.stack||String(e);console.error(report.failure);}
 finally{writeFileSync('opt17-arena-sweep-'+mode+'.json',JSON.stringify(report,null,2));await browser.close();}

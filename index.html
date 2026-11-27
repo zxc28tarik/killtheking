@@ -14367,6 +14367,58 @@ const KTKCalmUIV25=(()=>{
             for(const id of ['medal-container','score-popup-container'])document.getElementById(id).replaceChildren();
         }
 
+        // OPT18: prepare only active Arena shader variants before the match clock.
+        // The temporary scene references real geometry/materials; no draw,
+        // no changes to production visibility, no disabling shader diagnostics.
+        function prepareArenaShaderPrograms(THREE,renderer,scene,camera,now){
+            const stats={state:'pending',candidates:0,lights:0,skipped:0,
+                programsBefore:renderer.info.programs?.length??0,programsAfter:0,ms:0,error:null};
+            const started=now();
+            let stage=null;
+            try{
+                if(typeof renderer.compile!=='function'||renderer.getContext?.().isContextLost?.()){
+                    stats.state='unavailable';return stats;
+                }
+                stage=new THREE.Scene();
+                stage.fog=scene.fog;stage.environment=scene.environment;
+                const seen=new Set();
+                scene.traverseVisible(o=>{
+                    if(!o.layers.test(camera.layers))return;
+                    if(o.isLight){stage.add(o.clone(false));stats.lights++;return;}
+                    if(!o.isMesh||!o.geometry||!o.material||o.isSkinnedMesh){
+                        if(o.material)stats.skipped++;return;
+                    }
+                    for(const mat of (Array.isArray(o.material)?o.material:[o.material])){
+                        if(!mat.visible)continue;
+                        const key=[mat.uuid,o.geometry.uuid,!!o.isInstancedMesh,!!o.instanceColor].join(':');
+                        if(seen.has(key))continue;
+                        seen.add(key);
+                        const proxy=o.isInstancedMesh?new THREE.InstancedMesh(o.geometry,mat,1):new THREE.Mesh(o.geometry,mat);
+                        if(o.isInstancedMesh&&o.instanceColor)proxy.instanceColor=o.instanceColor;
+                        proxy.layers.mask=o.layers.mask;
+                        stage.add(proxy);stats.candidates++;
+                    }
+                });
+                renderer.compile(stage,camera);
+                stats.state='ready';
+            }catch(error){
+                // A warmup is optional; normal rendering remains authoritative.
+                stats.state='fallback';stats.error=String(error);
+            }finally{
+                if(stage)stage.clear(); // Never dispose shared production resources.
+                stats.programsAfter=renderer.info.programs?.length??0;
+                stats.ms=Math.max(0,now()-started);
+            }
+            return stats;
+        }
+        let arenaShaderWarmupStatus={state:'not-started'};
+        function prepareArenaShadersForRound(){
+            arenaShaderWarmupStatus=(!meadowBattleMode&&!nativeSiegeMode&&arenaMap==='castle')
+                ?prepareArenaShaderPrograms(THREE,renderer,scene,camera,()=>performance.now())
+                :{state:'other-map'};
+        }
+        window.ktkArenaShaderWarmupStatus=()=>({...arenaShaderWarmupStatus});
+
         function resetFreeForAllRound() {
             clearRoundTransients();
             resetRoundBarrels(castleMapData,meadowMapData,arenaMap);
@@ -14500,6 +14552,7 @@ const KTKCalmUIV25=(()=>{
             document.getElementById('reload-indicator').classList.add('hidden');
             document.getElementById('bow-charge-ui').classList.add('hidden');
             document.getElementById('shield-overlay').style.opacity = '0';
+            prepareArenaShadersForRound();
             ArenaMatch.begin(arenaMatch);
             lastTime=performance.now();fpsFrames=0;fpsTimer=0;
             syncMatchDurationControls();
