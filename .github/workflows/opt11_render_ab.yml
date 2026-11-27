@@ -7,6 +7,9 @@ on:
       - 'qa/opt11_render_ab.mjs'
       - 'tests/opt11-render-ab-integrity.test.mjs'
   workflow_dispatch:
+concurrency:
+  group: opt11-render-main
+  cancel-in-progress: true
 jobs:
   render-ab:
     strategy:
