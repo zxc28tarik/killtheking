@@ -105,8 +105,48 @@ test('OPT10 ME compaction does not dirty any hidden role matrices, but revives w
  const alive=compactor.prepare({soldiers},camera);
  assert.equal(alive.visible,1);
  assert.equal(alive.emptyRoleMeshes,0);
- assert.ok(mesh.instanceMatrix.version>initialVersion);
+ assert.equal(alive.prefixOnlyRoleMeshes,1);
+ assert.equal(mesh.instanceMatrix.version,initialVersion); // stable slot zero needs no rewrite
  const m=new T.Matrix4();mesh.getMatrixAt(0,m);assert.equal(m.elements[14],-15);
  compactor.restore();
+ assert.deepEqual(Array.from(mesh.instanceMatrix.array),original);
+});
+
+test('OPT19 all 32 visibility masks preserve exact draw prefix, untouched suffix and restored slots',()=>{
+ for(let mask=0;mask<32;mask++){
+  const {mesh,soldiers,original,camera,compactor}=fixture();
+  const visible=[];
+  for(let i=0;i<5;i++){
+   soldiers[i].alive=!!(mask&(1<<i));soldiers[i].x=0;soldiers[i].z=-15;
+   if(soldiers[i].alive)visible.push(i);
+  }
+  const version=mesh.instanceMatrix.version;
+  let first=0;while(first<visible.length&&visible[first]===first)first++;
+  const changed=visible.length-first;
+  const stat=compactor.prepare({soldiers},camera);
+  assert.equal(stat.visible,visible.length);
+  assert.equal(mesh.count,visible.length);
+  const expected=original.slice();
+  for(let i=0;i<visible.length;i++)expected.splice(i*16,16,...original.slice(visible[i]*16,visible[i]*16+16));
+  assert.deepEqual(Array.from(mesh.instanceMatrix.array),expected);
+  assert.equal(stat.matrixFloatsCopied,changed*32);
+  assert.equal(mesh.instanceMatrix.version,version+(changed?1:0));
+  compactor.restore();
+  assert.deepEqual(Array.from(mesh.instanceMatrix.array),original);
+  assert.equal(mesh.count,5);assert.equal(mesh.visible,true);
+  assert.equal(compactor.status().matrixFloatsCopied,changed*48);
+  assert.equal(mesh.instanceMatrix.version,version+(changed?2:0));
+ }
+});
+test('OPT19 nonprefix revival uploads and restores a previously hidden role',()=>{
+ const {mesh,soldiers,original,camera,compactor}=fixture();
+ for(const s of soldiers)s.alive=false;
+ compactor.prepare({soldiers},camera);compactor.restore();
+ const version=mesh.instanceMatrix.version;
+ soldiers[3].alive=true;
+ assert.equal(compactor.prepare({soldiers},camera).visible,1);
+ assert.equal(mesh.instanceMatrix.version,version+1);
+ const m=new T.Matrix4();mesh.getMatrixAt(0,m);assert.equal(m.elements[14],-30);
+ compactor.restore();assert.equal(mesh.instanceMatrix.version,version+2);
  assert.deepEqual(Array.from(mesh.instanceMatrix.array),original);
 });

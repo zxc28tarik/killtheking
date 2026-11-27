@@ -16514,7 +16514,7 @@ const KTKCalmUIV25=(()=>{
         function createMeadowArmyVisibility(THREE,visual,matrixPolicy=null){
             const frustum=new THREE.Frustum(),viewProjection=new THREE.Matrix4(),
                 sphere=new THREE.Sphere(),roles=[],records=[];
-            const stats={alive:0,visible:0,culledAlive:0,dead:0,fullTriangles:0,submittedTriangles:0,emptyRoleMeshes:0};
+            const stats={alive:0,visible:0,culledAlive:0,dead:0,fullTriangles:0,submittedTriangles:0,emptyRoleMeshes:0,prefixOnlyRoleMeshes:0,matrixFloatsCopied:0};
             let prepared=false;
             for(const [type,role] of Object.entries(visual.roles)){
                 let radius=0,triangles=0;
@@ -16537,7 +16537,8 @@ const KTKCalmUIV25=(()=>{
                     // OPT10 ME: an entirely culled class had no matrix changes,
                     // so restoring count/visibility needs no GPU buffer dirty mark.
                     if(r.matrixChanged){
-                        r.mesh.instanceMatrix.array.set(r.backup);
+                        r.mesh.instanceMatrix.array.set(r.backup.subarray(r.firstFloat,r.endFloat),r.firstFloat);
+                        stats.matrixFloatsCopied+=r.endFloat-r.firstFloat;
                         r.mesh.instanceMatrix.needsUpdate=true;
                     }
                     r.mesh.count=r.oldCount;r.mesh.visible=r.oldVisible;
@@ -16550,7 +16551,7 @@ const KTKCalmUIV25=(()=>{
                 visual.group.updateWorldMatrix(true,false);
                 viewProjection.multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse);
                 frustum.setFromProjectionMatrix(viewProjection);
-                Object.assign(stats,{alive:0,visible:0,culledAlive:0,dead:0,fullTriangles:0,submittedTriangles:0,emptyRoleMeshes:0});
+                Object.assign(stats,{alive:0,visible:0,culledAlive:0,dead:0,fullTriangles:0,submittedTriangles:0,emptyRoleMeshes:0,prefixOnlyRoleMeshes:0,matrixFloatsCopied:0});
                 prepared=true;
                 try{
                     if(matrixPolicy)matrixPolicy.begin();
@@ -16579,19 +16580,30 @@ const KTKCalmUIV25=(()=>{
                         stats.visible+=slots.length;
                         stats.submittedTriangles+=triangles*slots.length;
                         if(slots.length===role.slots.size)continue;
+                        // OPT19: sorted unique slots always satisfy slots[i] >= i.
+                        // A contiguous visible prefix only needs a count change.
+                        let first=0;
+                        while(first<slots.length&&slots[first]===first)first++;
+                        const firstFloat=first*16,endFloat=slots.length*16;
                         for(const record of meshes){
                             const mesh=record.mesh,array=mesh.instanceMatrix.array;
                             record.oldCount=mesh.count;record.oldVisible=mesh.visible;
-                            record.matrixChanged=slots.length>0;
+                            record.firstFloat=firstFloat;record.endFloat=endFloat;
+                            record.matrixChanged=false;
                             records.push(record);
-                            if(slots.length){
-                                record.backup.set(array);
-                                // Sorted source slots; copy from immutable backup.
-                                for(let i=0;i<slots.length;i++){
+                            if(first<slots.length){
+                                // Back up only the overwritten range. Ascending
+                                // in-place copies cannot overwrite a later source.
+                                record.backup.set(array.subarray(firstFloat,endFloat),firstFloat);
+                                record.matrixChanged=true;
+                                for(let i=first;i<slots.length;i++){
                                     const src=slots[i]*16;
-                                    array.set(record.backup.subarray(src,src+16),i*16);
+                                    array.copyWithin(i*16,src,src+16);
                                 }
+                                stats.matrixFloatsCopied+=2*(endFloat-firstFloat);
                                 mesh.instanceMatrix.needsUpdate=true;
+                            }else if(slots.length){
+                                stats.prefixOnlyRoleMeshes++;
                             }else{
                                 stats.emptyRoleMeshes++;
                                 mesh.visible=false;
