@@ -206,3 +206,9 @@ Her paket küçük bağımsız değişiklik, önce/sonra aynı test, kanonik HTM
 
 ## OPT-19 — Meadow/Siege render-only matrix copy reduction
 - Same sorted visible slots, same culling bounds and render transforms. Contiguous visible prefix changes only mesh.count; no extra matrix version bumps. Otherwise save/restore only overwritten destination range and compact ascending with copyWithin (sorted unique slots[i] >= i). Suffix untouched; restore in existing finally. No AI, lights, quality, soldiers or pinned rig changes. Counters prefixOnlyRoleMeshes and matrixFloatsCopied (float entries copied, NOT GPU bytes or FPS) available through existing status. Exhaustive 32-mask fixture plus hidden-role nonprefix revival test. Canonical HTML copies updated atomically. CI and real GPU FPS pending.
+
+### OPT-19 CI kapanışı
+- Browser game checks 46010622976, targeted Chromium 46010623207, UI32 46010622907 PASS. Hardware GPU FPS unknown.
+
+## OPT-26 — Inactive map scene matrix traversal
+- Requested out of numerical order; OPT20–25 remain open. Three r128 updates world matrices even for invisible children. Only explicitly registered top-level inactive castle/meadow/siege visuals can skip render-time matrix traversal; active map objects (even if hidden/offscreen), physics, raycasts, live units, lighting and known light/target/camera roots retain original update logic. Exact r128 root transform logic, fallback for other revisions/reparented scenes; scope ends in finally. Re-activation explicitly syncs world matrices before simulation. Existing profiler captures registered and skipped root call counts, not GPU bytes or FPS. Five r128 regression tests and three-map × two-resolution profile assertions. Hardware FPS and pixel parity remain open.

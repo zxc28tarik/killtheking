@@ -10269,6 +10269,9 @@ const KTKCalmUIV25=(()=>{
             activeArenaFogMultiplier=map==='meadow'?.12:1;
             scene.fog.density=ATMOSPHERES[currentAtmosphereIdx].fogDensity*
                 activeArenaFogMultiplier;
+            // OPT26: reactivated map matrices must be current even before the
+            // first rendered frame (e.g. immediate raycasts and spawn checks).
+            scene.updateMatrixWorld(true);
         }
 
         // AK-MAP-01 — SIEGE IS A MAP VARIANT OF THE ORIGINAL G5.4 / KRUNKER ENGINE.
@@ -10686,6 +10689,7 @@ const KTKCalmUIV25=(()=>{
               enabled?nativeSiegeNavigation:castleMapData.navigation);
           }
           nativeSiegeGateMesh.visible=enabled&&!nativeSiegeGateOpen;
+          if(enabled)nativeSiegeParts.updateWorldMatrix(true,true);
         }
         function nativeSiegeNativeBoxes(){
           // Ground-plane G5.4 should not treat a walkable high parapet as a full wall.
@@ -16808,6 +16812,59 @@ const KTKCalmUIV25=(()=>{
         }
         window.ktkArenaShaderWarmupStatus=()=>({...arenaShaderWarmupStatus});
 
+        // OPT26: skip only inactive, explicitly registered map visual roots in
+        // the renderer's scene matrix traversal. Never skip active-map objects
+        // merely because they are outside the camera. No simulation/raycast changes.
+        function createInactiveMapMatrixGate(THREE,scene,groups){
+            const original=scene.updateMatrixWorld,registered=new Map(),protectedRoots=new Set();
+            const totals={},last={},counts={};
+            let depth=0,frames=0,skippedTotal=0;
+            // Known light targets and camera/light trees keep normal matrix updates.
+            const rootOf=o=>{while(o?.parent&&o.parent!==scene)o=o.parent;return o?.parent===scene?o:null;};
+            scene.traverse(o=>{
+                if(o.isLight||o.isCamera)protectedRoots.add(rootOf(o));
+                if(o.isLight&&o.target)protectedRoots.add(rootOf(o.target));
+            });
+            for(const group of groups){
+                totals[group.name]=0;last[group.name]=0;counts[group.name]=0;
+                for(const root of group.roots){
+                    if(!root||root.parent!==scene||protectedRoots.has(root)||registered.has(root))continue;
+                    registered.set(root,group);counts[group.name]++;
+                }
+            }
+            const supported=THREE.REVISION==='128'&&scene.parent===null;
+            if(supported)scene.updateMatrixWorld=function(force){
+                if(!depth||this!==scene||scene.parent!==null)return original.call(this,force);
+                // Exact r128 Object3D root matrix update, followed by its normal
+                // child traversal except the allowlisted inactive hidden roots.
+                if(this.matrixAutoUpdate)this.updateMatrix();
+                if(this.matrixWorldNeedsUpdate||force){
+                    this.matrixWorld.copy(this.matrix);
+                    this.matrixWorldNeedsUpdate=false;force=true;
+                }
+                const children=this.children;
+                for(let i=0,n=children.length;i<n;i++){
+                    const child=children[i],group=registered.get(child);
+                    if(group&&child.visible===false&&group.inactive()){
+                        skippedTotal++;totals[group.name]++;last[group.name]++;
+                        continue;
+                    }
+                    child.updateMatrixWorld(force);
+                }
+            };
+            return {
+                begin(){if(depth++===0){frames++;for(const key in last)last[key]=0;}},
+                end(){if(depth>0)depth--;},
+                status(){return {supported,frames,skippedTotal,registered:{...counts},last:{...last},totals:{...totals},active:depth>0};}
+            };
+        }
+        const inactiveMapMatrixGate=createInactiveMapMatrixGate(THREE,scene,[
+            {name:'castle',roots:castleMapData.visuals,inactive:()=>arenaMap!=='castle'},
+            {name:'meadow',roots:meadowMapData.visuals,inactive:()=>arenaMap!=='meadow'},
+            {name:'siege',roots:[nativeSiegeParts],inactive:()=>!nativeSiegeCastleEnabled}
+        ]);
+        window.ktkInactiveMapMatrixStatus=()=>inactiveMapMatrixGate.status();
+
         function animate() {
             requestAnimationFrame(animate);
             const now = performance.now();
@@ -16835,8 +16892,11 @@ const KTKCalmUIV25=(()=>{
                     });
                 frameUiQueue.flush(renderSpeedLines,renderTeamHUD,renderLiveScoreboard,renderRadar);
             }
-            updateActiveMeadowGrass();
-            renderActiveMap();
+            inactiveMapMatrixGate.begin();
+            try{
+                updateActiveMeadowGrass();
+                renderActiveMap();
+            }finally{inactiveMapMatrixGate.end();}
             acknowledgeSceneRender(idleSceneState);
         }
 
