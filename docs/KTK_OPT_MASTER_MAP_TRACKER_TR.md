@@ -186,3 +186,9 @@ Her paket küçük bağımsız değişiklik, önce/sonra aynı test, kanonik HTM
 
 ## OPT-16 — Arena shader prewarm A/B teşhisi
 - Shader hata kontrolü açık kalıyor. QA-only bağımsız cold/prewarm koşuları gerçek Arena reset + renderer, gerçek effect factory (opaque/basic/lambert), gerçek arrow mesh, aynı fog/env/lights, ilk draw ve tekrar draw. B sadece geçici sahnede compile yapar; gerçek material referansı korunur. Program key/count, API süreleri, draw object/material, compile süresi ve ilk draw maliyeti ayrı kaydedilir. Hook'lar finally restore; production HTML byte-identical. Amaç first-use stall başka yere taşınmadan önce hangi shader varyantı ve startup maliyetini doğrulamak. Sonuç bekleniyor; production prewarm kararı henüz verilmedi.
+
+### OPT-16 kapanış: negative result
+- A/B 46006461283 2/2 PASS; UI32 PASS; 316/316 genel. Both baseline 16 shader programs; cold/prewarm effect/arrow draws 0 new programs. Compile prewarm 0.7ms, no new keys. Cold vs prewarm first opaque 14.6/15.9ms, basic 6.7/10.2, lambert 6.3/4.2, arrow 5.7/7.3. No evidence these effects explain OPT15 first-use stalls. Do not add effect prewarm to production.
+
+## OPT-17 — Arena off-camera static/character material attribution
+- QA-only independent cold/prewarm runs, 12 fixed camera views at 2 courtyard positions and one rampart, plus 4 repeats. Only active visible scene nodes on camera layers; exact shared geometry/material with instancing variant; light clones and same environment/fog. A/B separate startup compile costs and newly linked programs during sweep. Log category/object/material/geometry/texture flags and shadow pass for slow API calls; assert source scene visibility/material assignments unchanged. Live map profiler now attributes slow shader calls to actual draw object; production HTML unchanged. No general prewarm applied until evidence. Real GPU FPS still open.

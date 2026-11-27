@@ -103,7 +103,7 @@ try{
     const gl=renderer.getContext();
     // OPT15 diagnostic: distinguish shader/driver API stalls from game JS.
     // Only this disposable QA page is instrumented, never the game itself.
-    q.shaderCalls={};q.shaderSlow=[];q.shaderHookErrors=[];
+    q.shaderCalls={};q.shaderSlow=[];q.shaderHookErrors=[];let currentShaderDraw=null;
     const shaderRestore=[];
     for(const name of ['compileShader','linkProgram','getShaderParameter','getProgramParameter','getShaderInfoLog','getProgramInfoLog']){
       const original=gl[name];if(typeof original!=='function')continue;
@@ -116,7 +116,7 @@ try{
             if(q.active){
               const ms=performance.now()-t,a=q.shaderCalls[name]??(q.shaderCalls[name]={calls:0,totalMs:0,maxMs:0});
               a.calls++;a.totalMs+=ms;a.maxMs=Math.max(a.maxMs,ms);
-              if(ms>=2&&q.shaderSlow.length<256)q.shaderSlow.push({name,ms,phase:q.phase,t:t-q.start});
+              if(ms>=2&&q.shaderSlow.length<256)q.shaderSlow.push({name,ms,phase:q.phase,t:t-q.start,draw:currentShaderDraw});
             }
           }
         };
@@ -198,7 +198,12 @@ try{
         const count=group?.count??geo.index?.count??geo.attributes.position?.count??0;
         a.triangles+=Math.floor(count/3)*(obj?.isInstancedMesh?obj.count:1);
       }
-      return origDraw.call(this,cam,sc,geo,mat,obj,group);
+      const previous=currentShaderDraw;
+      currentShaderDraw={category:classify(obj),name:obj.name||obj.type,material:mat.name||mat.type,
+        geometry:geo.type,instanced:!!obj.isInstancedMesh,shadowPass:cam!==camera,
+        map:!!mat.map,bump:!!mat.bumpMap,normal:!!mat.normalMap,transparent:mat.transparent,side:mat.side};
+      try{return origDraw.call(this,cam,sc,geo,mat,obj,group);}
+      finally{currentShaderDraw=previous;}
     };
     const original=renderer.render;
     let frameNo=0;

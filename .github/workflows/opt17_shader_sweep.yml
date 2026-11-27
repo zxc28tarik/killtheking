@@ -1,0 +1,38 @@
+name: OPT-17 Arena active map shader sweep A/B
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/opt17_shader_sweep.yml'
+      - 'qa/opt17_shader_sweep.mjs'
+      - 'tests/opt17-shader-sweep-integrity.test.mjs'
+  workflow_dispatch:
+concurrency:
+  group: opt17-sweep-main
+  cancel-in-progress: true
+jobs:
+  shader-sweep:
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        arm: [cold, prewarm]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    env:
+      KTK_SHADER_ARM: ${{ matrix.arm }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save --no-package-lock playwright@1.58.2
+      - run: npx playwright install --with-deps chromium
+      - run: node --test tests/opt17-shader-sweep-integrity.test.mjs
+      - run: node qa/opt17_shader_sweep.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: opt17-arena-sweep-${{ matrix.arm }}
+          path: opt17-arena-sweep-*.json
+          if-no-files-found: warn
