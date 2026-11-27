@@ -25,7 +25,7 @@ jobs:
           import assert from 'node:assert/strict';
           const browser=await chromium.launch({args:['--use-angle=swiftshader','--enable-unsafe-swiftshader','--disable-dev-shm-usage','--disable-background-timer-throttling','--disable-renderer-backgrounding']});
           const p=await browser.newPage({viewport:{width:1920,height:1080},deviceScaleFactor:1});
-          const errors=[],consoleErrors=[],failedRequests=[],rounds=[],issues=[];
+          const errors=[],consoleErrors=[],failedRequests=[],rounds=[],issues=[],captureWarnings=[];
           let browserInfo=null;
           p.on('pageerror',e=>errors.push({at:new Date().toISOString(),error:e.stack||e.message}));
           p.on('console',m=>{if(m.type()==='error')consoleErrors.push({at:new Date().toISOString(),text:m.text()});});
@@ -148,28 +148,28 @@ jobs:
             console.log('ARENA_ENVIRONMENT',JSON.stringify(browserInfo));
             await start(480);
             await monitor(480);
-            await p.screenshot({path:'arena-round-8min.png'});
+            await p.screenshot({path:'arena-round-8min.png',timeout:10000}).catch(e=>captureWarnings.push(String(e)));
             await p.locator('#match-menu-btn').click();
             await p.waitForFunction(()=>window.ktkUI32Status().stage==='map');
             await start(120);
             await monitor(120);
-            await p.screenshot({path:'arena-round-2min.png'});
+            await p.screenshot({path:'arena-round-2min.png',timeout:10000}).catch(e=>captureWarnings.push(String(e)));
           }catch(e){issues.push({error:e.stack||String(e)});}
           finally{
             let offset=0;
             const frames=[],samples=[],longTasks=[];
             for(const r of rounds){
-              for(const f of r.frames)frames.push({...f,activeT:offset+(r.duration-f.remaining)*1000});
-              for(const s of r.samples)samples.push({...s,activeT:offset+(r.duration-s.remaining)*1000});
+              for(const f of r.frames)frames.push({...f,activeT:offset*1000+(r.duration-f.remaining)*1000});
+              for(const s of r.samples)samples.push({...s,activeT:offset*1000+(r.duration-s.remaining)*1000});
               for(const l of r.longTasks)longTasks.push({...l,roundDuration:r.duration});
               offset+=r.duration-r.remaining;
             }
             const windows=[];
             for(let i=0;i<10;i++){const fs=frames.filter(f=>f.activeT>=i*60000&&f.activeT<(i+1)*60000);windows.push({minute:i+1,...stats(fs)});}
             const topSpikes=frames.slice().sort((a,b)=>b.ms-a.ms).slice(0,20).map(f=>({second:Math.round(f.activeT/100)/10,ms:f.ms}));
-            const report={schema:'ktk-arena-10min-v1',source:process.env.GITHUB_SHA,environment:browserInfo,quality:'medium',mode:'ffa',automatedInput:true,activeGameSeconds:offset,summary:stats(frames),minutes:windows,topSpikes,resources:samples,longTasks,rounds,issues,errors,consoleErrors,failedRequests};
+            const report={schema:'ktk-arena-10min-v2',source:process.env.GITHUB_SHA,environment:browserInfo,quality:'medium',mode:'ffa',automatedInput:true,activeGameSeconds:offset,summary:stats(frames),minutes:windows,topSpikes,resources:samples,longTasks,rounds,issues,captureWarnings,errors,consoleErrors,failedRequests};
             writeFileSync('arena-10min-report.json',JSON.stringify(report,null,2));
-            console.log('ARENA_FINAL',JSON.stringify({source:report.source,environment:browserInfo,activeGameSeconds:offset,summary:report.summary,minutes:windows,topSpikes,resources:{first:samples[0],last:samples.at(-1),peakDrawCalls:Math.max(0,...samples.map(s=>s.drawCalls)),peakTriangles:Math.max(0,...samples.map(s=>s.triangles)),peakHeapBytes:Math.max(0,...samples.map(s=>s.heapBytes||0))},longTasks:longTasks.length,issues,errors,consoleErrors,failedRequests,invariants:rounds.flatMap(r=>r.invariants)}));
+            console.log('ARENA_FINAL',JSON.stringify({source:report.source,environment:browserInfo,activeGameSeconds:offset,summary:report.summary,minutes:windows,topSpikes,resources:{first:samples[0],last:samples.at(-1),peakDrawCalls:Math.max(0,...samples.map(s=>s.drawCalls)),peakTriangles:Math.max(0,...samples.map(s=>s.triangles)),peakHeapBytes:Math.max(0,...samples.map(s=>s.heapBytes||0))},longTasks:longTasks.length,issues,captureWarnings,errors,consoleErrors,failedRequests,invariants:rounds.flatMap(r=>r.invariants)}));
             await browser.close();
           }
           assert.equal(rounds.length,2,'missing rounds');

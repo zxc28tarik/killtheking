@@ -33,7 +33,7 @@ jobs:
           assert.ok(['meadow','siege'].includes(map));
           const browser=await chromium.launch({args:['--use-angle=swiftshader','--enable-unsafe-swiftshader','--disable-dev-shm-usage','--disable-background-timer-throttling','--disable-renderer-backgrounding']});
           const p=await browser.newPage({viewport:{width:1920,height:1080},deviceScaleFactor:1});
-          const errors=[],consoleErrors=[],failedRequests=[],issues=[],rounds=[],frames=[],samples=[],longTasks=[],invariants=[];
+          const errors=[],consoleErrors=[],failedRequests=[],issues=[],rounds=[],frames=[],samples=[],longTasks=[],invariants=[],captureWarnings=[];
           let browserInfo=null,activeMs=0;
           p.on('pageerror',e=>errors.push({at:new Date().toISOString(),error:e.stack||e.message}));
           p.on('console',m=>{if(m.type()==='error')consoleErrors.push({at:new Date().toISOString(),text:m.text()});});
@@ -189,16 +189,17 @@ jobs:
             for(let round=0;activeMs<600000&&round<30;round++){
               await start(round);
               await monitor(round,600000-activeMs);
-              await p.screenshot({path:map+'-round-'+round+'.png'});
+              // Screenshots are optional; a slow compositor must not stop a timed test.
+              if(activeMs>=600000)await p.screenshot({path:map+'-round-'+round+'.png',timeout:10000}).catch(e=>captureWarnings.push(String(e)));
             }
           }catch(e){issues.push({error:e.stack||String(e)});}
           finally{
             const minutes=[];
             for(let i=0;i<10;i++)minutes.push({minute:i+1,...stats(frames.filter(f=>f.activeT>=i*60000&&f.activeT<(i+1)*60000))});
             const topSpikes=frames.slice().sort((a,b)=>b.ms-a.ms).slice(0,20).map(f=>({second:Math.round(f.activeT/100)/10,ms:f.ms,round:f.round}));
-            const report={schema:'ktk-army-10min-v1',source:process.env.GITHUB_SHA,map,environment:browserInfo,quality:'medium',automatedInput:true,activeSeconds:activeMs/1000,summary:stats(frames),minutes,topSpikes,resources:samples,longTasks,rounds,issues,errors,consoleErrors,failedRequests,invariants,frames};
+            const report={schema:'ktk-army-10min-v2',source:process.env.GITHUB_SHA,map,environment:browserInfo,quality:'medium',automatedInput:true,activeSeconds:activeMs/1000,summary:stats(frames),minutes,topSpikes,resources:samples,longTasks,rounds,issues,captureWarnings,errors,consoleErrors,failedRequests,invariants,frames};
             writeFileSync(map+'-10min-report.json',JSON.stringify(report,null,2));
-            console.log('ARMY_FINAL',JSON.stringify({map,source:report.source,environment:browserInfo,activeSeconds:report.activeSeconds,summary:report.summary,minutes,topSpikes,resources:{first:samples[0],last:samples.at(-1),peakDrawCalls:Math.max(0,...samples.map(s=>s.drawCalls)),peakTriangles:Math.max(0,...samples.map(s=>s.triangles)),peakHeapBytes:Math.max(0,...samples.map(s=>s.heapBytes||0))},longTasks:longTasks.length,rounds,issues,errors,consoleErrors,failedRequests,invariants}));
+            console.log('ARMY_FINAL',JSON.stringify({map,source:report.source,environment:browserInfo,activeSeconds:report.activeSeconds,summary:report.summary,minutes,topSpikes,resources:{first:samples[0],last:samples.at(-1),peakDrawCalls:Math.max(0,...samples.map(s=>s.drawCalls)),peakTriangles:Math.max(0,...samples.map(s=>s.triangles)),peakHeapBytes:Math.max(0,...samples.map(s=>s.heapBytes||0))},longTasks:longTasks.length,rounds,issues,captureWarnings,errors,consoleErrors,failedRequests,invariants}));
             await browser.close();
           }
           assert.ok(activeMs>=600000,'missing 600 seconds of active frame time');
