@@ -101,6 +101,29 @@ try{
     const q={start:performance.now(),frame:[],frameWork:[],frameTimeline:[],longtasks:[],heapDrops:[],renderRoute:[],physics:[],armySim:[],armyVisual:[],siegeEquipment:[],siegeTowerRender:[],grass:[],render:[],draws:{},samples:[],phase:'warmup',active:true,gpu:[],gpuSupported:false};
     window.__optProfile=q;
     const gl=renderer.getContext();
+    // OPT15 diagnostic: distinguish shader/driver API stalls from game JS.
+    // Only this disposable QA page is instrumented, never the game itself.
+    q.shaderCalls={};q.shaderSlow=[];q.shaderHookErrors=[];
+    const shaderRestore=[];
+    for(const name of ['compileShader','linkProgram','getShaderParameter','getProgramParameter','getShaderInfoLog','getProgramInfoLog']){
+      const original=gl[name];if(typeof original!=='function')continue;
+      const own=Object.getOwnPropertyDescriptor(gl,name);
+      try{
+        const hook=function(...args){
+          const t=performance.now();
+          try{return original.apply(this,args);}
+          finally{
+            if(q.active){
+              const ms=performance.now()-t,a=q.shaderCalls[name]??(q.shaderCalls[name]={calls:0,totalMs:0,maxMs:0});
+              a.calls++;a.totalMs+=ms;a.maxMs=Math.max(a.maxMs,ms);
+              if(ms>=2&&q.shaderSlow.length<256)q.shaderSlow.push({name,ms,phase:q.phase,t:t-q.start});
+            }
+          }
+        };
+        Object.defineProperty(gl,name,{configurable:true,writable:true,value:hook});
+        shaderRestore.push(()=>{if(own)Object.defineProperty(gl,name,own);else delete gl[name];});
+      }catch(e){q.shaderHookErrors.push(name+': '+String(e));}
+    }
     const ext=renderer.capabilities.isWebGL2?gl.getExtension('EXT_disjoint_timer_query_webgl2'):null;
     q.gpuSupported=!!ext;
     const pending=[];
@@ -210,12 +233,12 @@ try{
         if(previousHeap!==null&&heap!==null&&previousHeap-heap>2*1024*1024)
           q.heapDrops.push({phase:q.phase,t:t-q.start,bytes:previousHeap-heap});
         previousHeap=heap;
-        q.samples.push({phase:q.phase,t:t-q.start,geometries:m.geometries,textures:m.textures,programs:r.programs?.length,heap:performance.memory?.usedJSHeapSize??null,calls:r.render.calls,triangles:r.render.triangles,remaining:arenaMatch.remaining,clock:arenaClock,armyElapsed:meadowBattleState?.elapsed??null,particles:particles.length,arrows:arrows.length,staticResources:window.ktkStaticResourceStatus?.(),castleDecor:window.ktkCastleDecorBatchStatus?.(),castleSolids:window.ktkCastleSolidBatchStatus?.(),siegeStatic:window.ktkSiegeStaticBatchStatus?.(),siegeRigid:window.ktkSiegeRigidBatchStatus?.(),siegeCosmetic:window.ktkSiegeCosmeticBatchStatus?.(),siegeArmyVisibility:window.ktkSiegeArmyVisibilityStatus?.(),armyVisibility:window.ktkMeadowArmyVisibilityStatus?.(),armyVertexBuffers:window.ktkArmyVertexBufferStatus?.(),grassCull:window.ktkMeshyGrassStatus?.(),armyVisualCpuPolicy:meadowBattleVisual?.performance?.()??null,armyArrowDrawCount:meadowBattleVisual?.flightArrows?.count??null});
+        q.samples.push({phase:q.phase,t:t-q.start,geometries:m.geometries,textures:m.textures,programs:r.programs?.length,heap:performance.memory?.usedJSHeapSize??null,calls:r.render.calls,triangles:r.render.triangles,remaining:arenaMatch.remaining,clock:arenaClock,armyElapsed:meadowBattleState?.elapsed??null,particles:particles.length,arrows:arrows.length,staticResources:window.ktkStaticResourceStatus?.(),castleDecor:window.ktkCastleDecorBatchStatus?.(),castleSolids:window.ktkCastleSolidBatchStatus?.(),siegeStatic:window.ktkSiegeStaticBatchStatus?.(),siegeRigid:window.ktkSiegeRigidBatchStatus?.(),siegeCosmetic:window.ktkSiegeCosmeticBatchStatus?.(),siegeArmyVisibility:window.ktkSiegeArmyVisibilityStatus?.(),armyVisibility:window.ktkMeadowArmyVisibilityStatus?.(),frameUi:window.ktkFrameUiStatus?.(),armyVertexBuffers:window.ktkArmyVertexBufferStatus?.(),grassCull:window.ktkMeshyGrassStatus?.(),armyVisualCpuPolicy:meadowBattleVisual?.performance?.()??null,armyArrowDrawCount:meadowBattleVisual?.flightArrows?.count??null});
       }
       requestAnimationFrame(frame);
     }
     requestAnimationFrame(frame);
-    q.stop=()=>{q.active=false;longTaskObserver?.disconnect();for(const item of pending)gl.deleteQuery(item.query);};
+    q.stop=()=>{q.active=false;longTaskObserver?.disconnect();for(const item of pending)gl.deleteQuery(item.query);for(const restore of shaderRestore)restore();};
   });
   await cdp.send('Performance.enable');
   const chromePerfStart=await cdp.send('Performance.getMetrics');
@@ -275,7 +298,7 @@ try{
     warning:'rAF gap is NOT GPU time. Callback work and CDP task time do not prove GPU, GC or driver stalls.'
   };
   report.drawCategories=Object.entries(report.measurements.draws).sort((a,b)=>b[1].calls-a[1].calls);
-  console.log('OPT_PROFILE',JSON.stringify({map,width,summary:report.summary,cpuTop:report.cpuTop,drawCategories:report.drawCategories,samples:report.measurements.samples,armySightline:report.armySightline,siegeSightline:report.siegeSightline,gpuSupported:report.measurements.gpuSupported,stall:report.stallDiagnostics,chromeTasks:report.chromeTaskMetrics,errors}));
+  console.log('OPT_PROFILE',JSON.stringify({map,width,summary:report.summary,cpuTop:report.cpuTop,drawCategories:report.drawCategories,samples:report.measurements.samples,armySightline:report.armySightline,siegeSightline:report.siegeSightline,gpuSupported:report.measurements.gpuSupported,stall:report.stallDiagnostics,shaderCalls:report.measurements.shaderCalls,shaderSlow:report.measurements.shaderSlow,shaderHookErrors:report.measurements.shaderHookErrors,chromeTasks:report.chromeTaskMetrics,errors}));
 }catch(e){report.failure=e.stack||String(e);console.error(report.failure);}
 finally{writeFileSync('opt-profile-report.json',JSON.stringify(report,null,2));await browser.close();}
 assert.ok(!report.failure,report.failure);assert.deepEqual(errors,[]);assert.ok(report.summary?.frame?.n>0,'no measured frames');

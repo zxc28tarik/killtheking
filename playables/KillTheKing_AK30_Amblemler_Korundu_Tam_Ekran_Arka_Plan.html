@@ -14230,6 +14230,29 @@ const KTKCalmUIV25=(()=>{
             rows.sort((a,b)=>b.kills-a.kills||a.deaths-b.deaths);
             return rows;
         }
+        // OPT15: persistent rows, update only changed text/classes. The row
+        // order and all labels remain exactly the original scoreboard values.
+        function syncLiveScoreRows(table,rows,doc){
+            while(table.children.length>rows.length)table.lastElementChild.remove();
+            for(let i=0;i<rows.length;i++){
+                const entry=rows[i];
+                let row=table.children[i];
+                if(!row){
+                    row=doc.createElement('div');
+                    for(let j=0;j<5;j++){
+                        const cell=doc.createElement('span');
+                        cell.className='match-live-cell';row.appendChild(cell);
+                    }
+                    table.appendChild(row);
+                }
+                const className='match-live-row'+(entry.isPlayer?' is-player':'');
+                if(row.className!==className)row.className=className;
+                for(let j=0;j<5;j++){
+                    const cell=row.children[j],value=String(entry.values[j]);
+                    if(cell.textContent!==value)cell.textContent=value;
+                }
+            }
+        }
         function renderLiveScoreboard() {
             if (!tabScoreboardHeld || arenaMatch.phase !== 'playing') return;
             const army=meadowBattleMode&&meadowBattleState;
@@ -14243,16 +14266,10 @@ const KTKCalmUIV25=(()=>{
                 const summary=document.getElementById('match-live-team-score');
                 summary.classList.remove('hidden');
                 summary.textContent='MAVİ '+alive('blue')+' — '+alive('red')+' KIRMIZI • Hayatta kalan asker';
-                liveScoreboardTable.replaceChildren();
-                armyLiveScoreRows(army,player.deaths).forEach((entry,i)=>{
-                    const row=document.createElement('div');
-                    row.className='match-live-row'+(entry.isPlayer?' is-player':'');
-                    for(const value of [i+1,entry.name,entry.kills,entry.deaths,(entry.kills/Math.max(1,entry.deaths)).toFixed(2)]){
-                        const cell=document.createElement('span');
-                        cell.className='match-live-cell';cell.textContent=String(value);row.appendChild(cell);
-                    }
-                    liveScoreboardTable.appendChild(row);
-                });
+                syncLiveScoreRows(liveScoreboardTable,armyLiveScoreRows(army,player.deaths).map((entry,i)=>({
+                    isPlayer:entry.isPlayer,values:[i+1,entry.name,entry.kills,entry.deaths,
+                        (entry.kills/Math.max(1,entry.deaths)).toFixed(2)]
+                })),document);
                 liveScoreboardOverlay.classList.remove('hidden');
                 liveScoreboardOverlay.setAttribute('aria-hidden','false');
                 return;
@@ -14266,22 +14283,12 @@ const KTKCalmUIV25=(()=>{
                 const points = ArenaTeams.scores(arenaMode,player,bots);
                 teamLiveScore.textContent = 'MAVİ '+points.blue+' — '+points.red+' KIRMIZI';
             }
-            liveScoreboardTable.replaceChildren();
-            for (const entry of standings) {
-                const row = document.createElement('div');
-                row.className = 'match-live-row' + (entry.isPlayer ? ' is-player' : '');
-                for (const value of [entry.rank, entry.name, entry.kills, entry.deaths, entry.kd.toFixed(2)]) {
-                    const cell = document.createElement('span');
-                    cell.className = 'match-live-cell';
-                    const team = entry.isPlayer ? ArenaTeams.PLAYER_TEAM
-                        : ArenaTeams.teamForBot(Number(entry.id.slice(4)));
-                    cell.textContent = arenaMode === 'tdm' && value === entry.name
-                        ? (team === 'blue' ? '🔵 ' : '🔴 ') + entry.name
-                        : String(value);
-                    row.appendChild(cell);
-                }
-                liveScoreboardTable.appendChild(row);
-            }
+            syncLiveScoreRows(liveScoreboardTable,standings.map(entry=>{
+                const team=entry.isPlayer?ArenaTeams.PLAYER_TEAM:ArenaTeams.teamForBot(Number(entry.id.slice(4)));
+                const values=[entry.rank,entry.name,entry.kills,entry.deaths,entry.kd.toFixed(2)].map(value=>
+                    arenaMode==='tdm'&&value===entry.name?(team==='blue'?'🔵 ':'🔴 ')+entry.name:String(value));
+                return {isPlayer:entry.isPlayer,values};
+            }),document);
             liveScoreboardOverlay.classList.remove('hidden');
             liveScoreboardOverlay.setAttribute('aria-hidden', 'false');
         }
@@ -14363,6 +14370,7 @@ const KTKCalmUIV25=(()=>{
         function resetFreeForAllRound() {
             clearRoundTransients();
             resetRoundBarrels(castleMapData,meadowMapData,arenaMap);
+            frameUiQueue.clear();
             renderSpeedLines(0);
             KTKNativeArmyMatchFinish.restoreHud(document);
             KTKBattlefieldVisualV19.setBattleUi(document,meadowBattleMode);
@@ -15147,6 +15155,31 @@ const KTKCalmUIV25=(()=>{
         let fpsFrames = 0;
         let fpsTimer = 0;
         let radarRefreshElapsed = 1 / 30;
+        // OPT15: multiple physics steps can occur before ONE rendered frame.
+        // Keep the original simulated timers but only draw the final UI state.
+        function createFrameUiQueue(){
+            let speed=null,radar=false,score=false,team=false;
+            const counts={speedRequests:0,radarRequests:0,scoreRequests:0,teamRequests:0,
+                speedDraws:0,radarDraws:0,scoreDraws:0,teamDraws:0};
+            return {
+                speed(value){speed=value;counts.speedRequests++;},
+                radar(){radar=true;counts.radarRequests++;},
+                score(){score=true;counts.scoreRequests++;},
+                team(){team=true;counts.teamRequests++;},
+                clear(){speed=null;radar=false;score=false;team=false;},
+                flush(drawSpeed,drawTeam,drawScore,drawRadar){
+                    const s=speed,t=team,b=score,r=radar;
+                    this.clear();
+                    if(s!==null){drawSpeed(s);counts.speedDraws++;}
+                    if(t){drawTeam();counts.teamDraws++;}
+                    if(b){drawScore();counts.scoreDraws++;}
+                    if(r){drawRadar();counts.radarDraws++;}
+                },
+                status:()=>({...counts})
+            };
+        }
+        const frameUiQueue=createFrameUiQueue();
+        window.ktkFrameUiStatus=()=>frameUiQueue.status();
         let lastProjectedFov = camera.fov;
         // Render-only buffers reused across frames; no physics/AI state impact.
         const botDefaultScale = new THREE.Vector3(1, 1, 1);
@@ -15380,7 +15413,7 @@ const KTKCalmUIV25=(()=>{
                 setHudText(speedEl,displaySpeed > 5 ? displaySpeed : 0);
                 setHudClass(speedEl,displaySpeed > 135 ? 'text-sky-300' : displaySpeed > 110 ? 'text-amber-400' : 'text-white');
 
-                renderSpeedLines(displaySpeed);
+                frameUiQueue.speed(displaySpeed);
 
                 // Dynamic FOV & Screen Shake
                 const isZoomed = (player.classIdx === 3 || player.classIdx === 2) && player.isRMBDown;
@@ -16275,11 +16308,11 @@ const KTKCalmUIV25=(()=>{
             const nativeArmyWinner=meadowBattleMode&&meadowBattleState&&meadowBattleState.winner;
             KTKNativeArmyMatchFinish.acceptEarlyWin(arenaMatch,nativeArmyWinner);
             if (matchFinished || nativeArmyWinner) showMatchResults();
-            renderTeamHUD();
+            frameUiQueue.team();
             if (tabScoreboardHeld && arenaMatch.phase === 'playing') {
                 scoreboardRefreshSeconds -= dt;
                 if (scoreboardRefreshSeconds <= 0) {
-                    renderLiveScoreboard();
+                    frameUiQueue.score();
                     scoreboardRefreshSeconds = 0.15;
                 }
             }
@@ -16287,7 +16320,7 @@ const KTKCalmUIV25=(()=>{
             radarRefreshElapsed += dt;
             if (radarRefreshElapsed >= 1 / 30) {
                 radarRefreshElapsed %= 1 / 30;
-                renderRadar();
+                frameUiQueue.radar();
             }
 
         }
@@ -16735,6 +16768,7 @@ const KTKCalmUIV25=(()=>{
                         impactHoldSeconds=Math.max(0,impactHoldSeconds-clock);
                         updateGame(sim-hold*.84,clock);
                     });
+                frameUiQueue.flush(renderSpeedLines,renderTeamHUD,renderLiveScoreboard,renderRadar);
             }
             updateActiveMeadowGrass();
             renderActiveMap();
