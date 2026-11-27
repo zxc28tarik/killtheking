@@ -7,7 +7,7 @@
 | ID | Alan | İş | Durum |
 |---|---|---|---|
 | A0 | Ortak QA | Arena dakika ofseti ve isteğe bağlı ekran görüntüsü; ordu 600s kabulü | Kodlandı; yeniden CI bekliyor |
-| A1 | Ortak QA | 3 harita x 2 çözünürlük; CPU profiler, fizik, çim, render çağrısı, varsa GPU timer query, kaynak sayaçları | Kodlandı; CI bekliyor |
+| A1 | Ortak QA | 3 harita x 2 çözünürlük; CPU profiler, fizik, çim, render çağrısı, varsa GPU timer query, kaynak sayaçları | 6/6 profil CI PASS; donanım kabulü açık |
 | A2 | Ortak QA | Gerçek GPU ve aynı kamera/kalite ile tekrarlanabilir baseline | Açık |
 | O1 | Ortak motor | Uzun karede gerçek maç saati/simülasyon farkı; ayrı saat/iş yükü politikası, spiral-of-death engeli | Açık |
 | O2 | Ortak motor | Sahiplik, dispose, pooling, transient ve tekrar maç temizliği | Açık |
@@ -32,3 +32,9 @@
 
 ## Kabul politikası
 Her paket küçük bağımsız değişiklik, önce/sonra aynı test, kanonik HTML eşitliği, gerçek Chromium, regresyon; FPS farkı ölçülmediyse yalnız kaynak azalışı bildirilir. Harita özel sonuçlar ayrı kapanır; diğer haritalarda regresyon kabulü olmadan tamamlanmış sayılmaz. Eski dallarda unutulacak iş bırakılmaz, bu tablo güncellenir.
+
+## OPT-A1 sonuçları ve OPT-O2/AR2/KU2 ilk kod paketi
+- [45975077384](https://github.com/zxc28tarik/killtheking/actions/runs/45975077384): 6/6 profil PASS. Yazılımsal WebGL, çok az gerçek kare; 1080p ölçüm örnekleri Arena 29, Meydan 4, Kuşatma 8. Arena GPU timer yalnız 1 örnek 1416ms; ordu haritalarında geçerli GPU timer örneği yok. CPU updateGame ortalama alt adım 1.57/15.48/8.46ms. GPU/kompozit beklemesi ile CPU çağrı süresi ayrıdır; gerçek donanım sonucu değildir.
+- Gölge kategorisi Arena'da kare başına ~150 statik kale çağrısı; kuşatmada ~354 statik kale+kuşatma mimarisi gölge çağrısı. Her iki ordu haritasında diğer instanced kategori kare başı 138 çağrı / 951992 üçgen; bu kategori asker veya diğer dekor ayrımı henüz kesin değil. Meydan çim kategorileri ayrıca gözleniyor. Bu sonuçlarla AR2/KU2 statik kaynak ve gölge birleştirme, ME1 asker geometrisi atıf önceliklendirildi.
+- İlk gerçek oyun kodu değişikliği: addBox ve nativeSiegeMesh yalnız aynı boyutlu BoxGeometry paylaşır; taş materyali aynı UV repeat çiftini paylaşır; oyuncu okları sabit iki geometriyi paylaşır, release ortak kaynakları dispose etmez. Mesh kimliği, raycast, collider, UV, renk/gölge ve şekil korunur. Yeni 4 regresyon testi; önce/sonra gerçek tarayıcı ve kaynak sayısı henüz bekleniyor. Bu paket draw call azalması veya FPS kazancı garanti etmez.
+- `ktkStaticResourceStatus()` gerçek oluşturma/önlenen kaynak sayaçları. Uzun test A0 tekrarları halen devam ediyor.

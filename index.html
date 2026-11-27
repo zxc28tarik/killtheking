@@ -7026,26 +7026,41 @@ window.addEventListener('error', function(event) {
         const grassMat = new THREE.MeshStandardMaterial({ color: 0x4b7a30, roughness: 0.92 });
         const ironMat = new THREE.MeshStandardMaterial({ color: 0x27272a, metalness: 0.82, roughness: 0.32 });
 
-        function addBox(x, y, z, w, h, d, mat, isSolid = true, castShadow = true) {
-            let useMat = mat;
-            if (mat === stoneMat) {
-                const clonedMap = stoneTexBundle.map.clone();
-                const clonedBump = stoneTexBundle.bumpMap.clone();
-                clonedMap.needsUpdate = true;
-                clonedBump.needsUpdate = true;
-                const rx = Math.max(1, Math.round(Math.max(w, d) / 6));
-                const ry = Math.max(1, Math.round(h / 6));
-                clonedMap.repeat.set(rx, ry);
-                clonedBump.repeat.set(rx, ry);
-                useMat = new THREE.MeshStandardMaterial({
-                    map: clonedMap,
-                    bumpMap: clonedBump,
-                    bumpScale: 0.14,
-                    roughness: 0.85,
-                    metalness: 0.05
+        // OPT-O2/AR2/KU2: level-owned immutable resources. Mesh identity,
+        // transforms, UV repeat, material parameters and collision stay unchanged.
+        const staticBoxGeometries=new Map(),staticStoneMaterials=new Map();
+        let staticBoxRequests=0,staticStoneRequests=0;
+        function sharedStaticBoxGeometry(w,h,d){
+            staticBoxRequests++;
+            const key=JSON.stringify([w,h,d]);
+            let geo=staticBoxGeometries.get(key);
+            if(!geo){geo=new THREE.BoxGeometry(w,h,d);staticBoxGeometries.set(key,geo);}
+            return geo;
+        }
+        function sharedStaticStoneMaterial(w,h,d){
+            staticStoneRequests++;
+            const rx=Math.max(1,Math.round(Math.max(w,d)/6));
+            const ry=Math.max(1,Math.round(h/6));
+            const key=rx+':'+ry;
+            let material=staticStoneMaterials.get(key);
+            if(!material){
+                const clonedMap=stoneTexBundle.map.clone(),clonedBump=stoneTexBundle.bumpMap.clone();
+                clonedMap.repeat.set(rx,ry);clonedBump.repeat.set(rx,ry);
+                clonedMap.needsUpdate=true;clonedBump.needsUpdate=true;
+                material=new THREE.MeshStandardMaterial({
+                    map:clonedMap,bumpMap:clonedBump,bumpScale:.14,roughness:.85,metalness:.05
                 });
+                staticStoneMaterials.set(key,material);
             }
-            const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), useMat);
+            return material;
+        }
+        window.ktkStaticResourceStatus=()=>({boxRequests:staticBoxRequests,uniqueBoxes:staticBoxGeometries.size,
+            stoneRequests:staticStoneRequests,uniqueStoneMaterials:staticStoneMaterials.size,
+            avoidedBoxAllocations:staticBoxRequests-staticBoxGeometries.size,
+            avoidedStoneTextureClones:2*(staticStoneRequests-staticStoneMaterials.size)});
+        function addBox(x, y, z, w, h, d, mat, isSolid = true, castShadow = true) {
+            const useMat=mat===stoneMat?sharedStaticStoneMaterial(w,h,d):mat;
+            const mesh = new THREE.Mesh(sharedStaticBoxGeometry(w,h,d), useMat);
             mesh.position.set(x, y, z);
             mesh.castShadow = castShadow;
             mesh.receiveShadow = true;
@@ -10157,7 +10172,7 @@ const KTKCalmUIV25=(()=>{
         const nativeSiegeMetal=new THREE.MeshStandardMaterial({color:0x45464c,metalness:.64,roughness:.46});
         const nativeSiegeShotMat=new THREE.MeshStandardMaterial({color:0x9e9992,roughness:.93});
         function nativeSiegeMesh(group,x,y,z,w,h,d,mat){
-          const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);
+          const m=new THREE.Mesh(sharedStaticBoxGeometry(w,h,d),mat);
           m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;group.add(m);return m;
         }
         function nativeSiegeAabb(x,y,z,w,h,d){return {
@@ -12265,9 +12280,25 @@ const KTKCalmUIV25=(()=>{
             activeLimit:EFFECT_ACTIVE_LIMIT,normalLimit:EFFECT_NORMAL_LIMIT,
             skippedNormalEffects,skippedPriorityEffects
         });
+        // OPT-O2: every launched/stuck player arrow shares the two immutable
+        // geometry buffers; only transient Object3D state is per projectile.
+        let sharedArrowShaft=null,sharedArrowHead=null;
+        function createPlayerArrowMesh(){
+            if(!sharedArrowShaft)sharedArrowShaft=new THREE.BoxGeometry(.05,.05,1.25);
+            if(!sharedArrowHead)sharedArrowHead=new THREE.ConeGeometry(.06,.22,4);
+            const arrowGroup=new THREE.Group();
+            const shaft=new THREE.Mesh(sharedArrowShaft,goldMat);
+            const head=new THREE.Mesh(sharedArrowHead,steelMat);
+            head.rotation.x=-Math.PI/2;head.position.z=-.68;
+            arrowGroup.add(shaft,head);
+            return arrowGroup;
+        }
         function releaseArrow(mesh) {
             scene.remove(mesh);
-            mesh.traverse(child=>{if(child.isMesh)child.geometry.dispose();});
+            mesh.traverse(child=>{
+                if(child.isMesh&&child.geometry!==sharedArrowShaft&&child.geometry!==sharedArrowHead)
+                    child.geometry.dispose();
+            });
         }
         function clearRoundTransients() {
             for(const p of particles)releaseParticle(p.mesh);
@@ -13401,12 +13432,7 @@ const KTKCalmUIV25=(()=>{
             const dir = playerAttackDirection();
 
             // Create physical 3D arrow with feathered fletching
-            const arrowGroup = new THREE.Group();
-            const shaft = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 1.25), goldMat);
-            const head = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.22, 4), steelMat);
-            head.rotation.x = -Math.PI / 2;
-            head.position.z = -0.68;
-            arrowGroup.add(shaft, head);
+            const arrowGroup = createPlayerArrowMesh();
             // Sweep from the player itself, including the first 0.9 m of travel.
             arrowGroup.position.copy(origin);
             orientPlayerArrow(arrowGroup,dir);
