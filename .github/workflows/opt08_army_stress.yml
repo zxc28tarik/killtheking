@@ -1,0 +1,26 @@
+name: OPT-08 deterministic army transform and arrow A-B
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/opt08_army_stress.yml'
+      - 'qa/opt_army_stress.mjs'
+      - 'qa/fixtures/army_render_pre_opt07.js'
+      - 'tests/opt08-benchmark-integrity.test.mjs'
+  workflow_dispatch:
+jobs:
+  benchmark:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node qa/opt_army_stress.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: opt08-army-cpu-before-after
+          path: opt08-army-stress-report.json
+          if-no-files-found: error
