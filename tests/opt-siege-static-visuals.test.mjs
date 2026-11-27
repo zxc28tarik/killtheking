@@ -26,6 +26,7 @@ function fixture(){
 }
 test('OPT06 regional batching preserves original source geometry, raycast identity and shadow receiver',()=>{
  const {root,original,mat,gate,camera}=fixture();
+ root.updateMatrixWorld(true);
  const before=camera.intersectObjects(original,false);
  assert.equal(before[0].object,original[0]);
  const geometries=original.map(o=>o.geometry);
