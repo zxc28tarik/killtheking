@@ -29,6 +29,37 @@ try{
   assert.equal(await p.evaluate(()=>nativeSiegeMode?'siege':meadowBattleMode?'meadow':'arena'),map);
   if(map==='siege')for(const key of ['F6','F7','F8'])await p.keyboard.press(key);
   if(map==='meadow')await p.keyboard.press('k');
+  // OPT07 QA: force the real camera to look at one living soldier for a
+  // single synchronous frame. This proves that the actual scene culler can
+  // retain a nearby unit; normal game camera is restored before measurement.
+  report.armySightline=await p.evaluate(()=>{
+    if(!meadowBattleMode||nativeSiegeMode||!meadowBattleVisual)return null;
+    const soldier=meadowBattleState.soldiers.find(s=>s.alive);
+    if(!soldier)throw Error('OPT07: expected at least one living army unit');
+    const originalPosition=camera.position.clone(),originalQuaternion=camera.quaternion.clone();
+    const natural=window.ktkMeadowArmyVisibilityStatus?.()??null;
+    const group=meadowBattleVisual.group;
+    let testResult;
+    try{
+      camera.position.set(soldier.x-12,2.5,soldier.z);
+      camera.lookAt(soldier.x,2.5,soldier.z);
+      camera.updateMatrixWorld(true);
+      const probe=createMeadowArmyVisibility(THREE,meadowBattleVisual);
+      try{testResult=probe.prepare(meadowBattleState,camera);}
+      finally{probe.restore();}
+    }finally{
+      camera.position.copy(originalPosition);
+      camera.quaternion.copy(originalQuaternion);
+      camera.updateMatrixWorld(true);
+    }
+    return {soldier:{id:soldier.id,x:soldier.x,z:soldier.z},
+      natural,forcedLook:{...testResult},sceneVisible:group.visible};
+  });
+  if(report.armySightline){
+    assert.ok(report.armySightline.sceneVisible,'Meadow army visuals not visible');
+    assert.ok(report.armySightline.forcedLook.visible>0,
+      'OPT07: nearby living soldier was wrongly culled even when camera faces it');
+  }
   await p.evaluate(()=>{
     const q={start:performance.now(),frame:[],physics:[],armySim:[],armyVisual:[],siegeEquipment:[],siegeTowerRender:[],grass:[],render:[],draws:{},samples:[],phase:'warmup',active:true,gpu:[],gpuSupported:false};
     window.__optProfile=q;
@@ -139,7 +170,7 @@ try{
   function summarize(rows){const a=rows.filter(x=>x.phase!=='warmup').map(x=>x.ms).sort((a,b)=>a-b);return a.length?{n:a.length,totalMs:a.reduce((x,y)=>x+y,0),meanMs:a.reduce((x,y)=>x+y,0)/a.length,p95Ms:a[Math.ceil(a.length*.95)-1],maxMs:a.at(-1)}:null;}
   report.summary=Object.fromEntries(['frame','physics','armySim','armyVisual','siegeEquipment','siegeTowerRender','grass','render','gpu'].map(k=>[k,summarize(report.measurements[k])]));
   report.drawCategories=Object.entries(report.measurements.draws).sort((a,b)=>b[1].calls-a[1].calls);
-  console.log('OPT_PROFILE',JSON.stringify({map,width,summary:report.summary,cpuTop:report.cpuTop,drawCategories:report.drawCategories,samples:report.measurements.samples,gpuSupported:report.measurements.gpuSupported,errors}));
+  console.log('OPT_PROFILE',JSON.stringify({map,width,summary:report.summary,cpuTop:report.cpuTop,drawCategories:report.drawCategories,samples:report.measurements.samples,armySightline:report.armySightline,gpuSupported:report.measurements.gpuSupported,errors}));
 }catch(e){report.failure=e.stack||String(e);console.error(report.failure);}
 finally{writeFileSync('opt-profile-report.json',JSON.stringify(report,null,2));await browser.close();}
 assert.ok(!report.failure,report.failure);assert.deepEqual(errors,[]);assert.ok(report.summary?.frame?.n>0,'no measured frames');
