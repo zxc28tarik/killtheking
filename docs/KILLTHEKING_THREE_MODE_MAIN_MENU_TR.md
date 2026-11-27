@@ -269,3 +269,7 @@ AK-01 kaynak kodu: `recovered/army/modules/shared-g54-army-commands.js` + `recov
 - [x] Fiziksel ilk temas, kadans, isabet/yıkım ve özgün S4B1 yalnız asker/koçbaşı modlarının bozulmaması için hedefli testler eklendi. GitHub CI ve Chromium raporu üretilecektir; uzun manuel oyun ve donanım GPU kabulü bununla karıştırılmayacaktır.
 - [ ] **AK-05c3** açık: mancınığın mavi okçulardan gecikmeli fiziksel ok darbesi alması, görsel parçacık/ses ve gerçek tam maç dengesi; düşman askere alan hasarı ayrı tasarım/onay gerektirir. Sonraki **AK-05d kuşatma kulesi** henüz yapılmadı.
 - [ ] **Pitch deck kullanıcı başlayalım diyene kadar beklemede.** `main` kullanıcının açık onayı olmadan birleştirilmeyecek.
+
+
+## UI33 — İlk açılışta eski menü parlaması (27 Kasım 2026)
+- Kullanıcı bildirimi: eski menü oyun yüklenirken kısa süre görünür. Önceki UI32 guard yalnız inherited visibility kullanıyor, eski kaynak container ID ancak JS install sırasında atanıyordu. Bu potansiyel açılış açığı kapatıldı: head içinde ilk engine script öncesi display:none guard, eski container kaynak HTML'de kalıcı inline display:none!important, body başlangıcında sade KILL THE KING boot örtüsü. Yeni harita seçim menüsü hazır olduğunda örtü kaldırılır; hata durumu örtüyü gizler. İlk 30 script ve tüm oyun/AI/grafik kaynakları byte-identical, 31 script sınırı korunuyor. İki statik regresyon testi ve gerçek Chromium JavaScript-disabled cold-start görüntüsü ile normal üç viewport acceptance eklendi. Gerçek kullanıcının önceki flash'ı birebir yeniden üretilmedi; yeni test sonuçları bekleniyor.

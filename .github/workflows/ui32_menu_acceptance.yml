@@ -27,6 +27,19 @@ jobs:
           assert.deepEqual(readFileSync('index.html'),readFileSync('playables/KillTheKing_AK30_Amblemler_Korundu_Tam_Ekran_Arka_Plan.html'));
           const b=await chromium.launch({args:['--use-angle=swiftshader','--enable-unsafe-swiftshader','--disable-dev-shm-usage']});
           try {
+            // UI33: inspect the actual source document with all game scripts
+            // disabled, not just the already-installed UI32 final state.
+            const cold=await b.newPage({viewport:{width:1366,height:768},javaScriptEnabled:false});
+            try{
+              await cold.goto(pathToFileURL(resolve('index.html')).href);
+              assert.equal(await cold.locator('#menu-overlay').isVisible(),false,'pre-JS legacy overlay must not paint');
+              assert.equal(await cold.locator('#ktk-original-menu').isVisible(),false,'legacy source controls must be hidden');
+              assert.equal(await cold.locator('#ktk-ui32-loading').isVisible(),true,'static boot screen must cover startup');
+              const bootBox=await cold.locator('#ktk-ui32-loading').boundingBox();
+              assert.equal(bootBox.width,1366);assert.equal(bootBox.height,768);
+              await cold.screenshot({path:'ui32-cold-boot.png',timeout:90000});
+              console.log('PASS UI33 no legacy menu before JavaScript');
+            }finally{await cold.close();}
             for(const viewport of [{width:1920,height:1080},{width:1366,height:768},{width:390,height:844}]){
               const p=await b.newPage({viewport}); const errors=[]; p.on('pageerror',e=>errors.push(e.message));
               await p.goto(pathToFileURL(resolve('index.html')).href);
@@ -38,6 +51,7 @@ jobs:
                 throw error;
               }
               const status=await p.evaluate(()=>window.ktkUI32Status());
+              assert.equal(await p.locator('#ktk-ui32-loading').count(),0,'boot cover must retire when new menu is ready');
               assert.equal(await p.locator('[data-focus-class]').count(),0,'obsolete duplicate class controls');
               assert.equal(status.legacyHidden,true);assert.equal(status.stage,'map');assert.equal(status.mapEmblems,3);assert.equal(status.classes,4);
               const box=await p.locator('#menu-overlay').boundingBox();assert.ok(Math.abs(box.width-viewport.width)<2);

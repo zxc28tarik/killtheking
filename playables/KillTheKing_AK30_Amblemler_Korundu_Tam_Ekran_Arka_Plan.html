@@ -3,6 +3,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kill the King — UI32 • Arena / Meydan / Kuşatma</title>
+    <style id="ktk-ui32-boot">
+        html{background:#172125}
+        /* UI33: parsed before any engine script or legacy markup. A descendant
+           cannot undo display:none, unlike inherited visibility:hidden. */
+        #menu-overlay:not([data-ui32-ready]),#menu-overlay.hidden,
+        #menu-overlay>#ktk-original-menu{display:none!important}
+        #ktk-ui32-loading{position:fixed;inset:0;z-index:999998;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;background:#172125;color:#f6e9cc;font:600 15px system-ui,sans-serif;text-align:center;pointer-events:auto}
+        #ktk-ui32-loading strong{font:700 clamp(24px,5vw,42px) Georgia,serif;letter-spacing:.07em}
+        body:has(#menu-overlay[data-ui32-ready="true"])>#ktk-ui32-loading,
+        body:has(#menu-overlay[data-ui32-ready="error"])>#ktk-ui32-loading,
+        body:has(#ktk-startup-error)>#ktk-ui32-loading{display:none!important}
+    </style>
     
     <script>
 /**
@@ -205,6 +217,7 @@
 
 </style></head>
 <body class="relative w-full h-full overflow-hidden text-white">
+    <div id="ktk-ui32-loading" role="status"><strong>KILL THE KING</strong><span>Oyun hazırlanıyor…</span></div>
 <script>
 window.addEventListener('error', function(event) {
   const message = String((event.error && event.error.message) || event.message || '');
@@ -551,9 +564,8 @@ window.addEventListener('error', function(event) {
     </div>
 
     <!-- ==================== START / PAUSE MENU OVERLAY (v3.0 HD) ==================== -->
-    <style id="ktk-ui32-boot">#menu-overlay:not([data-ui32-ready]){visibility:hidden!important}#menu-overlay.hidden{display:none!important}#ktk-original-menu{display:none!important}</style>
     <div id="menu-overlay" class="fixed inset-0 z-30 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
-        <div class="max-w-5xl w-full bg-slate-900/95 border-2 border-amber-500/60 rounded-xl shadow-2xl p-5 sm:p-7 flex flex-col gap-5 my-auto">
+        <div id="ktk-original-menu" style="display:none!important" class="max-w-5xl w-full bg-slate-900/95 border-2 border-amber-500/60 rounded-xl shadow-2xl p-5 sm:p-7 flex flex-col gap-5 my-auto">
             
             <!-- Header -->
             <div class="flex flex-col sm:flex-row justify-between items-center border-b border-white/10 pb-4 gap-3">
@@ -17562,6 +17574,8 @@ back.addEventListener('click',()=>stage('map'));
 let wasHidden=overlay.classList.contains('hidden');
 new MutationObserver(()=>{const hidden=overlay.classList.contains('hidden');if(wasHidden&&!hidden)stage(arenaMatch.phase==='paused'?'pause':'map');wasHidden=hidden;}).observe(overlay,{attributes:true,attributeFilter:['class']});
 stage('map');overlay.dataset.ui32Ready='true';
+// Explicitly retire the static boot cover; the CSS guard also handles error state.
+document.getElementById('ktk-ui32-loading')?.remove();
 window.ktkUI32Status=()=>({ready:overlay.dataset.ui32Ready,stage:panel.dataset.stage,legacyHidden:getComputedStyle(document.getElementById('ktk-original-menu')).display==='none',mapEmblems:panel.querySelectorAll('.ui32-emblem').length,classes:new Set(Array.from(panel.querySelectorAll('[data-approved-class]'),b=>b.dataset.approvedClass)).size,playButton:!!panel.querySelector('#play-btn'),selectedMap:panel.querySelector('[data-focus-map][aria-pressed=true]')?.dataset.focusMap,engineMap:arenaMap,engineSiege:nativeSiegeMode,engineArmy:meadowBattleMode,phase:arenaMatch.phase,menuHidden:overlay.classList.contains('hidden')&&getComputedStyle(overlay).display==='none'});
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
