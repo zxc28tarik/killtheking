@@ -16440,7 +16440,7 @@ const KTKCalmUIV25=(()=>{
         function createMeadowArmyVisibility(THREE,visual){
             const frustum=new THREE.Frustum(),viewProjection=new THREE.Matrix4(),
                 sphere=new THREE.Sphere(),roles=[],records=[];
-            const stats={alive:0,visible:0,culledAlive:0,dead:0,fullTriangles:0,submittedTriangles:0};
+            const stats={alive:0,visible:0,culledAlive:0,dead:0,fullTriangles:0,submittedTriangles:0,emptyRoleMeshes:0};
             let prepared=false;
             for(const [type,role] of Object.entries(visual.roles)){
                 let radius=0,triangles=0;
@@ -16460,9 +16460,13 @@ const KTKCalmUIV25=(()=>{
             function restore(){
                 if(!prepared)return;
                 for(const r of records){
-                    r.mesh.instanceMatrix.array.set(r.backup);
+                    // OPT10 ME: an entirely culled class had no matrix changes,
+                    // so restoring count/visibility needs no GPU buffer dirty mark.
+                    if(r.matrixChanged){
+                        r.mesh.instanceMatrix.array.set(r.backup);
+                        r.mesh.instanceMatrix.needsUpdate=true;
+                    }
                     r.mesh.count=r.oldCount;r.mesh.visible=r.oldVisible;
-                    r.mesh.instanceMatrix.needsUpdate=true;
                 }
                 records.length=0;prepared=false;
             }
@@ -16472,7 +16476,7 @@ const KTKCalmUIV25=(()=>{
                 visual.group.updateWorldMatrix(true,false);
                 viewProjection.multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse);
                 frustum.setFromProjectionMatrix(viewProjection);
-                Object.assign(stats,{alive:0,visible:0,culledAlive:0,dead:0,fullTriangles:0,submittedTriangles:0});
+                Object.assign(stats,{alive:0,visible:0,culledAlive:0,dead:0,fullTriangles:0,submittedTriangles:0,emptyRoleMeshes:0});
                 prepared=true;
                 try{
                     for(const entry of roles){
@@ -16497,17 +16501,22 @@ const KTKCalmUIV25=(()=>{
                         if(slots.length===role.slots.size)continue;
                         for(const record of meshes){
                             const mesh=record.mesh,array=mesh.instanceMatrix.array;
-                            record.backup.set(array);
                             record.oldCount=mesh.count;record.oldVisible=mesh.visible;
+                            record.matrixChanged=slots.length>0;
                             records.push(record);
-                            // Sorted source slots; copy from immutable backup.
-                            for(let i=0;i<slots.length;i++){
-                                const src=slots[i]*16;
-                                array.set(record.backup.subarray(src,src+16),i*16);
+                            if(slots.length){
+                                record.backup.set(array);
+                                // Sorted source slots; copy from immutable backup.
+                                for(let i=0;i<slots.length;i++){
+                                    const src=slots[i]*16;
+                                    array.set(record.backup.subarray(src,src+16),i*16);
+                                }
+                                mesh.instanceMatrix.needsUpdate=true;
+                            }else{
+                                stats.emptyRoleMeshes++;
+                                mesh.visible=false;
                             }
                             mesh.count=slots.length;
-                            if(!slots.length)mesh.visible=false;
-                            mesh.instanceMatrix.needsUpdate=true;
                         }
                     }
                 }catch(e){restore();throw e;}

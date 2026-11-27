@@ -79,3 +79,26 @@ test('OPT05 actual army batch shadow policy remains non-casting',()=>{
  assert.ok(start>=0&&end>start);
  assert.match(html.slice(start,end),/mesh\.castShadow=false;mesh\.receiveShadow=false;/);
 });
+
+test('OPT10 ME compaction does not dirty any hidden role matrices, but revives without stale GPU state',()=>{
+ const {mesh,soldiers,camera,compactor,original}=fixture();
+ for(const s of soldiers)s.alive=false;
+ const initialVersion=mesh.instanceMatrix.version;
+ const hidden=compactor.prepare({soldiers},camera);
+ assert.equal(hidden.visible,0);
+ assert.equal(hidden.emptyRoleMeshes,1);
+ assert.equal(mesh.count,0);assert.equal(mesh.visible,false);
+ assert.equal(mesh.instanceMatrix.version,initialVersion);
+ compactor.restore();
+ assert.equal(mesh.count,5);assert.equal(mesh.visible,true);
+ assert.equal(mesh.instanceMatrix.version,initialVersion);
+ assert.deepEqual(Array.from(mesh.instanceMatrix.array),original);
+ soldiers[0].alive=true;
+ const alive=compactor.prepare({soldiers},camera);
+ assert.equal(alive.visible,1);
+ assert.equal(alive.emptyRoleMeshes,0);
+ assert.ok(mesh.instanceMatrix.version>initialVersion);
+ const m=new T.Matrix4();mesh.getMatrixAt(0,m);assert.equal(m.elements[14],-15);
+ compactor.restore();
+ assert.deepEqual(Array.from(mesh.instanceMatrix.array),original);
+});

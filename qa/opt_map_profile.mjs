@@ -68,6 +68,7 @@ try{
     q.gpuSupported=!!ext;
     const pending=[];
     const category=new WeakMap();
+    // OPT10 ME: armyVisibility status also reports emptyRoleMeshes after frustum compaction.
     function mark(root,tag){if(root?.traverse)root.traverse(o=>{category.set(o,tag);});}
     for(const root of castleMapData.visuals)mark(root,'castle-static');
     for(const root of meadowMapData.visuals)mark(root,'meadow-static');
