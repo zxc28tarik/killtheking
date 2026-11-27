@@ -1,0 +1,188 @@
+name: Arena 10-minute live benchmark
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/arena_10min_benchmark.yml']
+  workflow_dispatch:
+jobs:
+  arena:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save --no-package-lock playwright@1.58.2
+      - run: npx playwright install --with-deps chromium
+      - name: Play two natural Arena rounds (8 + 2 minutes)
+        run: |
+          node --input-type=module <<'JS'
+          import {chromium} from 'playwright';
+          import {resolve} from 'node:path';
+          import {pathToFileURL} from 'node:url';
+          import {writeFileSync} from 'node:fs';
+          import assert from 'node:assert/strict';
+          const browser=await chromium.launch({args:['--use-angle=swiftshader','--enable-unsafe-swiftshader','--disable-dev-shm-usage','--disable-background-timer-throttling','--disable-renderer-backgrounding']});
+          const p=await browser.newPage({viewport:{width:1920,height:1080},deviceScaleFactor:1});
+          const errors=[],consoleErrors=[],failedRequests=[],rounds=[],issues=[];
+          let browserInfo=null;
+          p.on('pageerror',e=>errors.push({at:new Date().toISOString(),error:e.stack||e.message}));
+          p.on('console',m=>{if(m.type()==='error')consoleErrors.push({at:new Date().toISOString(),text:m.text()});});
+          p.on('requestfailed',r=>failedRequests.push({url:r.url().slice(0,300),error:r.failure()?.errorText}));
+          const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+          const quantile=(a,q)=>a[Math.min(a.length-1,Math.max(0,Math.ceil(a.length*q)-1))]??null;
+          function stats(frames){
+            const sorted=frames.map(f=>f.ms).filter(x=>Number.isFinite(x)&&x>0).sort((a,b)=>a-b);
+            const total=sorted.reduce((a,b)=>a+b,0);
+            const low=sorted.slice(-Math.max(1,Math.ceil(sorted.length*.01)));
+            const low01=sorted.slice(-Math.max(1,Math.ceil(sorted.length*.001)));
+            const n=v=>Math.round(v*100)/100;
+            return sorted.length?{frames:sorted.length,measuredSeconds:n(total/1000),averageFPS:n(1000*sorted.length/total),onePercentLowFPS:n(1000*low.length/low.reduce((a,b)=>a+b,0)),pointOnePercentLowFPS:n(1000*low01.length/low01.reduce((a,b)=>a+b,0)),p50Ms:n(quantile(sorted,.5)),p95Ms:n(quantile(sorted,.95)),p99Ms:n(quantile(sorted,.99)),worstMs:n(sorted.at(-1)),over33ms:sorted.filter(x=>x>33.33).length,over50ms:sorted.filter(x=>x>50).length,over100ms:sorted.filter(x=>x>100).length,over250ms:sorted.filter(x=>x>250).length,over1000ms:sorted.filter(x=>x>1000).length}:null;
+          }
+          async function start(duration){
+            await p.locator('[data-focus-map="arena"]').click();
+            await p.locator('#fm-toggle-settings').click();
+            await p.locator('[data-focus-mode="ffa"]').click();
+            await p.locator('[data-focus-duration="'+duration+'"]').click();
+            await p.locator('#fm-quality').selectOption('medium');
+            await p.locator('#ui32-back').click();
+            await p.locator('[data-focus-map="arena"]').click();
+            await p.locator('[data-approved-class="0"]:visible').click();
+            await p.locator('#play-btn').click();
+            await p.waitForFunction(()=>arenaMatch.phase==='playing'&&document.pointerLockElement===canvas,{},{timeout:15000});
+            assert.equal(await p.evaluate(()=>arenaMatch.durationSeconds),duration);
+          }
+          async function monitor(duration){
+            await p.evaluate(()=>{
+              const run={frames:[],samples:[],longTasks:[],invariants:[],active:true,started:performance.now(),prev:null,lastSample:0,actions:0};
+              window.__arenaBenchmark=run;
+              let observer=null;
+              if(PerformanceObserver.supportedEntryTypes.includes('longtask')){
+                observer=new PerformanceObserver(list=>{for(const e of list.getEntries())if(run.active&&e.startTime>=run.started)run.longTasks.push({t:e.startTime-run.started,ms:e.duration});});
+                observer.observe({entryTypes:['longtask']});
+              }
+              run.stop=()=>{run.active=false;observer?.disconnect();};
+              function frame(t){
+                if(!run.active)return;
+                const playing=isGameActive&&arenaMatch.phase==='playing';
+                if(playing&&run.prev!==null&&t>run.prev)run.frames.push({t:t-run.started,ms:t-run.prev,remaining:arenaMatch.remaining});
+                run.prev=playing?t:null;
+                if(playing&&t-run.lastSample>=1000){
+                  run.lastSample=t;
+                  const m=renderer.info.memory,r=renderer.info.render;
+                  const row={t:t-run.started,remaining:arenaMatch.remaining,drawCalls:r.calls,triangles:r.triangles,geometries:m.geometries,textures:m.textures,heapBytes:performance.memory?.usedJSHeapSize??null,particles:particles.length,arrows:arrows.length,health:player.hp,kills:player.kills,deaths:player.deaths,locked:document.pointerLockElement===canvas,classIdx:player.classIdx};
+                  run.samples.push(row);
+                  if(![player.pos.x,player.pos.y,player.pos.z,player.hp,arenaMatch.remaining].every(Number.isFinite))run.invariants.push({t:row.t,issue:'Nonfinite player or clock state'});
+                  if(!row.locked)run.invariants.push({t:row.t,issue:'Pointer lock lost while active'});
+                }
+                requestAnimationFrame(frame);
+              }
+              requestAnimationFrame(frame);
+            });
+            const started=Date.now(),deadline=started+(duration+90)*1000;
+            let nextClass=0,lastClass=-1,mouseHeld=false,step=0,lastMinute=-1;
+            try{
+              while(Date.now()<deadline){
+                const state=await p.evaluate(()=>({phase:arenaMatch.phase,remaining:arenaMatch.remaining,active:isGameActive,locked:document.pointerLockElement===canvas,classIdx:player.classIdx}));
+                if(state.phase==='results')break;
+                if(state.phase!=='playing'||!state.active||!state.locked)throw Error('Unexpected interruption: '+JSON.stringify(state));
+                const elapsed=duration-state.remaining,minute=Math.floor(elapsed/60);
+                if(minute!==lastMinute){lastMinute=minute;console.log('ARENA_PROGRESS',JSON.stringify({duration,elapsed,remaining:state.remaining}));}
+                nextClass=Math.floor(elapsed/30)%4;
+                if(nextClass!==lastClass){
+                  if(mouseHeld){await p.mouse.up();mouseHeld=false;}
+                  await p.keyboard.press('Digit'+(nextClass+1));lastClass=nextClass;
+                }
+                // Aim through the actual mouse handler; no position, health,
+                // cooldown, bot policy, or clock writes. Browser input is scripted.
+                const aim=await p.evaluate(()=>{
+                  const target=bots.filter(b=>!b.dead).sort((a,b)=>a.mesh.position.distanceToSquared(player.pos)-b.mesh.position.distanceToSquared(player.pos))[0];
+                  if(!target)return null;
+                  const d=target.mesh.position.clone().sub(player.pos);d.y+=1.55;
+                  const yaw=Math.atan2(-d.x,-d.z),pitch=Math.atan2(d.y,Math.hypot(d.x,d.z));
+                  const dy=Math.atan2(Math.sin(yaw-player.yaw),Math.cos(yaw-player.yaw));
+                  document.dispatchEvent(new MouseEvent('mousemove',{movementX:Math.round(-dy/(.0022*mouseSensitivity)),movementY:Math.round(-(pitch-player.pitch)/(.0022*mouseSensitivity)),bubbles:true}));
+                  window.__arenaBenchmark.actions++;
+                  return {distance:Math.hypot(d.x,d.z)};
+                });
+                const move=aim&&aim.distance>(state.classIdx<2?4:14)?'KeyW':step%2?'KeyA':'KeyD';
+                await p.keyboard.down(move.slice(-1).toLowerCase());
+                try{
+                  if(state.classIdx===2){
+                    if(!mouseHeld){await p.mouse.down();mouseHeld=true;}
+                    else if(step%4===0){await p.mouse.up();mouseHeld=false;}
+                  }else{
+                    if(mouseHeld){await p.mouse.up();mouseHeld=false;}
+                    await p.mouse.click(960,540);
+                    if(step%8===0)await p.keyboard.press('KeyF'.slice(-1).toLowerCase());
+                    if(state.classIdx===3&&step%12===0)await p.keyboard.press('r');
+                  }
+                  if(step%11===0)await p.keyboard.press('Space');
+                  if(step%17===0)await p.keyboard.press('c');
+                  if(step%40===0){await p.keyboard.down('Tab');await sleep(150);await p.keyboard.up('Tab');}
+                  await sleep(650);
+                }finally{await p.keyboard.up(move.slice(-1).toLowerCase());}
+                step++;
+              }
+            }finally{
+              if(mouseHeld)await p.mouse.up().catch(()=>{});
+              const raw=await p.evaluate(()=>{
+                const r=window.__arenaBenchmark;r.stop();
+                return {frames:r.frames,samples:r.samples,longTasks:r.longTasks,invariants:r.invariants,actions:r.actions,phase:arenaMatch.phase,remaining:arenaMatch.remaining,result:arenaMatch.result,elapsedWallMs:performance.now()-r.started};
+              });
+              const result={duration,...raw,summary:stats(raw.frames)};
+              rounds.push(result);
+              console.log('ARENA_ROUND_SUMMARY',JSON.stringify({duration,phase:raw.phase,remaining:raw.remaining,wallSeconds:raw.elapsedWallMs/1000,actions:raw.actions,summary:result.summary,matchResult:raw.result}));
+            }
+            assert.equal(rounds.at(-1).phase,'results','round did not finish naturally');
+            assert.equal(rounds.at(-1).remaining,0,'clock did not reach zero');
+          }
+          try{
+            await p.goto(pathToFileURL(resolve('index.html')).href);
+            await p.waitForFunction(()=>window.ktkUI32Status?.().ready==='true',null,{timeout:30000});
+            browserInfo=await p.evaluate(()=>{
+              const gl=renderer.getContext(),ext=gl.getExtension('WEBGL_debug_renderer_info');
+              return {userAgent:navigator.userAgent,renderer:ext?gl.getParameter(ext.UNMASKED_RENDERER_WEBGL):gl.getParameter(gl.RENDERER),vendor:ext?gl.getParameter(ext.UNMASKED_VENDOR_WEBGL):gl.getParameter(gl.VENDOR),width:innerWidth,height:innerHeight,dpr:devicePixelRatio};
+            });
+            console.log('ARENA_ENVIRONMENT',JSON.stringify(browserInfo));
+            await start(480);
+            await monitor(480);
+            await p.screenshot({path:'arena-round-8min.png'});
+            await p.locator('#match-menu-btn').click();
+            await p.waitForFunction(()=>window.ktkUI32Status().stage==='map');
+            await start(120);
+            await monitor(120);
+            await p.screenshot({path:'arena-round-2min.png'});
+          }catch(e){issues.push({error:e.stack||String(e)});}
+          finally{
+            let offset=0;
+            const frames=[],samples=[],longTasks=[];
+            for(const r of rounds){
+              for(const f of r.frames)frames.push({...f,activeT:offset+(r.duration-f.remaining)*1000});
+              for(const s of r.samples)samples.push({...s,activeT:offset+(r.duration-s.remaining)*1000});
+              for(const l of r.longTasks)longTasks.push({...l,roundDuration:r.duration});
+              offset+=r.duration-r.remaining;
+            }
+            const windows=[];
+            for(let i=0;i<10;i++){const fs=frames.filter(f=>f.activeT>=i*60000&&f.activeT<(i+1)*60000);windows.push({minute:i+1,...stats(fs)});}
+            const topSpikes=frames.slice().sort((a,b)=>b.ms-a.ms).slice(0,20).map(f=>({second:Math.round(f.activeT/100)/10,ms:f.ms}));
+            const report={schema:'ktk-arena-10min-v1',source:process.env.GITHUB_SHA,environment:browserInfo,quality:'medium',mode:'ffa',automatedInput:true,activeGameSeconds:offset,summary:stats(frames),minutes:windows,topSpikes,resources:samples,longTasks,rounds,issues,errors,consoleErrors,failedRequests};
+            writeFileSync('arena-10min-report.json',JSON.stringify(report,null,2));
+            console.log('ARENA_FINAL',JSON.stringify({source:report.source,environment:browserInfo,activeGameSeconds:offset,summary:report.summary,minutes:windows,topSpikes,resources:{first:samples[0],last:samples.at(-1),peakDrawCalls:Math.max(0,...samples.map(s=>s.drawCalls)),peakTriangles:Math.max(0,...samples.map(s=>s.triangles)),peakHeapBytes:Math.max(0,...samples.map(s=>s.heapBytes||0))},longTasks:longTasks.length,issues,errors,consoleErrors,failedRequests,invariants:rounds.flatMap(r=>r.invariants)}));
+            await browser.close();
+          }
+          assert.equal(rounds.length,2,'missing rounds');
+          assert.equal(rounds.reduce((n,r)=>n+r.duration-r.remaining,0),600,'missing 10-minute active match time');
+          assert.deepEqual(issues,[]);
+          assert.deepEqual(errors,[]);
+          assert.deepEqual(rounds.flatMap(r=>r.invariants),[]);
+          JS
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: arena-10min-evidence
+          path: |
+            arena-10min-report.json
+            arena-round-*.png
+          if-no-files-found: warn
