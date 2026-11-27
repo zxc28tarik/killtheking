@@ -180,3 +180,9 @@ Her paket küçük bağımsız değişiklik, önce/sonra aynı test, kanonik HTM
 
 ## OPT-15 — bütün haritalarda frame UI coalescing + shader stall teşhisi
 - Orijinal updateGame, clock ve hit-stop adımları korunur. Radar 30Hz, skor 0.15s ve team HUD istekleri aynı substep timer ile oluşur; tek görüntü için en fazla bir kez çizilir. Hız çizgisi son hız değerini alır; round reset temizler. Tab tuşunun ilk açılışı anlık; skor satırları ve cell'ler tekrar kullanılır, içerik/rank ve CSS değişmez. Yeni 4 test. QA-only WebGL compile/link/status/info-log süreleri ve frame UI sayaçları, hook restore. Shader prewarm uygulanmadı: gerçek driver ölçümü ve menü/başlangıç etkisi bilinmiyor.
+
+### OPT-15 kapanış
+- 314/314 genel, 6/6 profiler 46004609454, UI32 46004609470, BUG21–30 46004609520 PASS. 960 Arena radar requests/draws 190/61, Meadow 118/36, Siege 108/36. Arena shader log API 960 getProgramInfoLog 3450.6ms (3 çağrı), getShaderInfoLog 600.5ms; 1920 tek yeni program getProgramInfoLog 3122.8ms + getShaderInfoLog 4712.2ms, render 7842.8ms. Diğer maplerde ölçülen shader call yok. Software backend; real FPS proof yok.
+
+## OPT-16 — Arena shader prewarm A/B teşhisi
+- Shader hata kontrolü açık kalıyor. QA-only bağımsız cold/prewarm koşuları gerçek Arena reset + renderer, gerçek effect factory (opaque/basic/lambert), gerçek arrow mesh, aynı fog/env/lights, ilk draw ve tekrar draw. B sadece geçici sahnede compile yapar; gerçek material referansı korunur. Program key/count, API süreleri, draw object/material, compile süresi ve ilk draw maliyeti ayrı kaydedilir. Hook'lar finally restore; production HTML byte-identical. Amaç first-use stall başka yere taşınmadan önce hangi shader varyantı ve startup maliyetini doğrulamak. Sonuç bekleniyor; production prewarm kararı henüz verilmedi.
